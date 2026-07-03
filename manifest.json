@@ -1,0 +1,14 @@
+{
+  "name": "slimehedron",
+  "short_name": "slimehedron",
+  "description": "a living, physics-driven slime arpeggiator",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#e3d4ff",
+  "theme_color": "#c4a9f5",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
