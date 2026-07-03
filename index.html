@@ -36,7 +36,7 @@ header .spacer{flex:1}
 .btn.on{outline:2px solid var(--accent)}
 main{flex:1;display:flex;gap:18px;padding:0 18px 18px;min-height:0}
 #stage{flex:1;display:flex;align-items:center;justify-content:center;position:relative;min-width:0}
-canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(circle at 50% 38%,rgba(255,250,255,.32),rgba(210,196,255,.20));max-width:100%;max-height:100%;cursor:crosshair}
+canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(circle at 50% 38%,rgba(255,250,255,.32),rgba(210,196,255,.20));max-width:100%;max-height:100%;cursor:crosshair;touch-action:none} /* every finger is its own ball */
 .hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-soft);font-weight:500;background:var(--card);padding:5px 12px;border-radius:10px;backdrop-filter:blur(6px)}
 aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px}
 aside::-webkit-scrollbar{width:8px}
@@ -59,6 +59,25 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 .pwr{display:inline-block;width:17px;height:17px;line-height:15px;text-align:center;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);font-size:11px;font-weight:800;cursor:pointer;margin-left:6px;vertical-align:-3px;user-select:none;transition:.15s}
 .pwr:not(.on){opacity:.3;filter:grayscale(1)}
 .seg svg,.adsr .k svg{pointer-events:none;vertical-align:-1px;margin-left:3px}
+.btn.big{padding:12px 20px;font-size:15px;border-radius:18px}
+.btn.magic{background:linear-gradient(135deg,var(--mint),var(--sky));font-weight:700;animation:beckon 2.6s ease-in-out infinite}
+.btn.magic.on{outline:3px solid var(--accent);box-shadow:0 0 18px rgba(179,136,240,.5);animation:none}
+@keyframes beckon{0%,100%{box-shadow:var(--shadow)}50%{box-shadow:0 0 22px rgba(159,230,207,.95)}}
+.adv{font-size:12px;color:var(--ink-soft);font-weight:700;display:flex;gap:6px;align-items:center;cursor:pointer;user-select:none}
+#advBar{display:flex;align-items:center;gap:12px;padding:0 22px 10px;flex-wrap:wrap}
+#advBar[hidden]{display:none}
+#recDot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#ff5f7a;vertical-align:-1px;transition:.2s}
+#recBtn.rec #recDot{border-radius:3px;animation:recPulse 1s infinite}
+#recBtn.rec{outline:2px solid #ff5f7a}
+@keyframes recPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,95,122,.7)}50%{box-shadow:0 0 0 8px rgba(255,95,122,0)}}
+.recItem{display:flex;align-items:center;gap:8px;margin:8px 0}
+.recItem audio{flex:1;height:32px;min-width:0}
+.recItem button{border:none;background:rgba(255,255,255,.75);border-radius:8px;padding:5px 9px;cursor:pointer;font-size:14px;box-shadow:0 1px 4px rgba(120,110,160,.25)}
+#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#fff;border-radius:14px;padding:10px 18px;font-size:13px;font-weight:700;color:var(--ink);box-shadow:var(--shadow);z-index:150;opacity:0;transition:.3s;pointer-events:none}
+#toast.show{opacity:1}
+#countNum{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:130px;font-weight:700;color:var(--accent);z-index:140;pointer-events:none;text-shadow:0 4px 30px rgba(255,255,255,.95)}
+#splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:linear-gradient(135deg,#e3d4ffee,#c4f0e2ee 50%,#ffd3e7ee);backdrop-filter:blur(10px);cursor:pointer;transition:opacity .5s;text-align:center}
+#splash.gone{opacity:0;pointer-events:none}
 #dragBar{display:none;width:46px;height:5px;border-radius:3px;background:rgba(150,135,190,.45);margin:2px auto 10px;cursor:grab;touch-action:none}
 #menuBtn{display:none}
 @media (max-width:820px){
@@ -108,31 +127,42 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 <body>
 <header>
   <h1>slimehedron<span class="dot">.</span></h1>
-  <span class="sub">a living, physics-driven slime instrument</span>
   <span class="spacer"></span>
-  <span class="sub">random shape</span><div class="toggle on" id="randShapeT" title="on: reform into a new shape · off: rejoin the same shape"></div>
-  <div class="slimeswitch" id="slimeMode" title="slime baby mode — gentle auto-wiggle, spin & rain"><div class="ss-knob"><span class="sic"></span></div></div>
+  <button class="btn primary big" id="playBtn">▶ play</button>
+  <button class="btn big magic" id="slimeBig" title="the music plays on its own — just watch, listen and poke">✨ auto-play</button>
+  <button class="btn big" id="drumBtn" title="drum loop on / off">🥁 drums</button>
+  <button class="btn big" id="dropBtn" title="add a bouncing ball">⚪ drop ball</button>
+  <button class="btn big" id="recBtn" title="record your music"><span id="recDot"></span> record</button>
   <span class="spacer"></span>
+  <button class="btn" id="resetBtn" title="put every knob back how it started">↺ reset</button>
+  <label class="adv" title="more knobs for curious minds"><input type="checkbox" id="advT"> advanced</label>
+</header>
+<div id="advBar" hidden>
   <span style="font-size:15px" title="melody">🎵</span><input type="range" id="mixSl" min="0" max="100" value="50" style="width:78px;flex:none" title="balance: melody ↔ drums"><span style="font-size:15px" title="drums">🥁</span>
-  <button class="btn" id="drumBtn" title="casio-style drum loop, tracks the tempo">🥁 drums</button>
+  <span style="font-size:15px" title="tape warmth">📼</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:78px;flex:none" title="warmth — cozy cassette color">
+  <span style="font-size:15px" title="swing">🕺</span><input type="range" id="swingSl" min="0" max="100" value="0" style="width:78px;flex:none" title="swing — offbeats lean late, MPC / 808 style groove">
   <span id="drumCtl" style="display:flex;align-items:center;gap:8px;opacity:.35;pointer-events:none">
     <select id="drumKit" style="flex:none;width:auto" title="kit"><option value="chip" selected>chip</option><option value="conga">conga</option><option value="bossa">bossa</option><option value="rock">rock 1</option><option value="beep">beeper</option></select>
     <select id="drumFeel" style="flex:none;width:auto" title="feel"><option value="1" selected>normal</option><option value="t">triplet</option><option value="2">double</option><option value="h">half</option></select>
-    <select id="drumSig" style="flex:none;width:auto" title="time signature"><option value="16" selected>4/4</option><option value="12">3/4</option><option value="12c">6/8</option><option value="20">5/4</option></select>
+    <select id="drumSig" style="flex:none;width:auto" title="time signature"><option value="16" selected>4/4</option><option value="12">3/4</option><option value="12c">6/8</option><option value="20" title="counts 1-2-3 1-2">5/4</option><option value="14" title="counts 1-2 1-2 1-2-3">7/8</option><option value="18" title="counts 1-2 1-2 1-2 1-2-3">9/8</option></select>
     <input type="range" id="drumVol" min="0" max="100" value="80" title="drum volume" style="width:64px;flex:none">
   </span>
-  <button class="btn primary" id="playBtn">▶ play</button>
-  <button class="btn" id="dropBtn">drop ball</button>
+  <span class="sub">random shape</span><div class="toggle on" id="randShapeT" title="on: reform into a new shape · off: rejoin the same shape"></div>
+  <span class="sub">count-in 3·2·1</span><div class="toggle on" id="countT" title="count 4 beats out loud before recording starts"></div>
   <button class="btn warn" id="clearBtn">clear</button>
-</header>
+</div>
 <svg width="0" height="0" style="position:absolute"><defs><filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="7"/><feColorMatrix mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 26 -12"/></filter></defs></svg>
 <main>
   <div id="stage">
     <canvas id="cv" width="720" height="720"></canvas>
-    <div class="hint">click inside to drop a ball · walls are notes · fill it til it bursts</div>
+    <div class="hint">tap to drop balls · <b>spacebar</b> rains them · fill it til it bursts</div>
   </div>
   <aside>
     <div id="dragBar"></div>
+    <div class="card" id="recCard" style="display:none">
+      <h2>my recordings</h2>
+      <div id="recList"></div>
+    </div>
     <div class="card">
       <h2>timing</h2>
       <div class="row"><label>tempo</label><input type="range" id="bpm" min="40" max="220" value="80"><span class="val" id="bpmV">80</span></div>
@@ -274,20 +304,21 @@ const SCALES={
 const NOTE_NAMES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 
 const S={
-  playing:false,bpm:80,div:0.125,dotted:false,triplet:false,quantize:true,rain:false,
+  playing:false,bpm:80,div:0.125,dotted:false,triplet:false,swing:0,quantize:true,rain:false,
   root:60,scale:"major",octs:2,shape:6,spin:0,
   chaos:0.12,speed:4,grav:0,
   velRand:false,velFix:100,velMin:55,velMax:120,
   synth:true,wave:"triangle",sub:0,
   atk:0.001,dec:0.15,sus:0.18,rel:0.28,
   filt:"lowpass",cut:0.78,res:0,fenv:0.30,
-  vol:0.55,mix:0.5,dly:0,filtOn:true,fxOn:true,midi:false,midiOut:null,
+  vol:0.55,mix:0.5,dly:0,warm:0.3,filtOn:true,fxOn:true,midi:false,midiOut:null,
   rainRate:0.5,rainAmt:0.35,slimeMode:false,randomShape:true
 };
 let BURST_MS=6000; // how long the corners stay broken open before reforming
 
 // ---------- audio ----------
-let AC=null,master=null,delayNode=null,dlyFb=null,dlyWet=null,masterFilt=null,slimeEQ=null,slimeComp=null,activeVoices=0;
+let AC=null,master=null,delayNode=null,dlyFb=null,dlyWet=null,masterFilt=null,slimeEQ=null,slimeComp=null,activeVoices=0,recTap=null,masterHP=null;
+let noiseBuf=null,tapeDry=null,tapeWet=null,tapeShaper=null,tapeTone=null,tapeDly=null,wowDepth=null,flutDepth=null,hissG=null; // tape color stage
 function initAudio(){
   if(AC)return;
   AC=new (window.AudioContext||window.webkitAudioContext)();
@@ -299,38 +330,89 @@ function initAudio(){
   dlyWet=AC.createGain();dlyWet.gain.value=S.dly;
   delayNode.connect(dlyFb);dlyFb.connect(delayNode);delayNode.connect(dlyWet);
   masterFilt=AC.createBiquadFilter();masterFilt.type="lowpass";masterFilt.frequency.value=14000;masterFilt.Q.value=0.5;
+  masterHP=AC.createBiquadFilter();masterHP.type="highpass";masterHP.frequency.value=20;masterHP.Q.value=0.6;
   slimeEQ=AC.createBiquadFilter();slimeEQ.type="highshelf";slimeEQ.frequency.value=3800;slimeEQ.gain.value=0;
   slimeComp=AC.createDynamicsCompressor();slimeComp.threshold.value=0;slimeComp.ratio.value=1;slimeComp.knee.value=6;slimeComp.attack.value=.012;slimeComp.release.value=.25;
+  // ---- tape color stage: gentle tanh saturation + tone rolloff + wow/flutter + hiss ----
+  // all native nodes, fixed cost, no AudioWorklet — runs fine on old phones. sits before the
+  // limiter so recordings inherit the character, but kept subtle enough to never smear them.
+  noiseBuf=AC.createBuffer(1,AC.sampleRate,AC.sampleRate); // 1s of noise, shared by droplet ticks + tape hiss
+  {const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+  tapeShaper=AC.createWaveShaper();
+  {const n=1024,c=new Float32Array(n),k=2.2;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(k*x)/k;}tapeShaper.curve=c;} // normalized: unity for quiet signals, soft squash on peaks
+  tapeDry=AC.createGain();tapeWet=AC.createGain();
+  tapeTone=AC.createBiquadFilter();tapeTone.type='highshelf';tapeTone.frequency.value=9500;tapeTone.gain.value=0;
+  tapeDly=AC.createDelay(0.02);tapeDly.delayTime.value=0.004; // fixed 4ms line the LFOs wiggle = wow & flutter
+  const wowLfo=AC.createOscillator();wowLfo.type='sine';wowLfo.frequency.value=0.5;wowDepth=AC.createGain();wowDepth.gain.value=0;
+  const flutLfo=AC.createOscillator();flutLfo.type='sine';flutLfo.frequency.value=6.3;flutDepth=AC.createGain();flutDepth.gain.value=0;
+  wowLfo.connect(wowDepth);wowDepth.connect(tapeDly.delayTime);flutLfo.connect(flutDepth);flutDepth.connect(tapeDly.delayTime);
+  wowLfo.start();flutLfo.start();
+  const hissSrc=AC.createBufferSource();hissSrc.buffer=noiseBuf;hissSrc.loop=true;
+  const hissFilt=AC.createBiquadFilter();hissFilt.type='lowpass';hissFilt.frequency.value=3200;hissFilt.Q.value=0.5; // soft distant wash, nothing grating
+  hissG=AC.createGain();hissG.gain.value=0;
+  hissSrc.connect(hissFilt);hissFilt.connect(hissG);hissG.connect(tapeDly);hissSrc.start();
   master.connect(masterFilt);dlyWet.connect(masterFilt);
-  masterFilt.connect(slimeEQ);slimeEQ.connect(slimeComp);slimeComp.connect(lim);lim.connect(AC.destination);
+  masterFilt.connect(masterHP);masterHP.connect(slimeEQ);slimeEQ.connect(slimeComp);
+  slimeComp.connect(tapeDry);slimeComp.connect(tapeShaper);tapeShaper.connect(tapeWet); // dry/wet split is pre-delay, so no comb filtering
+  tapeDry.connect(tapeTone);tapeWet.connect(tapeTone);tapeTone.connect(tapeDly);tapeDly.connect(lim);lim.connect(AC.destination);
+  recTap=AC.createMediaStreamDestination();lim.connect(recTap); // recorder hears exactly what you hear
+  setWarmth(S.warm);
 }
+function setWarmth(w){S.warm=w;if(!AC)return;const t=AC.currentTime;
+  tapeWet.gain.setTargetAtTime(w*1.15,t,0.1);tapeDry.gain.setTargetAtTime(1-w*0.85,t,0.1);
+  tapeTone.gain.setTargetAtTime(-w*4.5,t,0.1);      // tape's rounded top end
+  wowDepth.gain.setTargetAtTime(w*0.0006,t,0.1);    // slow pitch drift (wow)
+  flutDepth.gain.setTargetAtTime(w*0.00012,t,0.1);  // fast shimmer (flutter)
+  hissG.gain.setTargetAtTime(S.playing?w*0.0005:0,t,0.6);} // barely-there static, and only while the music plays
 function setSlimeProcessing(on){if(!AC)return;const t=AC.currentTime;
   slimeComp.threshold.setTargetAtTime(on?-18:0,t,0.2);slimeComp.ratio.setTargetAtTime(on?3:1,t,0.2);slimeEQ.gain.setTargetAtTime(on?-3.5:0,t,0.2);}
 function freqFromCents(cents){const midi=S.root+cents/100;return 440*Math.pow(2,(midi-69)/12);}
 function cutHz(x){return 60*Math.pow(14000/60,x);}
 function cutHzFill(x){return 260*Math.pow(14000/260,Math.max(0,Math.min(1,x)));}
-function playSynth(freq,vel){
+function playSynth(freq,vel,imp){
+  // raindrop model: every hit is TWO sounds — a noise "tick" (the impact), then a tonal "ring"
+  // (the trapped-bubble resonance) a few ms later. impact geometry (imp 0..1) sets the character:
+  // hard head-on hit = big splashy drop (ticky, short); soft grazing hit = small clean ringer (airy, long).
   if(!S.synth)return;
   initAudio();
   if(activeVoices>32)return; // polyphony cap: ramped tempos stay clean, never mushy
   activeVoices++;
   const t=AC.currentTime, v=vel/127, ff=modLevel();
+  if(imp==null)imp=0.5+Math.random()*0.5;
+  const dud=Math.random()<0.05;            // ~1 in 20 drops traps no bubble: soft thud, barely rings (real rain does this)
+  const ej=0.85+Math.random()*0.3;         // per-hit envelope jitter ±15% — no two drops alike
+  const gap=0.008+Math.random()*0.017;     // crater-collapse pause between tick and ring
+  const tr=t+gap;
   // fill drives envelope: empty = plucky/short, full = rounder attack/decay + longer release
-  const A=Math.max(0.001,S.atk+ff*0.1), D=Math.max(0.001,S.dec+ff*0.2), Su=Math.max(0.0001,Math.min(1,S.sus+ff*0.2)), Rl=Math.max(0.02,S.rel+ff*0.8);
-  const o=AC.createOscillator();o.type=S.wave;o.frequency.value=freq;
+  const shorten=1.15-imp*0.4;              // harder hits decay quicker
+  const A=Math.max(0.001,(S.atk+ff*0.1)*ej), D=Math.max(0.001,(S.dec+ff*0.2)*ej*shorten),
+        Su=Math.max(0.0001,Math.min(1,S.sus+ff*0.2)), Rl=Math.max(0.02,(S.rel+ff*0.8)*ej*shorten);
+  // --- tick layer (skipped when busy so old phones stay smooth) ---
+  if(activeVoices<=24&&noiseBuf){
+    const nz=AC.createBufferSource();nz.buffer=noiseBuf;
+    const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=Math.min(9000,freq*5);bp.Q.value=1.1;
+    const ng=AC.createGain();const tickLvl=v*(0.05+imp*0.16)*(0.9+Math.random()*0.2);
+    ng.gain.setValueAtTime(0,t);ng.gain.linearRampToValueAtTime(tickLvl,t+0.0015);
+    ng.gain.exponentialRampToValueAtTime(0.0001,t+0.006+imp*0.009);
+    nz.connect(bp);bp.connect(ng);ng.connect(master);
+    nz.start(t,Math.random()*0.4,0.05);
+  }
+  // --- ring layer ---
+  const o=AC.createOscillator();o.type=S.wave;o.detune.value=Math.random()*8-4; // ±4 cents
+  o.frequency.setValueAtTime(freq*1.02,tr);o.frequency.exponentialRampToValueAtTime(freq,tr+0.04); // bubble settles onto pitch
   const mix=AC.createGain();mix.gain.value=1;o.connect(mix);
   let sub=null;
   if(S.sub>0){ sub=AC.createOscillator();sub.type="triangle";sub.frequency.value=freq/2;const sg=AC.createGain();sg.gain.value=S.sub*1.3;sub.connect(sg);sg.connect(mix); }
   const f=AC.createBiquadFilter();f.type=S.filt;f.Q.value=Math.min(12,S.res*12); // resonance capped kid-safe: can never scream or squeal
   const base=cutHz(S.cut), top=cutHz(Math.min(1,S.cut+S.fenv));
-  f.frequency.setValueAtTime(S.fenv>0?top:base,t);
-  if(S.fenv>0)f.frequency.linearRampToValueAtTime(base,t+A+D);
-  const g=AC.createGain();const peak=v*0.42;
-  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+A);g.gain.linearRampToValueAtTime(peak*Su,t+A+D);
-  const relStart=t+A+D+0.05;g.gain.setValueAtTime(peak*Su,relStart);g.gain.exponentialRampToValueAtTime(0.0001,relStart+Rl);
+  f.frequency.setValueAtTime(S.fenv>0?top:base,tr);
+  if(S.fenv>0)f.frequency.linearRampToValueAtTime(base,tr+A+D);
+  const g=AC.createGain();const peak=v*0.42*(dud?0.16:1)*(1-imp*0.18);
+  g.gain.setValueAtTime(0,tr);g.gain.linearRampToValueAtTime(peak,tr+A);g.gain.linearRampToValueAtTime(peak*Su,tr+A+D);
+  const relStart=tr+A+D+0.05;g.gain.setValueAtTime(peak*Su,relStart);g.gain.exponentialRampToValueAtTime(0.0001,relStart+Rl);
   if(S.filtOn){mix.connect(f);f.connect(g);}else{mix.connect(g);}g.connect(master);if(S.fxOn)g.connect(delayNode);
   o.onended=()=>{activeVoices=Math.max(0,activeVoices-1);};
-  o.start(t);if(sub)sub.start(t);const end=relStart+Rl+0.03;o.stop(end);if(sub)sub.stop(end);
+  o.start(tr);if(sub)sub.start(tr);const end=relStart+Rl+0.03;o.stop(end);if(sub)sub.stop(end);
 }
 async function enableMidi(){
   try{const access=await navigator.requestMIDIAccess();const sel=document.getElementById('midiPort');sel.innerHTML="";
@@ -345,21 +427,33 @@ function sendMidi(cents,vel){if(!S.midi||!S.midiOut)return;const note=Math.round
 
 // ---------- drums: casio-style synthesized kit, 4-bar loops ----------
 let drumOn=false,drumStep=0,drumTime=0,drumBus=null,drumKit='chip',drumFeel='1',drumSig='16',NB=null;
-const SIGS={'16':{n:16,acc:[0]},'12':{n:12,acc:[0]},'12c':{n:12,acc:[0,6]},'20':{n:20,acc:[0]}};
+const SIGS={'16':{n:16,acc:[0]},'12':{n:12,acc:[0]},'12c':{n:12,acc:[0,6]},'20':{n:20,acc:[0]},'14':{n:14,acc:[0,4,8]},'18':{n:18,acc:[0,4,8,12]}}; // accents mark the group starts so your ear learns the counting
 function initDrums(){if(drumBus)return;drumBus=AC.createGain();drumBus.gain.value=(document.getElementById('drumVol').value/100)*1.1;drumBus.connect(slimeEQ);applyMix();}
 function rep(base,bars){const out=[];for(let b=0;b<bars;b++)for(const st of base)out.push(st+16*b);return out;}
 const KITS={ // 64 sixteenth-steps = 4 bars
   chip:{K:rep([0,8],4),s:rep([4,12],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[],r:[]}, // gameboy 4/4: kick / hat / snare / hat
   conga:{c:rep([0,7],4),C:rep([3,12,14],3).concat(rep([3,6,12,14],1).map(x=>x+48)),r:rep([4,10],4),h:[],K:[]},
   bossa:{r:rep([0,6,12],2).concat(rep([4,8],2).map(x=>x+32)),h:rep([0,2,4,6,8,10,12,14],4),K:rep([0,8],4),c:[],C:[]},
-  rock:{K:rep([0,8,10],4),r:rep([4,12],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[]},
+  rock:{K:rep([0,8,10],4),s:rep([4,12],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[],r:[]},
   beep:{K:rep([0,4,8,12],4),r:rep([2,6,10,14],4),h:[],c:[],C:rep([15],4)}
 };
+const PATTERNS={ // real signature skeletons, role-based: lo=kick, mid=snare, hi=pulse
+  '12':{lo:[0],mid:[4,8],hi:[0,2,4,6,8,10]},                 // 3/4 waltz: BOOM chick chick
+  '12c':{lo:[0],mid:[6],hi:[0,2,4,6,8,10]},                  // 6/8 compound: 2 dotted-quarter groups, snare on group 2
+  '20':{lo:[0,12],mid:[8,16],hi:[0,2,4,6,8,10,12,14,16,18]}, // 5/4 take-five lope: 3+2, no dead steps
+  '14':{lo:[0,4],mid:[8],hi:[0,2,4,6,8,10,12]},              // 7/8 rachenitsa (2+2+3): kick rides the short groups, snare owns the long one
+  '18':{lo:[0,4,8],mid:[12],hi:[0,2,4,6,8,10,12,14,16]}      // 9/8 karşılama (2+2+2+3): the Blue Rondo lean
+};
+const KITVOICE={chip:{lo:'K',mid:'s',hi:'h'},conga:{lo:'c',mid:'C',hi:'r'},bossa:{lo:'K',mid:'r',hi:'h'},rock:{lo:'K',mid:'s',hi:'h'},beep:{lo:'K',mid:'r',hi:'C'}};
 function dHit(v,t,a){a=a||1;
-  if(v==='C'||v==='c'||v==='K'){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';
-    const f0=v==='C'?330:v==='c'?230:110;
+  if(v==='K'){const o=AC.createOscillator(),g=AC.createGain();o.type='sine'; // proper kick: fast pitch dive + body
+    o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(45,t+0.12);
+    g.gain.setValueAtTime(0.85*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+    o.connect(g);g.connect(drumBus);o.start(t);o.stop(t+0.32);}
+  else if(v==='C'||v==='c'){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';
+    const f0=v==='C'?330:230;
     o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f0*0.72,t+0.08);
-    g.gain.setValueAtTime((v==='K'?0.7:0.5)*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+(v==='K'?0.22:0.16));
+    g.gain.setValueAtTime(0.5*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
     o.connect(g);g.connect(drumBus);o.start(t);o.stop(t+0.25);}
   else if(v==='s'){if(!NB){NB=AC.createBuffer(1,AC.sampleRate*0.1,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
     const src=AC.createBufferSource(),bp=AC.createBiquadFilter(),g=AC.createGain(),o=AC.createOscillator(),og=AC.createGain();
@@ -379,17 +473,36 @@ function dHit(v,t,a){a=a||1;
     g.gain.setValueAtTime(0.16*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);
     src.connect(hp);hp.connect(g);g.connect(drumBus);src.start(t);src.stop(t+0.05);}
 }
-function drumStepDur(){let d=60/S.bpm/4;if(drumFeel==='2')d*=0.5;else if(drumFeel==='h')d*=2;return d;} // triplet swing applied per-step in the scheduler
+function drumTriplet(){return drumSig==='16'&&S.triplet;} // 4/4 + triplets = the 12/8 half-time shuffle grid
+function drumSPB(){return drumTriplet()?3:4;}             // steps per beat: triplet-8ths vs 16ths
+function drumBar(){return drumTriplet()?12:SIGS[drumSig].n;}
+function drumStepDur(){let d=60/S.bpm/drumSPB();if(drumFeel==='2')d*=0.5;else if(drumFeel==='h')d*=2;return d;}
 function drumSchedule(){ // lookahead scheduler: sample-accurate, follows tempo/feel/signature live
   if(!drumOn||!AC)return;
-  const sig=SIGS[drumSig],bar=sig.n,loop=bar*4;
+  const sig=SIGS[drumSig],bar=drumBar(),loop=bar*4;
   while(drumTime<AC.currentTime+0.12){
-    const st=drumStep%loop, inBar=st%bar, barI=(st/bar)|0;
-    if(inBar===0)dHit('K',drumTime,1.3); // pronounced downbeat, every bar, every signature
-    else if(sig.acc.includes(inBar))dHit('K',drumTime,0.7);
-    if(inBar<16){const kit=KITS[drumKit],pst=inBar+16*barI;
-      for(const v in kit)if(kit[v].includes(pst))dHit(v,drumTime,inBar===0?1.2:1);}
-    drumTime+=drumStepDur()*(drumFeel==='t'?(drumStep%2===0?4/3:2/3):1);drumStep++;} // shuffle: looong-short, looong-short
+    const st=drumStep%loop, inBar=st%bar, barI=(st/bar)|0, hum=0.92+Math.random()*0.16; // ±8% human wobble on every hit
+    if(drumTriplet()){ // the classic triplet vibe: kick plants on 1, snare lands on 3, hats roll triplets
+      const vm=KITVOICE[drumKit];
+      dHit(vm.hi,drumTime,(inBar%3===0?(inBar===0?1.15:0.95):0.68)*hum); // downbeat hats lean, middle triplets tucked
+      if(inBar===0)dHit(vm.lo,drumTime,(barI===0?1.3:1.12)*hum);
+      if(barI>=2&&inBar===10)dHit(vm.lo,drumTime,0.75*hum);             // lead-in kick, back half of the phrase only
+      if(inBar===6)dHit(vm.mid,drumTime,1.05*hum);                      // half-time backbeat
+      if(barI===3&&inBar>=9)dHit(vm.mid,drumTime,(0.5+(inBar-9)*0.18)*hum); // bar 4: triplet roll walking back to the top
+    }else if(drumSig==='16'){ // 4/4: the authored 4-bar grooves
+      const kit=KITS[drumKit],pst=inBar+16*barI;
+      for(const v in kit)if(kit[v].includes(pst))dHit(v,drumTime,(inBar===0?1.25:1)*hum);
+      if(barI===3&&inBar>=13)dHit(KITVOICE[drumKit].mid,drumTime,(0.45+(inBar-13)*0.15)*hum); // soft garnish fill into bar 1
+    }else{ // 3/4, 6/8, 5/4, 7/8, 9/8: true signature skeletons voiced by the chosen kit
+      const pat=PATTERNS[drumSig],vm=KITVOICE[drumKit];
+      if(pat.lo.includes(inBar))dHit(vm.lo,drumTime,(inBar===0?1.3:1.05)*hum);
+      if(pat.mid.includes(inBar))dHit(vm.mid,drumTime,1*hum);
+      if(pat.hi.includes(inBar))dHit(vm.hi,drumTime,(sig.acc.includes(inBar)?1.1:0.8)*hum);
+      if(barI===3&&inBar>bar-4)dHit(vm.mid,drumTime,(0.5+(inBar-(bar-3))*0.15)*hum); // little walk-up fill ending each 4-bar phrase
+    }
+    const sw16=(drumFeel!=='t'&&drumSig==='16'&&!S.triplet&&S.swing>0.01)?(drumStep%2===0?1+S.swing*0.5:1-S.swing*0.5):1; // adjustable 16th swing, same clock as the melody
+    const swf=(drumFeel==='t'&&drumSig!=='12c'&&!drumTriplet())?(drumStep%2===0?4/3:2/3):sw16; // no shuffle on top of ternary grids
+    drumTime+=drumStepDur()*swf;drumStep++;}
 }
 
 // ---------- aurora palette ----------
@@ -426,12 +539,13 @@ function spawn(x,y){const ang=Math.random()*Math.PI*2, sp=ballSpeed();
   if(balls.length>80)balls.shift();}
 function velForHit(){return S.velRand?Math.round(S.velMin+Math.random()*(S.velMax-S.velMin)):S.velFix;}
 let pendingNotes=[];
-function trigger(cents){const vel=velForHit();if(S.quantize)pendingNotes.push({cents,vel});else{playSynth(freqFromCents(cents),vel);sendMidi(cents,vel);}}
+function trigger(cents,imp){const vel=velForHit();if(S.quantize)pendingNotes.push({cents,vel,imp});else{playSynth(freqFromCents(cents),vel,imp);sendMidi(cents,vel);}}
 function jitter(b){if(S.chaos<=0)return;const sp=Math.hypot(b.vx,b.vy);const a=Math.atan2(b.vy,b.vx)+(Math.random()-0.5)*S.chaos*2.2; // perturb angle only — speed stays steady
   b.vx=Math.cos(a)*sp;b.vy=Math.sin(a)*sp;}
 
 // ---------- granular particles + burst ----------
 const PR=8, GRAV=0.17;
+let gX=0,gY=GRAV,liquidH=0; // tiltable gravity + how high the liquid sits (drives the filter morph)
 function shapeArea(){const N=S.shape==="circle"?24:parseInt(S.shape,10);return 0.5*N*R*R*Math.sin(2*Math.PI/N);}
 function partCap(){return Math.min(2400,(shapeArea()/110)|0);} // particle budget (perf only) — fullness is MEASURED, not guessed
 let measuredFill=0;
@@ -510,7 +624,7 @@ function fillPhysics(now){
     for(const p of particles){p.age++;
       if(!p.pooled&&(p.age>50||(p.age>10&&Math.hypot(p.vx,p.vy)<1.2)))p.pooled=true; // fleck lands -> joins the liquid
       if(p.pooled&&p.r<PR)p.r+=0.12;
-      p.vy+=GRAV;p.x+=p.vx;p.y+=p.vy;p.vx*=0.985;p.vy*=0.992;bounceInside(p);}
+      p.vy+=gY;p.vx+=gX;p.x+=p.vx;p.y+=p.vy;p.vx*=0.985;p.vy*=0.992;bounceInside(p);}
     relaxParticles();relaxParticles(); // double pass = stiffer, calmer liquid
     for(const p of particles)bounceInside(p);
     if(fillFrac()>=0.9||particles.length>=partCap()*0.98)pressure++;else pressure=Math.max(0,pressure-2);
@@ -530,15 +644,24 @@ function fillPhysics(now){
       if(done||now-reformStart>2200)commitReform();
     }
     const segs=curSegs||computeSegs();
-    for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.vy+=GRAV;p.x+=p.vx;p.y+=p.vy;p.vx*=0.994;segHit(p,segs);
+    for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.vy+=gY;p.vx+=gX;p.x+=p.vx;p.y+=p.vy;p.vx*=0.994;segHit(p,segs);
       if(p.y>H+60||p.x<-60||p.x>W+60||p.y<-200)particles.splice(i,1);}
   }
+  if(particles.length){let sy=0,n=0;for(const p of particles)if(p.pooled){sy+=p.y;n++;}
+    if(n>8){const hF=Math.max(0,Math.min(1,((CY+R*0.72)-sy/n)/(R*1.44)));liquidH+=(hF-liquidH)*0.04;}}
+  else liquidH*=0.98;
   if(burstFlash>0)burstFlash*=0.93;
   if(formGlow>0)formGlow*=0.95;
   if(masterFilt){const m=modLevel(),t=AC.currentTime;
-    masterFilt.frequency.setTargetAtTime(S.filtOn?cutHzFill(1-m):14000,t,0.35);
-    dlyWet.gain.setTargetAtTime(S.fxOn?Math.min(0.8,S.dly+m*0.4):0,t,0.4);
-    dlyFb.gain.setTargetAtTime(0.2+m*0.28,t,0.4);} // effects scale 1:1 with how full it is
+    // liquid position morphs the master filter: low pool = warm LP, middle = band, high = airy HP
+    const hLift=Math.max(0,(liquidH-0.3)/0.7), base=S.filtOn?cutHzFill(1-m):14000;
+    const lp=Math.min(14000,base+(14000-base)*hLift*hLift);
+    const hp=S.filtOn?20*Math.pow(110,hLift):20; // 20 Hz -> ~2.2 kHz max, gentle on ears always
+    masterHP.frequency.setTargetAtTime(hp,t,0.35);
+    masterFilt.frequency.setTargetAtTime(lp,t,0.35);
+    const wash=m*m; // squared: barely any echo below half-full, blooms near the top — matches how the ear hears wash
+    dlyWet.gain.setTargetAtTime(S.fxOn?Math.min(0.5,S.dly+wash*0.22):0,t,0.4);
+    dlyFb.gain.setTargetAtTime(Math.min(0.35,0.18+wash*0.17),t,0.4);} // feedback capped hard: melody stays legible even at full
 }
 
 // ---------- ball stepping ----------
@@ -556,13 +679,13 @@ function step(){
           if(dist<BR){const vn=b.vx*e.nx+b.vy*e.ny;
             if(vn<0){b.vx-=2*vn*e.nx;b.vy-=2*vn*e.ny;jitter(b);b.x+=(BR-dist)*e.nx;b.y+=(BR-dist)*e.ny;e.flash=1;
               const nw=performance.now();
-              if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;trigger(e.cents);splash(b.x,b.y,e.nx,e.ny);}}}}
+              if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1)));splash(b.x,b.y,e.nx,e.ny);}}}} // head-on = 1, grazing = ~0: impact angle shapes the drop's sound
       }else{ // caught outside a fresh shape: float free, no wall spam, drift off into space
         if(b.x<-80||b.x>W+80||b.y<-80||b.y>H+80){balls.splice(bi,1);continue;}
       }
     }else{ // broken open — bounce off the fragments, trickle out through the gaps
       const hit=segHit(b,curSegs||computeSegs());
-      if(hit){jitter(b);if(hit.f)hit.f.flash=1;trigger(hit.cents);}
+      if(hit){jitter(b);if(hit.f)hit.f.flash=1;trigger(hit.cents,0.4+Math.random()*0.6);}
       if(Math.hypot(b.x-CX,b.y-CY)>R+260)balls.splice(bi,1); // escaped into open space
     }
     // hold a steady, tempo-based speed (kills the float-vs-fast inconsistency; gravity still bends the path)
@@ -572,7 +695,11 @@ function step(){
 
 // ---------- transport / rain ----------
 let lastTick=0,nextRain=0,rainTickN=0,tickCount=0;
-function tickInterval(){let beat=60/S.bpm;let d=S.div*4*beat;if(S.triplet)d*=(tickCount%2===0?4/3:2/3);if(S.dotted)d*=1.5;return d*1000;} // triplet = swung long-short pairs, same tempo
+function tickInterval(){let beat=60/S.bpm;let d=S.div*4*beat;
+  if(S.triplet)d*=2/3; // TRUE triplets: three even notes per beat — "1 & a 2 & a", not a lopsided shuffle
+  if(S.dotted)d*=1.5;
+  if(!S.triplet&&S.swing>0.01)d*=(tickCount%2===0?1+S.swing*0.5:1-S.swing*0.5); // MPC-style: offbeats lean late, up to 75/25
+  return d*1000;}
 function spawnRain(){const a=Math.random()*Math.PI*2,r=Math.random()*R*0.35;spawn(CX+Math.cos(a)*r,CY+Math.sin(a)*r-R*0.35);}
 function rainIntervalMs(){const bars=4-S.rainRate*3.9;return Math.max(200,bars*4*(60000/S.bpm));} // ~4 bars per drop at default rate
 function transport(now){
@@ -580,7 +707,7 @@ function transport(now){
   drumSchedule();
   if(now-lastTick>=tickInterval()){lastTick=(now-lastTick>tickInterval()*3)?now:lastTick+tickInterval();tickCount++; // drift-free grid, stays on beat with drums
     if(S.quantize&&pendingNotes.length){const seen=new Set();
-      for(const p of pendingNotes){const k=Math.round(p.cents);if(seen.has(k))continue;seen.add(k);playSynth(freqFromCents(p.cents),p.vel);sendMidi(p.cents,p.vel);}
+      for(const p of pendingNotes){const k=Math.round(p.cents);if(seen.has(k))continue;seen.add(k);playSynth(freqFromCents(p.cents),p.vel,p.imp);sendMidi(p.cents,p.vel);}
       pendingNotes.length=0;}
   }
   if((S.rain||S.slimeMode)&&balls.length===0)spawnRain(); // watchdog: always at least one ball in play
@@ -676,7 +803,9 @@ bindRange("sub","sub",v=>v/100);
 bindRange("atk","atk",v=>v/100*1.5);bindRange("dec","dec",v=>v/100*1.5);bindRange("sus","sus",v=>v/100);bindRange("rel","rel",v=>v/100*2);
 bindRange("cut","cut",v=>v/100);bindRange("res","res",v=>v/100);bindRange("fenv","fenv",v=>v/100);
 bindRange("vol","vol",v=>{const x=v/100;S.vol=x;applyMix();return x;});
-bindRange("dly","dly",v=>{const x=v/100;if(dlyWet){if(dlyWet.gain.setTargetAtTime)dlyWet.gain.setTargetAtTime(x,AC.currentTime,0.05);else dlyWet.gain.value=x;}return x;});
+$("warmSl").addEventListener('input',e=>setWarmth(e.target.value/100)); // safe before audio init: stores S.warm, applied when audio starts
+bindRange("swingSl","swing",v=>v/100);
+bindRange("dly","dly",v=>{const x=Math.pow(v/100,2)*0.5;if(dlyWet){if(dlyWet.gain.setTargetAtTime)dlyWet.gain.setTargetAtTime(x,AC.currentTime,0.05);else dlyWet.gain.value=x;}return x;}); // squared taper, capped at 0.5 wet — front half of the slider stays subtle
 bindRange("rainRate","rainRate",v=>v/100);
 bindRange("burstSec","burstSec",v=>{BURST_MS=v*1000;return v;});
 
@@ -685,7 +814,10 @@ $("waveSeg").addEventListener('click',e=>{if(e.target.tagName!=="BUTTON")return;
 $("filtSeg").addEventListener('click',e=>{const b=e.target.closest("button");if(!b)return;[...b.parentNode.children].forEach(x=>x.classList.remove('active'));b.classList.add('active');S.filt=b.dataset.f;});
 
 function bindToggle(id,key,cb){$(id).addEventListener('click',()=>{const el=$(id);el.classList.toggle('on');S[key]=el.classList.contains('on');if(cb)cb(S[key]);});}
-bindToggle("tripT","triplet",on=>{if(drumOn){drumFeel=on?"t":"1";document.getElementById("drumFeel").value=drumFeel;}});bindToggle("dotT","dotted");bindToggle("quantT","quantize");bindToggle("synthT","synth");
+bindToggle("tripT","triplet",on=>{if(on&&S.dotted){S.dotted=false;$("dotT").classList.remove("on");}
+  if(drumOn){drumFeel=on?"t":"1";document.getElementById("drumFeel").value=drumFeel;}});
+bindToggle("dotT","dotted",on=>{if(on&&S.triplet){S.triplet=false;$("tripT").classList.remove("on");
+  if(drumOn&&drumFeel==="t"){drumFeel="1";document.getElementById("drumFeel").value="1";}}});bindToggle("quantT","quantize");bindToggle("synthT","synth");
 bindToggle("rainT","rain",on=>{$("rainCfg").style.display=on?"block":"none";if(on){initAudio();if(AC.state==="suspended")AC.resume();if(!S.playing)setPlaying(true);nextRain=performance.now();}});
 bindToggle("randShapeT","randomShape");
 bindToggle("velRandT","velRand",on=>{$("velFixedRow").style.display=on?"none":"flex";$("velRangeRow").style.display=on?"flex":"none";$("velRangeRow2").style.display=on?"flex":"none";});
@@ -701,7 +833,8 @@ function updateScaleNote(){const sc=scaleObj();const micro=sc.c.some(c=>c%100!==
   $("scaleNote").textContent=`${sc.c.length} notes/oct × ${S.octs} = ${totalDegrees()} pitches mapped around the shape.`+(micro?" ⚡ microtonal — exact on the synth.":"");}
 updateScaleNote();
 
-function setPlaying(p){S.playing=p;$("playBtn").textContent=p?"⏸ pause":"▶ play";$("playBtn").classList.toggle('on',p);if(p){lastTick=performance.now();if(window._wormReset)window._wormReset();}}
+function setPlaying(p){S.playing=p;$("playBtn").textContent=p?"⏸ pause":"▶ play";$("playBtn").classList.toggle('on',p);if(p){lastTick=performance.now();if(window._wormReset)window._wormReset();}
+  if(AC&&hissG)hissG.gain.setTargetAtTime(p?S.warm*0.0005:0,AC.currentTime,0.6);} // hiss fades in with the music, gone when paused
 $("drumBtn").addEventListener('click',()=>{initAudio();if(AC.state==="suspended")AC.resume();initDrums();
   drumOn=!drumOn;$("drumBtn").classList.toggle('on',drumOn);
   const c=$("drumCtl");c.style.opacity=drumOn?1:0.35;c.style.pointerEvents=drumOn?"auto":"none";
@@ -730,6 +863,38 @@ $("menuBtn").addEventListener('click',()=>document.querySelector('aside').classL
 $("playBtn").addEventListener('click',()=>{initAudio();if(AC.state==="suspended")AC.resume();setPlaying(!S.playing);});
 $("dropBtn").addEventListener('click',()=>{initAudio();if(AC.state==="suspended")AC.resume();spawn(CX+(Math.random()-.5)*60,CY-R*0.4);if(!S.playing)setPlaying(true);});
 $("clearBtn").addEventListener('click',()=>{balls.length=0;pendingNotes=[];particles=[];debris=[];frags=null;fillState="fill";measuredFill=0;});
+// ---------- tilt & shake: the phone IS a controller ----------
+function enableMotion(){ // ios requires a user gesture — the splash tap is it
+  try{if(window.DeviceMotionEvent&&DeviceMotionEvent.requestPermission)DeviceMotionEvent.requestPermission().catch(()=>{});}catch(e){}
+  try{if(window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission)DeviceOrientationEvent.requestPermission().catch(()=>{});}catch(e){}
+}
+addEventListener('deviceorientation',e=>{
+  if(e.gamma==null)return;
+  gX=Math.max(-1,Math.min(1,e.gamma/40))*GRAV*1.1; // lean the phone = slosh the liquid
+  const b=e.beta==null?90:Math.max(0,Math.min(180,e.beta));
+  gY=GRAV*Math.max(0.25,Math.min(1,Math.sin(b*Math.PI/180)+0.15));
+});
+let lastShake=0;
+addEventListener('devicemotion',e=>{
+  const a=e.accelerationIncludingGravity;if(!a)return;
+  const mag=Math.abs(a.x||0)+Math.abs(a.y||0)+Math.abs(a.z||0),nw=performance.now();
+  if(mag>42&&nw-lastShake>3000&&fillState==="fill"&&particles.length>60){lastShake=nw;startBreak(nw);burstFlash=1;} // shake it til it breaks
+});
+
+// keyboard autonomy: space = balls, A = auto play, D = drums, R = record, arrows = tempo
+let lastKb=0;
+addEventListener('keydown',e=>{
+  const tg=e.target.tagName;if(tg==='SELECT'||tg==='INPUT'||tg==='TEXTAREA')return;
+  if(e.code==='Space'||e.code==='Enter'||e.code==='ShiftLeft'||e.code==='ShiftRight'){e.preventDefault(); // hold any of them for a ball rainstorm
+    const nw=performance.now();if(nw-lastKb<110)return;lastKb=nw;
+    initAudio();if(AC.state==='suspended')AC.resume();
+    spawn(CX+(Math.random()-.5)*R*1.2,CY-R*0.45);if(!S.playing)setPlaying(true);}
+  else if(e.code==='KeyA'&&!e.repeat)$("slimeBig").click();
+  else if(e.code==='KeyD'&&!e.repeat)$("drumBtn").click();
+  else if(e.code==='KeyR'&&!e.repeat)$("recBtn").click();
+  else if(e.code==='ArrowUp'||e.code==='ArrowDown'){e.preventDefault();
+    const el=$("bpm");el.value=parseFloat(el.value)+(e.code==='ArrowUp'?2:-2);el.dispatchEvent(new Event('input'));}
+});
 cv.addEventListener('pointerdown',e=>{initAudio();if(AC.state==="suspended")AC.resume();const r=cv.getBoundingClientRect();const x=(e.clientX-r.left)*(W/r.width),y=(e.clientY-r.top)*(H/r.height);spawn(x,y);if(!S.playing)setPlaying(true);});
 
 // ---------- moog knobs ----------
@@ -757,7 +922,9 @@ function setSliderValue(id,val){const inp=document.getElementById(id);if(!inp)re
 const MODS=[
   {id:'sub',rate:0.025,c:35,d:22},{id:'cut',rate:0.035,c:62,d:20},
   {id:'fenv',rate:0.03,c:42,d:24},{id:'atk',rate:0.02,c:4,d:4},{id:'dec',rate:0.025,c:14,d:8},
-  {id:'sus',rate:0.022,c:22,d:10},{id:'rel',rate:0.025,c:18,d:9}
+  {id:'sus',rate:0.022,c:22,d:10},{id:'rel',rate:0.025,c:18,d:9},
+  {id:'chaos',rate:0.02,c:22,d:14}, // gentle ball-wobble drift: varied impact angles = varied drop timbres, organically
+  {id:'swingSl',rate:0.016,c:22,d:9} // swing breathes 13–31%: the groove leans and relaxes like a human drummer
 ]; // delay stays off the wobble list — the liquid level drives it
 function slimeModStep(now){
   for(let i=0;i<MODS.length;i++){const m=MODS[i],inp=document.getElementById(m.id);if(!inp)continue;
@@ -780,6 +947,10 @@ function slimeSVG(fill,face){
 <circle cx="50" cy="25" r="6" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="50.5" cy="26" r="2.6" fill="#5a4f78"/>
 <ellipse cx="22" cy="35" rx="5" ry="3" fill="#ff8fbe" opacity=".6"/><ellipse cx="58" cy="35" rx="5" ry="3" fill="#ff8fbe" opacity=".6"/>
 <path d="M33 33 h14 q-7 10 -14 0 Z" fill="#5a4f78"/>`;
+  }else if(face==="bigeye"){
+    f=`<circle cx="30" cy="26" r="9.5" fill="#fff" stroke="#5a4f78" stroke-width="2.6"/><circle cx="30" cy="27" r="5" fill="#5a4f78"/><circle cx="32" cy="24.5" r="1.8" fill="#fff"/>
+<circle cx="50" cy="26" r="9.5" fill="#fff" stroke="#5a4f78" stroke-width="2.6"/><circle cx="50" cy="27" r="5" fill="#5a4f78"/><circle cx="52" cy="24.5" r="1.8" fill="#fff"/>
+<path d="M34 41 q6 6 12 0" fill="none" stroke="#5a4f78" stroke-width="2.6" stroke-linecap="round"/>`;
   }else{
     f=`<path d="M24 26 l5.5 -7 l5.5 7" fill="none" stroke="#5a4f78" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M45 26 l5.5 -7 l5.5 7" fill="none" stroke="#5a4f78" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -832,6 +1003,30 @@ const chillers=[]; // full-view slimes with cursor physics
   chiller('left:33%;bottom:1%;width:62px;height:58px','--pink',1.4,62);
   // capture home centers after layout
   requestAnimationFrame(()=>{for(const c of chillers){const b=c.el.getBoundingClientRect();c.hx=b.left+b.width/2;c.hy=b.top+b.height/2;c.x=c.hx;c.y=c.hy;c.init=true;}});
+  // ---- upside-down nappers: hang off the top of the play area, ignore your mouse completely.
+  // click one → big-eye mode: pulses to the beat in rainbow for 4 bars, then back to napping. just for the hell of it.
+  const sleepers=[];
+  function sleeper(fx,fillVar,size){const el=document.createElement('div');el.className='slime';
+    el.style.cssText=`position:fixed;width:${size}px;height:${Math.round(size*0.93)}px;transform:rotate(180deg);transition:none`;
+    el.title='...zzz';
+    el.innerHTML=`<div>${slimeSVG(cssVar(fillVar),'happy')}</div>`;
+    el.addEventListener('click',()=>{if(el._rave)return;el._rave=true;
+      el.firstChild.innerHTML=slimeSVG(cssVar(fillVar),'bigeye');
+      const t0=performance.now(),spb=60000/S.bpm,dur=16*spb; // 4 bars at the tempo when you woke it
+      (function pulse(){
+        const el2=performance.now()-t0;
+        if(el2>=dur){el.style.transform='rotate(180deg)';el.style.filter='';el.firstChild.innerHTML=slimeSVG(cssVar(fillVar),'happy');el._rave=false;return;}
+        const p=el2/spb; // beats elapsed
+        const s=1+0.16*Math.abs(Math.sin(p*Math.PI)); // one pump per beat
+        el.style.transform=`rotate(180deg) scale(${s.toFixed(3)})`;
+        el.style.filter=`hue-rotate(${Math.floor(p*45)%360}deg) saturate(1.7)`;
+        requestAnimationFrame(pulse);})();});
+    layer.appendChild(el);sleepers.push({el,fx,size});}
+  sleeper(0.16,'--yellow',58);
+  sleeper(0.74,'--lav',64);
+  function placeSleepers(){const r=cv.getBoundingClientRect();
+    for(const s of sleepers){s.el.style.left=(r.left+r.width*s.fx-s.size/2)+'px';s.el.style.top=(r.top-6)+'px';}}
+  addEventListener('resize',placeSleepers);requestAnimationFrame(placeSleepers);
 })();
 
 // ---------- wiggle worm: big cylindrical metronome buddy (click = double-time jerkin for 4 bars) ----------
@@ -855,7 +1050,7 @@ const chillers=[]; // full-view slimes with cursor physics
       :'<circle cx="-7" cy="-4" r="3" fill="#3d3756"/><circle cx="7" cy="-4" r="3" fill="#3d3756"/><path d="M-5.5 4 q5.5 5.5 11 0" fill="none" stroke="#3d3756" stroke-width="3" stroke-linecap="round"/>';}
   setFace(false);
   function beats(){ // drums are the master clock when on; otherwise tempo from the moment play started
-    if(drumOn&&AC)return (drumStep-(drumTime-AC.currentTime)/drumStepDur())/4;
+    if(drumOn&&AC)return (drumStep-(drumTime-AC.currentTime)/drumStepDur())/drumSPB();
     return wBeat;
   }
   const N=11;
@@ -928,40 +1123,178 @@ const chillers=[]; // full-view slimes with cursor physics
   });
 })();
 
-// ---------- slime cursor attraction + bounce ----------
-const cursor={x:-9999,y:-9999,px:-9999,py:-9999,sp:0};
-addEventListener('mousemove',e=>{cursor.x=e.clientX;cursor.y=e.clientY;});
+// ---------- slime buddy train: brush past one to collect it — they float behind you like pac-man ghosts ----------
+const cursor={x:-9999,y:-9999,idle:0};
+const trail=[]; // breadcrumb path the train follows, newest first
+addEventListener('mousemove',e=>{cursor.x=e.clientX;cursor.y=e.clientY;cursor.idle=performance.now();
+  const h=trail[0];
+  if(!h||Math.hypot(e.clientX-h.x,e.clientY-h.y)>7){trail.unshift({x:e.clientX,y:e.clientY});if(trail.length>140)trail.pop();}});
+let _uiR=[],_uiT=0;
+function uiRects(){const rs=[];
+  for(const el of [document.querySelector('header'),document.querySelector('aside'),document.getElementById('advBar'),document.getElementById('menuBtn')]){
+    if(!el||el.hidden)continue;const cs=getComputedStyle(el);if(cs.display==='none')continue;
+    const r=el.getBoundingClientRect();if(r.width&&r.height)rs.push(r);}
+  return rs;}
+function pointInUI(x,y,pad){for(const r of _uiR){if(x>r.left-pad&&x<r.right+pad&&y>r.top-pad&&y<r.bottom+pad)return r;}return null;}
+function shoveOut(p,pad){const r=pointInUI(p.x,p.y,pad);if(!r)return p; // nudge a target to the nearest free edge — never park on the knobs
+  const cands=[{x:r.left-pad,y:p.y},{x:r.right+pad,y:p.y},{x:p.x,y:r.top-pad},{x:p.x,y:r.bottom+pad}];
+  let best=null,bd=1e9;
+  for(const c of cands){if(c.x<20||c.x>innerWidth-20||c.y<20||c.y>innerHeight-20)continue;
+    const d=Math.hypot(c.x-p.x,c.y-p.y);if(d<bd){bd=d;best=c;}}
+  return best||p;}
+function trailPoint(dist){ // walk backwards along the breadcrumbs
+  if(!trail.length)return null;let acc=0;
+  for(let i=0;i<trail.length-1;i++){const a=trail[i],b=trail[i+1],seg=Math.hypot(a.x-b.x,a.y-b.y);
+    if(acc+seg>=dist){const f=(dist-acc)/(seg||1);return {x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f};}
+    acc+=seg;}
+  return trail[trail.length-1];}
+const LEAD=120,SPACE=62,COLLECT=110,EASE=0.055; // LEAD keeps them clear of whatever you're pointing at
+let trainSeq=1;
 function slimePhysics(){
-  cursor.sp=Math.hypot(cursor.x-cursor.px,cursor.y-cursor.py);cursor.px=cursor.x;cursor.py=cursor.y;
-  const RAD=170, FAST=42, K=0.018, DAMP=0.85;
+  const now=performance.now();
+  if(now-_uiT>400){_uiR=uiRects();_uiT=now;}
+  const idle=now-cursor.idle>5000, overUI=!!pointInUI(cursor.x,cursor.y,0);
   for(const c of chillers){if(!c.init)continue;
-    const dcx=cursor.x-c.x,dcy=cursor.y-c.y,dc=Math.hypot(dcx,dcy)||1;
-    let tx=c.hx,ty=c.hy;
-    if(dc<RAD && cursor.sp<FAST){const stand=c.r+16;tx=cursor.x-dcx/dc*stand;ty=cursor.y-dcy/dc*stand;} // elastic follow with standoff
-    c.vx+=(tx-c.x)*K;c.vy+=(ty-c.y)*K;c.vx*=DAMP;c.vy*=DAMP;
-    if(dc<c.r+6){c.vx-=dcx/dc*1.6;c.vy-=dcy/dc*1.6;} // bounce off the cursor
-    c.x+=c.vx;c.y+=c.vy;
+    if(idle&&c.collected)c.collected=false; // you wandered off — everyone drifts home on their own
+    else if(!c.collected&&!idle&&!overUI&&Math.hypot(cursor.x-c.x,cursor.y-c.y)<COLLECT){
+      c.collected=true;c.seq=trainSeq++; // picked up! joins the back of the line
+      c.el.classList.add('squish');setTimeout(()=>c.el.classList.remove('squish'),460);}}
+  const train=chillers.filter(c=>c.init&&c.collected).sort((a,b)=>a.seq-b.seq);
+  for(const c of chillers){if(!c.init)continue;
+    let t={x:c.hx,y:c.hy};
+    const rank=train.indexOf(c);
+    if(rank>=0){
+      const tp=trailPoint(LEAD+rank*SPACE);if(tp)t=tp;
+      const dc=Math.hypot(cursor.x-t.x,cursor.y-t.y);
+      if(dc<LEAD*0.7&&dc>0.01){const a=Math.atan2(t.y-cursor.y,t.x-cursor.x);t={x:cursor.x+Math.cos(a)*LEAD*0.7,y:cursor.y+Math.sin(a)*LEAD*0.7};} // polite personal space
+      t=shoveOut(t,c.r+14);}
+    c.x+=(t.x-c.x)*EASE;c.y+=(t.y-c.y)*EASE; // pure eased drift: floaty, can't overshoot, can't jitter
   }
+  // soft body-bumping so the line stays a line, not a pile
   for(let i=0;i<chillers.length;i++)for(let j=i+1;j<chillers.length;j++){const a=chillers[i],b=chillers[j];if(!a.init||!b.init)continue;
-    let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),min=a.r+b.r;
-    if(d<min&&d>0.01){const push=(min-d)/2;dx/=d;dy/=d;a.x-=dx*push;a.y-=dy*push;b.x+=dx*push;b.y+=dy*push;
-      const rvx=(a.vx-b.vx)*0.5,rvy=(a.vy-b.vy)*0.5;a.vx-=rvx;a.vy-=rvy;b.vx+=rvx;b.vy+=rvy;}}
+    let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),min=(a.r+b.r)*0.9;
+    if(d<min&&d>0.01){const push=(min-d)/2;dx/=d;dy/=d;a.x-=dx*push;a.y-=dy*push;b.x+=dx*push;b.y+=dy*push;}}
   for(const c of chillers){if(!c.init)continue;c.el.style.transform=`translate(${(c.x-c.hx).toFixed(1)}px,${(c.y-c.hy).toFixed(1)}px)`;}
   requestAnimationFrame(slimePhysics);
 }
 requestAnimationFrame(slimePhysics);
 
-// slime baby switch
-$("slimeMode").querySelector('.sic').innerHTML=slimeSVG(cssVar('--mint'),'happy');
+// the magic button
 function setDivUI(d){S.div=d;[...$("divSeg").children].forEach(b=>b.classList.toggle('active',parseFloat(b.dataset.d)===d));}
-$("slimeMode").addEventListener('click',()=>{
-  const el=$("slimeMode");el.classList.toggle('on');S.slimeMode=el.classList.contains('on');
+$("slimeBig").addEventListener('click',()=>{
+  const el=$("slimeBig");el.classList.toggle('on');S.slimeMode=el.classList.contains('on');
+  el.textContent="✨ auto-play"; // same words on or off — the glow does the talking
   initAudio();if(AC&&AC.state==="suspended")AC.resume();setSlimeProcessing(S.slimeMode);
   if(S.slimeMode){if(!S.playing)setPlaying(true);setSliderValue('spin',14);
     S.quantize=true;$("quantT").classList.add('on');setDivUI(0.0625); // lock everything to 1/16 grid while slimin'
     if(!S.rain){$("rainT").classList.add('on');S.rain=true;$("rainCfg").style.display="block";nextRain=performance.now();}
   }else{setSliderValue('spin',0);S.quantize=false;$("quantT").classList.remove('on');}
 });
+$("advT").addEventListener('change',e=>{$("advBar").hidden=!e.target.checked;});
+$("countT").addEventListener('click',()=>$("countT").classList.toggle('on'));
+$("resetBtn").addEventListener('click',()=>{try{localStorage.removeItem('slimehedron');}catch(e){}location.reload();}); // recordings survive — settings go back to factory
+
+// ---------- record & keep: pulse-red recorder, count-in, refresh-proof shelf ----------
+function toast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t);}
+  t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
+let mediaRec=null,recChunks=[],recCounting=false,rdb=null;
+const REC_MIME=window.MediaRecorder?(MediaRecorder.isTypeSupported('audio/mp4')?'audio/mp4':(MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':'')):'';
+function recDB(){return new Promise(res=>{if(rdb)return res(rdb);
+  const q=indexedDB.open('slimehedron-rec',1);
+  q.onupgradeneeded=()=>q.result.createObjectStore('takes',{keyPath:'id',autoIncrement:true});
+  q.onsuccess=()=>{rdb=q.result;res(rdb);};q.onerror=()=>res(null);});}
+function countTick(last,at){const t=at||AC.currentTime,o=AC.createOscillator(),g=AC.createGain();o.type='square';o.frequency.value=last?1250:820;
+  g.gain.setValueAtTime(0.18,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.08);
+  o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+0.1);} // straight to speakers, never onto the recording
+function startRec(){recChunks=[];
+  mediaRec=new MediaRecorder(recTap.stream,{mimeType:REC_MIME,audioBitsPerSecond:160000});
+  mediaRec.ondataavailable=e=>{if(e.data.size)recChunks.push(e.data);};
+  mediaRec.onstop=saveTake;mediaRec.start();
+  $("recBtn").classList.add('rec');if(!S.playing)setPlaying(true);}
+function schedSyncCount(){ // drums running: ticks land ON the drum beats, take starts exactly on the next bar-1
+  recCounting=true;
+  const spb=drumSPB(),sd=drumStepDur(),bar=drumBar(),beats=Math.ceil(bar/spb); // ceil: 7/8 and 9/8 have half-beats, kids count whole numbers
+  const nowT=AC.currentTime,pos=drumStep-(drumTime-nowT)/sd; // fractional steps elapsed on the drum grid
+  let startStep=Math.ceil(pos/bar)*bar;                      // next bar-1 downbeat
+  if(startStep-pos<2*spb)startStep+=bar;                     // under 2 beats away? take the following bar
+  const num=document.createElement('div');num.id='countNum';document.body.appendChild(num);
+  for(let k=0;k<beats;k++){const st=startStep-bar+k*spb;if(st<pos+0.1)continue; // only count beats still ahead
+    const at=nowT+(st-pos)*sd;
+    countTick(k===beats-1,at);
+    setTimeout(()=>{num.textContent=String(beats-k);},(at-nowT)*1000);}
+  const startAt=nowT+(startStep-pos)*sd;
+  setTimeout(()=>{num.remove();recCounting=false;startRec();},Math.max(0,(startAt-nowT)*1000-30));
+}
+$("recBtn").addEventListener('click',()=>{
+  initAudio();if(AC.state==='suspended')AC.resume();
+  if(mediaRec&&mediaRec.state==='recording'){mediaRec.stop();return;}
+  if(recCounting)return;
+  if(!REC_MIME){toast('recording not supported in this browser 😢');return;}
+  if($("countT").classList.contains('on')){
+    if(drumOn&&S.playing){schedSyncCount();}
+    else{recCounting=true;
+      const bt=60/S.bpm,num=document.createElement('div');num.id='countNum';document.body.appendChild(num);
+      for(let i=0;i<4;i++)setTimeout(()=>{num.textContent=String(4-i);countTick(i===3);},i*bt*1000);
+      setTimeout(()=>{num.remove();recCounting=false;
+        if(drumOn){drumStep=0;drumTime=AC.currentTime+0.03;} // drums start at bar 1 with the take
+        startRec();},4*bt*1000);}
+  }else{if(drumOn&&!S.playing){drumStep=0;drumTime=AC.currentTime+0.03;}startRec();}});
+async function saveTake(){
+  $("recBtn").classList.remove('rec');
+  const blob=new Blob(recChunks,{type:REC_MIME});mediaRec=null;
+  if(blob.size<2000){toast('too short — try again!');return;}
+  const db=await recDB();if(!db){toast('could not save 😢');return;}
+  const take={when:Date.now(),blob,name:'slime jam · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
+  db.transaction('takes','readwrite').objectStore('takes').add(take).onsuccess=()=>{renderTakes();toast('✅ saved! find it under "my recordings"');};}
+async function renderTakes(){
+  const db=await recDB();if(!db)return;
+  const rq=db.transaction('takes').objectStore('takes').getAll();
+  rq.onsuccess=()=>{const takes=rq.result||[],card=$("recCard"),list=$("recList");
+    card.style.display=takes.length?'block':'none';list.innerHTML='';
+    const ext=REC_MIME.includes('mp4')?'m4a':'webm';
+    for(const tk of takes){const url=URL.createObjectURL(tk.blob);
+      const row=document.createElement('div');row.className='recItem';
+      row.innerHTML='<audio controls preload="metadata" src="'+url+'"></audio>';
+      const sh=document.createElement('button');sh.textContent='📤';sh.title='share or save it';
+      sh.onclick=async()=>{const f=new File([tk.blob],(tk.name||'slime jam').replace(/[^\w ·-]/g,'')+'.'+ext,{type:tk.blob.type});
+        if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'slime jam'});}catch(e){}}
+        else{const a=document.createElement('a');a.href=url;a.download=f.name;a.click();}};
+      const del=document.createElement('button');del.textContent='🗑';del.title='delete';
+      del.onclick=async()=>{const d=await recDB();d.transaction('takes','readwrite').objectStore('takes').delete(tk.id).onsuccess=()=>renderTakes();};
+      row.appendChild(sh);row.appendChild(del);list.appendChild(row);}};}
+renderTakes();
+
+// ---------- remember settings between visits ----------
+const SAVE_TOGGLES=['dotT','tripT','quantT','randShapeT','velRandT','filtPwr','fxPwr','countT'];
+function saveState(){const o={r:{},s:{},t:{},seg:{},adv:$("advT").checked};
+  document.querySelectorAll('input[type=range]').forEach(i=>{if(i.id)o.r[i.id]=i.value;});
+  document.querySelectorAll('select').forEach(i=>{if(i.id)o.s[i.id]=i.value;});
+  SAVE_TOGGLES.forEach(id=>{const e=$(id);if(e)o.t[id]=e.classList.contains('on');});
+  ['divSeg','waveSeg','filtSeg'].forEach(id=>{const a=$(id).querySelector('.active');if(a)o.seg[id]=[...$(id).children].indexOf(a);});
+  try{localStorage.setItem('slimehedron',JSON.stringify(o));}catch(e){}}
+let saveTmr=null;const queueSave=()=>{clearTimeout(saveTmr);saveTmr=setTimeout(saveState,600);};
+addEventListener('input',queueSave,true);addEventListener('click',queueSave,true);
+(function restore(){let o=null;try{o=JSON.parse(localStorage.getItem('slimehedron'));}catch(e){}if(!o)return;
+  for(const id in o.r||{}){const e=$(id);if(e){e.value=o.r[id];e.dispatchEvent(new Event('input'));}}
+  for(const id in o.s||{}){const e=$(id);if(e){e.value=o.s[id];e.dispatchEvent(new Event('change'));}}
+  for(const id in o.t||{}){const e=$(id);if(e&&e.classList.contains('on')!==o.t[id])e.click();}
+  for(const id in o.seg||{}){const e=$(id),b=e&&e.children[o.seg[id]];if(b)b.click();}
+  if(o.adv){$("advT").checked=true;$("advBar").hidden=false;}
+})();
+
+// ---------- splash: one friendly tap starts everything ----------
+(function(){
+  const sp=document.createElement('div');sp.id='splash';
+  sp.innerHTML='<div class="bob" style="width:150px;height:140px">'+slimeSVG(cssVar('--mint'),'happy')+'</div>'+
+    '<div style="font-size:36px;font-weight:700">slimehedron<span style="color:var(--accent)">.</span></div>'+
+    '<div style="font-size:14px;color:var(--ink-soft);font-weight:600">make music with bouncing slime!</div>'+
+    '<div class="btn primary big" style="font-size:20px;padding:16px 36px">▶ tap to play!</div>';
+  document.body.appendChild(sp);
+  sp.addEventListener('pointerdown',()=>{enableMotion();sp.classList.add('gone');setTimeout(()=>sp.remove(),600);
+    initAudio();if(AC.state==="suspended")AC.resume();
+    if(!S.slimeMode)$("slimeBig").click();},{once:true});
+})();
+
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
 </script>
 </body>
