@@ -69,6 +69,8 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 .adv{font-size:12px;color:var(--ink-soft);font-weight:700;display:flex;gap:6px;align-items:center;cursor:pointer;user-select:none}
 #advBar{display:flex;align-items:center;gap:12px;padding:0 22px 10px;flex-wrap:wrap;position:relative;z-index:70}
 #advBar[hidden]{display:none}
+#triMixBar{display:flex;align-items:center;gap:14px;padding:2px 22px 6px;position:relative;z-index:70}
+.triHint{font-size:12.5px;color:var(--ink-soft);font-weight:600}
 #recDot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#ff5f7a;vertical-align:-1px;transition:.2s}
 #recBtn.rec #recDot{border-radius:3px;animation:recPulse 1s infinite}
 #recBtn.rec{outline:2px solid #ff5f7a}
@@ -146,16 +148,19 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <button class="btn big" id="recBtn" title="record your music"><span id="recDot"></span> record</button>
   <span class="spacer"></span>
   <button class="btn" id="resetBtn" title="put every knob back how it started">↺ reset</button>
-  <label class="adv" title="more knobs for curious minds"><input type="checkbox" id="advT" checked> advanced</label>
+  <label class="adv" title="more knobs for curious minds"><input type="checkbox" id="advT"> advanced</label>
 </header>
-<div id="advBar">
+<div id="triMixBar">
   <div id="triMix" title="drag the slime — 🎵 melody up top, 🥁 drums left, 🎹 keys right">
-    <svg viewBox="-14 -18 128 124" width="122" height="118" style="display:block;overflow:visible">
+    <svg viewBox="-14 -18 128 124" width="108" height="104" style="display:block;overflow:visible">
       <defs><linearGradient id="tmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c6ff"/><stop offset=".5" stop-color="#bdeee0"/><stop offset="1" stop-color="#ffd3e7"/></linearGradient></defs>
       <path d="M50 8 Q55 8 58 13 L88 63 Q92 70 85 74 Q78 78 50 78 Q22 78 15 74 Q8 70 12 63 L42 13 Q45 8 50 8 Z" fill="url(#tmg)" stroke="rgba(255,255,255,.95)" stroke-width="2.5"/>
       <text x="50" y="-2" font-size="19" text-anchor="middle">🎵</text><text x="6" y="98" font-size="19" text-anchor="middle">🥁</text><text x="94" y="98" font-size="19" text-anchor="middle">🎹</text>
       <circle id="triKnob" cx="50" cy="53" r="8" fill="#9fe6cf" stroke="#fff" stroke-width="2.5" style="filter:drop-shadow(0 2px 3px rgba(120,110,160,.4))"/>
     </svg></div>
+  <span class="triHint">drag the dot — <b>🎵 melody</b> · 🥁 drums · 🎹 keys</span>
+</div>
+<div id="advBar" hidden>
   <span style="font-size:14px" title="bass">🎸</span><input type="range" id="bpMix" min="0" max="100" value="50" style="width:60px;flex:none" title="balance: bass ↔ chord pads"><span style="font-size:14px" title="chord pads">🎹</span>
   <span style="font-size:15px" title="tape warmth">📼</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:78px;flex:none" title="warmth — cozy cassette color">
   <span style="font-size:15px" title="swing">🕺</span><input type="range" id="swingSl" min="0" max="100" value="0" style="width:78px;flex:none" title="swing — offbeats lean late, MPC / 808 style groove">
@@ -515,21 +520,22 @@ function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for
   if(!bandOn)return;
   const n=scaleObj().c.length,pr=PROGS[progIdx],rd=pr[barI%pr.length]%n;curRootDeg=rd;
   const degs=[rd,(rd+2)%n,(rd+4)%n],barDur=drumBar()*drumStepDur();
-  const pv=0.042*Math.min(1,S.bpMix*2);
-  if(S.synth)for(const d of degs){const c=centsForDegree(d),po=AC.createOscillator(),pg=AC.createGain();
-    po.type='square';po.frequency.value=freqFromCents(c); // gameboy pad: quiet squares, slow bloom
-    pg.gain.setValueAtTime(0,t);pg.gain.linearRampToValueAtTime(pv,t+0.25);
-    pg.gain.setValueAtTime(pv,t+barDur*0.75);pg.gain.linearRampToValueAtTime(0.0001,t+barDur);
-    po.connect(pg);pg.connect(bandBus);po.start(t);po.stop(t+barDur+0.05);
-    sendMidiAt(Math.round(S.root+c/100),60,S.chPad,t,barDur*0.9);}
+  const pv=0.019*Math.min(1,S.bpMix*2); // soft background ambience, well under the melody
+  if(S.synth)for(const d of degs){const c=centsForDegree(d),po=AC.createOscillator(),pg=AC.createGain(),plp=AC.createBiquadFilter();
+    po.type='triangle';po.frequency.value=freqFromCents(c);          // mellow pad, not buzzy squares
+    plp.type='lowpass';plp.frequency.value=1500;plp.Q.value=0.4;      // roll off the top so it sits behind everything
+    pg.gain.setValueAtTime(0,t);pg.gain.linearRampToValueAtTime(pv,t+0.75); // slow gentle bloom (soft attack)
+    pg.gain.setValueAtTime(pv,t+barDur*0.65);pg.gain.linearRampToValueAtTime(0.0001,t+barDur);
+    po.connect(plp);plp.connect(pg);pg.connect(bandBus);po.start(t);po.stop(t+barDur+0.05);
+    sendMidiAt(Math.round(S.root+c/100),50,S.chPad,t,barDur*0.9);}
 }
 function bassNote(tok,t,hum){ // chip bass pluck: square through a warm LP + triangle sub — cuts on laptops, breathes between hits
   const n=scaleObj().c.length;let c=centsForDegree(curRootDeg);
   if(tok==='F')c=centsForDegree((curRootDeg+4)%n);else if(tok==='O')c+=1200;
-  if(S.synth){const f=freqFromCents(c)/2,v=0.34*(hum||1)*Math.min(1,(1-S.bpMix)*2);
+  if(S.synth){const f=freqFromCents(c)/2,v=0.42*(hum||1)*Math.min(1,(1-S.bpMix)*2);
     const o=AC.createOscillator(),g=AC.createGain(),lp=AC.createBiquadFilter(),sub=AC.createOscillator(),sg=AC.createGain();
-    o.type='square';o.frequency.value=f;lp.type='lowpass';lp.frequency.value=900;lp.Q.value=0.5;
-    sub.type='triangle';sub.frequency.value=f/2;sg.gain.value=0.5;
+    o.type='square';o.frequency.value=f;lp.type='lowpass';lp.frequency.value=1500;lp.Q.value=0.6; // more mids = the groove cuts through laptop speakers
+    sub.type='triangle';sub.frequency.value=f/2;sg.gain.value=0.32;
     g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.008);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
     o.connect(lp);sub.connect(sg);sg.connect(lp);lp.connect(g);g.connect(bandBus);
     o.start(t);o.stop(t+0.32);sub.start(t);sub.stop(t+0.32);}
