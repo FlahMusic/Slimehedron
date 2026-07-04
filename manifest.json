@@ -4,7 +4,7 @@
   "description": "a living, physics-driven slime arpeggiator",
   "start_url": "./index.html",
   "display": "fullscreen",
-  "orientation": "landscape",
+  "orientation": "any",
   "background_color": "#e3d4ff",
   "theme_color": "#c4a9f5",
   "icons": [
