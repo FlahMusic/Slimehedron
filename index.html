@@ -148,17 +148,18 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <button class="btn big" id="recBtn" title="record your music"><span id="recDot"></span> record</button>
   <span class="spacer"></span>
   <button class="btn" id="resetBtn" title="put every knob back how it started">↺ reset</button>
+  <label class="adv" title="performance mode — lighter graphics, smoother on slower phones/PCs (full liquid is on by default)"><input type="checkbox" id="perfT"> ⚡ smooth</label>
   <label class="adv" title="more knobs for curious minds"><input type="checkbox" id="advT"> advanced</label>
 </header>
 <div id="triMixBar">
-  <div id="triMix" title="drag the slime — 🎵 melody up top, 🥁 drums left, 🎹 keys right">
+  <div id="triMix" title="drag the dot — 🎵 melody up top, 🥁 drums left, 🎸 bass+pads right · double-tap = center">
     <svg viewBox="-14 -18 128 124" width="108" height="104" style="display:block;overflow:visible">
       <defs><linearGradient id="tmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c6ff"/><stop offset=".5" stop-color="#bdeee0"/><stop offset="1" stop-color="#ffd3e7"/></linearGradient></defs>
       <path d="M50 8 Q55 8 58 13 L88 63 Q92 70 85 74 Q78 78 50 78 Q22 78 15 74 Q8 70 12 63 L42 13 Q45 8 50 8 Z" fill="url(#tmg)" stroke="rgba(255,255,255,.95)" stroke-width="2.5"/>
-      <text x="50" y="-2" font-size="19" text-anchor="middle">🎵</text><text x="6" y="98" font-size="19" text-anchor="middle">🥁</text><text x="94" y="98" font-size="19" text-anchor="middle">🎹</text>
+      <text x="50" y="-2" font-size="19" text-anchor="middle">🎵</text><text x="6" y="98" font-size="19" text-anchor="middle">🥁</text><text x="94" y="98" font-size="19" text-anchor="middle">🎸</text>
       <circle id="triKnob" cx="50" cy="53" r="8" fill="#9fe6cf" stroke="#fff" stroke-width="2.5" style="filter:drop-shadow(0 2px 3px rgba(120,110,160,.4))"/>
     </svg></div>
-  <span class="triHint">drag the dot — <b>🎵 melody</b> · 🥁 drums · 🎹 keys</span>
+  <span class="triHint">drag the dot — <b>🎵 melody</b> · 🥁 drums · 🎸 bass+pads</span>
 </div>
 <div id="advBar" hidden>
   <span style="font-size:14px" title="bass">🎸</span><input type="range" id="bpMix" min="0" max="100" value="50" style="width:60px;flex:none" title="balance: bass ↔ chord pads"><span style="font-size:14px" title="chord pads">🎹</span>
@@ -857,8 +858,8 @@ function draw(){
 }
 function loop(now){
   // adaptive quality watchdog: sustained slow frames -> drop to lite render (one-way, avoids flip-flop)
-  if(!LITE&&_lastFrame){_fpsAcc+=now-_lastFrame;if(++_fpsN>=30){const avg=_fpsAcc/_fpsN;_fpsAcc=0;_fpsN=0;
-    if(avg>27)_slowRun++;else _slowRun=0; if(_slowRun>=3)LITE=true;}}
+  if(!LITE&&_lastFrame){_fpsAcc+=now-_lastFrame;if(++_fpsN>=40){const avg=_fpsAcc/_fpsN;_fpsAcc=0;_fpsN=0;
+    if(avg>46)_slowRun++;else _slowRun=0; if(_slowRun>=5){LITE=true;const pt=document.getElementById('perfT');if(pt)pt.checked=true;}}} // full liquid by default; only auto-drops if truly unplayable (~<21fps sustained)
   _lastFrame=now;
   if(S.playing){if(S.slimeMode)slimeModStep(now);if(S.spin!==0){rot+=S.spin*0.0003;rebuild();}transport(now);
     curSegs=(fillState==="fill")?null:computeSegs();
@@ -951,6 +952,7 @@ bindRange("bpMix","bpMix",v=>v/100);
   svg.addEventListener('pointerdown',e=>{drag=true;svg.setPointerCapture(e.pointerId);const[x,y]=pt(e);setMix(x,y);e.preventDefault();});
   svg.addEventListener('pointermove',e=>{if(drag){const[x,y]=pt(e);setMix(x,y);}});
   svg.addEventListener('pointerup',()=>drag=false);svg.addEventListener('lostpointercapture',()=>drag=false);
+  svg.addEventListener('dblclick',()=>setMix(50,50.7)); // double-tap/click = reset to the center (everyone equal)
 })();
 $("filtPwr").addEventListener('click',()=>{S.filtOn=$("filtPwr").classList.toggle('on');});
 $("fxPwr").addEventListener('click',()=>{S.fxOn=$("fxPwr").classList.toggle('on');});
@@ -1077,6 +1079,7 @@ const SPOTS=[
 const chillers=[]; // full-view slimes with cursor physics
 (function(){
   const layer=document.createElement('div');layer.id="slimes";document.body.appendChild(layer);
+  const MOB=matchMedia('(max-width:820px)').matches; // phones: fewer, static slimes so the tiny screen stays clean
   function setFace(el,face){el.dataset.face=face;el.querySelector('.bob').innerHTML=slimeSVG(cssVar(el.dataset.fill),face);}
   function rest(el){el.style.transform=el.dataset.rest;}
   function hide(el){el.style.transform=el.dataset.hidden;}
@@ -1089,7 +1092,7 @@ const chillers=[]; // full-view slimes with cursor physics
     setTimeout(()=>{el.dataset.state="hidden";hide(el);},700);
     const back=2600+Math.random()*2600;
     setTimeout(()=>{setFace(el,"happy");rest(el);el.dataset.state="out";idle(el);},700+back);}
-  SPOTS.forEach((s,i)=>{const g=GEO[s.edge];const el=document.createElement('div');el.className="slime peeker";el.style.position="fixed";
+  (MOB?[SPOTS[0],SPOTS[4],SPOTS[6]]:SPOTS).forEach((s,i)=>{const g=GEO[s.edge];const el=document.createElement('div');el.className="slime peeker";el.style.position="fixed";
     Object.assign(el.style,g.anchor,s.cross);let _r=g.rest,_h=g.hide;if(s.edge==='bottom'){const a=' rotate('+(Math.random()*24-12).toFixed(0)+'deg)';_r+=a;_h+=a;} // upright, each at its own lil angle
     el.dataset.rest=_r;el.dataset.hidden=_h;el.dataset.fill=s.fill;el.dataset.state="out";el.dataset.face="happy";
     el.innerHTML=`<div class="bob" style="animation-delay:${(i*0.35).toFixed(2)}s">${slimeSVG(cssVar(s.fill),"happy")}</div>`;
@@ -1101,11 +1104,13 @@ const chillers=[]; // full-view slimes with cursor physics
       el.querySelector('.bob').innerHTML=slimeSVG(cssVar(fillVar),'wow');el.classList.add('squish');setTimeout(()=>el.classList.remove('squish'),480);
       setTimeout(()=>{el.querySelector('.bob').innerHTML=slimeSVG(cssVar(fillVar),'happy');el._busy=false;},1500);});
     layer.appendChild(el);chillers.push({el,fillVar,r:size/2,hx:0,hy:0,x:0,y:0,vx:0,vy:0,init:false});}
-  // all in the empty left/bottom margins — clear of the top bar, mixer and side panel
+  // desktop only: full-view buddies with cursor physics (touch has no cursor, so they'd teleport — skip on phones)
+  if(!MOB){
   chiller('left:1.5%;top:34%;width:74px;height:70px','--peach',0,74);
   chiller('left:2.5%;top:56%;width:70px;height:66px','--mint',0.5,70);
   chiller('left:1%;top:77%;width:78px;height:74px','--sky',1,78);
   chiller('left:2%;bottom:3%;width:62px;height:58px','--pink',1.4,62);
+  }
   // capture home centers after layout
   requestAnimationFrame(()=>{for(const c of chillers){const b=c.el.getBoundingClientRect();c.hx=b.left+b.width/2;c.hy=b.top+b.height/2;c.x=c.hx;c.y=c.hy;c.init=true;}});
   // ---- upside-down nappers: hang off the top of the play area, ignore your mouse completely.
@@ -1127,8 +1132,7 @@ const chillers=[]; // full-view slimes with cursor physics
         el.style.filter=`hue-rotate(${Math.floor(p*45)%360}deg) saturate(1.7)`;
         requestAnimationFrame(pulse);})();});
     layer.appendChild(el);sleepers.push({el,fx,size});}
-  sleeper(0.16,'--yellow',58);
-  sleeper(0.74,'--lav',64);
+  if(!MOB){sleeper(0.16,'--yellow',58);sleeper(0.74,'--lav',64);} // no room in the left margin on phones
   function placeSleepers(){const r=cv.getBoundingClientRect();const ys=[0.24,0.7]; // upright, tucked in the empty margin left of the play area
     sleepers.forEach((s,i)=>{s.el.style.left=Math.max(4,r.left-s.size-10)+'px';s.el.style.top=(r.top+r.height*ys[i])+'px';});}
   addEventListener('resize',placeSleepers);requestAnimationFrame(placeSleepers);
@@ -1161,10 +1165,12 @@ const chillers=[]; // full-view slimes with cursor physics
   const N=11;
   function tick(){
     const now=performance.now(),dt=Math.min(50,now-lastT);lastT=now; // dt clamp: reloads & lag cant fling him
-    const rc=cv.getBoundingClientRect(),ar=asideEl.getBoundingClientRect(),gap=ar.left-rc.right;
-    if(gap<46){el.style.display='none';requestAnimationFrame(tick);return;} // no room? step aside politely
-    el.style.display='block';const wPx=Math.min(120,gap-12);
-    el.style.right='auto';el.style.width=wPx+'px';el.style.left=(rc.right+(gap-wPx)/2)+'px';
+    const rc=cv.getBoundingClientRect();el.style.display='block'; // the boy NEVER vanishes
+    if(matchMedia('(max-width:820px)').matches){ // mobile: small, dancing at the right edge
+      el.style.left='auto';el.style.right='0px';el.style.width='42px';el.style.height='38%';el.style.top='26%';
+    }else{const ar=asideEl.getBoundingClientRect(),gap=ar.left-rc.right;
+      if(gap>=64){const wPx=Math.min(120,gap-12);el.style.right='auto';el.style.width=wPx+'px';el.style.height='64%';el.style.top='12%';el.style.left=(rc.right+(gap-wPx)/2)+'px';}
+      else{el.style.left='auto';el.style.right='2px';el.style.width='52px';el.style.height='52%';el.style.top='20%';}} // narrow desktop: tuck him smaller at the right edge
     if(S.playing&&!drumOn)wBeat+=dt*S.bpm/60000;
     const dbl=now<dblUntil;setFace(dbl);
     const u=beats()*(dbl?2:1);
@@ -1282,7 +1288,7 @@ function slimePhysics(){
   for(const c of chillers){if(!c.init)continue;c.el.style.transform=`translate(${(c.x-c.hx).toFixed(1)}px,${(c.y-c.hy).toFixed(1)}px)`;}
   requestAnimationFrame(slimePhysics);
 }
-requestAnimationFrame(slimePhysics);
+if(!matchMedia('(max-width:820px)').matches)requestAnimationFrame(slimePhysics); // cursor-follow train is desktop-only
 
 // the magic button
 function setDivUI(d){S.div=d;[...$("divSeg").children].forEach(b=>b.classList.toggle('active',parseFloat(b.dataset.d)===d));}
@@ -1296,6 +1302,7 @@ $("slimeBig").addEventListener('click',()=>{
   }else{setSliderValue('spin',0);S.quantize=false;$("quantT").classList.remove('on');}
 });
 $("advT").addEventListener('change',e=>{$("advBar").hidden=!e.target.checked;});
+$("perfT").addEventListener('change',e=>{LITE=e.target.checked;}); // manual smooth/performance toggle
 $("countT").addEventListener('click',()=>$("countT").classList.toggle('on'));
 $("resetBtn").addEventListener('click',()=>{try{localStorage.removeItem('slimehedron');}catch(e){}location.reload();}); // recordings survive — settings go back to factory
 
@@ -1350,7 +1357,10 @@ async function saveTake(){
   if(blob.size<2000){toast('too short — try again!');return;}
   const db=await recDB();if(!db){toast('could not save 😢');return;}
   const take={when:Date.now(),blob,name:'slime jam · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
-  db.transaction('takes','readwrite').objectStore('takes').add(take).onsuccess=()=>{renderTakes();toast('✅ saved!');if(matchMedia('(max-width:820px)').matches)document.querySelector('aside').classList.add('open');};}
+  db.transaction('takes','readwrite').objectStore('takes').add(take).onsuccess=()=>{renderTakes();
+    const mob=matchMedia('(max-width:820px)').matches;
+    toast(mob?'✅ saved! ▶ play & 📤 share in the panel below':'✅ saved! ▶ play & 📤 share in “my recordings” →');
+    if(mob)document.querySelector('aside').classList.add('open');};}
 async function renderTakes(){
   const db=await recDB();if(!db)return;
   const rq=db.transaction('takes').objectStore('takes').getAll();
