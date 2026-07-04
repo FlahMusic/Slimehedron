@@ -63,8 +63,6 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 .btn.big{padding:12px 20px;font-size:15px;border-radius:18px}
 .btn.magic{background:linear-gradient(135deg,var(--mint),var(--sky));font-weight:700;animation:beckon 2.6s ease-in-out infinite}
 .btn.magic.on{outline:3px solid var(--accent);box-shadow:0 0 18px rgba(179,136,240,.5);animation:none}
-.btn.big.on{background:linear-gradient(135deg,var(--accent),var(--sky));color:#fff;border-color:transparent;box-shadow:0 0 16px rgba(179,136,240,.55);outline:none;transform:translateY(-1px)}
-.btn.big.on:hover{filter:brightness(1.05)}
 @keyframes beckon{0%,100%{box-shadow:var(--shadow)}50%{box-shadow:0 0 22px rgba(159,230,207,.95)}}
 .adv{font-size:12px;color:var(--ink-soft);font-weight:700;display:flex;gap:6px;align-items:center;cursor:pointer;user-select:none}
 #advBar{display:flex;align-items:center;gap:12px;padding:0 22px 10px;flex-wrap:wrap;position:relative;z-index:70}
@@ -146,15 +144,15 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <button class="btn big" id="recBtn" title="record your music"><span id="recDot"></span> record</button>
   <span class="spacer"></span>
   <button class="btn" id="resetBtn" title="put every knob back how it started">↺ reset</button>
-  <label class="adv" title="more knobs for curious minds"><input type="checkbox" id="advT" checked> advanced</label>
+  <label class="adv" title="more knobs for curious minds"><input type="checkbox" id="advT"> advanced</label>
 </header>
-<div id="advBar">
+<div id="advBar" hidden>
   <div id="triMix" title="drag the slime — 🎵 melody up top, 🥁 drums left, 🎹 keys right">
-    <svg viewBox="-14 -18 128 124" width="122" height="118" style="display:block;overflow:visible">
+    <svg viewBox="0 0 100 92" width="88" height="81" style="display:block">
       <defs><linearGradient id="tmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c6ff"/><stop offset=".5" stop-color="#bdeee0"/><stop offset="1" stop-color="#ffd3e7"/></linearGradient></defs>
       <path d="M50 8 Q55 8 58 13 L88 63 Q92 70 85 74 Q78 78 50 78 Q22 78 15 74 Q8 70 12 63 L42 13 Q45 8 50 8 Z" fill="url(#tmg)" stroke="rgba(255,255,255,.95)" stroke-width="2.5"/>
-      <text x="50" y="-2" font-size="19" text-anchor="middle">🎵</text><text x="6" y="98" font-size="19" text-anchor="middle">🥁</text><text x="94" y="98" font-size="19" text-anchor="middle">🎹</text>
-      <circle id="triKnob" cx="50" cy="53" r="8" fill="#9fe6cf" stroke="#fff" stroke-width="2.5" style="filter:drop-shadow(0 2px 3px rgba(120,110,160,.4))"/>
+      <text x="50" y="22" font-size="11" text-anchor="middle">🎵</text><text x="21" y="72" font-size="11" text-anchor="middle">🥁</text><text x="79" y="72" font-size="11" text-anchor="middle">🎹</text>
+      <circle id="triKnob" cx="50" cy="53" r="7.5" fill="#9fe6cf" stroke="#fff" stroke-width="2.5" style="filter:drop-shadow(0 2px 3px rgba(120,110,160,.4))"/>
     </svg></div>
   <span style="font-size:14px" title="bass">🎸</span><input type="range" id="bpMix" min="0" max="100" value="50" style="width:60px;flex:none" title="balance: bass ↔ chord pads"><span style="font-size:14px" title="chord pads">🎹</span>
   <span style="font-size:15px" title="tape warmth">📼</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:78px;flex:none" title="warmth — cozy cassette color">
@@ -337,7 +335,7 @@ let BURST_MS=6000; // how long the corners stay broken open before reforming
 
 // ---------- audio ----------
 let AC=null,master=null,delayNode=null,dlyFb=null,dlyWet=null,masterFilt=null,slimeEQ=null,slimeComp=null,activeVoices=0,recTap=null,masterHP=null,bandBus=null,melBus=null,bandMix=null;
-let noiseBuf=null,tapeDry=null,tapeWet=null,tapeDrive=null,tapeShaper=null,tapeTone=null,tapeDly=null,wowDepth=null,flutDepth=null,hissG=null; // tape color stage
+let noiseBuf=null,tapeDry=null,tapeWet=null,tapeShaper=null,tapeTone=null,tapeDly=null,wowDepth=null,flutDepth=null,hissG=null; // tape color stage
 function initAudio(){
   if(AC)return;
   AC=new (window.AudioContext||window.webkitAudioContext)();
@@ -362,8 +360,8 @@ function initAudio(){
   {const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
   tapeShaper=AC.createWaveShaper();
   {const n=1024,c=new Float32Array(n),k=2.2;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(k*x)/k;}tapeShaper.curve=c;} // normalized: unity for quiet signals, soft squash on peaks
-  tapeDry=AC.createGain();tapeWet=AC.createGain();tapeDrive=AC.createGain();tapeDrive.gain.value=1; // drive into the saturator
-  tapeTone=AC.createBiquadFilter();tapeTone.type='lowpass';tapeTone.frequency.value=18000;tapeTone.Q.value=0.7; // gentle global low pass = the tape darkness
+  tapeDry=AC.createGain();tapeWet=AC.createGain();
+  tapeTone=AC.createBiquadFilter();tapeTone.type='highshelf';tapeTone.frequency.value=9500;tapeTone.gain.value=0;
   tapeDly=AC.createDelay(0.02);tapeDly.delayTime.value=0.004; // fixed 4ms line the LFOs wiggle = wow & flutter
   const wowLfo=AC.createOscillator();wowLfo.type='sine';wowLfo.frequency.value=0.5;wowDepth=AC.createGain();wowDepth.gain.value=0;
   const flutLfo=AC.createOscillator();flutLfo.type='sine';flutLfo.frequency.value=6.3;flutDepth=AC.createGain();flutDepth.gain.value=0;
@@ -375,19 +373,17 @@ function initAudio(){
   hissSrc.connect(hissFilt);hissFilt.connect(hissG);hissG.connect(tapeDly);hissSrc.start();
   master.connect(masterFilt);dlyWet.connect(masterFilt);
   masterFilt.connect(masterHP);masterHP.connect(slimeEQ);slimeEQ.connect(slimeComp);
-  slimeComp.connect(tapeDry);slimeComp.connect(tapeDrive);tapeDrive.connect(tapeShaper);tapeShaper.connect(tapeWet); // dry/wet split is pre-delay, so no comb filtering
+  slimeComp.connect(tapeDry);slimeComp.connect(tapeShaper);tapeShaper.connect(tapeWet); // dry/wet split is pre-delay, so no comb filtering
   tapeDry.connect(tapeTone);tapeWet.connect(tapeTone);tapeTone.connect(tapeDly);tapeDly.connect(lim);lim.connect(AC.destination);
   recTap=AC.createMediaStreamDestination();lim.connect(recTap); // recorder hears exactly what you hear
   setWarmth(S.warm);
 }
 function setWarmth(w){S.warm=w;if(!AC)return;const t=AC.currentTime;
-  // real tape feel: gentle global low pass + soft tanh saturation. NO seasick pitch vibrato.
-  tapeWet.gain.setTargetAtTime(0.12+w*0.9,t,0.12);tapeDry.gain.setTargetAtTime(1-w*0.55,t,0.12);
-  tapeDrive.gain.setTargetAtTime(1+w*1.7,t,0.12);            // push harder into the tanh = more saturation as it warms
-  tapeTone.frequency.setTargetAtTime(18000-w*13000,t,0.15);  // low pass rolls 18k -> ~5k, warm & rounded
-  wowDepth.gain.setTargetAtTime(0,t,0.1);                    // vibrato OFF (was overdone)
-  flutDepth.gain.setTargetAtTime(0,t,0.1);
-  hissG.gain.setTargetAtTime(S.playing?w*0.0004:0,t,0.6);}   // just a whisper of hiss
+  tapeWet.gain.setTargetAtTime(w*1.15,t,0.1);tapeDry.gain.setTargetAtTime(1-w*0.85,t,0.1);
+  tapeTone.gain.setTargetAtTime(-w*8,t,0.1);        // gentle global top-end rolloff — the real tape darkness
+  wowDepth.gain.setTargetAtTime(w*0.00022,t,0.1);   // wow: barely-there drift, never seasick
+  flutDepth.gain.setTargetAtTime(w*0.000025,t,0.1); // flutter: subliminal
+  hissG.gain.setTargetAtTime(S.playing?w*0.0005:0,t,0.6);} // barely-there static, and only while the music plays
 function setSlimeProcessing(on){if(!AC)return;const t=AC.currentTime;
   slimeComp.threshold.setTargetAtTime(on?-18:0,t,0.2);slimeComp.ratio.setTargetAtTime(on?3:1,t,0.2);slimeEQ.gain.setTargetAtTime(on?-3.5:0,t,0.2);}
 function freqFromCents(cents){const midi=S.root+cents/100;return 440*Math.pow(2,(midi-69)/12);}
@@ -608,7 +604,7 @@ function jitter(b){if(S.chaos<=0)return;const sp=Math.hypot(b.vx,b.vy);const a=M
 const PR=8, GRAV=0.17;
 let gX=0,gY=GRAV,liquidH=0; // tiltable gravity + how high the liquid sits (drives the filter morph)
 function shapeArea(){const N=S.shape==="circle"?24:parseInt(S.shape,10);return 0.5*N*R*R*Math.sin(2*Math.PI/N);}
-function partCap(){return Math.floor(Math.min(2800,shapeArea()/85)*(LITE?0.55:1));} // particle budget (perf only); thinned on weak devices
+function partCap(){return Math.min(2800,(shapeArea()/85)|0);} // particle budget (perf only) — fullness is MEASURED, not guessed
 let measuredFill=0;
 function ballSpeed(){return (S.bpm/80)*3.4;} // steady, tempo-driven ball speed
 let particles=[];  // {x,y,vx,vy,hue,r}
@@ -799,8 +795,6 @@ const rimC=document.createElement('canvas');rimC.width=W;rimC.height=H;const rct
 let GOO='url(#goo)';{const t=document.createElement('canvas').getContext('2d');t.filter=GOO;if(t.filter!==GOO)GOO='blur(6px)';} // fallback where svg canvas filters are unsupported
 const mcv=document.createElement('canvas');mcv.width=mcv.height=36;const mctx=mcv.getContext('2d',{willReadFrequently:true});
 let mFrame=0;
-// ---- adaptive quality: auto-drop the pricey goo pass on devices that can't hold the frame rate ----
-let LITE=false, _fpsAcc=0, _fpsN=0, _slowRun=0, _lastFrame=0;
 function measureFill(){ // barrel-in-a-rainstorm: read the real water line off the liquid render
   mctx.clearRect(0,0,36,36);mctx.drawImage(lq,0,0,36,36);
   const d=mctx.getImageData(0,0,36,36).data;let n=0;
@@ -818,8 +812,6 @@ function drawParticles(){ // living liquid: fused goo + sweeping iridescent shee
     const wob=1+0.07*Math.sin(now*0.002+p.hue*17); // each blob breathes
     lctx.fillStyle=aurora(p.hue+tn,64,0.95);lctx.beginPath();lctx.arc(p.sx,p.sy,p.r*1.85*wob,0,7);lctx.fill();}
   if(++mFrame%20===0&&fillState==="fill")measureFill();
-  if(LITE){ ctx.drawImage(lq,0,0); } // lite mode: draw the liquid straight — skips the costly goo+sheen+rim passes
-  else {
   gctx.clearRect(0,0,W,H);gctx.filter=GOO;gctx.drawImage(lq,0,0);gctx.filter='none';
   gctx.globalCompositeOperation='source-atop'; // sheen clipped to the liquid only
   const h0=(now*0.01)%360,sh=gctx.createLinearGradient(0,0,W,H);
@@ -830,7 +822,6 @@ function drawParticles(){ // living liquid: fused goo + sweeping iridescent shee
   rctx.globalCompositeOperation='destination-out';rctx.drawImage(gooC,0,5);rctx.globalCompositeOperation='source-over';
   ctx.drawImage(gooC,0,0);
   ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=0.45;ctx.drawImage(rimC,0,0);ctx.restore();
-  }
   if(flecks)for(const p of particles){if(p.pooled)continue; // fresh spray: crisp droplets off the hit point
     ctx.fillStyle=aurora(p.hue+tn,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}}
 function drawBalls(){ // every ball its own vivid hue across the full wheel
@@ -850,10 +841,6 @@ function draw(){
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(CX,CY,R*1.35,0,7);ctx.fill();}
 }
 function loop(now){
-  // adaptive quality watchdog: sustained slow frames -> drop to lite render (one-way, avoids flip-flop)
-  if(!LITE&&_lastFrame){_fpsAcc+=now-_lastFrame;if(++_fpsN>=30){const avg=_fpsAcc/_fpsN;_fpsAcc=0;_fpsN=0;
-    if(avg>27)_slowRun++;else _slowRun=0; if(_slowRun>=3)LITE=true;}}
-  _lastFrame=now;
   if(S.playing){if(S.slimeMode)slimeModStep(now);if(S.spin!==0){rot+=S.spin*0.0003;rebuild();}transport(now);
     curSegs=(fillState==="fill")?null:computeSegs();
     step();fillPhysics(now);}
@@ -924,13 +911,11 @@ $("drumFeel").addEventListener('change',e=>{drumFeel=e.target.value; // triplet 
   if(drumFeel==="1"){S.triplet=false;$("tripT").classList.remove("on");}});
 $("drumVol").addEventListener('input',()=>applyMix());
 function applyMix(){if(!AC||!master)return;const t=AC.currentTime; // triangle mix: center = everyone full
-  const c=x=>Math.min(1,x*3);S.wMg=c(S.wM);const T=0.09; // gentle ramp = no zipper/clicks when dragging fast or slow
-  master.gain.setTargetAtTime(S.vol,t,T);
-  if(melBus)melBus.gain.setTargetAtTime(c(S.wM),t,T);
-  if(bandMix)bandMix.gain.setTargetAtTime(c(S.wK),t,T);
-  if(drumBus)drumBus.gain.setTargetAtTime(($("drumVol").value/100)*1.1*c(S.wD),t,T);}
-let _mixRAF=0;
-function scheduleMix(){if(_mixRAF)return;_mixRAF=requestAnimationFrame(()=>{_mixRAF=0;applyMix();});} // coalesce rapid drags to 1 audio update/frame
+  const c=x=>Math.min(1,x*3);S.wMg=c(S.wM);
+  master.gain.setTargetAtTime(S.vol,t,0.05);
+  if(melBus)melBus.gain.setTargetAtTime(c(S.wM),t,0.05);
+  if(bandMix)bandMix.gain.setTargetAtTime(c(S.wK),t,0.05);
+  if(drumBus)drumBus.gain.setTargetAtTime(($("drumVol").value/100)*1.1*c(S.wD),t,0.05);}
 bindRange("bpMix","bpMix",v=>v/100);
 (function(){const el=$("triMix");if(!el)return;const svg=el.querySelector('svg'),kn=el.querySelector('#triKnob');
   const T=[50,16],L=[21,68],Rt=[79,68];
@@ -939,9 +924,9 @@ bindRange("bpMix","bpMix",v=>v/100);
     a=Math.max(0,a);b=Math.max(0,b);g=Math.max(0,g);const sm=a+b+g||1;
     S.wM=a/sm;S.wD=b/sm;S.wK=g/sm;
     kn.setAttribute('cx',S.wM*T[0]+S.wD*L[0]+S.wK*Rt[0]);kn.setAttribute('cy',S.wM*T[1]+S.wD*L[1]+S.wK*Rt[1]);
-    scheduleMix();}
+    applyMix();}
   let drag=false;
-  const pt=e=>{const r=svg.getBoundingClientRect();return [-14+(e.clientX-r.left)/r.width*128,-18+(e.clientY-r.top)/r.height*124];};
+  const pt=e=>{const r=svg.getBoundingClientRect();return [(e.clientX-r.left)*100/r.width,(e.clientY-r.top)*92/r.height];};
   svg.addEventListener('pointerdown',e=>{drag=true;svg.setPointerCapture(e.pointerId);const[x,y]=pt(e);setMix(x,y);e.preventDefault();});
   svg.addEventListener('pointermove',e=>{if(drag){const[x,y]=pt(e);setMix(x,y);}});
   svg.addEventListener('pointerup',()=>drag=false);svg.addEventListener('lostpointercapture',()=>drag=false);
@@ -998,7 +983,6 @@ function hashHue(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%
 function mark(inp){inp.dataset.touched=performance.now();}
 function enhanceKnobs(){
   document.querySelectorAll('input[type=range]').forEach(inp=>{
-    if(inp.closest('#advBar'))return; // top-bar sliders stay plain — no redundant/clutter knobs
     const min=parseFloat(inp.min)||0,max=parseFloat(inp.max)||100;
     const k=document.createElement('div');k.className='rknob';k.title=inp.title||'';const hue=hashHue(inp.id||'x');
     k.style.setProperty('--kc',`hsl(${hue},68%,82%)`);k.style.setProperty('--kc2',`hsl(${hue},58%,62%)`);
@@ -1095,36 +1079,35 @@ const chillers=[]; // full-view slimes with cursor physics
       el.querySelector('.bob').innerHTML=slimeSVG(cssVar(fillVar),'wow');el.classList.add('squish');setTimeout(()=>el.classList.remove('squish'),480);
       setTimeout(()=>{el.querySelector('.bob').innerHTML=slimeSVG(cssVar(fillVar),'happy');el._busy=false;},1500);});
     layer.appendChild(el);chillers.push({el,fillVar,r:size/2,hx:0,hy:0,x:0,y:0,vx:0,vy:0,init:false});}
-  // all in the empty left/bottom margins — clear of the top bar, mixer and side panel
-  chiller('left:1.5%;top:34%;width:74px;height:70px','--peach',0,74);
-  chiller('left:2.5%;top:56%;width:70px;height:66px','--mint',0.5,70);
-  chiller('left:1%;top:77%;width:78px;height:74px','--sky',1,78);
-  chiller('left:2%;bottom:3%;width:62px;height:58px','--pink',1.4,62);
+  chiller('left:1.5%;top:92px;width:74px;height:70px','--peach',0,74);
+  chiller('left:3%;top:42%;width:70px;height:66px','--mint',0.5,70);
+  chiller('left:1%;bottom:8%;width:78px;height:74px','--sky',1,78);
+  chiller('left:33%;bottom:1%;width:62px;height:58px','--pink',1.4,62);
   // capture home centers after layout
   requestAnimationFrame(()=>{for(const c of chillers){const b=c.el.getBoundingClientRect();c.hx=b.left+b.width/2;c.hy=b.top+b.height/2;c.x=c.hx;c.y=c.hy;c.init=true;}});
   // ---- upside-down nappers: hang off the top of the play area, ignore your mouse completely.
   // click one → big-eye mode: pulses to the beat in rainbow for 4 bars, then back to napping. just for the hell of it.
   const sleepers=[];
   function sleeper(fx,fillVar,size){const el=document.createElement('div');el.className='slime';
-    el.style.cssText=`position:fixed;width:${size}px;height:${Math.round(size*0.93)}px;transition:none`;
-    el.title='hi!';
+    el.style.cssText=`position:fixed;width:${size}px;height:${Math.round(size*0.93)}px;transform:rotate(180deg);transition:none`;
+    el.title='...zzz';
     el.innerHTML=`<div>${slimeSVG(cssVar(fillVar),'happy')}</div>`;
     el.addEventListener('click',()=>{if(el._rave)return;el._rave=true;
       el.firstChild.innerHTML=slimeSVG(cssVar(fillVar),'bigeye');
       const t0=performance.now(),spb=60000/S.bpm,dur=16*spb; // 4 bars at the tempo when you woke it
       (function pulse(){
         const el2=performance.now()-t0;
-        if(el2>=dur){el.style.transform='';el.style.filter='';el.firstChild.innerHTML=slimeSVG(cssVar(fillVar),'happy');el._rave=false;return;}
+        if(el2>=dur){el.style.transform='rotate(180deg)';el.style.filter='';el.firstChild.innerHTML=slimeSVG(cssVar(fillVar),'happy');el._rave=false;return;}
         const p=el2/spb; // beats elapsed
         const s=1+0.16*Math.abs(Math.sin(p*Math.PI)); // one pump per beat
-        el.style.transform=`scale(${s.toFixed(3)})`;
+        el.style.transform=`rotate(180deg) scale(${s.toFixed(3)})`;
         el.style.filter=`hue-rotate(${Math.floor(p*45)%360}deg) saturate(1.7)`;
         requestAnimationFrame(pulse);})();});
     layer.appendChild(el);sleepers.push({el,fx,size});}
   sleeper(0.16,'--yellow',58);
   sleeper(0.74,'--lav',64);
-  function placeSleepers(){const r=cv.getBoundingClientRect();const ys=[0.24,0.7]; // upright, tucked in the empty margin left of the play area
-    sleepers.forEach((s,i)=>{s.el.style.left=Math.max(4,r.left-s.size-10)+'px';s.el.style.top=(r.top+r.height*ys[i])+'px';});}
+  function placeSleepers(){const r=cv.getBoundingClientRect();
+    for(const s of sleepers){s.el.style.left=(r.left+r.width*s.fx-s.size/2)+'px';s.el.style.top=(r.top-6)+'px';}}
   addEventListener('resize',placeSleepers);requestAnimationFrame(placeSleepers);
 })();
 
@@ -1392,7 +1375,6 @@ addEventListener('input',queueSave,true);addEventListener('click',queueSave,true
     initAudio();if(AC.state==="suspended")AC.resume();
     if(!S.slimeMode)$("slimeBig").click();
     if(!drumOn)$("drumBtn").click(); // full band from the first second
-    if(!bandOn)$("bandBtn").click(); // bass + chord pads on by default too
   },{once:true});
 })();
 

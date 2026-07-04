@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>slimehedron</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#c4a9f5">
@@ -23,7 +23,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;font-family:'Quicksand',system-ui,sans-serif;color:var(--ink)}
 body{background:linear-gradient(135deg,var(--bg1) 0%,var(--bg4) 26%,var(--bg2) 52%,var(--bg5) 74%,var(--bg3) 100%);background-attachment:fixed;display:flex;flex-direction:column;overflow:hidden}
-header{display:flex;align-items:center;gap:14px;padding:14px 22px;position:relative;z-index:70}
+header{display:flex;align-items:center;gap:14px;padding:14px 22px}
 header h1{font-size:20px;font-weight:700;margin:0;letter-spacing:.5px}
 header h1 .dot{color:var(--accent)}
 header .sub{font-size:12px;color:var(--ink-soft);font-weight:500}
@@ -38,8 +38,7 @@ main{flex:1;display:flex;gap:18px;padding:0 18px 18px;min-height:0}
 #stage{flex:1;display:flex;align-items:center;justify-content:center;position:relative;min-width:0}
 canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(circle at 50% 38%,rgba(255,250,255,.32),rgba(210,196,255,.20));max-width:100%;max-height:100%;cursor:crosshair;touch-action:none} /* every finger is its own ball */
 .hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-soft);font-weight:500;background:var(--card);padding:5px 12px;border-radius:10px;backdrop-filter:blur(6px)}
-aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px;position:relative;z-index:70}
-.slime.chill{pointer-events:none} /* the train never blocks a click */
+aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px}
 aside::-webkit-scrollbar{width:8px}
 aside::-webkit-scrollbar-thumb{background:rgba(180,170,210,.5);border-radius:8px}
 .card{position:relative;background:var(--card);border:1px solid var(--card-brd);border-radius:20px;padding:14px 16px;box-shadow:var(--shadow);backdrop-filter:blur(10px);overflow:visible}
@@ -63,11 +62,9 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 .btn.big{padding:12px 20px;font-size:15px;border-radius:18px}
 .btn.magic{background:linear-gradient(135deg,var(--mint),var(--sky));font-weight:700;animation:beckon 2.6s ease-in-out infinite}
 .btn.magic.on{outline:3px solid var(--accent);box-shadow:0 0 18px rgba(179,136,240,.5);animation:none}
-.btn.big.on{background:linear-gradient(135deg,var(--accent),var(--sky));color:#fff;border-color:transparent;box-shadow:0 0 16px rgba(179,136,240,.55);outline:none;transform:translateY(-1px)}
-.btn.big.on:hover{filter:brightness(1.05)}
 @keyframes beckon{0%,100%{box-shadow:var(--shadow)}50%{box-shadow:0 0 22px rgba(159,230,207,.95)}}
 .adv{font-size:12px;color:var(--ink-soft);font-weight:700;display:flex;gap:6px;align-items:center;cursor:pointer;user-select:none}
-#advBar{display:flex;align-items:center;gap:12px;padding:0 22px 10px;flex-wrap:wrap;position:relative;z-index:70}
+#advBar{display:flex;align-items:center;gap:12px;padding:0 22px 10px;flex-wrap:wrap}
 #advBar[hidden]{display:none}
 #recDot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#ff5f7a;vertical-align:-1px;transition:.2s}
 #recBtn.rec #recDot{border-radius:3px;animation:recPulse 1s infinite}
@@ -83,15 +80,8 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 #splash.gone{opacity:0;pointer-events:none}
 #dragBar{display:none;width:46px;height:5px;border-radius:3px;background:rgba(150,135,190,.45);margin:2px auto 10px;cursor:grab;touch-action:none}
 #menuBtn{display:none}
-.chSel{flex:none;width:52px}
 @media (max-width:820px){
-  body{height:100dvh}
-  header{flex-wrap:wrap;gap:6px;padding:8px 10px}
-  header h1{font-size:15px}
-  .btn.big{padding:9px 12px;font-size:13px;border-radius:14px}
-  .btn{padding:7px 11px;font-size:12px}
-  #stage{min-height:0}
-  canvas{border-radius:16px}
+  header{flex-wrap:wrap;gap:8px;padding:10px 12px}
   main{padding:0 8px 8px}
   aside{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:74vh;background:rgba(246,240,255,.94);backdrop-filter:blur(16px);border-radius:22px 22px 0 0;box-shadow:0 -12px 40px rgba(120,100,170,.4);padding:8px 14px 24px;transform:translateY(105%);transition:transform .32s cubic-bezier(.3,1,.3,1);z-index:80;overflow-y:auto}
   aside.open{transform:translateY(0)}
@@ -141,22 +131,14 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <button class="btn primary big" id="playBtn">▶ play</button>
   <button class="btn big magic" id="slimeBig" title="the music plays on its own — just watch, listen and poke">✨ auto-play</button>
   <button class="btn big" id="drumBtn" title="drum loop on / off">🥁 drums</button>
-  <button class="btn big" id="bandBtn" title="bass & chords that follow your scale">🎸 bass+pads</button>
   <button class="btn big" id="dropBtn" title="add a bouncing ball">⚪ drop ball</button>
   <button class="btn big" id="recBtn" title="record your music"><span id="recDot"></span> record</button>
   <span class="spacer"></span>
   <button class="btn" id="resetBtn" title="put every knob back how it started">↺ reset</button>
-  <label class="adv" title="more knobs for curious minds"><input type="checkbox" id="advT" checked> advanced</label>
+  <label class="adv" title="more knobs for curious minds"><input type="checkbox" id="advT"> advanced</label>
 </header>
-<div id="advBar">
-  <div id="triMix" title="drag the slime — 🎵 melody up top, 🥁 drums left, 🎹 keys right">
-    <svg viewBox="-14 -18 128 124" width="122" height="118" style="display:block;overflow:visible">
-      <defs><linearGradient id="tmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c6ff"/><stop offset=".5" stop-color="#bdeee0"/><stop offset="1" stop-color="#ffd3e7"/></linearGradient></defs>
-      <path d="M50 8 Q55 8 58 13 L88 63 Q92 70 85 74 Q78 78 50 78 Q22 78 15 74 Q8 70 12 63 L42 13 Q45 8 50 8 Z" fill="url(#tmg)" stroke="rgba(255,255,255,.95)" stroke-width="2.5"/>
-      <text x="50" y="-2" font-size="19" text-anchor="middle">🎵</text><text x="6" y="98" font-size="19" text-anchor="middle">🥁</text><text x="94" y="98" font-size="19" text-anchor="middle">🎹</text>
-      <circle id="triKnob" cx="50" cy="53" r="8" fill="#9fe6cf" stroke="#fff" stroke-width="2.5" style="filter:drop-shadow(0 2px 3px rgba(120,110,160,.4))"/>
-    </svg></div>
-  <span style="font-size:14px" title="bass">🎸</span><input type="range" id="bpMix" min="0" max="100" value="50" style="width:60px;flex:none" title="balance: bass ↔ chord pads"><span style="font-size:14px" title="chord pads">🎹</span>
+<div id="advBar" hidden>
+  <span style="font-size:15px" title="melody">🎵</span><input type="range" id="mixSl" min="0" max="100" value="50" style="width:78px;flex:none" title="balance: melody ↔ drums"><span style="font-size:15px" title="drums">🥁</span>
   <span style="font-size:15px" title="tape warmth">📼</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:78px;flex:none" title="warmth — cozy cassette color">
   <span style="font-size:15px" title="swing">🕺</span><input type="range" id="swingSl" min="0" max="100" value="0" style="width:78px;flex:none" title="swing — offbeats lean late, MPC / 808 style groove">
   <span id="drumCtl" style="display:flex;align-items:center;gap:8px;opacity:.35;pointer-events:none">
@@ -284,7 +266,6 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <hr>
       <div class="row"><label>send MIDI out</label><div class="toggle" id="midiT"></div></div>
       <div class="row"><label>port</label><select id="midiPort"><option>— enable above —</option></select></div>
-      <div class="row"><label>ch 🎵🥁🎸🎹</label><select id="chMel" class="chSel"></select><select id="chDrum" class="chSel"></select><select id="chBass" class="chSel"></select><select id="chPad" class="chSel"></select></div>
       <div class="note" id="midiNote">internal synth plays microtones exactly. MIDI out snaps to nearest semitone (true microtonal needs MPE — a VST3-build feature).</div>
     </div>
   </aside>
@@ -330,21 +311,18 @@ const S={
   synth:true,wave:"triangle",sub:0,
   atk:0.001,dec:0.15,sus:0.18,rel:0.28,
   filt:"lowpass",cut:0.78,res:0,fenv:0.30,
-  vol:0.55,wM:0.34,wD:0.33,wK:0.33,wMg:1,bpMix:0.5,dly:0,warm:0.3,filtOn:true,fxOn:true,chMel:1,chDrum:2,chBass:3,chPad:4,midi:false,midiOut:null,
+  vol:0.55,mix:0.5,dly:0,warm:0.3,filtOn:true,fxOn:true,midi:false,midiOut:null,
   rainRate:0.5,rainAmt:0.35,slimeMode:false,randomShape:true
 };
 let BURST_MS=6000; // how long the corners stay broken open before reforming
 
 // ---------- audio ----------
-let AC=null,master=null,delayNode=null,dlyFb=null,dlyWet=null,masterFilt=null,slimeEQ=null,slimeComp=null,activeVoices=0,recTap=null,masterHP=null,bandBus=null,melBus=null,bandMix=null;
-let noiseBuf=null,tapeDry=null,tapeWet=null,tapeDrive=null,tapeShaper=null,tapeTone=null,tapeDly=null,wowDepth=null,flutDepth=null,hissG=null; // tape color stage
+let AC=null,master=null,delayNode=null,dlyFb=null,dlyWet=null,masterFilt=null,slimeEQ=null,slimeComp=null,activeVoices=0,recTap=null,masterHP=null;
+let noiseBuf=null,tapeDry=null,tapeWet=null,tapeShaper=null,tapeTone=null,tapeDly=null,wowDepth=null,flutDepth=null,hissG=null; // tape color stage
 function initAudio(){
   if(AC)return;
   AC=new (window.AudioContext||window.webkitAudioContext)();
   master=AC.createGain();master.gain.value=S.vol;
-  bandBus=AC.createGain();bandBus.gain.value=1;bandMix=AC.createGain();bandMix.gain.value=1;
-  bandBus.connect(bandMix);bandMix.connect(master); // duck stage -> mix stage
-  melBus=AC.createGain();melBus.gain.value=1;melBus.connect(master);
   const lim=AC.createDynamicsCompressor();
   lim.threshold.value=-6;lim.ratio.value=14;lim.attack.value=.003;lim.release.value=.25;
   delayNode=AC.createDelay(2.0);delayNode.delayTime.value=60/S.bpm*0.75;
@@ -362,8 +340,8 @@ function initAudio(){
   {const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
   tapeShaper=AC.createWaveShaper();
   {const n=1024,c=new Float32Array(n),k=2.2;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.tanh(k*x)/k;}tapeShaper.curve=c;} // normalized: unity for quiet signals, soft squash on peaks
-  tapeDry=AC.createGain();tapeWet=AC.createGain();tapeDrive=AC.createGain();tapeDrive.gain.value=1; // drive into the saturator
-  tapeTone=AC.createBiquadFilter();tapeTone.type='lowpass';tapeTone.frequency.value=18000;tapeTone.Q.value=0.7; // gentle global low pass = the tape darkness
+  tapeDry=AC.createGain();tapeWet=AC.createGain();
+  tapeTone=AC.createBiquadFilter();tapeTone.type='highshelf';tapeTone.frequency.value=9500;tapeTone.gain.value=0;
   tapeDly=AC.createDelay(0.02);tapeDly.delayTime.value=0.004; // fixed 4ms line the LFOs wiggle = wow & flutter
   const wowLfo=AC.createOscillator();wowLfo.type='sine';wowLfo.frequency.value=0.5;wowDepth=AC.createGain();wowDepth.gain.value=0;
   const flutLfo=AC.createOscillator();flutLfo.type='sine';flutLfo.frequency.value=6.3;flutDepth=AC.createGain();flutDepth.gain.value=0;
@@ -375,19 +353,17 @@ function initAudio(){
   hissSrc.connect(hissFilt);hissFilt.connect(hissG);hissG.connect(tapeDly);hissSrc.start();
   master.connect(masterFilt);dlyWet.connect(masterFilt);
   masterFilt.connect(masterHP);masterHP.connect(slimeEQ);slimeEQ.connect(slimeComp);
-  slimeComp.connect(tapeDry);slimeComp.connect(tapeDrive);tapeDrive.connect(tapeShaper);tapeShaper.connect(tapeWet); // dry/wet split is pre-delay, so no comb filtering
+  slimeComp.connect(tapeDry);slimeComp.connect(tapeShaper);tapeShaper.connect(tapeWet); // dry/wet split is pre-delay, so no comb filtering
   tapeDry.connect(tapeTone);tapeWet.connect(tapeTone);tapeTone.connect(tapeDly);tapeDly.connect(lim);lim.connect(AC.destination);
   recTap=AC.createMediaStreamDestination();lim.connect(recTap); // recorder hears exactly what you hear
   setWarmth(S.warm);
 }
 function setWarmth(w){S.warm=w;if(!AC)return;const t=AC.currentTime;
-  // real tape feel: gentle global low pass + soft tanh saturation. NO seasick pitch vibrato.
-  tapeWet.gain.setTargetAtTime(0.12+w*0.9,t,0.12);tapeDry.gain.setTargetAtTime(1-w*0.55,t,0.12);
-  tapeDrive.gain.setTargetAtTime(1+w*1.7,t,0.12);            // push harder into the tanh = more saturation as it warms
-  tapeTone.frequency.setTargetAtTime(18000-w*13000,t,0.15);  // low pass rolls 18k -> ~5k, warm & rounded
-  wowDepth.gain.setTargetAtTime(0,t,0.1);                    // vibrato OFF (was overdone)
-  flutDepth.gain.setTargetAtTime(0,t,0.1);
-  hissG.gain.setTargetAtTime(S.playing?w*0.0004:0,t,0.6);}   // just a whisper of hiss
+  tapeWet.gain.setTargetAtTime(w*1.15,t,0.1);tapeDry.gain.setTargetAtTime(1-w*0.85,t,0.1);
+  tapeTone.gain.setTargetAtTime(-w*4.5,t,0.1);      // tape's rounded top end
+  wowDepth.gain.setTargetAtTime(w*0.0006,t,0.1);    // slow pitch drift (wow)
+  flutDepth.gain.setTargetAtTime(w*0.00012,t,0.1);  // fast shimmer (flutter)
+  hissG.gain.setTargetAtTime(S.playing?w*0.0005:0,t,0.6);} // barely-there static, and only while the music plays
 function setSlimeProcessing(on){if(!AC)return;const t=AC.currentTime;
   slimeComp.threshold.setTargetAtTime(on?-18:0,t,0.2);slimeComp.ratio.setTargetAtTime(on?3:1,t,0.2);slimeEQ.gain.setTargetAtTime(on?-3.5:0,t,0.2);}
 function freqFromCents(cents){const midi=S.root+cents/100;return 440*Math.pow(2,(midi-69)/12);}
@@ -434,7 +410,7 @@ function playSynth(freq,vel,imp){
   const g=AC.createGain();const peak=v*0.42*(dud?0.16:1)*(1-imp*0.18);
   g.gain.setValueAtTime(0,tr);g.gain.linearRampToValueAtTime(peak,tr+A);g.gain.linearRampToValueAtTime(peak*Su,tr+A+D);
   const relStart=tr+A+D+0.05;g.gain.setValueAtTime(peak*Su,relStart);g.gain.exponentialRampToValueAtTime(0.0001,relStart+Rl);
-  if(S.filtOn){mix.connect(f);f.connect(g);}else{mix.connect(g);}g.connect(melBus);if(S.fxOn)g.connect(delayNode);
+  if(S.filtOn){mix.connect(f);f.connect(g);}else{mix.connect(g);}g.connect(master);if(S.fxOn)g.connect(delayNode);
   o.onended=()=>{activeVoices=Math.max(0,activeVoices-1);};
   o.start(tr);if(sub)sub.start(tr);const end=relStart+Rl+0.03;o.stop(end);if(sub)sub.stop(end);
 }
@@ -447,7 +423,7 @@ async function enableMidi(){
   }catch(e){document.getElementById('midiPort').innerHTML="<option>MIDI not available here</option>";S.midi=false;document.getElementById('midiT').classList.remove('on');}
 }
 function sendMidi(cents,vel){if(!S.midi||!S.midiOut)return;const note=Math.round(S.root+cents/100);if(note<0||note>127)return;
-  S.midiOut.send([0x90|(S.chMel-1),note,vel]);setTimeout(()=>{try{S.midiOut.send([0x80|(S.chMel-1),note,0]);}catch(e){}},180);}
+  S.midiOut.send([0x90,note,vel]);setTimeout(()=>{try{S.midiOut.send([0x80,note,0]);}catch(e){}},180);}
 
 // ---------- drums: casio-style synthesized kit, 4-bar loops ----------
 let drumOn=false,drumStep=0,drumTime=0,drumBus=null,drumKit='chip',drumFeel='1',drumSig='16',NB=null;
@@ -469,12 +445,11 @@ const PATTERNS={ // real signature skeletons, role-based: lo=kick, mid=snare, hi
   '18':{lo:[0,4,8],mid:[12],hi:[0,2,4,6,8,10,12,14,16]}      // 9/8 karşılama (2+2+2+3): the Blue Rondo lean
 };
 const KITVOICE={chip:{lo:'K',mid:'s',hi:'h'},conga:{lo:'c',mid:'C',hi:'r'},bossa:{lo:'K',mid:'r',hi:'h'},rock:{lo:'K',mid:'s',hi:'h'},beep:{lo:'K',mid:'r',hi:'C'}};
-function dHit(v,t,a){a=a||1;sendMidiAt(DRUMN[v]||38,Math.min(127,(90*a)|0),S.chDrum,t,0.15);
+function dHit(v,t,a){a=a||1;
   if(v==='K'){const o=AC.createOscillator(),g=AC.createGain();o.type='sine'; // proper kick: fast pitch dive + body
     o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(45,t+0.12);
     g.gain.setValueAtTime(0.85*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
-    o.connect(g);g.connect(drumBus);o.start(t);o.stop(t+0.32);
-    if(bandBus&&bandOn){bandBus.gain.cancelScheduledValues(t);bandBus.gain.setValueAtTime(0.32,t);bandBus.gain.linearRampToValueAtTime(1,t+0.3);}}
+    o.connect(g);g.connect(drumBus);o.start(t);o.stop(t+0.32);}
   else if(v==='C'||v==='c'){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';
     const f0=v==='C'?330:230;
     o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f0*0.72,t+0.08);
@@ -502,47 +477,11 @@ function drumTriplet(){return drumSig==='16'&&S.triplet;} // 4/4 + triplets = th
 function drumSPB(){return drumTriplet()?3:4;}             // steps per beat: triplet-8ths vs 16ths
 function drumBar(){return drumTriplet()?12:SIGS[drumSig].n;}
 function drumStepDur(){let d=60/S.bpm/drumSPB();if(drumFeel==='2')d*=0.5;else if(drumFeel==='h')d*=2;return d;}
-// ---------- band: gameboy bass + snes pads, degree-based so ANY scale works (even microtonal) ----------
-let bandOn=false,progIdx=0;
-const PROGS=[[0,4,5,3],[0,5,3,4],[5,3,0,4],[0,3,4,3]]; // I-V-vi-IV, 50s doo-wop, axis, plagal rock — as scale degrees
-const DRUMN={K:36,s:38,h:42,r:37,C:63,c:62};
-function sendMidiAt(note,vel,ch,acT,durSec){if(!S.midi||!S.midiOut||note<0||note>127)return;
-  const ts=performance.now()+Math.max(0,acT-AC.currentTime)*1000;
-  try{S.midiOut.send([0x90|(ch-1),note,vel],ts);S.midiOut.send([0x80|(ch-1),note,0],ts+durSec*1000);}catch(e){}}
-let curRootDeg=0;
-const BASSPAT={'16':{0:'R',4:'R',6:'F',8:'R',12:'R',14:'O'},'12':{0:'R',4:'F',8:'O'},'12c':{0:'R',6:'F'},'20':{0:'R',8:'R',12:'F',16:'O'}}; // R=root F=fifth O=octave
-function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for the pluck pattern
-  if(!bandOn)return;
-  const n=scaleObj().c.length,pr=PROGS[progIdx],rd=pr[barI%pr.length]%n;curRootDeg=rd;
-  const degs=[rd,(rd+2)%n,(rd+4)%n],barDur=drumBar()*drumStepDur();
-  const pv=0.042*Math.min(1,S.bpMix*2);
-  if(S.synth)for(const d of degs){const c=centsForDegree(d),po=AC.createOscillator(),pg=AC.createGain();
-    po.type='square';po.frequency.value=freqFromCents(c); // gameboy pad: quiet squares, slow bloom
-    pg.gain.setValueAtTime(0,t);pg.gain.linearRampToValueAtTime(pv,t+0.25);
-    pg.gain.setValueAtTime(pv,t+barDur*0.75);pg.gain.linearRampToValueAtTime(0.0001,t+barDur);
-    po.connect(pg);pg.connect(bandBus);po.start(t);po.stop(t+barDur+0.05);
-    sendMidiAt(Math.round(S.root+c/100),60,S.chPad,t,barDur*0.9);}
-}
-function bassNote(tok,t,hum){ // chip bass pluck: square through a warm LP + triangle sub — cuts on laptops, breathes between hits
-  const n=scaleObj().c.length;let c=centsForDegree(curRootDeg);
-  if(tok==='F')c=centsForDegree((curRootDeg+4)%n);else if(tok==='O')c+=1200;
-  if(S.synth){const f=freqFromCents(c)/2,v=0.34*(hum||1)*Math.min(1,(1-S.bpMix)*2);
-    const o=AC.createOscillator(),g=AC.createGain(),lp=AC.createBiquadFilter(),sub=AC.createOscillator(),sg=AC.createGain();
-    o.type='square';o.frequency.value=f;lp.type='lowpass';lp.frequency.value=900;lp.Q.value=0.5;
-    sub.type='triangle';sub.frequency.value=f/2;sg.gain.value=0.5;
-    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.008);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
-    o.connect(lp);sub.connect(sg);sg.connect(lp);lp.connect(g);g.connect(bandBus);
-    o.start(t);o.stop(t+0.32);sub.start(t);sub.stop(t+0.32);}
-  sendMidiAt(Math.round(S.root+c/100)-12,96,S.chBass,t,0.25);
-}
-function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums, bass, pads & midi
-  if((!drumOn&&!bandOn)||!AC)return;
+function drumSchedule(){ // lookahead scheduler: sample-accurate, follows tempo/feel/signature live
+  if(!drumOn||!AC)return;
   const sig=SIGS[drumSig],bar=drumBar(),loop=bar*4;
   while(drumTime<AC.currentTime+0.12){
     const st=drumStep%loop, inBar=st%bar, barI=(st/bar)|0, hum=0.92+Math.random()*0.16; // ±8% human wobble on every hit
-    if(inBar===0)bandBar(drumTime,barI);
-    if(bandOn){const bp=BASSPAT[drumSig],tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));if(tok)bassNote(tok,drumTime,hum);}
-    if(!drumOn){drumTime+=drumStepDur();drumStep++;continue;} // band without drums: same grid, silent kit
     if(drumTriplet()){ // the classic triplet vibe: kick plants on 1, snare lands on 3, hats roll triplets
       const vm=KITVOICE[drumKit];
       dHit(vm.hi,drumTime,(inBar%3===0?(inBar===0?1.15:0.95):0.68)*hum); // downbeat hats lean, middle triplets tucked
@@ -608,7 +547,7 @@ function jitter(b){if(S.chaos<=0)return;const sp=Math.hypot(b.vx,b.vy);const a=M
 const PR=8, GRAV=0.17;
 let gX=0,gY=GRAV,liquidH=0; // tiltable gravity + how high the liquid sits (drives the filter morph)
 function shapeArea(){const N=S.shape==="circle"?24:parseInt(S.shape,10);return 0.5*N*R*R*Math.sin(2*Math.PI/N);}
-function partCap(){return Math.floor(Math.min(2800,shapeArea()/85)*(LITE?0.55:1));} // particle budget (perf only); thinned on weak devices
+function partCap(){return Math.min(2400,(shapeArea()/110)|0);} // particle budget (perf only) — fullness is MEASURED, not guessed
 let measuredFill=0;
 function ballSpeed(){return (S.bpm/80)*3.4;} // steady, tempo-driven ball speed
 let particles=[];  // {x,y,vx,vy,hue,r}
@@ -721,7 +660,7 @@ function fillPhysics(now){
     masterHP.frequency.setTargetAtTime(hp,t,0.35);
     masterFilt.frequency.setTargetAtTime(lp,t,0.35);
     const wash=m*m; // squared: barely any echo below half-full, blooms near the top — matches how the ear hears wash
-    dlyWet.gain.setTargetAtTime(S.fxOn?Math.min(0.5,S.dly+wash*0.22)*(S.wMg||1):0,t,0.4);
+    dlyWet.gain.setTargetAtTime(S.fxOn?Math.min(0.5,S.dly+wash*0.22):0,t,0.4);
     dlyFb.gain.setTargetAtTime(Math.min(0.35,0.18+wash*0.17),t,0.4);} // feedback capped hard: melody stays legible even at full
 }
 
@@ -799,8 +738,6 @@ const rimC=document.createElement('canvas');rimC.width=W;rimC.height=H;const rct
 let GOO='url(#goo)';{const t=document.createElement('canvas').getContext('2d');t.filter=GOO;if(t.filter!==GOO)GOO='blur(6px)';} // fallback where svg canvas filters are unsupported
 const mcv=document.createElement('canvas');mcv.width=mcv.height=36;const mctx=mcv.getContext('2d',{willReadFrequently:true});
 let mFrame=0;
-// ---- adaptive quality: auto-drop the pricey goo pass on devices that can't hold the frame rate ----
-let LITE=false, _fpsAcc=0, _fpsN=0, _slowRun=0, _lastFrame=0;
 function measureFill(){ // barrel-in-a-rainstorm: read the real water line off the liquid render
   mctx.clearRect(0,0,36,36);mctx.drawImage(lq,0,0,36,36);
   const d=mctx.getImageData(0,0,36,36).data;let n=0;
@@ -816,10 +753,8 @@ function drawParticles(){ // living liquid: fused goo + sweeping iridescent shee
     if(!p.pooled){flecks=true;continue;}
     p.sx+=(p.x-p.sx)*0.3;p.sy+=(p.y-p.sy)*0.3;
     const wob=1+0.07*Math.sin(now*0.002+p.hue*17); // each blob breathes
-    lctx.fillStyle=aurora(p.hue+tn,64,0.95);lctx.beginPath();lctx.arc(p.sx,p.sy,p.r*1.85*wob,0,7);lctx.fill();}
+    lctx.fillStyle=aurora(p.hue+tn,64,0.95);lctx.beginPath();lctx.arc(p.sx,p.sy,p.r*1.5*wob,0,7);lctx.fill();}
   if(++mFrame%20===0&&fillState==="fill")measureFill();
-  if(LITE){ ctx.drawImage(lq,0,0); } // lite mode: draw the liquid straight — skips the costly goo+sheen+rim passes
-  else {
   gctx.clearRect(0,0,W,H);gctx.filter=GOO;gctx.drawImage(lq,0,0);gctx.filter='none';
   gctx.globalCompositeOperation='source-atop'; // sheen clipped to the liquid only
   const h0=(now*0.01)%360,sh=gctx.createLinearGradient(0,0,W,H);
@@ -830,7 +765,6 @@ function drawParticles(){ // living liquid: fused goo + sweeping iridescent shee
   rctx.globalCompositeOperation='destination-out';rctx.drawImage(gooC,0,5);rctx.globalCompositeOperation='source-over';
   ctx.drawImage(gooC,0,0);
   ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=0.45;ctx.drawImage(rimC,0,0);ctx.restore();
-  }
   if(flecks)for(const p of particles){if(p.pooled)continue; // fresh spray: crisp droplets off the hit point
     ctx.fillStyle=aurora(p.hue+tn,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}}
 function drawBalls(){ // every ball its own vivid hue across the full wheel
@@ -850,10 +784,6 @@ function draw(){
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(CX,CY,R*1.35,0,7);ctx.fill();}
 }
 function loop(now){
-  // adaptive quality watchdog: sustained slow frames -> drop to lite render (one-way, avoids flip-flop)
-  if(!LITE&&_lastFrame){_fpsAcc+=now-_lastFrame;if(++_fpsN>=30){const avg=_fpsAcc/_fpsN;_fpsAcc=0;_fpsN=0;
-    if(avg>27)_slowRun++;else _slowRun=0; if(_slowRun>=3)LITE=true;}}
-  _lastFrame=now;
   if(S.playing){if(S.slimeMode)slimeModStep(now);if(S.spin!==0){rot+=S.spin*0.0003;rebuild();}transport(now);
     curSegs=(fillState==="fill")?null:computeSegs();
     step();fillPhysics(now);}
@@ -910,42 +840,16 @@ $("drumBtn").addEventListener('click',()=>{initAudio();if(AC.state==="suspended"
   const c=$("drumCtl");c.style.opacity=drumOn?1:0.35;c.style.pointerEvents=drumOn?"auto":"none";
   if(drumOn){drumStep=0;drumTime=AC.currentTime+0.05;lastTick=performance.now();if(!S.playing)setPlaying(true);}});
 $("drumKit").addEventListener('change',e=>{drumKit=e.target.value;});
-$("bandBtn").addEventListener('click',()=>{initAudio();if(AC.state==="suspended")AC.resume();
-  const wasRunning=drumOn||bandOn;bandOn=!bandOn;$("bandBtn").classList.toggle('on',bandOn);
-  if(bandOn){progIdx=Math.floor(Math.random()*PROGS.length); // fresh progression each time
-    if(!wasRunning){drumStep=0;drumTime=AC.currentTime+0.05;}
-    if(!S.playing)setPlaying(true);}});
-[['chMel',1],['chDrum',2],['chBass',3],['chPad',4]].forEach(([id,df])=>{const el=$(id);if(!el)return;
-  for(let i=1;i<=16;i++){const o=document.createElement('option');o.value=i;o.textContent=i;if(i===df)o.selected=true;el.appendChild(o);}
-  el.addEventListener('change',()=>{S[id]=parseInt(el.value);});});
 $("drumSig").addEventListener('change',e=>{drumSig=e.target.value;});
 $("drumFeel").addEventListener('change',e=>{drumFeel=e.target.value; // triplet feel syncs the melody too
   if(drumFeel==="t"){S.triplet=true;$("tripT").classList.add("on");}
   if(drumFeel==="1"){S.triplet=false;$("tripT").classList.remove("on");}});
 $("drumVol").addEventListener('input',()=>applyMix());
-function applyMix(){if(!AC||!master)return;const t=AC.currentTime; // triangle mix: center = everyone full
-  const c=x=>Math.min(1,x*3);S.wMg=c(S.wM);const T=0.09; // gentle ramp = no zipper/clicks when dragging fast or slow
-  master.gain.setTargetAtTime(S.vol,t,T);
-  if(melBus)melBus.gain.setTargetAtTime(c(S.wM),t,T);
-  if(bandMix)bandMix.gain.setTargetAtTime(c(S.wK),t,T);
-  if(drumBus)drumBus.gain.setTargetAtTime(($("drumVol").value/100)*1.1*c(S.wD),t,T);}
-let _mixRAF=0;
-function scheduleMix(){if(_mixRAF)return;_mixRAF=requestAnimationFrame(()=>{_mixRAF=0;applyMix();});} // coalesce rapid drags to 1 audio update/frame
-bindRange("bpMix","bpMix",v=>v/100);
-(function(){const el=$("triMix");if(!el)return;const svg=el.querySelector('svg'),kn=el.querySelector('#triKnob');
-  const T=[50,16],L=[21,68],Rt=[79,68];
-  function setMix(x,y){const [x1,y1]=T,[x2,y2]=L,[x3,y3]=Rt,d=((y2-y3)*(x1-x3)+(x3-x2)*(y1-y3));
-    let a=((y2-y3)*(x-x3)+(x3-x2)*(y-y3))/d,b=((y3-y1)*(x-x3)+(x1-x3)*(y-y3))/d,g=1-a-b;
-    a=Math.max(0,a);b=Math.max(0,b);g=Math.max(0,g);const sm=a+b+g||1;
-    S.wM=a/sm;S.wD=b/sm;S.wK=g/sm;
-    kn.setAttribute('cx',S.wM*T[0]+S.wD*L[0]+S.wK*Rt[0]);kn.setAttribute('cy',S.wM*T[1]+S.wD*L[1]+S.wK*Rt[1]);
-    scheduleMix();}
-  let drag=false;
-  const pt=e=>{const r=svg.getBoundingClientRect();return [-14+(e.clientX-r.left)/r.width*128,-18+(e.clientY-r.top)/r.height*124];};
-  svg.addEventListener('pointerdown',e=>{drag=true;svg.setPointerCapture(e.pointerId);const[x,y]=pt(e);setMix(x,y);e.preventDefault();});
-  svg.addEventListener('pointermove',e=>{if(drag){const[x,y]=pt(e);setMix(x,y);}});
-  svg.addEventListener('pointerup',()=>drag=false);svg.addEventListener('lostpointercapture',()=>drag=false);
-})();
+function applyMix(){if(!AC||!master)return;const t=AC.currentTime; // crossfader: center = both full
+  const mSc=Math.min(1,(1-S.mix)*2),dSc=Math.min(1,S.mix*2);
+  master.gain.setTargetAtTime(S.vol*mSc,t,0.05);
+  if(drumBus)drumBus.gain.setTargetAtTime(($("drumVol").value/100)*1.1*dSc,t,0.05);}
+$("mixSl").addEventListener('input',e=>{S.mix=e.target.value/100;applyMix();});
 $("filtPwr").addEventListener('click',()=>{S.filtOn=$("filtPwr").classList.toggle('on');});
 $("fxPwr").addEventListener('click',()=>{S.fxOn=$("fxPwr").classList.toggle('on');});
 $("menuBtn").addEventListener('click',()=>document.querySelector('aside').classList.toggle('open'));
@@ -998,9 +902,8 @@ function hashHue(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%
 function mark(inp){inp.dataset.touched=performance.now();}
 function enhanceKnobs(){
   document.querySelectorAll('input[type=range]').forEach(inp=>{
-    if(inp.closest('#advBar'))return; // top-bar sliders stay plain — no redundant/clutter knobs
     const min=parseFloat(inp.min)||0,max=parseFloat(inp.max)||100;
-    const k=document.createElement('div');k.className='rknob';k.title=inp.title||'';const hue=hashHue(inp.id||'x');
+    const k=document.createElement('div');k.className='rknob';const hue=hashHue(inp.id||'x');
     k.style.setProperty('--kc',`hsl(${hue},68%,82%)`);k.style.setProperty('--kc2',`hsl(${hue},58%,62%)`);
     k.innerHTML='<div class="kdot"></div>';const dot=k.firstChild;inp.parentNode.insertBefore(k,inp);
     const frac=()=>(parseFloat(inp.value)-min)/((max-min)||1);
@@ -1043,7 +946,7 @@ function slimeSVG(fill,face){
 <circle cx="30" cy="25" r="6" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="30.5" cy="26" r="2.6" fill="#5a4f78"/>
 <circle cx="50" cy="25" r="6" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="50.5" cy="26" r="2.6" fill="#5a4f78"/>
 <ellipse cx="22" cy="35" rx="5" ry="3" fill="#ff8fbe" opacity=".6"/><ellipse cx="58" cy="35" rx="5" ry="3" fill="#ff8fbe" opacity=".6"/>
-<ellipse cx="40" cy="36" rx="4.5" ry="5.5" fill="#5a4f78"/>`;
+<path d="M33 33 h14 q-7 10 -14 0 Z" fill="#5a4f78"/>`;
   }else if(face==="bigeye"){
     f=`<circle cx="30" cy="26" r="9.5" fill="#fff" stroke="#5a4f78" stroke-width="2.6"/><circle cx="30" cy="27" r="5" fill="#5a4f78"/><circle cx="32" cy="24.5" r="1.8" fill="#fff"/>
 <circle cx="50" cy="26" r="9.5" fill="#fff" stroke="#5a4f78" stroke-width="2.6"/><circle cx="50" cy="27" r="5" fill="#5a4f78"/><circle cx="52" cy="24.5" r="1.8" fill="#fff"/>
@@ -1064,9 +967,9 @@ const GEO={
   right:{anchor:{right:'0'},rest:`translateX(${SW-PEEK}px) rotate(-90deg)`,hide:`translateX(${SW+OUT}px) rotate(-90deg)`}
 };
 const SPOTS=[
-  {edge:'bottom',cross:{left:'12%'},fill:'--lav'},{edge:'bottom',cross:{left:'28%'},fill:'--pink'},
-  {edge:'bottom',cross:{left:'46%'},fill:'--peach'},{edge:'bottom',cross:{left:'63%'},fill:'--yellow'},
-  {edge:'left',cross:{top:'20%'},fill:'--mint'},{edge:'left',cross:{top:'46%'},fill:'--sky'},{edge:'left',cross:{top:'72%'},fill:'--lav'}
+  {edge:'top',cross:{left:'22%'},fill:'--lav'},{edge:'top',cross:{left:'52%'},fill:'--peach'},
+  {edge:'left',cross:{top:'28%'},fill:'--mint'},{edge:'left',cross:{top:'66%'},fill:'--sky'},
+  {edge:'bottom',cross:{left:'30%'},fill:'--pink'},{edge:'bottom',cross:{left:'60%'},fill:'--yellow'}
 ];
 const chillers=[]; // full-view slimes with cursor physics
 (function(){
@@ -1084,8 +987,7 @@ const chillers=[]; // full-view slimes with cursor physics
     const back=2600+Math.random()*2600;
     setTimeout(()=>{setFace(el,"happy");rest(el);el.dataset.state="out";idle(el);},700+back);}
   SPOTS.forEach((s,i)=>{const g=GEO[s.edge];const el=document.createElement('div');el.className="slime peeker";el.style.position="fixed";
-    Object.assign(el.style,g.anchor,s.cross);let _r=g.rest,_h=g.hide;if(s.edge==='bottom'){const a=' rotate('+(Math.random()*24-12).toFixed(0)+'deg)';_r+=a;_h+=a;} // upright, each at its own lil angle
-    el.dataset.rest=_r;el.dataset.hidden=_h;el.dataset.fill=s.fill;el.dataset.state="out";el.dataset.face="happy";
+    Object.assign(el.style,g.anchor,s.cross);el.dataset.rest=g.rest;el.dataset.hidden=g.hide;el.dataset.fill=s.fill;el.dataset.state="out";el.dataset.face="happy";
     el.innerHTML=`<div class="bob" style="animation-delay:${(i*0.35).toFixed(2)}s">${slimeSVG(cssVar(s.fill),"happy")}</div>`;
     el.style.transform=g.rest;el.addEventListener('click',()=>spook(el));layer.appendChild(el);idle(el);});
   // full-view buddies (freely positioned, get cursor physics)
@@ -1095,36 +997,35 @@ const chillers=[]; // full-view slimes with cursor physics
       el.querySelector('.bob').innerHTML=slimeSVG(cssVar(fillVar),'wow');el.classList.add('squish');setTimeout(()=>el.classList.remove('squish'),480);
       setTimeout(()=>{el.querySelector('.bob').innerHTML=slimeSVG(cssVar(fillVar),'happy');el._busy=false;},1500);});
     layer.appendChild(el);chillers.push({el,fillVar,r:size/2,hx:0,hy:0,x:0,y:0,vx:0,vy:0,init:false});}
-  // all in the empty left/bottom margins — clear of the top bar, mixer and side panel
-  chiller('left:1.5%;top:34%;width:74px;height:70px','--peach',0,74);
-  chiller('left:2.5%;top:56%;width:70px;height:66px','--mint',0.5,70);
-  chiller('left:1%;top:77%;width:78px;height:74px','--sky',1,78);
-  chiller('left:2%;bottom:3%;width:62px;height:58px','--pink',1.4,62);
+  chiller('left:1.5%;top:92px;width:74px;height:70px','--peach',0,74);
+  chiller('left:3%;top:42%;width:70px;height:66px','--mint',0.5,70);
+  chiller('left:1%;bottom:8%;width:78px;height:74px','--sky',1,78);
+  chiller('left:33%;bottom:1%;width:62px;height:58px','--pink',1.4,62);
   // capture home centers after layout
   requestAnimationFrame(()=>{for(const c of chillers){const b=c.el.getBoundingClientRect();c.hx=b.left+b.width/2;c.hy=b.top+b.height/2;c.x=c.hx;c.y=c.hy;c.init=true;}});
   // ---- upside-down nappers: hang off the top of the play area, ignore your mouse completely.
   // click one → big-eye mode: pulses to the beat in rainbow for 4 bars, then back to napping. just for the hell of it.
   const sleepers=[];
   function sleeper(fx,fillVar,size){const el=document.createElement('div');el.className='slime';
-    el.style.cssText=`position:fixed;width:${size}px;height:${Math.round(size*0.93)}px;transition:none`;
-    el.title='hi!';
+    el.style.cssText=`position:fixed;width:${size}px;height:${Math.round(size*0.93)}px;transform:rotate(180deg);transition:none`;
+    el.title='...zzz';
     el.innerHTML=`<div>${slimeSVG(cssVar(fillVar),'happy')}</div>`;
     el.addEventListener('click',()=>{if(el._rave)return;el._rave=true;
       el.firstChild.innerHTML=slimeSVG(cssVar(fillVar),'bigeye');
       const t0=performance.now(),spb=60000/S.bpm,dur=16*spb; // 4 bars at the tempo when you woke it
       (function pulse(){
         const el2=performance.now()-t0;
-        if(el2>=dur){el.style.transform='';el.style.filter='';el.firstChild.innerHTML=slimeSVG(cssVar(fillVar),'happy');el._rave=false;return;}
+        if(el2>=dur){el.style.transform='rotate(180deg)';el.style.filter='';el.firstChild.innerHTML=slimeSVG(cssVar(fillVar),'happy');el._rave=false;return;}
         const p=el2/spb; // beats elapsed
         const s=1+0.16*Math.abs(Math.sin(p*Math.PI)); // one pump per beat
-        el.style.transform=`scale(${s.toFixed(3)})`;
+        el.style.transform=`rotate(180deg) scale(${s.toFixed(3)})`;
         el.style.filter=`hue-rotate(${Math.floor(p*45)%360}deg) saturate(1.7)`;
         requestAnimationFrame(pulse);})();});
     layer.appendChild(el);sleepers.push({el,fx,size});}
   sleeper(0.16,'--yellow',58);
   sleeper(0.74,'--lav',64);
-  function placeSleepers(){const r=cv.getBoundingClientRect();const ys=[0.24,0.7]; // upright, tucked in the empty margin left of the play area
-    sleepers.forEach((s,i)=>{s.el.style.left=Math.max(4,r.left-s.size-10)+'px';s.el.style.top=(r.top+r.height*ys[i])+'px';});}
+  function placeSleepers(){const r=cv.getBoundingClientRect();
+    for(const s of sleepers){s.el.style.left=(r.left+r.width*s.fx-s.size/2)+'px';s.el.style.top=(r.top-6)+'px';}}
   addEventListener('resize',placeSleepers);requestAnimationFrame(placeSleepers);
 })();
 
@@ -1149,7 +1050,7 @@ const chillers=[]; // full-view slimes with cursor physics
       :'<circle cx="-7" cy="-4" r="3" fill="#3d3756"/><circle cx="7" cy="-4" r="3" fill="#3d3756"/><path d="M-5.5 4 q5.5 5.5 11 0" fill="none" stroke="#3d3756" stroke-width="3" stroke-linecap="round"/>';}
   setFace(false);
   function beats(){ // drums are the master clock when on; otherwise tempo from the moment play started
-    if((drumOn||bandOn)&&AC)return (drumStep-(drumTime-AC.currentTime)/drumStepDur())/drumSPB();
+    if(drumOn&&AC)return (drumStep-(drumTime-AC.currentTime)/drumStepDur())/drumSPB();
     return wBeat;
   }
   const N=11;
@@ -1392,7 +1293,6 @@ addEventListener('input',queueSave,true);addEventListener('click',queueSave,true
     initAudio();if(AC.state==="suspended")AC.resume();
     if(!S.slimeMode)$("slimeBig").click();
     if(!drumOn)$("drumBtn").click(); // full band from the first second
-    if(!bandOn)$("bandBtn").click(); // bass + chord pads on by default too
   },{once:true});
 })();
 
