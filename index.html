@@ -520,10 +520,10 @@ function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for
   if(!bandOn)return;
   const n=scaleObj().c.length,pr=PROGS[progIdx],rd=pr[barI%pr.length]%n;curRootDeg=rd;
   const degs=[rd,(rd+2)%n,(rd+4)%n],barDur=drumBar()*drumStepDur();
-  const pv=0.019*Math.min(1,S.bpMix*2); // soft background ambience, well under the melody
+  const pv=0.03*Math.min(1,S.bpMix*2); // soft pad bed with some body — present but under the melody
   if(S.synth)for(const d of degs){const c=centsForDegree(d),po=AC.createOscillator(),pg=AC.createGain(),plp=AC.createBiquadFilter();
     po.type='triangle';po.frequency.value=freqFromCents(c);          // mellow pad, not buzzy squares
-    plp.type='lowpass';plp.frequency.value=1500;plp.Q.value=0.4;      // roll off the top so it sits behind everything
+    plp.type='lowpass';plp.frequency.value=2300;plp.Q.value=0.9;      // open the mids with a gentle presence bump so the chords have warmth + body
     pg.gain.setValueAtTime(0,t);pg.gain.linearRampToValueAtTime(pv,t+0.75); // slow gentle bloom (soft attack)
     pg.gain.setValueAtTime(pv,t+barDur*0.65);pg.gain.linearRampToValueAtTime(0.0001,t+barDur);
     po.connect(plp);plp.connect(pg);pg.connect(bandBus);po.start(t);po.stop(t+barDur+0.05);
