@@ -729,9 +729,9 @@ function fillPhysics(now){
     const hp=S.filtOn?20*Math.pow(110,hLift):20; // 20 Hz -> ~2.2 kHz max, gentle on ears always
     masterHP.frequency.setTargetAtTime(hp,t,0.35);
     masterFilt.frequency.setTargetAtTime(lp,t,0.35);
-    const wash=m*m; // squared: barely any echo below half-full, blooms near the top — matches how the ear hears wash
-    dlyWet.gain.setTargetAtTime(S.fxOn?Math.min(0.5,S.dly+wash*0.22)*(S.wMg||1):0,t,0.4);
-    dlyFb.gain.setTargetAtTime(Math.min(0.35,0.18+wash*0.17),t,0.4);} // feedback capped hard: melody stays legible even at full
+    const fillL=Math.max(m,liquidH), wash=Math.pow(fillL,1.15); // gradual swell from ~1/4 full (not just at the top); robust fill read
+    dlyWet.gain.setTargetAtTime(S.fxOn?Math.min(0.55,S.dly+wash*0.34):0,t,0.5);  // echo blooms in with the liquid, fades smoothly as it drains
+    dlyFb.gain.setTargetAtTime(Math.min(0.42,0.14+wash*0.26),t,0.5);} // longer ambient tail as it fills = reverb-like wash (delay time stays tempo-synced)
 }
 
 // ---------- ball stepping ----------
