@@ -148,7 +148,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <button class="btn big" id="recBtn" title="record your music"><span id="recDot"></span> record</button>
   <span class="spacer"></span>
   <button class="btn" id="resetBtn" title="put every knob back how it started">↺ reset</button>
-  <label class="adv" title="performance mode — lighter graphics, smoother on slower phones/PCs (full liquid is on by default)"><input type="checkbox" id="perfT"> ⚡ smooth</label>
+  <label class="adv" title="performance mode — lighter graphics for slower phones/PCs (full quality is on by default)"><input type="checkbox" id="perfT"> ⚡ performance</label>
   <label class="adv" title="more knobs for curious minds"><input type="checkbox" id="advT"> advanced</label>
 </header>
 <div id="triMixBar">
@@ -159,7 +159,6 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <text x="50" y="-2" font-size="19" text-anchor="middle">🎵</text><text x="6" y="98" font-size="19" text-anchor="middle">🥁</text><text x="94" y="98" font-size="19" text-anchor="middle">🎸</text>
       <circle id="triKnob" cx="50" cy="53" r="8" fill="#9fe6cf" stroke="#fff" stroke-width="2.5" style="filter:drop-shadow(0 2px 3px rgba(120,110,160,.4))"/>
     </svg></div>
-  <span class="triHint">drag the dot — <b>🎵 melody</b> · 🥁 drums · 🎸 bass+pads</span>
 </div>
 <div id="advBar" hidden>
   <span style="font-size:14px" title="bass">🎸</span><input type="range" id="bpMix" min="0" max="100" value="50" style="width:60px;flex:none" title="balance: bass ↔ chord pads"><span style="font-size:14px" title="chord pads">🎹</span>
