@@ -1057,9 +1057,13 @@ function slimeSVG(fill,face){
 <ellipse cx="22" cy="35" rx="5" ry="3" fill="#ff8fbe" opacity=".6"/><ellipse cx="58" cy="35" rx="5" ry="3" fill="#ff8fbe" opacity=".6"/>
 <ellipse cx="40" cy="36" rx="4.5" ry="5.5" fill="#5a4f78"/>`;
   }else if(face==="bigeye"){
-    f=`<circle cx="30" cy="26" r="9.5" fill="#fff" stroke="#5a4f78" stroke-width="2.6"/><circle cx="30" cy="27" r="5" fill="#5a4f78"/><circle cx="32" cy="24.5" r="1.8" fill="#fff"/>
-<circle cx="50" cy="26" r="9.5" fill="#fff" stroke="#5a4f78" stroke-width="2.6"/><circle cx="50" cy="27" r="5" fill="#5a4f78"/><circle cx="52" cy="24.5" r="1.8" fill="#fff"/>
-<path d="M34 41 q6 6 12 0" fill="none" stroke="#5a4f78" stroke-width="2.6" stroke-linecap="round"/>`;
+    f=`<circle cx="30" cy="26" r="7" fill="#fff" stroke="#5a4f78" stroke-width="2.5"/><circle cx="30" cy="27" r="3.6" fill="#5a4f78"/><circle cx="31.6" cy="24.8" r="1.4" fill="#fff"/>
+<circle cx="50" cy="26" r="7" fill="#fff" stroke="#5a4f78" stroke-width="2.5"/><circle cx="50" cy="27" r="3.6" fill="#5a4f78"/><circle cx="51.6" cy="24.8" r="1.4" fill="#fff"/>
+<path d="M33 39 h14 q-7 11 -14 0 Z" fill="#5a4f78"/>`;
+  }else if(face==="surprise"){
+    f=`<circle cx="30" cy="25" r="6.5" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="30" cy="25.5" r="3" fill="#5a4f78"/>
+<circle cx="50" cy="25" r="6.5" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="50" cy="25.5" r="3" fill="#5a4f78"/>
+<ellipse cx="40" cy="43" rx="4.2" ry="5.2" fill="#5a4f78"/>`;
   }else{
     f=`<path d="M24 26 l5.5 -7 l5.5 7" fill="none" stroke="#5a4f78" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M45 26 l5.5 -7 l5.5 7" fill="none" stroke="#5a4f78" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1096,7 +1100,7 @@ const chillers=[]; // full-view slimes with cursor physics
     setTimeout(()=>{el.dataset.state="hidden";hide(el);},700);
     const back=2600+Math.random()*2600;
     setTimeout(()=>{setFace(el,"happy");rest(el);el.dataset.state="out";idle(el);},700+back);}
-  (MOB?[SPOTS[0],SPOTS[4],SPOTS[6]]:SPOTS).forEach((s,i)=>{const g=GEO[s.edge];const el=document.createElement('div');el.className="slime peeker";el.style.position="fixed";
+  (MOB?[SPOTS[4],SPOTS[6]]:SPOTS).forEach((s,i)=>{const g=GEO[s.edge];const el=document.createElement('div');el.className="slime peeker";el.style.position="fixed";
     Object.assign(el.style,g.anchor,s.cross);let _r=g.rest,_h=g.hide;if(s.edge==='bottom'){const a=' rotate('+(Math.random()*24-12).toFixed(0)+'deg)';_r+=a;_h+=a;} // upright, each at its own lil angle
     el.dataset.rest=_r;el.dataset.hidden=_h;el.dataset.fill=s.fill;el.dataset.state="out";el.dataset.face="happy";
     el.innerHTML=`<div class="bob" style="animation-delay:${(i*0.35).toFixed(2)}s">${slimeSVG(cssVar(s.fill),"happy")}</div>`;
@@ -1105,7 +1109,7 @@ const chillers=[]; // full-view slimes with cursor physics
   function chiller(style,fillVar,delay,size){const el=document.createElement('div');el.className='slime chill';el.style.cssText='position:fixed;'+style;
     el.innerHTML=`<div class="bob" style="animation-delay:${delay}s">${slimeSVG(cssVar(fillVar),'happy')}</div>`;
     el.addEventListener('click',()=>{if(el._busy)return;el._busy=true;
-      el.querySelector('.bob').innerHTML=slimeSVG(cssVar(fillVar),'wow');el.classList.add('squish');setTimeout(()=>el.classList.remove('squish'),480);
+      el.querySelector('.bob').innerHTML=slimeSVG(cssVar(fillVar),'surprise');el.classList.add('squish');setTimeout(()=>el.classList.remove('squish'),480);
       setTimeout(()=>{el.querySelector('.bob').innerHTML=slimeSVG(cssVar(fillVar),'happy');el._busy=false;},1500);});
     layer.appendChild(el);chillers.push({el,fillVar,r:size/2,hx:0,hy:0,x:0,y:0,vx:0,vy:0,init:false});}
   // desktop only: full-view buddies with cursor physics (touch has no cursor, so they'd teleport — skip on phones)
@@ -1208,7 +1212,7 @@ const chillers=[]; // full-view slimes with cursor physics
 (function(){
   const layer=document.getElementById('slimes');
   const el=document.createElement('div');el.className='slime rgirl';
-  el.style.cssText='position:fixed;left:11%;bottom:0;width:66px;height:62px;z-index:51;transform:translateY(31px);transition:transform .5s cubic-bezier(.34,1.56,.64,1)';
+  el.style.cssText='position:fixed;left:22%;bottom:0;width:66px;height:62px;z-index:51;transform:translateY(31px);transition:transform .5s cubic-bezier(.34,1.56,.64,1)';
   const happy='<path d="M22 35 l5.5 -6 l5.5 6" fill="none" stroke="#5a4f78" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M47 35 l5.5 -6 l5.5 6" fill="none" stroke="#5a4f78" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M33 42 q7 6 14 0" fill="none" stroke="#5a4f78" stroke-width="2.6" stroke-linecap="round"/>';
   const wow='<circle cx="28" cy="33" r="5.5" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="28" cy="34" r="2.4" fill="#5a4f78"/><circle cx="52" cy="33" r="5.5" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="52" cy="34" r="2.4" fill="#5a4f78"/><ellipse cx="40" cy="44" rx="3.5" ry="4.5" fill="#5a4f78"/>';
   el.innerHTML='<div class="gbubble" id="gumbub">Gumby is love</div>'+
