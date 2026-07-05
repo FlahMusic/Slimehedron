@@ -67,9 +67,10 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 .btn.big.on:hover{filter:brightness(1.05)}
 @keyframes beckon{0%,100%{box-shadow:var(--shadow)}50%{box-shadow:0 0 22px rgba(159,230,207,.95)}}
 .adv{font-size:12px;color:var(--ink-soft);font-weight:700;display:flex;gap:6px;align-items:center;cursor:pointer;user-select:none}
-#advBar{display:flex;align-items:center;gap:12px;padding:0 22px 10px;flex-wrap:wrap;position:relative;z-index:70}
+#advBar{display:flex;align-items:center;gap:9px 12px;padding:0;flex-wrap:wrap;position:relative;z-index:70;flex:1;font-size:12px}
 #advBar[hidden]{display:none}
-#triMixBar{display:flex;align-items:center;gap:14px;padding:2px 22px 6px;position:relative;z-index:70}
+#advBar select,#advBar .btn{font-size:12px}
+#triMixBar{display:flex;align-items:center;gap:16px;padding:2px 22px 6px;position:relative;z-index:70;flex-wrap:wrap}
 .triHint{font-size:12.5px;color:var(--ink-soft);font-weight:600}
 #recDot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#ff5f7a;vertical-align:-1px;transition:.2s}
 #recBtn.rec #recDot{border-radius:3px;animation:recPulse 1s infinite}
@@ -133,6 +134,8 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 @keyframes twinkle{0%,100%{opacity:.15;transform:scale(.5) rotate(0deg)}50%{opacity:1;transform:scale(1.2) rotate(25deg)}}
 .gbubble{position:absolute;bottom:102%;left:54%;transform:translateX(-50%) scale(2.4);transform-origin:50% 100%;background:#fff;border-radius:12px;padding:7px 11px;font-size:12px;font-weight:700;color:#5a4f78;box-shadow:0 4px 12px rgba(150,120,190,.35);white-space:nowrap;opacity:0;transition:.3s;pointer-events:none}
 .gbubble.show{opacity:1}
+.rgirl .gdecor{opacity:0;transition:opacity .4s}
+.rgirl.show .gdecor{opacity:1}
 .gbubble::after{content:"";position:absolute;top:100%;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:#fff}
 </style>
 </head>
@@ -159,8 +162,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <text x="50" y="-2" font-size="19" text-anchor="middle">🎵</text><text x="6" y="98" font-size="19" text-anchor="middle">🥁</text><text x="94" y="98" font-size="19" text-anchor="middle">🎸</text>
       <circle id="triKnob" cx="50" cy="53" r="8" fill="#9fe6cf" stroke="#fff" stroke-width="2.5" style="filter:drop-shadow(0 2px 3px rgba(120,110,160,.4))"/>
     </svg></div>
-</div>
-<div id="advBar" hidden>
+  <div id="advBar" hidden>
   <span style="font-size:14px" title="bass">🎸</span><input type="range" id="bpMix" min="0" max="100" value="50" style="width:60px;flex:none" title="balance: bass ↔ chord pads"><span style="font-size:14px" title="chord pads">🎹</span>
   <span style="font-size:15px" title="tape warmth">📼</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:78px;flex:none" title="warmth — cozy cassette color">
   <span style="font-size:15px" title="swing">🕺</span><input type="range" id="swingSl" min="0" max="100" value="0" style="width:78px;flex:none" title="swing — offbeats lean late, MPC / 808 style groove">
@@ -173,6 +175,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <span class="sub">random shape</span><div class="toggle on" id="randShapeT" title="on: reform into a new shape · off: rejoin the same shape"></div>
   <span class="sub">count-in 3·2·1</span><div class="toggle on" id="countT" title="count 4 beats out loud before recording starts"></div>
   <button class="btn warn" id="clearBtn">clear</button>
+  </div>
 </div>
 <svg width="0" height="0" style="position:absolute"><defs><filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="7"/><feColorMatrix mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 26 -12"/></filter><radialGradient id="slimeSheen" cx="0.4" cy="0.28" r="0.85"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#3a3358" stop-opacity=".2"/></radialGradient></defs></svg>
 <main>
@@ -235,11 +238,11 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </div>
 
     <div class="card">
-      <h2>👊 hit power</h2>
-      <div class="row"><label>randomize</label><div class="toggle" id="velRandT"></div></div>
-      <div class="row" id="velFixedRow"><label>value</label><input type="range" id="velFix" min="1" max="127" value="100"><span class="val" id="velFixV">100</span></div>
-      <div class="row" id="velRangeRow" style="display:none"><label>min</label><input type="range" id="velMin" min="1" max="127" value="55"><span class="val" id="velMinV">55</span></div>
-      <div class="row" id="velRangeRow2" style="display:none"><label>max</label><input type="range" id="velMax" min="1" max="127" value="120"><span class="val" id="velMaxV">120</span></div>
+      <h2>💥 velocity</h2>
+      <div class="row"><label>randomize</label><div class="toggle on" id="velRandT"></div></div>
+      <div class="row" id="velFixedRow" style="display:none"><label>value</label><input type="range" id="velFix" min="1" max="127" value="100"><span class="val" id="velFixV">100</span></div>
+      <div class="row" id="velRangeRow"><label>min</label><input type="range" id="velMin" min="1" max="127" value="12"><span class="val" id="velMinV">12</span></div>
+      <div class="row" id="velRangeRow2"><label>max</label><input type="range" id="velMax" min="1" max="127" value="94"><span class="val" id="velMaxV">94</span></div>
     </div>
 
     <div class="card">
@@ -268,7 +271,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </div>
 
     <div class="card">
-      <h2>🎚️ filter <span class="pwr on" id="filtPwr" title="filter on/off">!</span></h2>
+      <h2>🎛️ filter <span class="pwr on" id="filtPwr" title="filter on/off">!</span></h2>
       <div class="row"><label>type</label>
         <div class="seg" id="filtSeg">
           <button data-f="lowpass" class="active" title="low pass: keeps the low sounds, softens the highs">LP<svg width="18" height="10" viewBox="0 0 20 10"><path d="M1 3 H10 C14 3 15 9 18 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
@@ -331,7 +334,7 @@ const S={
   playing:false,bpm:80,div:0.125,dotted:false,triplet:false,swing:0,quantize:true,rain:false,
   root:60,scale:"major",octs:2,shape:6,spin:0,
   chaos:0.12,speed:4,grav:0,
-  velRand:false,velFix:100,velMin:55,velMax:120,
+  velRand:true,velFix:100,velMin:12,velMax:94,
   synth:true,wave:"triangle",sub:0,
   atk:0.001,dec:0.15,sus:0.18,rel:0.28,
   filt:"lowpass",cut:0.78,res:0,fenv:0.30,
@@ -733,7 +736,7 @@ function fillPhysics(now){
 
 // ---------- ball stepping ----------
 function step(){
-  const gy=S.grav*0.02, ts=ballSpeed();
+  const g=S.grav, ts=ballSpeed(), gy=g*0.55; // gravity 0..1: gentle, spread smoothly across the whole slider
   for(let bi=balls.length-1;bi>=0;bi--){
     const b=balls[bi];
     b.r=BR;
@@ -755,8 +758,9 @@ function step(){
       if(hit){jitter(b);if(hit.f)hit.f.flash=1;trigger(hit.cents,0.4+Math.random()*0.6);}
       if(Math.hypot(b.x-CX,b.y-CY)>R+260)balls.splice(bi,1); // escaped into open space
     }
-    // hold a steady, tempo-based speed (kills the float-vs-fast inconsistency; gravity still bends the path)
-    const sp=Math.hypot(b.vx,b.vy)||1;const k=ts/sp;b.vx*=k;b.vy*=k;
+    // no gravity = steady tempo speed; the more gravity, the more they free-fall & settle (smooth across the whole slider)
+    const sp=Math.hypot(b.vx,b.vy)||1;const k=(ts/sp)*(1-g)+g;b.vx*=k;b.vy*=k;
+    if(g>0){b.vx*=(1-g*0.06);b.vy*=(1-g*0.015);} // drag grows with gravity so they land & settle instead of skating forever
   }
 }
 
@@ -873,7 +877,7 @@ function bindRange(id,key,fn){const el=$(id),v=$(id+"V");el.addEventListener('in
 bindRange("bpm","bpm",v=>{if(delayNode&&AC)delayNode.delayTime.setTargetAtTime(60/v*0.75,AC.currentTime,0.15);return v;}); // smooth so tempo changes don't crunch
 $("octs").addEventListener('input',e=>{S.octs=parseInt(e.target.value);$("octsV").textContent=e.target.value;rebuild();updateScaleNote();});
 bindRange("chaos","chaos",v=>v/100);
-bindRange("grav","grav");bindRange("spin","spin");
+bindRange("grav","grav",v=>v/100);bindRange("spin","spin");
 bindRange("velFix","velFix");bindRange("velMin","velMin");bindRange("velMax","velMax");
 bindRange("sub","sub",v=>v/100);
 bindRange("atk","atk",v=>v/100*1.5);bindRange("dec","dec",v=>v/100*1.5);bindRange("sus","sus",v=>v/100);bindRange("rel","rel",v=>v/100*2);
@@ -1203,11 +1207,12 @@ const chillers=[]; // full-view slimes with cursor physics
 // ---------- rainbow girl slime: sparkles, butterflies & gumby devotion ----------
 (function(){
   const layer=document.getElementById('slimes');
-  const el=document.createElement('div');el.className='slime';
-  el.style.cssText='position:fixed;left:0.5%;bottom:1%;width:140px;height:132px;z-index:51;transform:scale(.4);transform-origin:0 100%';
+  const el=document.createElement('div');el.className='slime rgirl';
+  el.style.cssText='position:fixed;left:11%;bottom:0;width:66px;height:62px;z-index:51;transform:translateY(31px);transition:transform .5s cubic-bezier(.34,1.56,.64,1)';
   const happy='<path d="M22 35 l5.5 -6 l5.5 6" fill="none" stroke="#5a4f78" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M47 35 l5.5 -6 l5.5 6" fill="none" stroke="#5a4f78" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M33 42 q7 6 14 0" fill="none" stroke="#5a4f78" stroke-width="2.6" stroke-linecap="round"/>';
   const wow='<circle cx="28" cy="33" r="5.5" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="28" cy="34" r="2.4" fill="#5a4f78"/><circle cx="52" cy="33" r="5.5" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="52" cy="34" r="2.4" fill="#5a4f78"/><ellipse cx="40" cy="44" rx="3.5" ry="4.5" fill="#5a4f78"/>';
   el.innerHTML='<div class="gbubble" id="gumbub">Gumby is love</div>'+
+    '<div class="gdecor">'+
     '<span class="spark" style="left:6%;top:18%;color:#ff9ec6;animation-duration:1.8s">\u2726</span>'+
     '<span class="spark" style="left:78%;top:12%;color:#9fe6cf;animation-duration:2.3s;animation-delay:.4s">\u2726</span>'+
     '<span class="spark" style="left:88%;top:55%;color:#ffe39c;animation-duration:1.6s;animation-delay:.9s">\u2727</span>'+
@@ -1215,7 +1220,8 @@ const chillers=[]; // full-view slimes with cursor physics
     '<span class="spark" style="left:46%;top:4%;color:#c4a9f5;animation-duration:2s;animation-delay:1.2s">\u2726</span>'+
     '<span class="bfly" style="animation-duration:8s;font-size:13px"><i>\ud83e\udd8b</i></span>'+
     '<span class="bfly" style="animation-duration:12s;animation-direction:reverse;font-size:16px;animation-delay:-3s"><i>\ud83e\udd8b</i></span>'+
-    '<div class="bob" style="position:absolute;left:15%;top:22%;width:100px;height:95px">'+
+    '</div>'+
+    '<div class="bob" style="position:absolute;inset:0">'+
     '<svg viewBox="0 0 80 72" width="100%" height="100%">'+
     '<defs><linearGradient id="rgrad" x1="0" y1="0" x2="1" y2="1">'+
     '<stop offset="0" stop-color="#ffb3ba"/><stop offset=".25" stop-color="#ffdfba"/><stop offset=".45" stop-color="#ffffba"/><stop offset=".65" stop-color="#baffc9"/><stop offset=".82" stop-color="#bae1ff"/><stop offset="1" stop-color="#e3baff"/></linearGradient></defs>'+
@@ -1230,8 +1236,8 @@ const chillers=[]; // full-view slimes with cursor physics
   const faceG=()=>el.querySelector('#gFace'),bub=el.querySelector('#gumbub');
   let tmr=null;
   el.addEventListener('click',()=>{
-    faceG().innerHTML=wow;bub.classList.add('show');
-    clearTimeout(tmr);tmr=setTimeout(()=>{bub.classList.remove('show');faceG().innerHTML=happy;},5000);
+    el.classList.add('show');el.style.transform='translateY(0)';faceG().innerHTML=wow;bub.classList.add('show');
+    clearTimeout(tmr);tmr=setTimeout(()=>{el.classList.remove('show');el.style.transform='translateY(31px)';bub.classList.remove('show');faceG().innerHTML=happy;},4500);
   });
 })();
 
@@ -1401,7 +1407,8 @@ addEventListener('input',queueSave,true);addEventListener('click',queueSave,true
 // ---------- splash: one friendly tap starts everything ----------
 (function(){
   const sp=document.createElement('div');sp.id='splash';
-  sp.innerHTML='<div class="bob" style="width:185px;height:172px">'+slimeSVG(cssVar('--mint'),'happy')+'</div>'+
+  sp.innerHTML='<div class="bob" style="width:185px;height:172px;position:relative">'+slimeSVG(cssVar('--mint'),'happy')+
+    '<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0"><g fill="none" stroke="#4a4270" stroke-width="2.3" stroke-linecap="round"><circle cx="29" cy="25" r="8.5" fill="rgba(255,255,255,.25)"/><circle cx="51" cy="25" r="8.5" fill="rgba(255,255,255,.25)"/><path d="M37.5 24 q2.5 -2 5 0"/><path d="M20.5 23.5 l-5 -1.5"/><path d="M59.5 23.5 l5 -1.5"/></g></svg></div>'+
     '<div style="font-size:34px;font-weight:700">slimehedron<span style="color:var(--accent)">.</span></div>'+
     '<div class="btn primary big" style="font-size:22px;padding:18px 42px;animation:beckon 2.2s ease-in-out infinite">▶ play</div>';
   document.body.appendChild(sp);
