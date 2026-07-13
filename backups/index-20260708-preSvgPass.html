@@ -30,7 +30,7 @@ header .sub{font-size:12px;color:var(--ink-soft);font-weight:500}
 header .spacer{flex:1}
 .btn{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--card-brd);border-radius:14px;padding:9px 16px;cursor:pointer;box-shadow:var(--shadow);transition:.15s;backdrop-filter:blur(8px)}
 .btn:hover{transform:translateY(-1px)}
-.btn:active{transform:translateY(0) scale(.96)}
+.btn:active{transform:translateY(0)}
 .btn.primary{background:linear-gradient(135deg,var(--lav),var(--sky));color:#3d3756}
 .btn.warn{background:linear-gradient(135deg,var(--peach),var(--pink))}
 .btn.on{outline:2px solid var(--accent)}
@@ -60,9 +60,7 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 .pwr{display:inline-block;width:17px;height:17px;line-height:15px;text-align:center;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);font-size:11px;font-weight:800;cursor:pointer;margin-left:6px;vertical-align:-3px;user-select:none;transition:.15s}
 .pwr:not(.on){opacity:.3;filter:grayscale(1)}
 .seg svg,.adsr .k svg{pointer-events:none;vertical-align:-1px;margin-left:3px}
-.btn.big{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:8px 18px;font-size:15px;border-radius:18px}
-.btn.big>svg{display:block} /* icon buttons: no baseline gap, uniform height */
-.btn.big.on{--icAcc:rgba(255,255,255,.9);--icInk:#fff} /* accent strokes flip white on active gradient */
+.btn.big{padding:12px 20px;font-size:15px;border-radius:18px}
 .btn.magic{background:linear-gradient(135deg,var(--mint),var(--sky));font-weight:700;animation:beckon 2.6s ease-in-out infinite}
 .btn.magic.on{outline:3px solid var(--accent);box-shadow:0 0 18px rgba(179,136,240,.5);animation:none}
 .btn.big.on{background:linear-gradient(135deg,var(--accent),var(--sky));color:#fff;border-color:transparent;box-shadow:0 0 16px rgba(179,136,240,.55);outline:none;transform:translateY(-1px)}
@@ -74,7 +72,7 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 #advBar select,#advBar .btn{font-size:12px}
 #triMixBar{display:flex;align-items:center;gap:16px;padding:2px 22px 6px;position:relative;z-index:70;flex-wrap:wrap}
 .triHint{font-size:12.5px;color:var(--ink-soft);font-weight:600}
-#recDot{display:block;width:23px;height:23px;border-radius:50%;background:#ff5f7a;border:1.5px solid rgba(255,255,255,.9);transition:.2s} /* white ring = same stroke language as the SVG icons */
+#recDot{display:inline-block;width:19px;height:19px;border-radius:50%;background:#ff5f7a;vertical-align:-4px;transition:.2s}
 #recBtn.rec #recDot{border-radius:5px;animation:recPulse 1s infinite}
 #recBtn.rec{outline:2px solid #ff5f7a}
 @keyframes recPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,95,122,.7)}50%{box-shadow:0 0 0 8px rgba(255,95,122,0)}}
@@ -96,9 +94,7 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   body{height:100dvh}
   header{flex-wrap:wrap;gap:6px;padding:8px 10px}
   header h1{font-size:15px}
-  .btn.big{min-height:42px;padding:6px 11px;font-size:13px;border-radius:14px}
-  #drumBtn svg,#dropBtn svg{width:24px;height:24px}
-  #bandBtn svg{width:37px;height:28px}
+  .btn.big{padding:9px 12px;font-size:13px;border-radius:14px}
   .btn{padding:7px 11px;font-size:12px}
   #stage{min-height:0}
   canvas{border-radius:16px}
@@ -125,9 +121,6 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 .ss-knob{position:absolute;top:2px;left:2px;width:36px;height:36px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(120,110,160,.4);transition:.28s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;justify-content:center}
 .slimeswitch.on .ss-knob{left:42px}
 .ss-knob .sic{width:29px;height:26px;display:block;line-height:0}
-.ss-knob .sic>div{width:100%;height:100%}
-.slimeswitch.on .sic{animation:bob 2.9s ease-in-out infinite} /* knob-slime breathes while auto-play is on */
-.slimeswitch.pop .ss-knob{animation:squish .46s ease} /* toggle squish, same as the edge slimes */
 #slimes{position:fixed;inset:0;pointer-events:none;z-index:50}
 .slime{width:90px;height:84px;pointer-events:auto;cursor:pointer;filter:drop-shadow(0 5px 6px rgba(150,120,190,.22))}
 .slime.peeker{transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
@@ -154,70 +147,40 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <h1>slimehedron<span class="dot">.</span></h1>
   <span class="spacer"></span>
   <button class="btn primary big" id="playBtn" title="play / pause">▶</button>
-  <button class="slimeswitch" id="slimeBig" title="auto-play"><span class="ss-knob"><span class="sic">✨</span></span></button>
-  <button class="btn big" id="drumBtn" title="drums"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icDrum"/></svg></button>
-  <button class="btn big" id="bandBtn" title="backing band"><svg width="45" height="34" viewBox="0 0 32 24"><use href="#icBass"/></svg></button>
-  <button class="btn big" id="dropBtn" title="drop a ball"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icBall"/></svg></button>
-  <button class="btn big" id="recBtn" title="record"><span id="recDot"></span></button>
+  <button class="slimeswitch" id="slimeBig" title="the music plays on its own — just watch, listen and poke"><span class="ss-knob"><span class="sic">✨</span></span></button>
+  <button class="btn big" id="drumBtn" title="drum loop on / off">🥁</button>
+  <button class="btn big" id="bandBtn" title="bass & chords that follow your scale">🎸</button>
+  <button class="btn big" id="dropBtn" title="add a bouncing ball"><svg width="22" height="22" viewBox="0 0 24 24"><g stroke="var(--ink-soft)" stroke-width="1.6" stroke-linecap="round" opacity=".55"><path d="M9 2 L8 6"/><path d="M12 1 L12 6"/><path d="M15 2 L16 6"/></g><circle cx="12" cy="16" r="7" fill="url(#dropBallG)" stroke="#fff" stroke-width="1.4"/><text x="12" y="19.5" font-size="9" text-anchor="middle">♪</text></svg></button>
+  <button class="btn big" id="recBtn" title="record your music"><span id="recDot"></span></button>
   <span class="spacer"></span>
-  <button class="btn" id="resetBtn" title="start fresh">↺</button>
-  <label class="adv" title="lighter graphics for slow devices"><input type="checkbox" id="perfT"> ⚡</label>
-  <label class="adv" title="more knobs"><input type="checkbox" id="advT"> ⚙️</label>
+  <button class="btn" id="resetBtn" title="put every knob back how it started">↺</button>
+  <label class="adv" title="performance mode — lighter graphics for slower phones/PCs (full quality is on by default)"><input type="checkbox" id="perfT"> ⚡</label>
+  <label class="adv" title="more knobs for curious minds"><input type="checkbox" id="advT"> ⚙️</label>
 </header>
 <div id="triMixBar">
-  <div id="triMix" title="drag to mix: melody / drums / band">
+  <div id="triMix" title="drag the dot — 🎵 melody up top, 🥁 drums left, 🎸 bass+pads right · double-tap = center">
     <svg viewBox="-14 -18 128 124" width="108" height="104" style="display:block;overflow:visible">
       <defs><linearGradient id="tmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c6ff"/><stop offset=".5" stop-color="#bdeee0"/><stop offset="1" stop-color="#ffd3e7"/></linearGradient></defs>
       <path d="M50 8 Q55 8 58 13 L88 63 Q92 70 85 74 Q78 78 50 78 Q22 78 15 74 Q8 70 12 63 L42 13 Q45 8 50 8 Z" fill="url(#tmg)" stroke="rgba(255,255,255,.95)" stroke-width="2.5"/>
-      <use href="#icNote" x="41" y="-18" width="18" height="18"/><use href="#icDrum" x="-3" y="82" width="18" height="18"/><use href="#icBass" x="83" y="84" width="22" height="16.5"/>
+      <text x="50" y="-2" font-size="19" text-anchor="middle">🎵</text><text x="6" y="98" font-size="19" text-anchor="middle">🥁</text><text x="94" y="98" font-size="19" text-anchor="middle">🎸</text>
       <circle id="triKnob" cx="50" cy="53" r="8" fill="#9fe6cf" stroke="#fff" stroke-width="2.5" style="filter:drop-shadow(0 2px 3px rgba(120,110,160,.4))"/>
     </svg></div>
+  <div id="advBar" hidden>
+  <span style="font-size:14px" title="bass">🎸</span><input type="range" id="bpMix" min="0" max="100" value="50" style="width:60px;flex:none" title="balance: bass ↔ chord pads"><span style="font-size:14px" title="chord pads">🎹</span>
+  <span style="font-size:15px" title="tape warmth">📼</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:78px;flex:none" title="warmth — cozy cassette color">
+  <span style="font-size:15px" title="swing">🕺</span><input type="range" id="swingSl" min="0" max="100" value="0" style="width:78px;flex:none" title="swing — offbeats lean late, MPC / 808 style groove">
   <span id="drumCtl" style="display:flex;align-items:center;gap:8px;opacity:.35;pointer-events:none">
-    <select id="drumKit" style="flex:none;width:auto" title="drum sound"><option value="chip" selected>chip</option><option value="conga">conga</option><option value="bossa">bossa</option><option value="rock">rock</option><option value="beep">beeper</option></select>
-    <select id="drumFeel" style="flex:none;width:auto" title="beat feel"><option value="1" selected>normal</option><option value="t">triplet</option><option value="2">double</option><option value="h">half</option></select>
-    <select id="drumSig" style="flex:none;width:auto" title="beats per bar"><option value="16" selected>4/4</option><option value="12">3/4</option><option value="12c">6/8</option><option value="20" title="counts 1-2-3 1-2">5/4</option><option value="14" title="counts 1-2 1-2 1-2-3">7/8</option><option value="18" title="counts 1-2 1-2 1-2 1-2-3">9/8</option></select>
+    <select id="drumKit" style="flex:none;width:auto" title="kit"><option value="chip" selected>chip</option><option value="conga">conga</option><option value="bossa">bossa</option><option value="rock">rock 1</option><option value="beep">beeper</option></select>
+    <select id="drumFeel" style="flex:none;width:auto" title="feel"><option value="1" selected>normal</option><option value="t">triplet</option><option value="2">double</option><option value="h">half</option></select>
+    <select id="drumSig" style="flex:none;width:auto" title="time signature"><option value="16" selected>4/4</option><option value="12">3/4</option><option value="12c">6/8</option><option value="20" title="counts 1-2-3 1-2">5/4</option><option value="14" title="counts 1-2 1-2 1-2-3">7/8</option><option value="18" title="counts 1-2 1-2 1-2 1-2-3">9/8</option></select>
     <input type="range" id="drumVol" min="0" max="100" value="80" title="drum volume" style="width:64px;flex:none">
   </span>
-  <div id="advBar" hidden>
-  <span style="font-size:14px" title="bass">🎸</span><input type="range" id="bpMix" min="0" max="100" value="50" style="width:60px;flex:none" title="bass ↔ pads"><span style="font-size:14px" title="chord pads">🎹</span>
-  <span style="font-size:15px" title="tape warmth">📼</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:78px;flex:none" title="tape warmth">
-  <span style="font-size:15px" title="swing">🕺</span><input type="range" id="swingSl" min="0" max="100" value="15" style="width:78px;flex:none" title="swing — makes the beat bounce">
-  <span class="sub">random shape</span><div class="toggle on" id="randShapeT" title="new shape after each burst"></div>
-  <span class="sub">count-in 3·2·1</span><div class="toggle on" id="countT" title="count down before recording"></div>
+  <span class="sub">random shape</span><div class="toggle on" id="randShapeT" title="on: reform into a new shape · off: rejoin the same shape"></div>
+  <span class="sub">count-in 3·2·1</span><div class="toggle on" id="countT" title="count 4 beats out loud before recording starts"></div>
   <button class="btn warn" id="clearBtn">clear</button>
   </div>
 </div>
-<svg width="0" height="0" style="position:absolute"><defs><filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="7"/><feColorMatrix mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 26 -12"/></filter><radialGradient id="slimeSheen" cx="0.4" cy="0.28" r="0.85"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#3a3358" stop-opacity=".2"/></radialGradient><radialGradient id="dropBallG" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="var(--mint)"/><stop offset=".7" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--lav)"/></radialGradient>
-<radialGradient id="drumG" cx="0.35" cy="0.3" r="0.9"><stop offset="0" stop-color="var(--yellow)"/><stop offset=".45" stop-color="var(--peach)"/><stop offset="1" stop-color="#f285ae"/></radialGradient>
-<radialGradient id="bassG" cx="0.35" cy="0.3" r="0.9"><stop offset="0" stop-color="#c9f2e4"/><stop offset=".55" stop-color="var(--mint)"/><stop offset="1" stop-color="#68c9a8"/></radialGradient>
-<radialGradient id="lavG" cx="0.35" cy="0.3" r="0.9"><stop offset="0" stop-color="#e2d4ff"/><stop offset=".55" stop-color="var(--lav)"/><stop offset="1" stop-color="#9a76e0"/></radialGradient>
-<!-- icon system: one language — gradient body, white 1.4 stroke, ink-soft accent strokes (overridable via --icAcc for .on buttons) -->
-<symbol id="icBall" viewBox="0 0 24 24"><g stroke="var(--icAcc,var(--ink-soft))" stroke-width="1.6" stroke-linecap="round" opacity=".55" fill="none"><path d="M9 2 L8 6"/><path d="M12 1 L12 6"/><path d="M15 2 L16 6"/></g><circle cx="12" cy="16" r="7" fill="url(#dropBallG)" stroke="#fff" stroke-width="1.4"/><text x="12" y="19.5" font-size="9" text-anchor="middle" fill="var(--icInk,var(--ink))">♪</text></symbol>
-<symbol id="icDrum" viewBox="0 0 24 24"><g stroke="var(--icAcc,var(--ink-soft))" stroke-width="1.6" stroke-linecap="round" opacity=".8" fill="none"><path d="M5.5 2.5 L10 7.5"/><path d="M18.5 2.5 L14 7.5"/></g><g fill="var(--icAcc,var(--ink-soft))" opacity=".8"><circle cx="5.3" cy="2.3" r="1.3"/><circle cx="18.7" cy="2.3" r="1.3"/></g><path d="M5 11.5 L5 16.6 Q5 20.4 12 20.4 Q19 20.4 19 16.6 L19 11.5" fill="url(#drumG)" stroke="#fff" stroke-width="1.4"/><ellipse cx="12" cy="11.5" rx="7" ry="3.1" fill="#fffdf6" stroke="#fff" stroke-width="1.4"/><path d="M7.2 14.6 L9.4 17.6 M16.8 14.6 L14.6 17.6" stroke="#fff" stroke-width="1.2" opacity=".8" fill="none" stroke-linecap="round"/></symbol>
-<symbol id="icBass" viewBox="0 0 32 24"><!-- the band: bassist + keyboardist slimes at full mascot scale, blush and all -->
-<g stroke="var(--icAcc,var(--ink-soft))" stroke-width="1.4" stroke-linecap="round" opacity=".85" fill="none"><path d="M16.3 6.5 V1.8 q1.9 .5 1.7 2.4"/><path d="M31 5.5 V2.2"/></g>
-<g fill="var(--icAcc,var(--ink-soft))" opacity=".85"><circle cx="15.1" cy="6.8" r="1.35"/><circle cx="29.9" cy="5.8" r="1.1"/></g>
-<path d="M24 3.6 C19.4 3.6 17.9 8.2 17.9 11.9 C17.9 16.4 21.3 17.8 24 17.8 C26.7 17.8 30.1 16.4 30.1 11.9 C30.1 8.2 28.6 3.6 24 3.6 Z" fill="url(#lavG)" stroke="rgba(255,255,255,.5)" stroke-width=".8"/>
-<ellipse cx="21.6" cy="6.3" rx="1.9" ry="1.1" fill="rgba(255,255,255,.55)"/>
-<circle cx="22.1" cy="9.6" r="1.15" fill="#5a4f78"/><circle cx="26" cy="9.6" r="1.15" fill="#5a4f78"/>
-<ellipse cx="20.8" cy="11.8" rx="1" ry=".6" fill="#ff8fbe" opacity=".55"/><ellipse cx="27.3" cy="11.8" rx="1" ry=".6" fill="#ff8fbe" opacity=".55"/>
-<path d="M22.5 12 q1.6 1.5 3.2 0" fill="none" stroke="#5a4f78" stroke-width="1.3" stroke-linecap="round"/>
-<rect x="16.6" y="16.2" width="14" height="6.2" rx="1.4" fill="var(--sky)"/>
-<rect x="17.6" y="17.3" width="12" height="4" rx=".7" fill="#fff"/>
-<path d="M20 17.3 v4 M22.4 17.3 v4 M24.8 17.3 v4 M27.2 17.3 v4" stroke="#8f7fb8" stroke-width=".6" opacity=".8" fill="none"/>
-<rect x="19.4" y="17.3" width="1.2" height="2.2" rx=".3" fill="#5a4f78"/><rect x="21.8" y="17.3" width="1.2" height="2.2" rx=".3" fill="#5a4f78"/><rect x="26.6" y="17.3" width="1.2" height="2.2" rx=".3" fill="#5a4f78"/>
-<path d="M8.2 5 C3.2 5 1.6 10 1.6 14 C1.6 18.9 5.3 20.4 8.2 20.4 C11.1 20.4 14.8 18.9 14.8 14 C14.8 10 13.2 5 8.2 5 Z" fill="url(#bassG)" stroke="rgba(255,255,255,.5)" stroke-width=".8"/>
-<ellipse cx="5.6" cy="7.8" rx="2" ry="1.2" fill="rgba(255,255,255,.55)"/>
-<circle cx="6.2" cy="11" r="1.15" fill="#5a4f78"/><circle cx="10.2" cy="11" r="1.15" fill="#5a4f78"/>
-<ellipse cx="4.9" cy="13.4" rx="1" ry=".6" fill="#ff8fbe" opacity=".55"/><ellipse cx="11.5" cy="13.4" rx="1" ry=".6" fill="#ff8fbe" opacity=".55"/>
-<path d="M6.6 13.6 q1.6 1.5 3.2 0" fill="none" stroke="#5a4f78" stroke-width="1.3" stroke-linecap="round"/>
-<path d="M4.6 20 L13.6 12.6" stroke="#7c65c9" stroke-width="1.8" stroke-linecap="round" fill="none"/>
-<circle cx="14" cy="12.2" r="1.15" fill="#7c65c9"/>
-<ellipse cx="4.9" cy="20.2" rx="3.2" ry="2.5" fill="var(--pink)" transform="rotate(-40 4.9 20.2)"/>
-<path d="M3.6 21.2 L6.4 18.8" stroke="#fff" stroke-width=".7" opacity=".9" fill="none"/>
-</symbol>
-<symbol id="icNote" viewBox="0 0 24 24"><g stroke="var(--icAcc,var(--ink-soft))" stroke-width="1.6" stroke-linecap="round" opacity=".55" fill="none"><path d="M20.2 3.2 l1.6 -1.6"/><path d="M21.4 7 l2.2 -.6"/></g><path d="M15.4 15 V5 q3.8 1.2 3.2 4.8" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><ellipse cx="12.2" cy="16.6" rx="4.3" ry="3.5" fill="url(#dropBallG)" stroke="#fff" stroke-width="1.4" transform="rotate(-16 12.2 16.6)"/></symbol>
-</defs></svg>
+<svg width="0" height="0" style="position:absolute"><defs><filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="7"/><feColorMatrix mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 26 -12"/></filter><radialGradient id="slimeSheen" cx="0.4" cy="0.28" r="0.85"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#3a3358" stop-opacity=".2"/></radialGradient><radialGradient id="dropBallG" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="var(--mint)"/><stop offset=".7" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--lav)"/></radialGradient></defs></svg>
 <main>
   <div id="stage">
     <canvas id="cv" width="720" height="720"></canvas>
@@ -374,7 +337,7 @@ const SCALES={
 const NOTE_NAMES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 
 const S={
-  playing:false,bpm:80,div:0.125,dotted:false,triplet:false,swing:0.15,quantize:true,rain:false, // a lil default swing so the groove bounces instead of marching
+  playing:false,bpm:80,div:0.125,dotted:false,triplet:false,swing:0,quantize:true,rain:false,
   root:60,scale:"major",octs:2,shape:6,spin:0,
   chaos:0.12,speed:4,grav:0,
   velRand:true,velFix:100,velMin:12,velMax:94,
@@ -520,41 +483,34 @@ const PATTERNS={ // real signature skeletons, role-based: lo=kick, mid=snare, hi
   '18':{lo:[0,4,8],mid:[12],hi:[0,2,4,6,8,10,12,14,16]}      // 9/8 karşılama (2+2+2+3): the Blue Rondo lean
 };
 const KITVOICE={chip:{lo:'K',mid:'s',hi:'h'},conga:{lo:'c',mid:'C',hi:'r'},bossa:{lo:'K',mid:'r',hi:'h'},rock:{lo:'K',mid:'s',hi:'h'},beep:{lo:'K',mid:'r',hi:'C'}};
-const KITTONE={ // same engine, different shells — so chip vs rock actually SOUND different, not just different step patterns
-  chip:{kf:210,ke:75,kd:0.14,kv:0.72,sf:2700,sd:0.05,sb:240,hf:9500,hd:0.02},   // gameboy: tight blippy kick, zippy snare, tssy hats
-  rock:{kf:115,ke:36,kd:0.5,kv:1.05,sf:1300,sd:0.16,sb:165,hf:6200,hd:0.05},    // big room: boomy long kick, fat low snare, darker open hats
-  bossa:{kf:165,ke:52,kd:0.24,kv:0.8,sf:2000,sd:0.08,sb:200,hf:8200,hd:0.028},  // studio: tidy and mid-sized
-  conga:{kf:150,ke:45,kd:0.3,kv:0.85,sf:1800,sd:0.09,sb:190,hf:7500,hd:0.03},
-  beep:{kf:185,ke:62,kd:0.18,kv:0.78,sf:2300,sd:0.06,sb:215,hf:9000,hd:0.024}
-};
 function dHit(v,t,a){a=a||1;sendMidiAt(DRUMN[v]||38,Math.min(127,(90*a)|0),S.chDrum,t,0.15);
-  if(v==='K'){const o=AC.createOscillator(),g=AC.createGain(),T=KITTONE[drumKit]||KITTONE.chip;o.type='sine'; // kick: pitch dive + body, sized per kit
-    o.frequency.setValueAtTime(T.kf,t);o.frequency.exponentialRampToValueAtTime(T.ke,t+Math.min(0.12,T.kd*0.35));
-    g.gain.setValueAtTime(0.85*a*T.kv,t);g.gain.exponentialRampToValueAtTime(0.001,t+T.kd);
-    o.connect(g);g.connect(drumBus);o.start(t);o.stop(t+T.kd+0.02);
+  if(v==='K'){const o=AC.createOscillator(),g=AC.createGain();o.type='sine'; // proper kick: fast pitch dive + body
+    o.frequency.setValueAtTime(150,t);o.frequency.exponentialRampToValueAtTime(45,t+0.12);
+    g.gain.setValueAtTime(0.85*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+    o.connect(g);g.connect(drumBus);o.start(t);o.stop(t+0.32);
     if(bandBus&&bandOn){bandBus.gain.cancelScheduledValues(t);bandBus.gain.setValueAtTime(0.32,t);bandBus.gain.linearRampToValueAtTime(1,t+0.3);}}
   else if(v==='C'||v==='c'){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';
     const f0=v==='C'?330:230;
     o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f0*0.72,t+0.08);
     g.gain.setValueAtTime(0.5*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
     o.connect(g);g.connect(drumBus);o.start(t);o.stop(t+0.25);}
-  else if(v==='s'){if(!NB){NB=AC.createBuffer(1,AC.sampleRate*0.25,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
-    const src=AC.createBufferSource(),bp=AC.createBiquadFilter(),g=AC.createGain(),o=AC.createOscillator(),og=AC.createGain(),T=KITTONE[drumKit]||KITTONE.chip;
-    src.buffer=NB;bp.type='bandpass';bp.frequency.value=T.sf;bp.Q.value=0.8;
-    g.gain.setValueAtTime(0.35*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+T.sd);
-    o.type='triangle';o.frequency.setValueAtTime(T.sb,t);o.frequency.exponentialRampToValueAtTime(T.sb*0.63,t+T.sd*0.7);
-    og.gain.setValueAtTime(0.22*a,t);og.gain.exponentialRampToValueAtTime(0.001,t+T.sd*0.8);
+  else if(v==='s'){if(!NB){NB=AC.createBuffer(1,AC.sampleRate*0.1,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+    const src=AC.createBufferSource(),bp=AC.createBiquadFilter(),g=AC.createGain(),o=AC.createOscillator(),og=AC.createGain();
+    src.buffer=NB;bp.type='bandpass';bp.frequency.value=1800;bp.Q.value=0.8;
+    g.gain.setValueAtTime(0.35*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.09);
+    o.type='triangle';o.frequency.setValueAtTime(190,t);o.frequency.exponentialRampToValueAtTime(120,t+0.06);
+    og.gain.setValueAtTime(0.22*a,t);og.gain.exponentialRampToValueAtTime(0.001,t+0.07);
     src.connect(bp);bp.connect(g);g.connect(drumBus);o.connect(og);og.connect(drumBus);
-    src.start(t);src.stop(t+T.sd+0.03);o.start(t);o.stop(t+T.sd*0.8+0.02);}
+    src.start(t);src.stop(t+0.1);o.start(t);o.stop(t+0.09);}
   else if(v==='r'){const o=AC.createOscillator(),g=AC.createGain(),bp=AC.createBiquadFilter();
     o.type='square';o.frequency.value=1700;bp.type='bandpass';bp.frequency.value=1700;bp.Q.value=6;
     g.gain.setValueAtTime(0.2*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.035);
     o.connect(bp);bp.connect(g);g.connect(drumBus);o.start(t);o.stop(t+0.05);}
-  else if(v==='h'){if(!NB){NB=AC.createBuffer(1,AC.sampleRate*0.25,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
-    const src=AC.createBufferSource(),hp=AC.createBiquadFilter(),g=AC.createGain(),T=KITTONE[drumKit]||KITTONE.chip;src.buffer=NB;
-    hp.type='highpass';hp.frequency.value=T.hf;
-    g.gain.setValueAtTime(0.16*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+T.hd);
-    src.connect(hp);hp.connect(g);g.connect(drumBus);src.start(t);src.stop(t+T.hd+0.02);}
+  else if(v==='h'){if(!NB){NB=AC.createBuffer(1,AC.sampleRate*0.1,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+    const src=AC.createBufferSource(),hp=AC.createBiquadFilter(),g=AC.createGain();src.buffer=NB;
+    hp.type='highpass';hp.frequency.value=7000;
+    g.gain.setValueAtTime(0.16*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.03);
+    src.connect(hp);hp.connect(g);g.connect(drumBus);src.start(t);src.stop(t+0.05);}
 }
 function drumTriplet(){return drumSig==='16'&&S.triplet;} // 4/4 + triplets = the 12/8 half-time shuffle grid
 function drumSPB(){return drumTriplet()?3:4;}             // steps per beat: triplet-8ths vs 16ths
@@ -602,13 +558,13 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
     if(inBar===0)bandBar(drumTime,barI);
     if(bandOn){const bp=BASSPAT[drumSig],tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));if(tok)bassNote(tok,drumTime,hum);}
     if(!drumOn){drumTime+=drumStepDur();drumStep++;continue;} // band without drums: same grid, silent kit
-    if(drumTriplet()){ // shuffle you can count: ONE-and-a TWO-and-a — kick plants 1 & 3, snare backbeats 2 & 4, hats roll every triplet
+    if(drumTriplet()){ // the classic triplet vibe: kick plants on 1, snare lands on 3, hats roll triplets
       const vm=KITVOICE[drumKit];
-      dHit(vm.hi,drumTime,(inBar%3===0?(inBar===0?1.15:0.95):0.68)*hum); // beat hats lean, middle triplets tucked
-      if(inBar===0)dHit(vm.lo,drumTime,(barI===0?1.3:1.12)*hum);        // kick on 1
-      if(inBar===6)dHit(vm.lo,drumTime,0.9*hum);                        // kick on 3, a touch lighter
-      if(inBar===3||inBar===9)dHit(vm.mid,drumTime,1.05*hum);           // SNARE on 2 and 4 — the backbeat you count by
-      if(barI===3&&inBar>=10)dHit(vm.mid,drumTime,(0.5+(inBar-10)*0.15)*hum); // two soft snares walking back to the top of the phrase
+      dHit(vm.hi,drumTime,(inBar%3===0?(inBar===0?1.15:0.95):0.68)*hum); // downbeat hats lean, middle triplets tucked
+      if(inBar===0)dHit(vm.lo,drumTime,(barI===0?1.3:1.12)*hum);
+      if(barI>=2&&inBar===10)dHit(vm.lo,drumTime,0.75*hum);             // lead-in kick, back half of the phrase only
+      if(inBar===6)dHit(vm.mid,drumTime,1.05*hum);                      // half-time backbeat
+      if(barI===3&&inBar>=9)dHit(vm.mid,drumTime,(0.5+(inBar-9)*0.18)*hum); // bar 4: triplet roll walking back to the top
     }else if(drumSig==='16'){ // 4/4: the authored 4-bar grooves
       const kit=KITS[drumKit],pst=inBar+16*barI;
       for(const v in kit)if(kit[v].includes(pst))dHit(v,drumTime,(inBar===0?1.25:1)*hum);
@@ -677,18 +633,11 @@ let breakAt=0, curSegs=null, burstFlash=0, pressure=0, prevShape="6";
 let frags=null, nextShape=null, reformStart=0;
 function modLevel(){return Math.min(1,fillFrac()/0.9);} // 0..1, reaches 1 exactly at the burst point
 function fillFrac(){return measuredFill;} // real pixel coverage of the liquid, like a water line
-// the pool is literally made of the notes: its color drifts toward every note splashed into it
-let liqHue=0.55,liqHueOld=0.62; // fresh notes float on top, older notes settle deep
-function feedLiquidHue(h){let d=((h-liqHue)%1+1.5)%1-0.5;liqHue=(liqHue+d*0.1+1)%1;
-  d=((liqHue-liqHueOld)%1+1.5)%1-0.5;liqHueOld=(liqHueOld+d*0.02+1)%1;}
-let ripples=[]; // surface rings where things enter the goo
-function addRipple(x,y,s){if(ripples.length>=24)ripples.shift();ripples.push({x,y,r:5,vr:1.8+(s||1),a:0.5});}
-function splash(x,y,inx,iny,hue){
+function splash(x,y,inx,iny){
   if(fillState!=="fill"||particles.length>=partCap())return; // no new fill while it's broken open
-  if(hue==null)hue=Math.random();feedLiquidHue(hue);
   for(let i=0;i<10;i++){const sp=1.4+Math.random()*2.6, tx=-iny, ty=inx, tang=(Math.random()-0.5)*3.6;
     const px=x+(Math.random()-0.5)*8, py=y+(Math.random()-0.5)*8;
-    particles.push({x:px,y:py,sx:px,sy:py,vx:inx*sp+tx*tang,vy:iny*sp+ty*tang,hue:(hue+(Math.random()-0.5)*0.05+1)%1,r:2,age:0,pooled:false});} // droplets wear the note's color
+    particles.push({x:px,y:py,sx:px,sy:py,vx:inx*sp+tx*tang,vy:iny*sp+ty*tang,hue:Math.random(),r:2,age:0,pooled:false});} // crisp flecks first, liquid later
 }
 // deflect a mover inward off the solid boundary
 function bounceInside(o){ // deflect inward off intact walls; broken walls let stuff spill through
@@ -749,7 +698,7 @@ function commitReform(){
 function fillPhysics(now){
   if(fillState==="fill"){
     for(const p of particles){p.age++;
-      if(!p.pooled&&(p.age>50||(p.age>10&&Math.hypot(p.vx,p.vy)<1.2))){p.pooled=true;if(Math.random()<0.2)addRipple(p.x,p.y-3,0.4);} // fleck lands -> joins the liquid, little ring where it lands
+      if(!p.pooled&&(p.age>50||(p.age>10&&Math.hypot(p.vx,p.vy)<1.2)))p.pooled=true; // fleck lands -> joins the liquid
       if(p.pooled&&p.r<PR)p.r+=0.12;
       p.vy+=gY;p.vx+=gX;p.x+=p.vx;p.y+=p.vy;p.vx*=0.985;p.vy*=0.992;bounceInside(p);}
     relaxParticles();relaxParticles(); // double pass = stiffer, calmer liquid
@@ -786,9 +735,9 @@ function fillPhysics(now){
     const hp=S.filtOn?20*Math.pow(110,hLift):20; // 20 Hz -> ~2.2 kHz max, gentle on ears always
     masterHP.frequency.setTargetAtTime(hp,t,0.35);
     masterFilt.frequency.setTargetAtTime(lp,t,0.35);
-    const fillL=Math.max(m,liquidH), wash=fillL*fillL; // square taper: swell stays subtle until genuinely full, so melody never drowns mid-fill
-    dlyWet.gain.setTargetAtTime(S.fxOn?Math.min(0.5,S.dly+wash*0.3):0,t,0.5);  // echo blooms in with the liquid, fades smoothly as it drains
-    dlyFb.gain.setTargetAtTime(Math.min(0.35,0.14+wash*0.21),t,0.5);} // feedback hard-capped at 0.35 — old 0.42+ cap let the tail wash out the melody at high fill
+    const fillL=Math.max(m,liquidH), wash=Math.pow(fillL,1.15); // gradual swell from ~1/4 full (not just at the top); robust fill read
+    dlyWet.gain.setTargetAtTime(S.fxOn?Math.min(0.55,S.dly+wash*0.34):0,t,0.5);  // echo blooms in with the liquid, fades smoothly as it drains
+    dlyFb.gain.setTargetAtTime(Math.min(0.42,0.14+wash*0.26),t,0.5);} // longer ambient tail as it fills = reverb-like wash (delay time stays tempo-synced)
 }
 
 // ---------- ball stepping ----------
@@ -806,7 +755,7 @@ function step(){
           if(dist<BR){const vn=b.vx*e.nx+b.vy*e.ny;
             if(vn<0){b.vx-=2*vn*e.nx;b.vy-=2*vn*e.ny;jitter(b);b.x+=(BR-dist)*e.nx;b.y+=(BR-dist)*e.ny;e.flash=1;
               const nw=performance.now();
-              if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1)));splash(b.x,b.y,e.nx,e.ny,e.hue);}}}} // splash carries the note's color into the pool
+              if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1)));splash(b.x,b.y,e.nx,e.ny);}}}} // head-on = 1, grazing = ~0: impact angle shapes the drop's sound
       }else{ // caught outside a fresh shape: float free, no wall spam, drift off into space
         if(b.x<-80||b.x>W+80||b.y<-80||b.y>H+80){balls.splice(bi,1);continue;}
       }
@@ -818,16 +767,6 @@ function step(){
     // no gravity = steady tempo speed; the more gravity, the more they free-fall & settle (smooth across the whole slider)
     const sp=Math.hypot(b.vx,b.vy)||1;const k=(ts/sp)*(1-g)+g;b.vx*=k;b.vy*=k;
     if(g>0){b.vx*=(1-g*0.06);b.vy*=(1-g*0.015);} // drag grows with gravity so they land & settle instead of skating forever
-    // slime is thick: balls wading through the pool drag at their own per-ball rate, and deeper = thicker —
-    // arrival times smear apart naturally, so a full tank plays looser than an empty one
-    if(liquidH>0.03){const surf=Math.max(CY-R*0.9,CY+R*0.72-liquidH*R*2.88); // pool surface back-solved from the avg-height fill reading
-      const under=b.y>surf;
-      if(under){if(!b.visc)b.visc=0.85+Math.random()*0.10; // each ball is born with its own tolerance for goo (up to ~18% slower when deep)
-        const depth=Math.min(1,(b.y-surf)/(R*0.9)),drag=1-(1-b.visc)*(0.45+0.75*depth);
-        b.vx*=drag;b.vy*=drag;}
-      if(under&&!b._under)addRipple(b.x,surf+2,1.2); // plunk — surface ring where it dives in
-      b._under=under;
-    }else b._under=false;
   }
 }
 
@@ -871,68 +810,52 @@ function drawDebris(){ctx.lineCap="round";ctx.lineWidth=7;
     ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();}
   ctx.shadowBlur=0;}
 const lq=document.createElement('canvas');lq.width=W;lq.height=H;const lctx=lq.getContext('2d');
+const gooC=document.createElement('canvas');gooC.width=W;gooC.height=H;const gctx=gooC.getContext('2d');
+const rimC=document.createElement('canvas');rimC.width=W;rimC.height=H;const rctx=rimC.getContext('2d');
+let GOO='url(#goo)';{const t=document.createElement('canvas').getContext('2d');t.filter=GOO;if(t.filter!==GOO)GOO='blur(6px)';} // fallback where svg canvas filters are unsupported
 const mcv=document.createElement('canvas');mcv.width=mcv.height=36;const mctx=mcv.getContext('2d',{willReadFrequently:true});
 let mFrame=0;
-// ---- adaptive quality: perf mode thins the particle budget; the render itself is cheap enough for everyone ----
+// ---- adaptive quality: auto-drop the pricey goo pass on devices that can't hold the frame rate ----
 let LITE=false, _fpsAcc=0, _fpsN=0, _slowRun=0, _lastFrame=0;
-function measureFill(){ // barrel-in-a-rainstorm: read the real water line off an offscreen stamp of the pool
-  lctx.clearRect(0,0,W,H);lctx.fillStyle='#fff';
-  for(const p of particles){if(!p.pooled)continue;lctx.beginPath();lctx.arc(p.x,p.y,p.r*1.85,0,7);lctx.fill();}
+function measureFill(){ // barrel-in-a-rainstorm: read the real water line off the liquid render
   mctx.clearRect(0,0,36,36);mctx.drawImage(lq,0,0,36,36);
   const d=mctx.getImageData(0,0,36,36).data;let n=0;
   for(let i=3;i<d.length;i+=4)if(d[i]>60)n++;
   measuredFill=Math.min(1,n/Math.max(1,shapeArea()/((W/36)*(W/36))));
 }
-function drawRipples(){for(let i=ripples.length-1;i>=0;i--){const r=ripples[i];
-  ctx.strokeStyle=`rgba(255,255,255,${r.a.toFixed(3)})`;ctx.lineWidth=1.6;
-  ctx.beginPath();ctx.ellipse(r.x,r.y,r.r,r.r*0.32,0,0,7);ctx.stroke();
-  r.r+=r.vr;r.a*=0.92;if(r.a<0.03)ripples.splice(i,1);}}
-function softBlobs(){ // loose drops (young puddle, or spilling out after a burst) — simple layered circles, no filters
-  for(const p of particles){if(!p.pooled)continue;
-    ctx.fillStyle=aurora(p.hue,58,0.55);ctx.beginPath();ctx.arc(p.x,p.y,p.r*1.5,0,7);ctx.fill();
-    ctx.fillStyle=aurora(p.hue,72,0.5);ctx.beginPath();ctx.arc(p.x,p.y,p.r*0.8,0,7);ctx.fill();}}
-function drawParticles(){ // the pool: one clean gradient volume, colored by the notes that filled it — identical on every device
-  if(!particles.length){measuredFill=Math.max(0,measuredFill-0.02);drawRipples();return;}
-  const now=performance.now();
-  let pooledN=0;for(const p of particles)if(p.pooled)pooledN++;
-  if(fillState==="fill"&&pooledN>=6){
-    const COLS=30,x0=CX-R-30,span=2*(R+30),colY=new Array(COLS).fill(1e9),bot=CY+R*0.99;
-    for(const p of particles){if(!p.pooled)continue;
-      const c=Math.max(0,Math.min(COLS-1,((p.x-x0)/span*COLS)|0));if(p.y-p.r<colY[c])colY[c]=p.y-p.r;}
-    for(let i=0;i<COLS;i++)if(colY[i]>bot)colY[i]=bot+30;          // empty columns sit under the floor
-    for(let s=0;s<2;s++){const c2=colY.slice();for(let i=1;i<COLS-1;i++)colY[i]=(c2[i-1]+2*c2[i]+c2[i+1])/4;} // relax into one meniscus
-    for(let i=0;i<COLS;i++)colY[i]+=Math.sin(now*0.0022+i*0.8)*2.2; // lazy sway
-    let topY=1e9;for(let i=0;i<COLS;i++)if(colY[i]<topY)topY=colY[i];
-    ctx.save();
-    ctx.beginPath();ctx.moveTo(edges[0].ax,edges[0].ay);for(const e of edges)ctx.lineTo(e.bx,e.by);ctx.closePath();ctx.clip(); // liquid lives inside the shape
-    const grad=ctx.createLinearGradient(0,topY,0,bot),cw=span/COLS;
-    grad.addColorStop(0,aurora(liqHue,68,0.9));grad.addColorStop(0.5,aurora(liqHue,55,0.94));grad.addColorStop(1,aurora(liqHueOld,40,0.97)); // fresh notes on top, old notes deep
-    ctx.beginPath();ctx.moveTo(x0,H+50);ctx.lineTo(x0,colY[0]);
-    for(let i=0;i<COLS-1;i++){const xm=x0+cw*(i+1);ctx.quadraticCurveTo(x0+cw*(i+0.5),colY[i],xm,(colY[i]+colY[i+1])/2);}
-    ctx.lineTo(x0+span,colY[COLS-1]);ctx.lineTo(x0+span,H+50);ctx.closePath();
-    ctx.fillStyle=grad;ctx.fill();
-    ctx.beginPath();ctx.moveTo(x0,colY[0]); // meniscus: a bright lip + thin white shine along the surface
-    for(let i=0;i<COLS-1;i++){const xm=x0+cw*(i+1);ctx.quadraticCurveTo(x0+cw*(i+0.5),colY[i],xm,(colY[i]+colY[i+1])/2);}
-    ctx.lineTo(x0+span,colY[COLS-1]);
-    ctx.strokeStyle=aurora(liqHue,80,0.8);ctx.lineWidth=3;ctx.stroke();
-    ctx.strokeStyle='rgba(255,255,255,0.5)';ctx.lineWidth=1.2;ctx.stroke();
-    drawRipples();
-    ctx.restore();
-  }else{softBlobs();drawRipples();}
-  if(fillState==="fill"&&++mFrame%20===0)measureFill();
-  for(const p of particles){if(p.pooled)continue; // fresh spray: crisp droplets in the note's own color
-    ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}}
-function drawBalls(){ // every ball its own vivid hue; underwater they wade — fat goopy wake, dimmer glow, visibly slower
-  const surf=(liquidH>0.03)?Math.max(CY-R*0.9,CY+R*0.72-liquidH*R*2.88):1e9;
-  for(const b of balls){const tl=b.trail.length,bh=Math.round(b.hue*360),under=b.y>surf;
-    for(let i=0;i<tl;i++){const [tx,ty]=b.trail[i];const f=i/tl;
-      if(under&&ty>surf){ctx.fillStyle=`hsla(${bh},65%,58%,${(f*0.4).toFixed(3)})`;ctx.beginPath();ctx.arc(tx,ty,BR*(0.4+0.95*f),0,7);ctx.fill();} // thick wake dragging through the goo
-      else{ctx.fillStyle=`hsla(${bh},90%,64%,${(f*0.25).toFixed(3)})`;ctx.beginPath();ctx.arc(tx,ty,BR*(0.2+0.55*f),0,7);ctx.fill();}}
-    const gr=under?BR*1.5:BR*2.2; // glow shrinks underwater — light doesn't travel far in slime
-    const g=ctx.createRadialGradient(b.x,b.y,1,b.x,b.y,gr);g.addColorStop(0,under?"rgba(255,255,255,.7)":"#fff");g.addColorStop(1,`hsla(${bh},90%,62%,0)`);
-    ctx.fillStyle=g;ctx.beginPath();ctx.arc(b.x,b.y,gr,0,7);ctx.fill();
-    ctx.fillStyle=under?`hsl(${bh},70%,52%)`:`hsl(${bh},88%,58%)`;ctx.beginPath();ctx.arc(b.x,b.y,BR,0,7);ctx.fill();
-    ctx.fillStyle=under?"rgba(255,255,255,.45)":"rgba(255,255,255,.75)";ctx.beginPath();ctx.arc(b.x-BR*0.3,b.y-BR*0.35,BR*0.32,0,7);ctx.fill();}
+function drawParticles(){ // living liquid: fused goo + sweeping iridescent sheen + wet rim light
+  if(!particles.length){measuredFill=Math.max(0,measuredFill-0.02);return;}
+  const now=performance.now(), tn=now*0.00003;
+  lctx.clearRect(0,0,W,H);
+  let flecks=false;
+  for(const p of particles){
+    if(!p.pooled){flecks=true;continue;}
+    p.sx+=(p.x-p.sx)*0.3;p.sy+=(p.y-p.sy)*0.3;
+    const wob=1+0.07*Math.sin(now*0.002+p.hue*17); // each blob breathes
+    lctx.fillStyle=aurora(p.hue+tn,64,0.95);lctx.beginPath();lctx.arc(p.sx,p.sy,p.r*1.85*wob,0,7);lctx.fill();}
+  if(++mFrame%20===0&&fillState==="fill")measureFill();
+  if(LITE){ ctx.drawImage(lq,0,0); } // lite mode: draw the liquid straight — skips the costly goo+sheen+rim passes
+  else {
+  gctx.clearRect(0,0,W,H);gctx.filter=GOO;gctx.drawImage(lq,0,0);gctx.filter='none';
+  gctx.globalCompositeOperation='source-atop'; // sheen clipped to the liquid only
+  const h0=(now*0.01)%360,sh=gctx.createLinearGradient(0,0,W,H);
+  sh.addColorStop(0,`hsla(${h0},90%,78%,0.20)`);sh.addColorStop(0.5,`hsla(${(h0+120)%360},90%,78%,0.10)`);sh.addColorStop(1,`hsla(${(h0+240)%360},90%,78%,0.20)`);
+  gctx.fillStyle=sh;gctx.fillRect(0,0,W,H);
+  gctx.globalCompositeOperation='source-over';
+  rctx.clearRect(0,0,W,H);rctx.drawImage(gooC,0,0); // top-edge rim = wet shine
+  rctx.globalCompositeOperation='destination-out';rctx.drawImage(gooC,0,5);rctx.globalCompositeOperation='source-over';
+  ctx.drawImage(gooC,0,0);
+  ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=0.45;ctx.drawImage(rimC,0,0);ctx.restore();
+  }
+  if(flecks)for(const p of particles){if(p.pooled)continue; // fresh spray: crisp droplets off the hit point
+    ctx.fillStyle=aurora(p.hue+tn,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}}
+function drawBalls(){ // every ball its own vivid hue across the full wheel
+  for(const b of balls){const tl=b.trail.length,bh=Math.round(b.hue*360);
+    for(let i=0;i<tl;i++){const [tx,ty]=b.trail[i];const f=i/tl;ctx.fillStyle=`hsla(${bh},90%,64%,${(f*0.25).toFixed(3)})`;ctx.beginPath();ctx.arc(tx,ty,BR*(0.2+0.55*f),0,7);ctx.fill();}
+    const g=ctx.createRadialGradient(b.x,b.y,1,b.x,b.y,BR*2.2);g.addColorStop(0,"#fff");g.addColorStop(1,`hsla(${bh},90%,62%,0)`);
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(b.x,b.y,BR*2.2,0,7);ctx.fill();
+    ctx.fillStyle=`hsl(${bh},88%,58%)`;ctx.beginPath();ctx.arc(b.x,b.y,BR,0,7);ctx.fill();
+    ctx.fillStyle="rgba(255,255,255,.75)";ctx.beginPath();ctx.arc(b.x-BR*0.3,b.y-BR*0.35,BR*0.32,0,7);ctx.fill();}
 }
 function draw(){
   ctx.clearRect(0,0,W,H);
@@ -947,38 +870,12 @@ function loop(now){
   if(!LITE&&_lastFrame){_fpsAcc+=now-_lastFrame;if(++_fpsN>=40){const avg=_fpsAcc/_fpsN;_fpsAcc=0;_fpsN=0;
     if(avg>46)_slowRun++;else _slowRun=0; if(_slowRun>=5){LITE=true;const pt=document.getElementById('perfT');if(pt)pt.checked=true;}}} // full liquid by default; only auto-drops if truly unplayable (~<21fps sustained)
   _lastFrame=now;
-  if(S.playing)update(now);
+  if(S.playing){if(S.slimeMode)slimeModStep(now);if(S.spin!==0){rot+=S.spin*0.0003;rebuild();}transport(now);
+    curSegs=(fillState==="fill")?null:computeSegs();
+    step();fillPhysics(now);}
   draw();requestAnimationFrame(loop);
 }
-function update(now){ // one sim tick — shared by the rAF loop (visible) and the worker heartbeat (hidden)
-  if(S.slimeMode)slimeModStep(now);if(S.spin!==0){rot+=S.spin*0.0003;rebuild();}transport(now);
-  curSegs=(fillState==="fill")?null:computeSegs();
-  step();fillPhysics(now);
-}
 requestAnimationFrame(loop);
-// background groove: rAF freezes in hidden tabs, but worker timers don't — so a worker heartbeat
-// keeps transport + physics ticking (no draw) and the music flows while you're in another tab
-(function(){
-  try{
-    const w=new Worker(URL.createObjectURL(new Blob(["setInterval(()=>postMessage(0),16)"],{type:'text/javascript'})));
-    w.onmessage=()=>{if(document.hidden&&S.playing)update(performance.now());};
-  }catch(e){} // no worker (e.g. blocked) = old behavior: the music naps with the tab
-})();
-// lock-screen media session: register as real media (like a music app) so phones keep the jam alive
-// when the screen rests, and the lock screen gets play/pause. a looping silent track holds the session open.
-const _keep=document.createElement('audio');
-(function(){const sr=8000,n=sr,b=new ArrayBuffer(44+n*2),v=new DataView(b); // 1s of silence, built by hand — no asset needed
-  const ws=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
-  ws(0,'RIFF');v.setUint32(4,36+n*2,true);ws(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
-  v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,n*2,true);
-  _keep.src=URL.createObjectURL(new Blob([b],{type:'audio/wav'}));_keep.loop=true;_keep.volume=0.01;_keep.setAttribute('playsinline','');})();
-addEventListener('pointerdown',()=>{if(S.playing&&_keep.paused)_keep.play().catch(()=>{});},{capture:true}); // autoplay rules want a gesture; any tap re-arms it
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AC&&AC.state==='suspended')AC.resume();}); // coming back = wake the audio if the OS napped it
-if('mediaSession' in navigator){
-  navigator.mediaSession.metadata=new MediaMetadata({title:'slime jam',artist:'slimehedron'});
-  navigator.mediaSession.setActionHandler('play',()=>{if(AC&&AC.state==='suspended')AC.resume();setPlaying(true);_keep.play().catch(()=>{});});
-  navigator.mediaSession.setActionHandler('pause',()=>{setPlaying(false);_keep.pause();});
-}
 
 // ---------- UI ----------
 const $=id=>document.getElementById(id);
@@ -1023,7 +920,6 @@ function updateScaleNote(){const sc=scaleObj();const micro=sc.c.some(c=>c%100!==
 updateScaleNote();
 
 function setPlaying(p){S.playing=p;$("playBtn").textContent=p?"⏸ pause":"▶ play";$("playBtn").classList.toggle('on',p);if(p){lastTick=performance.now();if(window._wormReset)window._wormReset();}
-  try{if(p)_keep.play().catch(()=>{});else _keep.pause();}catch(e){} // media session mirrors the transport
   if(AC&&hissG)hissG.gain.setTargetAtTime(p?S.warm*0.0005:0,AC.currentTime,0.6);} // hiss fades in with the music, gone when paused
 $("drumBtn").addEventListener('click',()=>{initAudio();if(AC.state==="suspended")AC.resume();initDrums();
   drumOn=!drumOn;$("drumBtn").classList.toggle('on',drumOn);
@@ -1149,7 +1045,7 @@ function slimeModStep(now){
     if(inp.dataset.touched&&now-(+inp.dataset.touched)<4500)continue;
     const target=m.c+Math.sin(now/1000*m.rate*6.283+i*1.7)*m.d;
     const nv=parseFloat(inp.value)+(target-parseFloat(inp.value))*0.02;
-    inp.value=nv;inp.dispatchEvent(Object.assign(new Event('input'),{_wob:1})); // tagged: wobble must not starve the settings-saver debounce
+    inp.value=nv;inp.dispatchEvent(new Event('input'));
   }
 }
 function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
@@ -1182,10 +1078,11 @@ function slimeSVG(fill,face){
   }
   return `<svg viewBox="0 0 80 72" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">${body}${f}</svg>`;
 }
-// the auto-play switch's knob = the glasses-slime logo, reused from the splash art (face swappable for toggle reactions)
-const SS_GLASSES='<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0"><g fill="none" stroke="#5a4f78" stroke-width="2.2" stroke-linecap="round" opacity=".85"><circle cx="29" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><circle cx="51" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><path d="M37.5 24 q2.5 -2 5 0"/><path d="M21.5 23.5 l-5 -1.5"/><path d="M58.5 23.5 l5 -1.5"/></g></svg>'; // wireframe specs, not welding goggles — face stays visible at knob size
-function setKnobFace(face){document.querySelector('#slimeBig .sic').innerHTML='<div style="position:relative;width:100%;height:100%">'+slimeSVG(cssVar('--mint'),face)+SS_GLASSES+'</div>';}
-setKnobFace('happy');
+(function(){ // the auto-play switch's knob = the glasses-slime logo, reused from the splash art
+  const ic=document.querySelector('#slimeBig .sic');
+  ic.innerHTML='<div style="position:relative;width:100%;height:100%">'+slimeSVG(cssVar('--mint'),'happy')+
+    '<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0"><g fill="none" stroke="#4a4270" stroke-width="4.5" stroke-linecap="round"><circle cx="29" cy="25" r="8.5" fill="rgba(255,255,255,.25)"/><circle cx="51" cy="25" r="8.5" fill="rgba(255,255,255,.25)"/><path d="M37.5 24 q2.5 -2 5 0"/><path d="M20.5 23.5 l-5 -1.5"/><path d="M59.5 23.5 l5 -1.5"/></g></svg></div>';
+})();
 const SH=84,SW=90,PEEK=34,OUT=14;
 const GEO={
   bottom:{anchor:{bottom:'0'},rest:`translateY(${SH-PEEK}px)`,hide:`translateY(${SH+OUT}px)`},
@@ -1419,21 +1316,12 @@ if(!matchMedia('(max-width:820px)').matches)requestAnimationFrame(slimePhysics);
 function setDivUI(d){S.div=d;[...$("divSeg").children].forEach(b=>b.classList.toggle('active',parseFloat(b.dataset.d)===d));}
 $("slimeBig").addEventListener('click',()=>{
   const el=$("slimeBig");el.classList.toggle('on');S.slimeMode=el.classList.contains('on');
-  el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop'); // restart squish even on rapid toggles
-  setKnobFace('surprise');clearTimeout(el._faceT);el._faceT=setTimeout(()=>{el.classList.remove('pop');setKnobFace('happy');},600);
   initAudio();if(AC&&AC.state==="suspended")AC.resume();setSlimeProcessing(S.slimeMode);
   if(S.slimeMode){if(!S.playing)setPlaying(true);setSliderValue('spin',14);
-    _modSnap={};for(const m of MODS){const inp=$(m.id);if(inp)_modSnap[m.id]=inp.value;}_slimeOnAt=performance.now(); // remember the patch before the wobble borrows it
     S.quantize=true;$("quantT").classList.add('on');setDivUI(0.0625); // lock everything to 1/16 grid while slimin'
     if(!S.rain){$("rainT").classList.add('on');S.rain=true;$("rainCfg").style.display="block";nextRain=performance.now();}
-  }else{setSliderValue('spin',0);S.quantize=false;$("quantT").classList.remove('on');
-    if(S.rain){S.rain=false;$("rainT").classList.remove('on');$("rainCfg").style.display="none";} // slime off = full manual: no auto-rain, you drop the balls
-    if(_modSnap)for(const m of MODS){const inp=$(m.id);if(!inp||!(m.id in _modSnap))continue; // hand the knobs back how we found them —
-      if(inp.dataset.touched&&+inp.dataset.touched>_slimeOnAt)continue;                        // unless the human moved one mid-jam, theirs wins
-      setSliderValue(m.id,_modSnap[m.id]);}
-  }
+  }else{setSliderValue('spin',0);S.quantize=false;$("quantT").classList.remove('on');}
 });
-let _modSnap=null,_slimeOnAt=0;
 $("advT").addEventListener('change',e=>{$("advBar").hidden=!e.target.checked;});
 $("perfT").addEventListener('change',e=>{LITE=e.target.checked;}); // manual smooth/performance toggle
 $("countT").addEventListener('click',()=>$("countT").classList.toggle('on'));
@@ -1521,7 +1409,7 @@ function saveState(){const o={r:{},s:{},t:{},seg:{},adv:$("advT").checked};
   ['divSeg','waveSeg','filtSeg'].forEach(id=>{const a=$(id).querySelector('.active');if(a)o.seg[id]=[...$(id).children].indexOf(a);});
   try{localStorage.setItem('slimehedron2',JSON.stringify(o));}catch(e){}}
 let saveTmr=null;const queueSave=()=>{clearTimeout(saveTmr);saveTmr=setTimeout(saveState,600);};
-addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('click',queueSave,true); // ignore synthetic wobble events — only real tweaks queue a save
+addEventListener('input',queueSave,true);addEventListener('click',queueSave,true);
 (function restore(){let o=null;try{o=JSON.parse(localStorage.getItem('slimehedron2'));}catch(e){}if(!o)return;
   for(const id in o.r||{}){const e=$(id);if(e){e.value=o.r[id];e.dispatchEvent(new Event('input'));}}
   for(const id in o.s||{}){const e=$(id);if(e){e.value=o.s[id];e.dispatchEvent(new Event('change'));}}
@@ -1534,7 +1422,7 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
 (function(){
   const sp=document.createElement('div');sp.id='splash';
   sp.innerHTML='<div class="bob" style="width:185px;height:172px;position:relative">'+slimeSVG(cssVar('--mint'),'happy')+
-    '<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0"><g fill="none" stroke="#5a4f78" stroke-width="1.4" stroke-linecap="round" opacity=".8"><circle cx="29" cy="25" r="7.5" fill="rgba(255,255,255,.1)"/><circle cx="51" cy="25" r="7.5" fill="rgba(255,255,255,.1)"/><path d="M37.5 24 q2.5 -2 5 0"/><path d="M21.5 23.5 l-5 -1.5"/><path d="M58.5 23.5 l5 -1.5"/></g></svg></div>'+
+    '<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0"><g fill="none" stroke="#4a4270" stroke-width="2.3" stroke-linecap="round"><circle cx="29" cy="25" r="8.5" fill="rgba(255,255,255,.25)"/><circle cx="51" cy="25" r="8.5" fill="rgba(255,255,255,.25)"/><path d="M37.5 24 q2.5 -2 5 0"/><path d="M20.5 23.5 l-5 -1.5"/><path d="M59.5 23.5 l5 -1.5"/></g></svg></div>'+
     '<div style="font-size:34px;font-weight:700">slimehedron<span style="color:var(--accent)">.</span></div>'+
     '<div class="btn primary big" style="font-size:22px;padding:18px 42px;animation:beckon 2.2s ease-in-out infinite">▶ play</div>';
   document.body.appendChild(sp);
