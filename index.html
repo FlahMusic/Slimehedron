@@ -38,6 +38,11 @@ main{flex:1;display:flex;gap:18px;padding:0 18px 18px;min-height:0}
 #stage{flex:1;display:flex;align-items:center;justify-content:center;position:relative;min-width:0}
 canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(circle at 50% 38%,rgba(255,250,255,.32),rgba(210,196,255,.20));max-width:100%;max-height:100%;cursor:crosshair;touch-action:none} /* every finger is its own ball */
 .hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-soft);font-weight:500;background:var(--card);padding:5px 12px;border-radius:10px;backdrop-filter:blur(6px)}
+#chordPill{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--card-brd);border-radius:12px;padding:6px 14px 8px;backdrop-filter:blur(8px);box-shadow:var(--shadow);text-align:center;pointer-events:none;min-width:96px} /* floats over the tank, never catches a click */
+#chordPill b{font-size:17px;letter-spacing:.5px}
+#chordNext{font-size:11px;color:var(--ink-soft);font-weight:700;margin-left:8px}
+#chordProg{height:3px;border-radius:2px;background:rgba(170,160,200,.3);margin-top:5px;overflow:hidden}
+#chordProg i{display:block;height:100%;width:0;border-radius:2px;transition:width .12s linear}
 aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px;position:relative;z-index:70}
 .slime.chill{pointer-events:none} /* the train never blocks a click */
 aside::-webkit-scrollbar{width:8px}
@@ -222,6 +227,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <div id="stage">
     <canvas id="cv" width="720" height="720"></canvas>
     <div class="hint">tap to drop balls · <b>spacebar</b> rains them · fill it til it bursts</div>
+    <div id="chordPill" hidden><b id="chordNow">—</b><span id="chordNext"></span><div id="chordProg"><i id="chordProgI"></i></div></div>
   </div>
   <aside>
     <div id="dragBar"></div>
@@ -497,7 +503,8 @@ async function enableMidi(){
     S.midiOut=outs[0];sel.onchange=()=>{S.midiOut=outs[sel.value];};
   }catch(e){document.getElementById('midiPort').innerHTML="<option>MIDI not available here</option>";S.midi=false;document.getElementById('midiT').classList.remove('on');}
 }
-function sendMidi(cents,vel){if(!S.midi||!S.midiOut)return;const note=Math.round(S.root+cents/100);if(note<0||note>127)return;
+function sendMidi(cents,vel){const note=Math.round(S.root+cents/100);midiCap('melody',note,vel,null,0.18); // the scribe hears everything, MIDI-out or not
+  if(!S.midi||!S.midiOut||note<0||note>127)return;
   S.midiOut.send([0x90|(S.chMel-1),note,vel]);setTimeout(()=>{try{S.midiOut.send([0x80|(S.chMel-1),note,0]);}catch(e){}},180);}
 
 // ---------- drums: casio-style synthesized kit, 4-bar loops ----------
@@ -562,16 +569,44 @@ function drumBar(){return drumTriplet()?12:SIGS[drumSig].n;}
 function drumStepDur(){let d=60/S.bpm/drumSPB();if(drumFeel==='2')d*=0.5;else if(drumFeel==='h')d*=2;return d;}
 // ---------- band: gameboy bass + snes pads, degree-based so ANY scale works (even microtonal) ----------
 let bandOn=false,progIdx=0;
-const PROGS=[[0,4,5,3],[0,5,3,4],[5,3,0,4],[0,3,4,3]]; // I-V-vi-IV, 50s doo-wop, axis, plagal rock — as scale degrees
+const PROGS=[[0,4,5,3],[0,5,3,4],[5,3,0,4],[0,3,4,3]]; // I-V-vi-IV, 50s doo-wop, axis, plagal rock — fallback until the melody has spoken
+// ---- the chord brain: listen to what the melody's been playing, harmonize with THAT ----
+const noteHisto=new Array(24).fill(0);let _prevRootDeg=0; // slow-decay histogram of recent scale degrees: new notes shout, old notes whisper
+function noteFeed(cents){const sc=scaleObj().c,n=sc.length,rem=((Math.round(cents)%1200)+1200)%1200;
+  let best=0,bd=1e9;for(let i=0;i<n;i++){const d=Math.min(Math.abs(sc[i]-rem),1200-Math.abs(sc[i]-rem));if(d<bd){bd=d;best=i;}}
+  for(let i=0;i<n;i++)noteHisto[i]*=0.93;noteHisto[best]+=1;}
+function pickChord(barI){const n=scaleObj().c.length;let total=0;for(let i=0;i<n;i++)total+=noteHisto[i];
+  if(total<3){const pr=PROGS[progIdx];return pr[barI%pr.length]%n;} // nothing to listen to yet: classic progression
+  const sc=[];for(let r=0;r<n;r++){
+    let s=noteHisto[r]*1.6+noteHisto[(r+2)%n]+noteHisto[(r+4)%n]+0.05; // how much of the recent melody lives inside this chord
+    if(r===curRootDeg)s*=0.4;else if(r===_prevRootDeg)s*=0.7;          // keep it moving — no camping, no ping-pong
+    if(barI%4===3&&r===0)s*=1.6;                                        // lean home at the end of each phrase
+    if(barI%4===2&&(r===4%n||r===3%n))s*=1.3;                           // set up the turnaround
+    sc.push(s);}
+  let sum=0;for(const v of sc)sum+=v;let pick=Math.random()*sum;        // weighted roulette: follows the melody, never a fixed loop
+  for(let r=0;r<n;r++){pick-=sc[r];if(pick<=0)return r;}return 0;}
+let nextRootDeg=null; // the brain decides one bar ahead so the pill can show where we're going
+function chordName(rd){const c0=centsForDegree(rd),a=((Math.round((centsForDegree(rd+2)-c0)/100))%12+12)%12,b=((Math.round((centsForDegree(rd+4)-c0)/100))%12+12)%12;
+  const root=NOTE_NAMES[(((S.root+Math.round(c0/100))%12)+12)%12];
+  const q=(a===4&&b===7)?'':(a===3&&b===7)?'m':(a===3&&b===6)?'dim':(a===4&&b===8)?'aug':(a===5)?'sus4':(a===2)?'sus2':'~'; // ~ = microtonal, no earth name for it
+  return root+q;}
+function updateChordPill(){const p=document.getElementById('chordPill');if(!p)return;
+  const n=scaleObj().c.length;
+  document.getElementById('chordNow').textContent=chordName(curRootDeg);
+  document.getElementById('chordNext').textContent=nextRootDeg!=null?'→ '+chordName(nextRootDeg):'';
+  document.getElementById('chordProgI').style.background=`linear-gradient(90deg,${aurora(curRootDeg/n,62)},${aurora((nextRootDeg==null?curRootDeg:nextRootDeg)/n,62)})`;} // bar fills FROM this chord's color INTO the next one's
 const DRUMN={K:36,s:38,h:42,r:37,C:63,c:62};
-function sendMidiAt(note,vel,ch,acT,durSec){if(!S.midi||!S.midiOut||note<0||note>127)return;
+function sendMidiAt(note,vel,ch,acT,durSec){
+  midiCap(ch===S.chDrum?'drums':ch===S.chBass?'bass':ch===S.chPad?'chords':'melody',note,vel,acT,durSec); // sort each hit into its own track
+  if(!S.midi||!S.midiOut||note<0||note>127)return;
   const ts=performance.now()+Math.max(0,acT-AC.currentTime)*1000;
   try{S.midiOut.send([0x90|(ch-1),note,vel],ts);S.midiOut.send([0x80|(ch-1),note,0],ts+durSec*1000);}catch(e){}}
 let curRootDeg=0;
 const BASSPAT={'16':{0:'R',4:'R',6:'F',8:'R',12:'R',14:'O'},'12':{0:'R',4:'F',8:'O'},'12c':{0:'R',6:'F'},'20':{0:'R',8:'R',12:'F',16:'O'}}; // R=root F=fifth O=octave
 function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for the pluck pattern
   if(!bandOn)return;
-  const n=scaleObj().c.length,pr=PROGS[progIdx],rd=pr[barI%pr.length]%n;curRootDeg=rd;
+  const n=scaleObj().c.length,rd=(nextRootDeg!=null?nextRootDeg:pickChord(barI))%n;_prevRootDeg=curRootDeg;curRootDeg=rd; // chord follows the melody's center of gravity, bar by bar
+  nextRootDeg=pickChord(barI+1)%n;updateChordPill(); // and the NEXT one is already chosen — the pill shows where we're headed
   const degs=[rd,(rd+2)%n,(rd+4)%n],barDur=drumBar()*drumStepDur();
   const pv=0.03*Math.min(1,S.bpMix*2); // soft pad bed with some body — present but under the melody
   if(S.synth)for(const d of degs){const c=centsForDegree(d),po=AC.createOscillator(),pg=AC.createGain(),plp=AC.createBiquadFilter();
@@ -602,13 +637,14 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
     if(inBar===0)bandBar(drumTime,barI);
     if(bandOn){const bp=BASSPAT[drumSig],tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));if(tok)bassNote(tok,drumTime,hum);}
     if(!drumOn){drumTime+=drumStepDur();drumStep++;continue;} // band without drums: same grid, silent kit
-    if(drumTriplet()){ // shuffle you can count: ONE-and-a TWO-and-a — kick plants 1 & 3, snare backbeats 2 & 4, hats roll every triplet
-      const vm=KITVOICE[drumKit];
-      dHit(vm.hi,drumTime,(inBar%3===0?(inBar===0?1.15:0.95):0.68)*hum); // beat hats lean, middle triplets tucked
+    if(drumTriplet()){ // the REAL shuffle: "ting — ting-a" — the hat SKIPS the middle triplet (that gap is the whole feel)
+      const vm=KITVOICE[drumKit],sub=inBar%3;
+      if(sub===0)dHit(vm.hi,drumTime,(inBar===0?1.15:0.92)*hum);        // hat on the beat
+      else if(sub===2)dHit(vm.hi,drumTime,0.6*hum);                     // hat on the 'a', tucked under
       if(inBar===0)dHit(vm.lo,drumTime,(barI===0?1.3:1.12)*hum);        // kick on 1
-      if(inBar===6)dHit(vm.lo,drumTime,0.9*hum);                        // kick on 3, a touch lighter
-      if(inBar===3||inBar===9)dHit(vm.mid,drumTime,1.05*hum);           // SNARE on 2 and 4 — the backbeat you count by
-      if(barI===3&&inBar>=10)dHit(vm.mid,drumTime,(0.5+(inBar-10)*0.15)*hum); // two soft snares walking back to the top of the phrase
+      if(inBar===6)dHit(vm.lo,drumTime,0.95*hum);                       // kick on 3
+      if(inBar===3||inBar===9)dHit(vm.mid,drumTime,1.1*hum);            // snare cracks 2 and 4
+      if(barI===3&&inBar===11)dHit(vm.mid,drumTime,0.55*hum);           // one soft pickup into the top of the phrase
     }else if(drumSig==='16'){ // 4/4: the authored 4-bar grooves
       const kit=KITS[drumKit],pst=inBar+16*barI;
       for(const v in kit)if(kit[v].includes(pst))dHit(v,drumTime,(inBar===0?1.25:1)*hum);
@@ -659,7 +695,7 @@ function spawn(x,y){const ang=Math.random()*Math.PI*2, sp=ballSpeed();
   if(balls.length>80)balls.shift();}
 function velForHit(){return S.velRand?Math.round(S.velMin+Math.random()*(S.velMax-S.velMin)):S.velFix;}
 let pendingNotes=[];
-function trigger(cents,imp){const vel=velForHit();if(S.quantize)pendingNotes.push({cents,vel,imp});else{playSynth(freqFromCents(cents),vel,imp);sendMidi(cents,vel);}}
+function trigger(cents,imp){noteFeed(cents);const vel=velForHit();if(S.quantize)pendingNotes.push({cents,vel,imp});else{playSynth(freqFromCents(cents),vel,imp);sendMidi(cents,vel);}} // every note also teaches the chord brain
 function jitter(b){if(S.chaos<=0)return;const sp=Math.hypot(b.vx,b.vy);const a=Math.atan2(b.vy,b.vx)+(Math.random()-0.5)*S.chaos*2.2; // perturb angle only — speed stays steady
   b.vx=Math.cos(a)*sp;b.vy=Math.sin(a)*sp;}
 
@@ -938,6 +974,8 @@ function draw(){
   ctx.clearRect(0,0,W,H);
   drawParticles();
   drawShape();drawDebris();drawBalls();
+  const cp=document.getElementById('chordPill'); // chord pill: only exists on screen while the band plays
+  if(cp){cp.hidden=!bandOn;if(bandOn){const bar=drumBar();document.getElementById('chordProgI').style.width=((drumStep%bar)/bar*100).toFixed(1)+'%';}}
   if(burstFlash>0.01){const g=ctx.createRadialGradient(CX,CY,10,CX,CY,R*1.35);
     g.addColorStop(0,`rgba(255,255,255,${0.45*burstFlash})`);g.addColorStop(0.5,`rgba(255,225,245,${0.28*burstFlash})`);g.addColorStop(1,"rgba(255,255,255,0)");
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(CX,CY,R*1.35,0,7);ctx.fill();}
@@ -1119,14 +1157,15 @@ function hashHue(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%
 function mark(inp){inp.dataset.touched=performance.now();}
 function enhanceKnobs(){
   document.querySelectorAll('input[type=range]').forEach(inp=>{
-    if(inp.closest('#advBar'))return; // top-bar sliders stay plain — no redundant/clutter knobs
+    inp.addEventListener('pointerdown',()=>mark(inp)); // EVERY slider marks as human-touched — the wobble must never fight your hand (swing lived in advBar and never got marked = the snap-back bug)
+    if(inp.closest('#advBar')||inp.closest('#triMixBar'))return; // top-bar sliders stay plain — no redundant/clutter knobs
     const min=parseFloat(inp.min)||0,max=parseFloat(inp.max)||100;
     const k=document.createElement('div');k.className='rknob';k.title=inp.title||'';const hue=hashHue(inp.id||'x');
     k.style.setProperty('--kc',`hsl(${hue},68%,82%)`);k.style.setProperty('--kc2',`hsl(${hue},58%,62%)`);
     k.innerHTML='<div class="kdot"></div>';const dot=k.firstChild;inp.parentNode.insertBefore(k,inp);
     const frac=()=>(parseFloat(inp.value)-min)/((max-min)||1);
     const render=()=>{dot.style.transform=`translate(-50%,-100%) rotate(${-135+frac()*270}deg)`;};
-    render();inp.addEventListener('input',render);inp.addEventListener('pointerdown',()=>mark(inp));
+    render();inp.addEventListener('input',render);
     let drag=false,ly=0;
     k.addEventListener('pointerdown',e=>{drag=true;ly=e.clientY;k.setPointerCapture(e.pointerId);e.preventDefault();});
     k.addEventListener('pointermove',e=>{if(!drag)return;const dy=ly-e.clientY;ly=e.clientY;let v=parseFloat(inp.value)+dy*(max-min)/170;v=Math.max(min,Math.min(max,v));inp.value=v;mark(inp);inp.dispatchEvent(new Event('input'));});
@@ -1146,7 +1185,7 @@ const MODS=[
 ]; // delay stays off the wobble list — the liquid level drives it
 function slimeModStep(now){
   for(let i=0;i<MODS.length;i++){const m=MODS[i],inp=document.getElementById(m.id);if(!inp)continue;
-    if(inp.dataset.touched&&now-(+inp.dataset.touched)<4500)continue;
+    if(inp.dataset.touched&&(now-(+inp.dataset.touched)<4500||+inp.dataset.touched>_slimeOnAt))continue; // touched this slime session = yours for the whole jam
     const target=m.c+Math.sin(now/1000*m.rate*6.283+i*1.7)*m.d;
     const nv=parseFloat(inp.value)+(target-parseFloat(inp.value))*0.02;
     inp.value=nv;inp.dispatchEvent(Object.assign(new Event('input'),{_wob:1})); // tagged: wobble must not starve the settings-saver debounce
@@ -1443,6 +1482,22 @@ $("resetBtn").addEventListener('click',()=>{try{localStorage.removeItem('slimehe
 function toast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t);}
   t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2600);}
 let mediaRec=null,recChunks=[],recCounting=false,rdb=null;
+// ---- MIDI capture: while recording, every note from every instrument is written down, then exported one .mid per part ----
+let recNotes=null,recStartAC=0,recBpm=120;
+function midiCap(part,note,vel,acT,durSec){if(!recNotes||note<0||note>127)return;
+  const t=((acT==null?AC.currentTime:acT)-recStartAC)*1000;if(t<-10)return;
+  recNotes[part].push({t:Math.max(0,t),note,vel:Math.max(1,Math.min(127,vel|0)),dur:(durSec||0.18)*1000});}
+function midiFile(events,bpm,ch){ // minimal type-0 SMF writer — tempo header + note on/offs, nothing fancy, every DAW eats it
+  const TPQ=480,uspq=Math.round(60000000/bpm),tick=ms=>Math.round(ms*bpm*TPQ/60000);
+  const evs=[];for(const e of events){evs.push({tk:tick(e.t),d:[0x90|ch,e.note,e.vel]});evs.push({tk:tick(e.t+e.dur),d:[0x80|ch,e.note,0]});}
+  evs.sort((a,b)=>a.tk-b.tk||((a.d[0]&0xF0)===0x80?-1:1)); // offs before ons at the same tick so repeated notes retrigger
+  const vlq=n=>{const s=[n&127];while(n>>=7)s.unshift((n&127)|128);return s;};
+  const trk=[0,0xFF,0x51,3,(uspq>>16)&255,(uspq>>8)&255,uspq&255];let last=0;
+  for(const e of evs){trk.push(...vlq(Math.max(0,e.tk-last)));last=e.tk;trk.push(...e.d);}
+  trk.push(0,0xFF,0x2F,0);
+  return new Blob([new Uint8Array([77,84,104,100,0,0,0,6,0,0,0,1,(TPQ>>8)&255,TPQ&255,77,84,114,107,(trk.length>>>24)&255,(trk.length>>16)&255,(trk.length>>8)&255,trk.length&255]),new Uint8Array(trk)],{type:'audio/midi'});}
+function takeBase(tk){const d=new Date(tk.when),p=x=>String(x).padStart(2,'0'); // filenames a human can read in a DAW bin
+  return `slimehedron-${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}`;}
 const REC_MIME=window.MediaRecorder?(MediaRecorder.isTypeSupported('audio/mp4')?'audio/mp4':(MediaRecorder.isTypeSupported('audio/webm;codecs=opus')?'audio/webm;codecs=opus':'')):'';
 function recDB(){return new Promise(res=>{if(rdb)return res(rdb);
   const q=indexedDB.open('slimehedron-rec',1);
@@ -1452,6 +1507,7 @@ function countTick(last,at){const t=at||AC.currentTime,o=AC.createOscillator(),g
   g.gain.setValueAtTime(0.18,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.08);
   o.connect(g);g.connect(AC.destination);o.start(t);o.stop(t+0.1);} // straight to speakers, never onto the recording
 function startRec(){recChunks=[];
+  recNotes={melody:[],drums:[],bass:[],chords:[]};recStartAC=AC.currentTime;recBpm=S.bpm; // MIDI scribe wakes up with the tape
   mediaRec=new MediaRecorder(recTap.stream,{mimeType:REC_MIME,audioBitsPerSecond:160000});
   mediaRec.ondataavailable=e=>{if(e.data.size)recChunks.push(e.data);};
   mediaRec.onstop=saveTake;mediaRec.start();
@@ -1487,9 +1543,12 @@ $("recBtn").addEventListener('click',()=>{
 async function saveTake(){
   $("recBtn").classList.remove('rec');
   const blob=new Blob(recChunks,{type:REC_MIME});mediaRec=null;
+  const notes=recNotes;recNotes=null; // scribe pencils down
   if(blob.size<2000){toast('too short — try again!');return;}
   const db=await recDB();if(!db){toast('could not save 😢');return;}
-  const take={when:Date.now(),blob,name:'slime jam · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
+  const midi={};if(notes){const chmap={melody:0,bass:1,chords:2,drums:9}; // drums on ch10 so DAWs auto-load a kit
+    for(const part in notes)if(notes[part].length>2)midi[part]=midiFile(notes[part],recBpm,chmap[part]);}
+  const take={when:Date.now(),blob,midi,name:'slime jam · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
   db.transaction('takes','readwrite').objectStore('takes').add(take).onsuccess=()=>{renderTakes();
     const mob=matchMedia('(max-width:820px)').matches;
     toast(mob?'✅ saved! ▶ play & 📤 share in the panel below':'✅ saved! ▶ play & 📤 share in “my recordings” →');
@@ -1503,13 +1562,21 @@ async function renderTakes(){
     for(const tk of takes){const url=URL.createObjectURL(tk.blob);
       const row=document.createElement('div');row.className='recItem';
       row.innerHTML='<audio controls preload="metadata" src="'+url+'"></audio>';
-      const sh=document.createElement('button');sh.textContent='📤';sh.title='share or save it';
-      sh.onclick=async()=>{const f=new File([tk.blob],(tk.name||'slime jam').replace(/[^\w ·-]/g,'')+'.'+ext,{type:tk.blob.type});
+      const sh=document.createElement('button');sh.textContent='📤';sh.title='share the audio';
+      sh.onclick=async()=>{const f=new File([tk.blob],takeBase(tk)+'-audio.'+ext,{type:tk.blob.type});
         if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'slime jam'});}catch(e){}}
         else{const a=document.createElement('a');a.href=url;a.download=f.name;a.click();}};
+      row.appendChild(sh);
+      const parts=tk.midi?Object.keys(tk.midi):[];
+      if(parts.length){const mb=document.createElement('button');mb.textContent='🎹';mb.title='MIDI — one track per instrument, for your DAW';
+        mb.onclick=async()=>{const files=parts.map(p=>new File([tk.midi[p]],takeBase(tk)+'-'+p+'.mid',{type:'audio/midi'}));
+          if(navigator.canShare&&navigator.canShare({files})){try{await navigator.share({files,title:'slime jam MIDI'});return;}catch(e){}}
+          parts.forEach((p,i)=>setTimeout(()=>{const a=document.createElement('a');a.href=URL.createObjectURL(tk.midi[p]);a.download=takeBase(tk)+'-'+p+'.mid';a.click();},i*400)); // staggered so the browser allows all of them
+          toast('⬇ '+parts.length+' MIDI tracks: '+parts.join(', '));};
+        row.appendChild(mb);}
       const del=document.createElement('button');del.textContent='🗑';del.title='delete';
       del.onclick=async()=>{const d=await recDB();d.transaction('takes','readwrite').objectStore('takes').delete(tk.id).onsuccess=()=>renderTakes();};
-      row.appendChild(sh);row.appendChild(del);list.appendChild(row);}};}
+      row.appendChild(del);list.appendChild(row);}};}
 renderTakes();
 
 // ---------- remember settings between visits ----------
