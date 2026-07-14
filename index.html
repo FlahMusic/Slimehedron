@@ -28,6 +28,8 @@ header h1{font-size:20px;font-weight:700;margin:0;letter-spacing:.5px}
 header h1 .dot{color:var(--accent)}
 header .sub{font-size:12px;color:var(--ink-soft);font-weight:500}
 header .spacer{flex:1}
+.btngroup{display:flex;align-items:center;gap:14px;flex-wrap:nowrap} /* transport + instruments: one family, never split across lines */
+#autoRow{display:flex;justify-content:center;padding:0 0 6px;position:relative;z-index:70} /* auto-play slime gets his own centered perch under the buttons */
 .btn{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--card-brd);border-radius:14px;padding:9px 16px;cursor:pointer;box-shadow:var(--shadow);transition:.15s;backdrop-filter:blur(8px)}
 .btn:hover{transform:translateY(-1px)}
 .btn:active{transform:translateY(0) scale(.96)}
@@ -99,8 +101,12 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 .chCol span{font-size:14px;line-height:1}
 @media (max-width:820px){
   body{height:100dvh}
-  header{flex-wrap:wrap;gap:6px;padding:8px 10px}
-  header h1{font-size:15px}
+  header{flex-wrap:wrap;gap:6px;padding:8px 10px;justify-content:center}
+  header h1{font-size:15px;width:100%;text-align:center} /* title line, then the button family below it — no orphaned pause button */
+  header .spacer{display:none}
+  .btngroup{gap:6px}
+  #autoRow{padding-bottom:4px}
+  #triMixBar{justify-content:center;gap:10px}
   .btn.big{min-height:42px;padding:6px 11px;font-size:13px;border-radius:14px}
   #drumBtn svg,#dropBtn svg{width:24px;height:24px}
   #bandBtn svg{width:37px;height:28px}
@@ -158,17 +164,19 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 <header>
   <h1>slimehedron<span class="dot">.</span></h1>
   <span class="spacer"></span>
-  <button class="btn primary big" id="playBtn" title="play / pause">▶</button>
-  <button class="slimeswitch" id="slimeBig" title="auto-play"><span class="ss-knob"><span class="sic">✨</span></span></button>
-  <button class="btn big" id="drumBtn" title="drums"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icDrum"/></svg></button>
-  <button class="btn big" id="bandBtn" title="backing band"><svg width="45" height="34" viewBox="0 0 32 24"><use href="#icBass"/></svg></button>
-  <button class="btn big" id="dropBtn" title="drop a ball"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icBall"/></svg></button>
-  <button class="btn big" id="recBtn" title="record"><span id="recDot"></span></button>
+  <div class="btngroup"><!-- transport + instruments live together as one unbreakable row, every screen size -->
+    <button class="btn primary big" id="playBtn" title="play / pause">▶</button>
+    <button class="btn big" id="drumBtn" title="drums"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icDrum"/></svg></button>
+    <button class="btn big" id="bandBtn" title="backing band"><svg width="45" height="34" viewBox="0 0 32 24"><use href="#icBass"/></svg></button>
+    <button class="btn big" id="dropBtn" title="drop a ball"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icBall"/></svg></button>
+    <button class="btn big" id="recBtn" title="record"><span id="recDot"></span></button>
+  </div>
   <span class="spacer"></span>
   <button class="btn" id="resetBtn" title="start fresh">↺</button>
   <label class="adv" title="lighter graphics for slow devices"><input type="checkbox" id="perfT"> ⚡</label>
   <label class="adv" title="more knobs"><input type="checkbox" id="advT"> ⚙️</label>
 </header>
+<div id="autoRow"><button class="slimeswitch" id="slimeBig" title="auto-play"><span class="ss-knob"><span class="sic">✨</span></span></button></div>
 <div id="triMixBar">
   <div id="triMix" title="drag to mix: melody / drums / band">
     <svg viewBox="-14 -18 128 124" width="108" height="104" style="display:block;overflow:visible">
@@ -178,13 +186,17 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <circle id="triKnob" cx="50" cy="53" r="8" fill="#9fe6cf" stroke="#fff" stroke-width="2.5" style="filter:drop-shadow(0 2px 3px rgba(120,110,160,.4))"/>
     </svg></div>
   <span id="drumCtl" style="display:flex;align-items:center;gap:8px;opacity:.35;pointer-events:none">
-    <select id="drumKit" style="flex:none;width:auto" title="drum sound"><option value="chip" selected>chip</option><option value="conga">conga</option><option value="bossa">bossa</option><option value="rock">rock</option><option value="beep">beeper</option></select>
+    <svg width="16" height="16" viewBox="0 0 24 24" style="flex:none"><use href="#icDrum"/></svg><!-- this cluster = the drums -->
+    <select id="drumKit" style="flex:none;width:auto" title="drum sound"><option value="chip" selected>video game</option><option value="conga">conga</option><option value="bossa">bossa</option><option value="rock">rock</option><option value="beep">robot</option></select>
     <select id="drumFeel" style="flex:none;width:auto" title="beat feel"><option value="1" selected>normal</option><option value="t">triplet</option><option value="2">double</option><option value="h">half</option></select>
     <select id="drumSig" style="flex:none;width:auto" title="beats per bar"><option value="16" selected>4/4</option><option value="12">3/4</option><option value="12c">6/8</option><option value="20" title="counts 1-2-3 1-2">5/4</option><option value="14" title="counts 1-2 1-2 1-2-3">7/8</option><option value="18" title="counts 1-2 1-2 1-2 1-2-3">9/8</option></select>
-    <input type="range" id="drumVol" min="0" max="100" value="80" title="drum volume" style="width:64px;flex:none">
+  </span>
+  <span style="display:flex;align-items:center;gap:6px">
+    <svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><use href="#icNote"/></svg>
+    <select id="voiceTop" style="flex:none;width:auto" title="melody voice"><option value="sine">smooth</option><option value="triangle" selected>soft</option><option value="sawtooth">buzzy</option><option value="square">beepy</option></select>
+    <span class="sub">tempo</span><input type="range" id="bpmTop" min="40" max="220" value="80" style="width:74px;flex:none" title="speed">
   </span>
   <div id="advBar" hidden>
-  <span style="font-size:14px" title="bass">🎸</span><input type="range" id="bpMix" min="0" max="100" value="50" style="width:60px;flex:none" title="bass ↔ pads"><span style="font-size:14px" title="chord pads">🎹</span>
   <span style="font-size:15px" title="tape warmth">📼</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:78px;flex:none" title="tape warmth">
   <span style="font-size:15px" title="swing">🕺</span><input type="range" id="swingSl" min="0" max="100" value="15" style="width:78px;flex:none" title="swing — makes the beat bounce">
   <span class="sub">random shape</span><div class="toggle on" id="randShapeT" title="new shape after each burst"></div>
@@ -510,7 +522,7 @@ function sendMidi(cents,vel){const note=Math.round(S.root+cents/100);midiCap('me
 // ---------- drums: casio-style synthesized kit, 4-bar loops ----------
 let drumOn=false,drumStep=0,drumTime=0,drumBus=null,drumKit='chip',drumFeel='1',drumSig='16',NB=null;
 const SIGS={'16':{n:16,acc:[0]},'12':{n:12,acc:[0]},'12c':{n:12,acc:[0,6]},'20':{n:20,acc:[0]},'14':{n:14,acc:[0,4,8]},'18':{n:18,acc:[0,4,8,12]}}; // accents mark the group starts so your ear learns the counting
-function initDrums(){if(drumBus)return;drumBus=AC.createGain();drumBus.gain.value=(document.getElementById('drumVol').value/100)*1.1;drumBus.connect(slimeEQ);applyMix();}
+function initDrums(){if(drumBus)return;drumBus=AC.createGain();drumBus.gain.value=0.88;drumBus.connect(slimeEQ);applyMix();} // drum level lives in the triangle mixer now
 function rep(base,bars){const out=[];for(let b=0;b<bars;b++)for(const st of base)out.push(st+16*b);return out;}
 const KITS={ // 64 sixteenth-steps = 4 bars
   chip:{K:rep([0,8],4),s:rep([4,12],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[],r:[]}, // gameboy 4/4: kick / hat / snare / hat
@@ -940,6 +952,7 @@ function drawDebris(){ctx.lineCap="round";ctx.lineWidth=7;
   ctx.shadowBlur=0;}
 const lq=document.createElement('canvas');lq.width=W;lq.height=H;const lctx=lq.getContext('2d');
 const loC=document.createElement('canvas');loC.width=W>>2;loC.height=H>>2;const loctx=loC.getContext('2d'); // quarter-res blob canvas: upscaling IS the blur — free metaballs, no filters, every device
+const shC=document.createElement('canvas');shC.width=W;shC.height=H;const shctx=shC.getContext('2d'); // gloss workbench: sheen + rim get composited here, then stamped on
 const mcv=document.createElement('canvas');mcv.width=mcv.height=36;const mctx=mcv.getContext('2d',{willReadFrequently:true});
 let mFrame=0;
 // ---- adaptive quality: perf mode thins the particle budget; the render itself is cheap enough for everyone ----
@@ -963,12 +976,22 @@ function drawRipples(){for(let i=ripples.length-1;i>=0;i--){const r=ripples[i];
   ctx.strokeStyle=`rgba(255,255,255,${r.a.toFixed(3)})`;ctx.lineWidth=1.6;
   ctx.beginPath();ctx.ellipse(r.x,r.y,r.r,r.r*0.32,0,0,7);ctx.stroke();
   r.r+=r.vr;r.a*=0.92;if(r.a<0.03)ripples.splice(i,1);}}
-function softBlobs(col){ // fused goo blobs (floating young slime, burst spill): quarter-size draw + upscale = free metaballs, no filters
+function softBlobs(col){ // glossy goo: upscale metaballs + sweeping shine + wet top rim — dust ball no more (perf mode keeps just the base)
   loctx.clearRect(0,0,loC.width,loC.height);
   loctx.fillStyle=col;
   for(const p of particles){if(!p.pooled)continue;
     loctx.beginPath();loctx.arc(p.x/4,p.y/4,Math.max(1.4,p.r*0.46),0,7);loctx.fill();}
-  ctx.drawImage(loC,0,0,W,H);}
+  if(LITE){ctx.drawImage(loC,0,0,W,H);return;}
+  shctx.clearRect(0,0,W,H);
+  shctx.drawImage(loC,0,0,W,H);shctx.drawImage(loC,0,0,W,H); // double-stamp: solid heart, soft skin
+  shctx.globalCompositeOperation='source-atop'; // shine only lands on the goo
+  const sw=(performance.now()*0.00025)%1,g=shctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(Math.max(0,sw-0.16),'rgba(255,255,255,0)');g.addColorStop(sw,'rgba(255,255,255,0.35)');g.addColorStop(Math.min(1,sw+0.16),'rgba(255,255,255,0)');
+  shctx.fillStyle=g;shctx.fillRect(0,0,W,H);
+  shctx.globalCompositeOperation='source-over';
+  ctx.drawImage(shC,0,0); // glossy body down first
+  shctx.globalCompositeOperation='destination-out';shctx.drawImage(loC,0,5,W,H);shctx.globalCompositeOperation='source-over'; // knock out a shifted copy -> only the top edge survives
+  ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=0.4;ctx.drawImage(shC,0,0);ctx.restore();} // = wet rim light on every blob
 function clipShape(){ctx.beginPath();ctx.moveTo(edges[0].ax,edges[0].ay);for(const e of edges)ctx.lineTo(e.bx,e.by);ctx.closePath();ctx.clip();}
 let surfY=null; // persistent water line with inertia — the surface eases toward the particles instead of teleporting, so it moves like liquid
 function drawParticles(){ // the goo: floats as a blob while young, settles into a gradient pool once heavy — colored by the chord it's made of
@@ -996,6 +1019,9 @@ function drawParticles(){ // the goo: floats as a blob while young, settles into
       for(let i=0;i<COLS-1;i++){const xm=x0+cw*(i+1);ctx.quadraticCurveTo(x0+cw*(i+0.5),colY[i],xm,(colY[i]+colY[i+1])/2);}
       ctx.lineTo(x0+span,colY[COLS-1]);ctx.lineTo(x0+span,H+50);ctx.closePath();
       ctx.fillStyle=grad;ctx.fill();
+      if(!LITE){const sw=(now*0.00022)%1,sg=ctx.createLinearGradient(x0,topY,x0+span,bot); // glimmer band gliding across the settled pool
+        sg.addColorStop(Math.max(0,sw-0.15),'rgba(255,255,255,0)');sg.addColorStop(sw,'rgba(255,255,255,0.22)');sg.addColorStop(Math.min(1,sw+0.15),'rgba(255,255,255,0)');
+        ctx.fillStyle=sg;ctx.fill();} // same path, second coat: the shine
       ctx.beginPath();ctx.moveTo(x0,colY[0]); // meniscus: a bright lip + thin white shine along the surface
       for(let i=0;i<COLS-1;i++){const xm=x0+cw*(i+1);ctx.quadraticCurveTo(x0+cw*(i+0.5),colY[i],xm,(colY[i]+colY[i+1])/2);}
       ctx.lineTo(x0+span,colY[COLS-1]);
@@ -1131,16 +1157,18 @@ $("drumSig").addEventListener('change',e=>{drumSig=e.target.value;});
 $("drumFeel").addEventListener('change',e=>{drumFeel=e.target.value; // triplet feel syncs the melody too
   if(drumFeel==="t"){S.triplet=true;$("tripT").classList.add("on");}
   if(drumFeel==="1"){S.triplet=false;$("tripT").classList.remove("on");}});
-$("drumVol").addEventListener('input',()=>applyMix());
+$("bpmTop").addEventListener('input',e=>{const b=$("bpm");b.value=e.target.value;b.dispatchEvent(new Event('input'));}); // top-bar tempo mirrors the card slider
+$("bpm").addEventListener('input',()=>{const t=$("bpmTop");if(t&&t.value!==$("bpm").value)t.value=$("bpm").value;});
+$("voiceTop").addEventListener('change',e=>{const b=$("waveSeg").querySelector(`button[data-w="${e.target.value}"]`);if(b)b.click();else S.wave=e.target.value;}); // kid-friendly voice picker drives the same waveSeg
+$("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.w)$("voiceTop").value=b.dataset.w;});
 function applyMix(){if(!AC||!master)return;const t=AC.currentTime; // triangle mix: center = everyone full
   const c=x=>Math.min(1,x*3);S.wMg=c(S.wM);const T=0.09; // gentle ramp = no zipper/clicks when dragging fast or slow
   master.gain.setTargetAtTime(S.vol,t,T);
   if(melBus)melBus.gain.setTargetAtTime(c(S.wM),t,T);
   if(bandMix)bandMix.gain.setTargetAtTime(c(S.wK),t,T);
-  if(drumBus)drumBus.gain.setTargetAtTime(($("drumVol").value/100)*1.1*c(S.wD),t,T);}
+  if(drumBus)drumBus.gain.setTargetAtTime(0.88*c(S.wD),t,T);} // triangle mixer is the one true drum fader
 let _mixRAF=0;
 function scheduleMix(){if(_mixRAF)return;_mixRAF=requestAnimationFrame(()=>{_mixRAF=0;applyMix();});} // coalesce rapid drags to 1 audio update/frame
-bindRange("bpMix","bpMix",v=>v/100);
 (function(){const el=$("triMix");if(!el)return;const svg=el.querySelector('svg'),kn=el.querySelector('#triKnob');
   const T=[50,16],L=[21,68],Rt=[79,68];
   function setMix(x,y){const [x1,y1]=T,[x2,y2]=L,[x3,y3]=Rt,d=((y2-y3)*(x1-x3)+(x3-x2)*(y1-y3));
