@@ -595,6 +595,23 @@ function updateChordPill(){const p=document.getElementById('chordPill');if(!p)re
   document.getElementById('chordNow').textContent=chordName(curRootDeg);
   document.getElementById('chordNext').textContent=nextRootDeg!=null?'→ '+chordName(nextRootDeg):'';
   document.getElementById('chordProgI').style.background=`linear-gradient(90deg,${aurora(curRootDeg/n,62)},${aurora((nextRootDeg==null?curRootDeg:nextRootDeg)/n,62)})`;} // bar fills FROM this chord's color INTO the next one's
+// ---- liquid color theory: the pool IS the chord — a pastel blend of its three note colors, melting into the next chord's blend as the bar plays out ----
+function degRGB(d){const td=totalDegrees(),h=auroraHue((((d%td)+td)%td)/td),s=0.74,l=0.62; // same color wheel the walls and notes already use
+  const a=s*Math.min(l,1-l),f=nn=>{const k=(nn+h/30)%12;return (l-a*Math.max(-1,Math.min(k-3,9-k,1)))*255;};
+  return [f(0),f(8),f(4)];}
+function chordRGB(rd){const r=[0,0,0];for(const d of [rd,rd+2,rd+4]){const c=degRGB(d);r[0]+=c[0]/3;r[1]+=c[1]/3;r[2]+=c[2]/3;}return r;} // C+E+G's colors mixed = the chord's color
+let liqRGB=[178,205,240]; // eased every frame so the color glides between chords, never snaps
+function liquidColor(){
+  let tgt;
+  if(bandOn&&drumBar()){const f=(drumStep%drumBar())/drumBar(),c1=chordRGB(curRootDeg),c2=chordRGB(nextRootDeg==null?curRootDeg:nextRootDeg);
+    tgt=[0,1,2].map(i=>c1[i]+(c2[i]-c1[i])*f);} // mid-bar the pool is literally between the two chords
+  else{const n=scaleObj().c.length,acc=[0,0,0];let w=0; // no band: blend the colors of whatever notes dominate the melody
+    for(let i=0;i<n;i++){if(noteHisto[i]<=0.01)continue;const c=degRGB(i);acc[0]+=c[0]*noteHisto[i];acc[1]+=c[1]*noteHisto[i];acc[2]+=c[2]*noteHisto[i];w+=noteHisto[i];}
+    tgt=w>0.5?[acc[0]/w,acc[1]/w,acc[2]/w]:liqRGB;}
+  for(let i=0;i<3;i++)liqRGB[i]+=(tgt[i]-liqRGB[i])*0.06;
+  const P=(m,al)=>`rgba(${(liqRGB[0]+(255-liqRGB[0])*m)|0},${(liqRGB[1]+(255-liqRGB[1])*m)|0},${(liqRGB[2]+(255-liqRGB[2])*m)|0},${al})`; // toward white = pastel
+  const D=(m,al)=>`rgba(${(liqRGB[0]*(1-m))|0},${(liqRGB[1]*(1-m))|0},${(liqRGB[2]*(1-m))|0},${al})`;                                     // toward dark = depth
+  return {crest:P(0.55,0.88),mid:P(0.22,0.94),deep:D(0.24,0.97),lip:P(0.78,0.8),blob:P(0.3,0.85)};}
 const DRUMN={K:36,s:38,h:42,r:37,C:63,c:62};
 function sendMidiAt(note,vel,ch,acT,durSec){
   midiCap(ch===S.chDrum?'drums':ch===S.chBass?'bass':ch===S.chPad?'chords':'melody',note,vel,acT,durSec); // sort each hit into its own track
@@ -713,6 +730,7 @@ let fillState="fill"; // fill | break | reform
 let breakAt=0, curSegs=null, burstFlash=0, pressure=0, prevShape="6";
 let frags=null, nextShape=null, reformStart=0;
 function modLevel(){return Math.min(1,fillFrac()/0.9);} // 0..1, reaches 1 exactly at the burst point
+function settleAmt(){return Math.max(0,Math.min(1,(fillFrac()-0.22)/0.28));} // 0 = young goo floats weightless, 1 (≥50% full) = heavy enough to settle
 function fillFrac(){return measuredFill;} // real pixel coverage of the liquid, like a water line
 // the pool is literally made of the notes: its color drifts toward every note splashed into it
 let liqHue=0.55,liqHueOld=0.62; // fresh notes float on top, older notes settle deep
@@ -785,10 +803,13 @@ function commitReform(){
 }
 function fillPhysics(now){
   if(fillState==="fill"){
+    const settle=settleAmt(),pg=gY*(0.12+0.88*settle); // young goo is nearly weightless; it gains weight as it grows and sinks to the floor
     for(const p of particles){p.age++;
       if(!p.pooled&&(p.age>50||(p.age>10&&Math.hypot(p.vx,p.vy)<1.2))){p.pooled=true;if(Math.random()<0.2)addRipple(p.x,p.y-3,0.4);} // fleck lands -> joins the liquid, little ring where it lands
       if(p.pooled&&p.r<PR)p.r+=0.12;
-      p.vy+=gY;p.vx+=gX;p.x+=p.vx;p.y+=p.vy;p.vx*=0.985;p.vy*=0.992;bounceInside(p);}
+      p.vy+=(p.pooled?pg:gY);p.vx+=gX;
+      if(p.pooled&&settle<1){p.vx+=(CX-p.x)*0.0009*(1-settle);p.vy+=((CY-R*0.05)-p.y)*0.0011*(1-settle);} // cohesion: the young blob hangs mid-shape where the balls fly
+      p.x+=p.vx;p.y+=p.vy;p.vx*=0.985;p.vy*=0.992;bounceInside(p);}
     relaxParticles();relaxParticles(); // double pass = stiffer, calmer liquid
     for(const p of particles)bounceInside(p);
     if(fillFrac()>=0.9||particles.length>=partCap()*0.98)pressure++;else pressure=Math.max(0,pressure-2);
@@ -816,22 +837,21 @@ function fillPhysics(now){
   else liquidH*=0.98;
   if(burstFlash>0)burstFlash*=0.93;
   if(formGlow>0)formGlow*=0.95;
-  if(masterFilt){const m=modLevel(),t=AC.currentTime;
-    // liquid position morphs the master filter: low pool = warm LP, middle = band, high = airy HP
-    const hLift=Math.max(0,(liquidH-0.3)/0.7), base=S.filtOn?cutHzFill(1-m):14000;
+  if(masterFilt){const m=modLevel(),ff=fillFrac(),t=AC.currentTime;
+    // real coverage (not the old avg-height guess, which lied on triangles and floating goo) morphs the master filter
+    const hLift=Math.max(0,(ff-0.35)/0.65), base=S.filtOn?cutHzFill(1-m):14000;
     const lp=Math.min(14000,base+(14000-base)*hLift*hLift);
     const hp=S.filtOn?20*Math.pow(110,hLift):20; // 20 Hz -> ~2.2 kHz max, gentle on ears always
     masterHP.frequency.setTargetAtTime(hp,t,0.35);
     masterFilt.frequency.setTargetAtTime(lp,t,0.35);
-    const fillL=Math.max(m,liquidH), wash=fillL*fillL; // square taper: swell stays subtle until genuinely full, so melody never drowns mid-fill
+    const wash=Math.pow(Math.min(1,ff/0.9),2); // square taper on TRUE coverage: no more washed-out sound at a visually 30% tank
     dlyWet.gain.setTargetAtTime(S.fxOn?Math.min(0.5,S.dly+wash*0.3):0,t,0.5);  // echo blooms in with the liquid, fades smoothly as it drains
-    dlyFb.gain.setTargetAtTime(Math.min(0.35,0.14+wash*0.21),t,0.5);} // feedback hard-capped at 0.35 — old 0.42+ cap let the tail wash out the melody at high fill
+    dlyFb.gain.setTargetAtTime(Math.min(0.35,0.14+wash*0.21),t,0.5);} // feedback hard-capped at 0.35
 }
 
 // ---------- ball stepping ----------
 function step(){
   const g=S.grav, ts=ballSpeed(), gy=g*0.55; // gravity 0..1: gentle, spread smoothly across the whole slider
-  const surf=(liquidH>0.03)?Math.max(CY-R*0.9,CY+R*0.72-liquidH*R*2.88):1e9; // one water line for the whole step
   for(let bi=balls.length-1;bi>=0;bi--){
     const b=balls[bi];
     b.r=BR;
@@ -845,10 +865,10 @@ function step(){
             if(vn<0){b.vx-=2*vn*e.nx;b.vy-=2*vn*e.ny;jitter(b);b.x+=(BR-dist)*e.nx;b.y+=(BR-dist)*e.ny;e.flash=1;
               const nw=performance.now();
               if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
-                const under=b.y>surf,depth=under?Math.min(1,(b.y-surf)/(R*0.9)):0;
+                const gd=gooAt(b.x,b.y),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
                 if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
                 const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0; // how gooed-up THIS ball is right now
-                trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1))*(1-goo*0.45),goo); // underwater hits ring softer & rounder
+                trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1))*(1-goo*0.45),goo); // goo-slathered hits ring softer & rounder
                 splash(b.x,b.y,e.nx,e.ny,e.hue);}}}} // splash carries the note's color into the pool
       }else{ // caught outside a fresh shape: float free, no wall spam, drift off into space
         if(b.x<-80||b.x>W+80||b.y<-80||b.y>H+80){balls.splice(bi,1);continue;}
@@ -863,12 +883,12 @@ function step(){
     if(g>0){b.vx*=(1-g*0.06);b.vy*=(1-g*0.015);} // drag grows with gravity so they land & settle instead of skating forever
     // slime is thick: balls wading through the pool drag at their own per-ball rate, and deeper = thicker —
     // arrival times smear apart naturally, so a full tank plays looser than an empty one
-    if(liquidH>0.03){
-      const under=b.y>surf;
-      if(under){if(!b.visc)b.visc=0.80+Math.random()*0.12; // each ball is born with its own tolerance for goo (up to ~28% slower when deep — you should SEE them wade)
-        const depth=Math.min(1,(b.y-surf)/(R*0.9)),drag=1-(1-b.visc)*(0.5+0.9*depth);
+    if(fillState==="fill"&&mMask){
+      const gd=gooAt(b.x,b.y),under=gd>0.3;
+      if(under){if(!b.visc)b.visc=0.80+Math.random()*0.12; // each ball is born with its own tolerance for goo (up to ~28% slower deep inside — you should SEE them wade)
+        const depth=Math.min(1,(gd-0.3)/0.6),drag=1-(1-b.visc)*(0.5+0.9*depth);
         b.vx*=drag;b.vy*=drag;}
-      if(under&&!b._under)addRipple(b.x,surf+2,1.2); // plunk — surface ring where it dives in
+      if(under&&!b._under)addRipple(b.x,b.y-BR,1.2); // plunk — ring exactly where it actually enters the goo
       b._under=under;
     }else b._under=false;
   }
@@ -924,64 +944,76 @@ const mcv=document.createElement('canvas');mcv.width=mcv.height=36;const mctx=mc
 let mFrame=0;
 // ---- adaptive quality: perf mode thins the particle budget; the render itself is cheap enough for everyone ----
 let LITE=false, _fpsAcc=0, _fpsN=0, _slowRun=0, _lastFrame=0;
+let mMask=null; // the fill mask doubles as the goo map: geometry-agnostic, works on triangles, circles, whatever
 function measureFill(){ // barrel-in-a-rainstorm: read the real water line off an offscreen stamp of the pool
   lctx.clearRect(0,0,W,H);lctx.fillStyle='#fff';
   for(const p of particles){if(!p.pooled)continue;lctx.beginPath();lctx.arc(p.x,p.y,p.r*1.85,0,7);lctx.fill();}
   mctx.clearRect(0,0,36,36);mctx.drawImage(lq,0,0,36,36);
   const d=mctx.getImageData(0,0,36,36).data;let n=0;
   for(let i=3;i<d.length;i+=4)if(d[i]>60)n++;
+  mMask=d;
   measuredFill=Math.min(1,n/Math.max(1,shapeArea()/((W/36)*(W/36))));
 }
+function gooAt(x,y){ // 0..1 goo density at a point, sampled from the mask's 3×3 neighborhood — floating blob or settled pool, same answer
+  if(!mMask)return 0;
+  const gx=Math.max(1,Math.min(34,(x/W*36)|0)),gy=Math.max(1,Math.min(34,(y/H*36)|0));
+  let a=0;for(let j=-1;j<=1;j++)for(let i=-1;i<=1;i++)a+=mMask[((gy+j)*36+gx+i)*4+3];
+  return a/2295;}
 function drawRipples(){for(let i=ripples.length-1;i>=0;i--){const r=ripples[i];
   ctx.strokeStyle=`rgba(255,255,255,${r.a.toFixed(3)})`;ctx.lineWidth=1.6;
   ctx.beginPath();ctx.ellipse(r.x,r.y,r.r,r.r*0.32,0,0,7);ctx.stroke();
   r.r+=r.vr;r.a*=0.92;if(r.a<0.03)ripples.splice(i,1);}}
-function softBlobs(){ // loose drops (young puddle, burst spill): drawn quarter-size then scaled up — the soft upscale fuses them into goo, not a bunch of balls
+function softBlobs(col){ // fused goo blobs (floating young slime, burst spill): quarter-size draw + upscale = free metaballs, no filters
   loctx.clearRect(0,0,loC.width,loC.height);
+  loctx.fillStyle=col;
   for(const p of particles){if(!p.pooled)continue;
-    loctx.fillStyle=aurora(p.hue,60,0.9);loctx.beginPath();loctx.arc(p.x/4,p.y/4,Math.max(1.4,p.r*0.46),0,7);loctx.fill();}
+    loctx.beginPath();loctx.arc(p.x/4,p.y/4,Math.max(1.4,p.r*0.46),0,7);loctx.fill();}
   ctx.drawImage(loC,0,0,W,H);}
+function clipShape(){ctx.beginPath();ctx.moveTo(edges[0].ax,edges[0].ay);for(const e of edges)ctx.lineTo(e.bx,e.by);ctx.closePath();ctx.clip();}
 let surfY=null; // persistent water line with inertia — the surface eases toward the particles instead of teleporting, so it moves like liquid
-function drawParticles(){ // the pool: one clean gradient volume, colored by the notes that filled it — identical on every device
-  if(!particles.length){surfY=null;measuredFill=Math.max(0,measuredFill-0.02);drawRipples();return;}
-  const now=performance.now();
+function drawParticles(){ // the goo: floats as a blob while young, settles into a gradient pool once heavy — colored by the chord it's made of
+  if(!particles.length){surfY=null;mMask=null;measuredFill=Math.max(0,measuredFill-0.02);drawRipples();return;} // empty tank = no ghost goo left in the mask
+  const now=performance.now(),LC=liquidColor();
   let pooledN=0;for(const p of particles)if(p.pooled)pooledN++;
-  if(fillState==="fill"&&pooledN>=18){ // don't form a surface from six lonely drops — that's where the jaggies lived
-    const COLS=30,x0=CX-R-30,span=2*(R+30),cw=span/COLS,bot=CY+R*0.99,tgt=new Array(COLS).fill(1e9);
-    for(const p of particles){if(!p.pooled)continue;
-      const c=Math.max(0,Math.min(COLS-1,((p.x-x0)/span*COLS)|0)),top=p.y-p.r;
-      if(surfY&&surfY.length===COLS&&top<surfY[c]-45)continue; // a "pooled" drop 45px above the water line is spray, not surface — no spikes
-      if(top<tgt[c])tgt[c]=top;}
-    for(let i=0;i<COLS;i++)if(tgt[i]>bot)tgt[i]=bot+30;               // empty columns sit under the floor
-    for(let s=0;s<3;s++){const c2=tgt.slice();for(let i=0;i<COLS;i++)tgt[i]=((c2[i-1]??c2[i])+2*c2[i]+(c2[i+1]??c2[i]))/4;} // three relax passes: one meniscus, no teeth
-    if(!surfY||surfY.length!==COLS)surfY=tgt.slice();
-    for(let i=0;i<COLS;i++)surfY[i]+=(tgt[i]-surfY[i])*0.1;           // surface tension: eases toward the truth, absorbs spikes as gentle swells
-    const colY=surfY.map((y,i)=>y+Math.sin(now*0.0016+i*0.33)*1.4);   // ONE slow wave rolling across — not thirty jitters
-    let topY=1e9;for(let i=0;i<COLS;i++)if(colY[i]<topY)topY=colY[i];
-    ctx.save();
-    ctx.beginPath();ctx.moveTo(edges[0].ax,edges[0].ay);for(const e of edges)ctx.lineTo(e.bx,e.by);ctx.closePath();ctx.clip(); // liquid lives inside the shape
-    const grad=ctx.createLinearGradient(0,topY,0,bot);
-    grad.addColorStop(0,aurora(liqHue,72,0.88));grad.addColorStop(0.45,aurora(liqHue,56,0.94));grad.addColorStop(1,aurora(liqHue+0.06,38,0.97)); // ONE color family, light crest to deep floor — no clashing hues
-    ctx.beginPath();ctx.moveTo(x0,H+50);ctx.lineTo(x0,colY[0]);
-    for(let i=0;i<COLS-1;i++){const xm=x0+cw*(i+1);ctx.quadraticCurveTo(x0+cw*(i+0.5),colY[i],xm,(colY[i]+colY[i+1])/2);}
-    ctx.lineTo(x0+span,colY[COLS-1]);ctx.lineTo(x0+span,H+50);ctx.closePath();
-    ctx.fillStyle=grad;ctx.fill();
-    ctx.beginPath();ctx.moveTo(x0,colY[0]); // meniscus: a bright lip + thin white shine along the surface
-    for(let i=0;i<COLS-1;i++){const xm=x0+cw*(i+1);ctx.quadraticCurveTo(x0+cw*(i+0.5),colY[i],xm,(colY[i]+colY[i+1])/2);}
-    ctx.lineTo(x0+span,colY[COLS-1]);
-    ctx.strokeStyle=aurora(liqHue,82,0.75);ctx.lineWidth=2.5;ctx.stroke();
-    ctx.strokeStyle='rgba(255,255,255,0.45)';ctx.lineWidth=1.1;ctx.stroke();
+  if(fillState==="fill"&&(++mFrame%10===0||!mMask))measureFill(); // fresh mask often — the balls' goo-sense reads from it
+  if(fillState==="fill"){
+    ctx.save();clipShape(); // NOTHING liquid ever renders outside the geometry — triangles, circles, all of it
+    if(pooledN>=18&&settleAmt()>=0.85){ // heavy enough: a settled pool with a real surface
+      const COLS=30,x0=CX-R-30,span=2*(R+30),cw=span/COLS,bot=CY+R*0.99,tgt=new Array(COLS).fill(1e9);
+      for(const p of particles){if(!p.pooled)continue;
+        const c=Math.max(0,Math.min(COLS-1,((p.x-x0)/span*COLS)|0)),top=p.y-p.r;
+        if(surfY&&surfY.length===COLS&&top<surfY[c]-90)continue; // way above the line = spray, not surface (90px so fast pours can't deadlock it)
+        if(top<tgt[c])tgt[c]=top;}
+      for(let i=0;i<COLS;i++)if(tgt[i]>bot)tgt[i]=bot+30;
+      for(let s=0;s<3;s++){const c2=tgt.slice();for(let i=0;i<COLS;i++)tgt[i]=((c2[i-1]??c2[i])+2*c2[i]+(c2[i+1]??c2[i]))/4;}
+      if(!surfY||surfY.length!==COLS)surfY=tgt.slice();
+      for(let i=0;i<COLS;i++)surfY[i]+=(tgt[i]-surfY[i])*(tgt[i]<surfY[i]?0.3:0.08); // rises eagerly with the pour, drains lazily — can never stall behind a fast fill
+      const colY=surfY.map((y,i)=>y+Math.sin(now*0.0016+i*0.33)*1.4);
+      let topY=1e9;for(let i=0;i<COLS;i++)if(colY[i]<topY)topY=colY[i];
+      const grad=ctx.createLinearGradient(0,topY,0,bot);
+      grad.addColorStop(0,LC.crest);grad.addColorStop(0.45,LC.mid);grad.addColorStop(1,LC.deep); // the chord's pastel, crest to floor
+      ctx.beginPath();ctx.moveTo(x0,H+50);ctx.lineTo(x0,colY[0]);
+      for(let i=0;i<COLS-1;i++){const xm=x0+cw*(i+1);ctx.quadraticCurveTo(x0+cw*(i+0.5),colY[i],xm,(colY[i]+colY[i+1])/2);}
+      ctx.lineTo(x0+span,colY[COLS-1]);ctx.lineTo(x0+span,H+50);ctx.closePath();
+      ctx.fillStyle=grad;ctx.fill();
+      ctx.beginPath();ctx.moveTo(x0,colY[0]); // meniscus: a bright lip + thin white shine along the surface
+      for(let i=0;i<COLS-1;i++){const xm=x0+cw*(i+1);ctx.quadraticCurveTo(x0+cw*(i+0.5),colY[i],xm,(colY[i]+colY[i+1])/2);}
+      ctx.lineTo(x0+span,colY[COLS-1]);
+      ctx.strokeStyle=LC.lip;ctx.lineWidth=2.5;ctx.stroke();
+      ctx.strokeStyle='rgba(255,255,255,0.45)';ctx.lineWidth=1.1;ctx.stroke();
+    }else{surfY=null;softBlobs(LC.blob);} // young goo: a weightless blob hanging mid-shape, already slowing balls that pass through
     drawRipples();
+    for(const p of particles){if(p.pooled)continue; // fresh spray: crisp droplets in the note's own color, inside the glass
+      ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}
     ctx.restore();
-  }else{surfY=null;softBlobs();drawRipples();} // young puddle or burst spill: fused goo blobs, never discrete balls
-  if(fillState==="fill"&&++mFrame%20===0)measureFill();
-  for(const p of particles){if(p.pooled)continue; // fresh spray: crisp droplets in the note's own color
-    ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}}
-function drawBalls(){ // every ball its own vivid hue; underwater they wade — fat goopy wake, dimmer glow, visibly slower
-  const surf=(liquidH>0.03)?Math.max(CY-R*0.9,CY+R*0.72-liquidH*R*2.88):1e9;
-  for(const b of balls){const tl=b.trail.length,bh=Math.round(b.hue*360),under=b.y>surf;
+  }else{ // broken open: goo spills free, no clip — it's escaping
+    surfY=null;softBlobs(LC.mid);drawRipples();
+    for(const p of particles){if(p.pooled)continue;
+      ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}}}
+function drawBalls(){ // every ball its own vivid hue; in the goo they wade — fat goopy wake, dimmer glow, visibly slower
+  for(const b of balls){const tl=b.trail.length,bh=Math.round(b.hue*360),under=fillState==="fill"&&gooAt(b.x,b.y)>0.3;
     for(let i=0;i<tl;i++){const [tx,ty]=b.trail[i];const f=i/tl;
-      if(under&&ty>surf){ctx.fillStyle=`hsla(${bh},65%,58%,${(f*0.4).toFixed(3)})`;ctx.beginPath();ctx.arc(tx,ty,BR*(0.4+0.95*f),0,7);ctx.fill();} // thick wake dragging through the goo
+      if(under){ctx.fillStyle=`hsla(${bh},65%,58%,${(f*0.4).toFixed(3)})`;ctx.beginPath();ctx.arc(tx,ty,BR*(0.4+0.95*f),0,7);ctx.fill();} // thick wake dragging through the goo
       else{ctx.fillStyle=`hsla(${bh},90%,64%,${(f*0.25).toFixed(3)})`;ctx.beginPath();ctx.arc(tx,ty,BR*(0.2+0.55*f),0,7);ctx.fill();}}
     const gr=under?BR*1.5:BR*2.2; // glow shrinks underwater — light doesn't travel far in slime
     const g=ctx.createRadialGradient(b.x,b.y,1,b.x,b.y,gr);g.addColorStop(0,under?"rgba(255,255,255,.7)":"#fff");g.addColorStop(1,`hsla(${bh},90%,62%,0)`);
