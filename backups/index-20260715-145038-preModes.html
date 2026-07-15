@@ -30,51 +30,6 @@ header .sub{font-size:12px;color:var(--ink-soft);font-weight:500}
 header .spacer{flex:1}
 .btngroup{display:flex;align-items:center;gap:14px;flex-wrap:nowrap} /* transport + instruments: one family, never split across lines */
 #autoRow{display:flex;justify-content:center;padding:0 0 6px;position:relative;z-index:70} /* auto-play slime gets his own centered perch under the buttons */
-/* ---- modes: one engine, three doors — classes only change what's visible ---- */
-#modeCards{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;padding:0 18px;max-width:720px}
-.modeCard{background:var(--card);border:1px solid var(--card-brd);border-radius:18px;padding:16px 18px;width:198px;cursor:pointer;box-shadow:var(--shadow);backdrop-filter:blur(8px);transition:.15s;text-align:left}
-.modeCard:hover{transform:translateY(-2px)}
-.modeCard b{font-size:17px;display:block;margin-bottom:4px}
-.modeCard span{font-size:12px;color:var(--ink-soft);font-weight:600;line-height:1.4;display:block}
-.modeCard.last{outline:2px solid var(--accent)}
-.modeCard.soon{opacity:.55;cursor:default;pointer-events:none}
-.modeCard.soon i{display:block;font-style:normal;font-size:10px;color:var(--accent);font-weight:700;margin-top:6px;letter-spacing:.6px;text-transform:uppercase}
-.mode-play aside .card:not(#recCard){display:none} /* play: the instrument and your recordings, nothing to study */
-.mode-play #drumFeel,.mode-play #drumSig{display:none}
-.mode-play #tapeIco,.mode-play #warmSl{display:none}
-.mode-learn aside,.mode-learn #triMixBar,.mode-learn #autoRow{display:none} /* learn: clear the desk, the lesson is the interface */
-/* ---- learn overlay: the mood machine ---- */
-#learnOverlay{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(230,222,250,.5);backdrop-filter:blur(6px)}
-#learnOverlay[hidden]{display:none}
-.lCard{background:rgba(252,249,255,.96);border:1px solid var(--card-brd);border-radius:22px;box-shadow:var(--shadow);padding:20px 24px;width:min(92vw,620px);max-height:88vh;overflow-y:auto;text-align:center}
-.lCard h3{margin:0 0 6px;font-size:15px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-soft)}
-.lSub{font-size:13px;color:var(--ink-soft);font-weight:600;margin:0 0 14px;line-height:1.5}
-.lBtns{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
-.lScenes{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:12px;margin:12px 0}
-.lScene{cursor:pointer;border:2px solid transparent;border-radius:14px;transition:.15s;padding:5px;background:rgba(255,255,255,.55)}
-.lScene:hover{transform:translateY(-2px);border-color:var(--card-brd)}
-.lScene.dim{opacity:.35;pointer-events:none}
-.lScene b{display:block;font-size:11.5px;margin-top:5px;font-weight:700}
-.lBig{width:min(62vw,280px);margin:0 auto 8px}
-.lFeed{min-height:22px;font-size:13.5px;font-weight:700;margin:8px 0;color:var(--ink)}
-.lRow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
-.pPiano{display:flex;gap:5px;justify-content:center;margin:14px 0 8px}
-.pKey{width:42px;height:66px;border:none;border-radius:9px;cursor:pointer;box-shadow:var(--shadow);transition:transform .07s;font-weight:700;font-size:11px;color:rgba(60,52,90,.75)}
-.pKey:active{transform:translateY(3px)}
-.lStickers{display:flex;gap:9px;justify-content:center;margin-top:4px}
-.lStk{color:rgba(150,135,190,.45);font-size:15px}
-.lStk.got{color:var(--accent)}
-/* ---- the pixel piano: crisp keys, slime markers standing on the notes ---- */
-.pxPiano{display:flex;justify-content:center;margin:34px 0 8px;user-select:none;touch-action:manipulation}
-.pxKeys{position:relative;display:inline-flex}
-.pxW{width:38px;height:112px;background:#fff8fc;border:2px solid #5a4f78;margin-right:-2px;border-radius:0 0 5px 5px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-size:12px;font-weight:700;color:#8a7bb0;cursor:pointer;box-sizing:border-box}
-.pxW:active{background:#efe2f8}
-.pxW.hl{background:#ffe7f3}
-.pxB{position:absolute;top:0;width:26px;height:64px;background:#4a4270;border:2px solid #2c2749;border-radius:0 0 4px 4px;cursor:pointer;z-index:2;box-sizing:border-box}
-.pxB:active{background:#5d548a}
-.pxB.hl{background:#7c65c9}
-.pxSlM{position:absolute;top:-28px;width:32px;height:32px;pointer-events:none;z-index:3;animation:pxbob 1.6s ease-in-out infinite}
-@keyframes pxbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .btn{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--card-brd);border-radius:14px;padding:9px 16px;cursor:pointer;box-shadow:var(--shadow);transition:.15s;backdrop-filter:blur(8px)}
 .btn:hover{transform:translateY(-1px)}
 .btn:active{transform:translateY(0) scale(.96)}
@@ -214,11 +169,9 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <button class="btn big" id="recBtn" title="record"><span id="recDot"></span></button>
   </div>
   <span class="spacer"></span>
-  <button class="btn" id="modePill" title="switch mode">play</button>
   <button class="btn warn" id="clearBtn" title="clear all balls &amp; liquid">clear</button>
   <button class="btn" id="resetBtn" title="start fresh">↺</button>
   <label class="adv" title="lighter graphics for slow devices"><input type="checkbox" id="perfT"> ⚡</label>
-  <label class="adv" title="pixel art style"><input type="checkbox" id="pixT"> ▦</label>
 </header>
 <div id="autoRow"><button class="slimeswitch" id="slimeBig" title="auto-play"><span class="ss-knob"><span class="sic">✨</span></span></button></div>
 <div id="triMixBar">
@@ -244,7 +197,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </span>
   </span>
   <span style="display:flex;align-items:center;gap:6px"><!-- FX school: hands-on tape + delay, no menus required -->
-    <span style="font-size:15px" id="tapeIco" title="tape saturation">📼</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:58px;flex:none" title="tape saturation — warm, worn cassette color">
+    <span style="font-size:15px" title="tape saturation">📼</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:58px;flex:none" title="tape saturation — warm, worn cassette color">
     <svg width="34" height="26" viewBox="0 0 32 24" style="flex:none"><use href="#icDelay"/></svg><span class="sub">delay</span><input type="range" id="dlyTop" min="0" max="100" value="0" style="width:58px;flex:none" title="delay — echoes in time with the tempo">
   </span>
 </div>
@@ -1026,7 +979,6 @@ function drawDebris(){ctx.lineCap="round";ctx.lineWidth=7;
 const lq=document.createElement('canvas');lq.width=W;lq.height=H;const lctx=lq.getContext('2d');
 const loC=document.createElement('canvas');loC.width=W>>2;loC.height=H>>2;const loctx=loC.getContext('2d'); // quarter-res blob canvas: upscaling IS the blur — free metaballs, no filters, every device
 const shC=document.createElement('canvas');shC.width=W;shC.height=H;const shctx=shC.getContext('2d'); // gloss workbench: sheen + rim get composited here, then stamped on
-const pxC=document.createElement('canvas');pxC.width=180;pxC.height=180;const pxctx=pxC.getContext('2d'); // ▦ pixel mode: the whole frame squeezes through here and comes out chunky
 const mcv=document.createElement('canvas');mcv.width=mcv.height=36;const mctx=mcv.getContext('2d',{willReadFrequently:true});
 let mFrame=0;
 // ---- adaptive quality: perf mode thins the particle budget; the render itself is cheap enough for everyone ----
@@ -1130,9 +1082,6 @@ function draw(){
   if(burstFlash>0.01){const g=ctx.createRadialGradient(CX,CY,10,CX,CY,R*1.35);
     g.addColorStop(0,`rgba(255,255,255,${0.45*burstFlash})`);g.addColorStop(0.5,`rgba(255,225,245,${0.28*burstFlash})`);g.addColorStop(1,"rgba(255,255,255,0)");
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(CX,CY,R*1.35,0,7);ctx.fill();}
-  if(window.PIX){ // ▦: downsample the finished frame and blow it back up with smoothing off — everything goes 16-bit
-    pxctx.imageSmoothingEnabled=false;pxctx.clearRect(0,0,180,180);pxctx.drawImage(cv,0,0,180,180);
-    ctx.save();ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,W,H);ctx.drawImage(pxC,0,0,W,H);ctx.restore();}
 }
 function loop(now){
   // adaptive quality watchdog: sustained slow frames -> drop to lite render (one-way, avoids flip-flop)
@@ -1242,21 +1191,6 @@ $("dlyTop").addEventListener('input',e=>{const x=Math.pow(e.target.value/100,2)*
   if(S.slimeMode){_dlyHand=x;dlyGrab=performance.now();if(dlyWet&&AC)dlyWet.gain.setTargetAtTime(x,AC.currentTime,0.05);}
   else{const d=$("dly");d.value=e.target.value;d.dispatchEvent(new Event('input'));}});
 $("dly").addEventListener('input',()=>{const t=$("dlyTop");if(t&&!dlyGrab)t.value=$("dly").value;}); // card slider keeps the top fader honest
-// ---------- modes: one engine, three doors — the class on <body> decides what shows ----------
-function applyMode(m){S.mode=m;
-  document.body.classList.remove('mode-play','mode-learn','mode-studio');
-  document.body.classList.add('mode-'+m);
-  try{localStorage.setItem('slimehedron-mode',m);}catch(e){}
-  const p=$("modePill");if(p)p.textContent=m;
-  if(window.LEARN){if(m==='learn')LEARN.enter();else LEARN.exit();}}
-$("modePill").addEventListener('click',()=>applyMode(S.mode==='play'?'learn':S.mode==='learn'?'studio':'play'));
-applyMode((()=>{try{return localStorage.getItem('slimehedron-mode')||'play';}catch(e){return 'play';}})()); // dress the room before the splash lifts
-// ▦ pixel toggle: repaint every slime on screen in its 16-bit wardrobe (canvas pixelates on the next frame by itself)
-$("pixT").checked=window.PIX;
-$("pixT").addEventListener('change',e=>{window.PIX=e.target.checked;
-  try{localStorage.setItem('slimehedron-pix',window.PIX?'1':'0');}catch(e2){}
-  document.querySelectorAll('.slime').forEach(el=>{const b=el.querySelector('.bob');if(b&&el.dataset.fill)b.innerHTML=slimeSVG(cssVar(el.dataset.fill),el.dataset.face||'happy');});
-  if(typeof setKnobFace==='function')setKnobFace('happy');});
 $("voiceTop").addEventListener('change',e=>{const b=$("waveSeg").querySelector(`button[data-w="${e.target.value}"]`);if(b)b.click();else S.wave=e.target.value;}); // kid-friendly voice picker drives the same waveSeg
 $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.w)$("voiceTop").value=b.dataset.w;});
 function applyMix(){if(!AC||!master)return;const t=AC.currentTime; // triangle mix: center = everyone full
@@ -1371,28 +1305,7 @@ function slimeModStep(now){
 function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
 
 // ---------- slime buddies ----------
-// pixel-art twin: same cast, 16-bit wardrobe. drives the ▦ toggle and the learn-mode piano slimes.
-window.PIX=false;try{window.PIX=localStorage.getItem('slimehedron-pix')==='1';}catch(e){}
-window.pixSlime=function(fill,face){
-  const D='rgba(44,39,73,.5)',W='rgba(255,255,255,.85)',I='#3c3456',B='#ff8fbe';
-  const rows=[[6,4],[5,6],[4,8],[3,10],[3,10],[2,12],[2,12],[2,12],[2,12],[2,12],[2,12],[3,10]];
-  let r='';
-  rows.forEach((rw,i)=>{r+=`<rect x="${rw[0]}" y="${i+2}" width="${rw[1]}" height="1" fill="${fill}"/>`;});
-  rows.forEach((rw,i)=>{r+=`<rect x="${rw[0]}" y="${i+2}" width="1" height="1" fill="${D}"/><rect x="${rw[0]+rw[1]-1}" y="${i+2}" width="1" height="1" fill="${D}"/>`;});
-  r+=`<rect x="6" y="2" width="4" height="1" fill="${D}"/><rect x="3" y="13" width="10" height="1" fill="${D}"/>`;
-  r+=`<rect x="5" y="3" width="2" height="1" fill="${W}"/><rect x="4" y="4" width="1" height="1" fill="${W}"/>`; // shine
-  r+=`<rect x="3" y="9" width="1" height="1" fill="${B}"/><rect x="12" y="9" width="1" height="1" fill="${B}"/>`; // blush
-  if(face==='wow'||face==='surprise'){ // big eyes + open mouth
-    r+=`<rect x="4" y="6" width="2" height="2" fill="${I}"/><rect x="10" y="6" width="2" height="2" fill="${I}"/><rect x="4" y="6" width="1" height="1" fill="${W}"/><rect x="10" y="6" width="1" height="1" fill="${W}"/><rect x="7" y="9" width="2" height="2" fill="${I}"/>`;
-  }else if(face==='bigeye'){ // wide-eyed flat mouth
-    r+=`<rect x="4" y="5" width="3" height="3" fill="#fff"/><rect x="9" y="5" width="3" height="3" fill="#fff"/><rect x="5" y="6" width="1" height="1" fill="${I}"/><rect x="10" y="6" width="1" height="1" fill="${I}"/><rect x="6" y="10" width="4" height="1" fill="${I}"/>`;
-  }else{ // happy: glint eyes + pixel smile
-    r+=`<rect x="4" y="6" width="2" height="2" fill="${I}"/><rect x="10" y="6" width="2" height="2" fill="${I}"/><rect x="4" y="6" width="1" height="1" fill="${W}"/><rect x="10" y="6" width="1" height="1" fill="${W}"/><rect x="6" y="9" width="1" height="1" fill="${I}"/><rect x="7" y="10" width="2" height="1" fill="${I}"/><rect x="9" y="9" width="1" height="1" fill="${I}"/>`;
-  }
-  return `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" width="100%" height="100%">${r}</svg>`;
-};
 function slimeSVG(fill,face){
-  if(window.PIX)return pixSlime(fill,face);
   const body=`<path d="M40 8 C18 8 11 28 11 44 C11 62 27 66 40 66 C53 66 69 62 69 44 C69 28 62 8 40 8 Z" fill="${fill}"/>
 <path d="M40 8 C18 8 11 28 11 44 C11 62 27 66 40 66 C53 66 69 62 69 44 C69 28 62 8 40 8 Z" fill="url(#slimeSheen)"/>
 <ellipse cx="29" cy="16" rx="7" ry="4" fill="rgba(255,255,255,.55)"/>`;
@@ -1791,36 +1704,23 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
   for(const id in o.seg||{}){const e=$(id),b=e&&e.children[o.seg[id]];if(b)b.click();}
 })();
 
-/* LEARN MODE lives in learn.js — its own file, loaded after this script. */
-
-// ---------- splash: three doors into one instrument (the required audio-unlock tap doubles as the choice) ----------
+// ---------- splash: one friendly tap starts everything ----------
 (function(){
   const sp=document.createElement('div');sp.id='splash';
-  let last='play';try{last=localStorage.getItem('slimehedron-mode')||'play';}catch(e){}
-  sp.innerHTML='<div class="bob" style="width:150px;height:140px;position:relative">'+slimeSVG(cssVar('--mint'),'happy')+
+  sp.innerHTML='<div class="bob" style="width:185px;height:172px;position:relative">'+slimeSVG(cssVar('--mint'),'happy')+
     '<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0"><g fill="none" stroke="#5a4f78" stroke-width="1.4" stroke-linecap="round" opacity=".8"><circle cx="29" cy="25" r="7.5" fill="rgba(255,255,255,.1)"/><circle cx="51" cy="25" r="7.5" fill="rgba(255,255,255,.1)"/><path d="M37.5 24 q2.5 -2 5 0"/><path d="M21.5 23.5 l-5 -1.5"/><path d="M58.5 23.5 l5 -1.5"/></g></svg></div>'+
     '<div style="font-size:34px;font-weight:700">slimehedron<span style="color:var(--accent)">.</span></div>'+
-    '<div id="modeCards">'+
-    '<div class="modeCard'+(last==='play'?' last':'')+'" data-m="play"><b>play</b><span>open-ended music making — melody, rhythm and harmony respond as you go</span></div>'+
-    '<div class="modeCard'+(last==='learn'?' last':'')+'" data-m="learn"><b>learn</b><span>piano, chords, intervals and the seven modes — real theory, taught through play</span></div>'+
-    '<div class="modeCard'+(last==='studio'?' last':'')+'" data-m="studio"><b>studio</b><span>the complete instrument — synthesis, effects, recording and MIDI export</span></div>'+
-    '</div>';
+    '<div class="btn primary big" style="font-size:22px;padding:18px 42px;animation:beckon 2.2s ease-in-out infinite">▶ play</div>';
   document.body.appendChild(sp);
-  sp.addEventListener('pointerdown',e=>{
-    const card=e.target.closest('.modeCard[data-m]');if(!card)return;
-    sp.classList.add('gone');setTimeout(()=>sp.remove(),600);
-    enableMotion();initAudio();if(AC.state==="suspended")AC.resume();
-    applyMode(card.dataset.m);
-    if(card.dataset.m==='play'){ // play: full band from the first second
-      if(!S.slimeMode)$("slimeBig").click();
-      if(!drumOn)$("drumBtn").click();
-      if(!bandOn)$("bandBtn").click();
-    }else{setPlaying(true);} // studio: transport running, canvas quiet — you build the sound yourself
-  });
+  sp.addEventListener('pointerdown',()=>{enableMotion();sp.classList.add('gone');setTimeout(()=>sp.remove(),600);
+    initAudio();if(AC.state==="suspended")AC.resume();
+    if(!S.slimeMode)$("slimeBig").click();
+    if(!drumOn)$("drumBtn").click(); // full band from the first second
+    if(!bandOn)$("bandBtn").click(); // bass + chord pads on by default too
+  },{once:true});
 })();
 
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
 </script>
-<script src="learn.js"></script>
 </body>
 </html>

@@ -1791,6 +1791,123 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
   for(const id in o.seg||{}){const e=$(id),b=e&&e.children[o.seg[id]];if(b)b.click();}
 })();
 
+// ================= LEARN MODE: the mood machine — the seven modes as seven scenes =================
+window.LEARN=(function(){
+  // each mode: scale key, formal name, scene, feel words, character-tone degree, cameo spot [x,y]
+  const M7=[
+   {k:'major',n:'ionian (major)',scene:'sunny meadow',feel:'bright and settled',ch:4,cam:[13,10]},
+   {k:'dorian',n:'dorian',scene:'twilight forest',feel:'cool and mysterious',ch:5,cam:[8.8,10.8]},
+   {k:'phrygian',n:'phrygian',scene:'desert oasis',feel:'dramatic and far away',ch:1,cam:[5.8,13]},
+   {k:'lydian',n:'lydian',scene:'floating islands',feel:'floating and curious',ch:3,cam:[8.5,9.4]},
+   {k:'mixolydian',n:'mixolydian',scene:'vintage carnival',feel:'warm and playful',ch:6,cam:[13.9,10.1]},
+   {k:'minor',n:'aeolian (minor)',scene:'rainy city',feel:'quiet and thoughtful',ch:5,cam:[15.1,11.6]},
+   {k:'locrian',n:'locrian',scene:'fractured mirror',feel:'unstable and eerie',ch:4,cam:[4,13.4]}
+  ];
+  // pixel scenes: arrays of [x,y,w,h,color] on a 16-grid — every scene hides a slime
+  const ART={
+   major:[[0,0,16,11,'#aee3ff'],[12,1,3,3,'#ffe39c'],[2,2,4,1,'#fff'],[3,1,2,1,'#fff'],[8,3,3,1,'#fff'],[0,11,16,5,'#93d97b'],[2,12,1,1,'#ffb6d6'],[6,13,1,1,'#fff0cf'],[10,13,1,1,'#ffd3e7'],[4,14,1,1,'#fff'],[12,9,3,2,'#9fe6cf'],[12.6,9.5,.5,.5,'#5a4f78'],[13.9,9.5,.5,.5,'#5a4f78'],[13,10.3,1,.3,'#5a4f78']],
+   dorian:[[0,0,16,16,'#4d3f77'],[12,2,2,2,'#fff0cf'],[1,6,3,7,'#274b3d'],[2,4,1,2,'#274b3d'],[6,7,4,6,'#2f5d4a'],[7,5,2,2,'#2f5d4a'],[12,8,3,5,'#274b3d'],[0,13,16,3,'#1e2f45'],[8.2,10.5,.6,.6,'#ffe39c'],[9.4,10.5,.6,.6,'#ffe39c']],
+   phrygian:[[0,0,16,9,'#3a3358'],[2,2,.6,.6,'#fff'],[6,1,.5,.5,'#fff'],[13,3,.6,.6,'#fff'],[10,2,.4,.4,'#fff'],[4,4,.4,.4,'#fff'],[0,9,16,7,'#e6c78e'],[0,12,16,4,'#d6af70'],[11,6,1,4,'#8a6a4a'],[9,5,2,1,'#4a9f6f'],[12,5,2,1,'#4a9f6f'],[10,4,1,1,'#4a9f6f'],[12,4,1,1,'#4a9f6f'],[4,12,4,2,'#9fe6cf'],[5,12.5,.5,.5,'#fff'],[4.8,13,.4,.4,'#5a4f78'],[6.6,13,.4,.4,'#5a4f78']],
+   lydian:[[0,0,16,16,'#d9c6ff'],[1,3,3,1,'#fff'],[11,2,3,1,'#fff'],[13,13,2,1,'#fff'],[8,2,.5,.5,'#fff'],[3,6,6,1,'#93d97b'],[4,7,4,2,'#b98a63'],[9,11,5,1,'#93d97b'],[10,12,3,1.5,'#b98a63'],[7.6,8.8,1.8,1.4,'#9fe6cf'],[7.9,9.2,.4,.4,'#5a4f78'],[8.8,9.2,.4,.4,'#5a4f78']],
+   mixolydian:[[0,0,16,10,'#ffd9a8'],[3,6,10,5,'#ff8a8a'],[4,6,1,5,'#fff6ec'],[6,6,1,5,'#fff6ec'],[8,6,1,5,'#fff6ec'],[10,6,1,5,'#fff6ec'],[5,4,6,1,'#e0576f'],[4,5,8,1,'#e0576f'],[7.5,2.4,.3,1.6,'#5a4f78'],[7.8,2.4,1.2,.8,'#9fe6cf'],[0,11,16,5,'#e8b471'],[13,9.4,1.8,1.6,'#9fe6cf'],[13.3,9.8,.4,.4,'#5a4f78'],[14.2,9.8,.4,.4,'#5a4f78']],
+   minor:[[0,0,16,16,'#31406b'],[1,7,3,9,'#222c4e'],[5,5,3,11,'#1a2340'],[9,8,3,8,'#222c4e'],[13,6,2,10,'#1a2340'],[2,8,.7,.7,'#ffe39c'],[6,7,.7,.7,'#ffe39c'],[6,9.4,.7,.7,'#ffe39c'],[10,9.4,.7,.7,'#ffe39c'],[13.6,7.6,.7,.7,'#ffe39c'],[3,1,.3,2,'#8fa8d9'],[7,2.4,.3,2,'#8fa8d9'],[11,.6,.3,2,'#8fa8d9'],[14,3,.3,2,'#8fa8d9'],[5,3.4,.3,2,'#8fa8d9'],[9,1.4,.3,2,'#8fa8d9'],[14.6,10.5,1,2.4,'#9fe6cf'],[14.8,11,.35,.35,'#5a4f78'],[15.4,11,.35,.35,'#5a4f78']],
+   locrian:[[0,0,16,16,'#454a73'],[2,2,4,1,'#cfe2ff'],[3,4,1,4,'#b8cdf5'],[9,2.6,1,5,'#cfe2ff'],[11,7,4,1,'#b8cdf5'],[5,9,1,4,'#a9bce8'],[12,10.6,1,3,'#cfe2ff'],[7,12,3,1,'#b8cdf5'],[7.8,0,.35,16,'#2c3357'],[0,7.8,16,.35,'#2c3357'],[3,13,1.1,1,'#9fe6cf'],[4.5,13.4,.8,.8,'#9fe6cf'],[5.7,13.1,.6,.6,'#9fe6cf'],[3.3,13.3,.35,.35,'#5a4f78']]
+  };
+  const px=a=>a.map(r=>`<rect x="${r[0]}" y="${r[1]}" width="${r[2]}" height="${r[3]}" fill="${r[4]}"/>`).join('');
+  const sceneSVG=(i,extra)=>`<svg viewBox="0 0 16 16" shape-rendering="crispEdges" style="width:100%;display:block;border-radius:10px">${px(ART[M7[i].k])}${extra||''}</svg>`;
+  // ---- modal jams: generated live by the same synth, always on-brand, nothing pre-recorded ----
+  let jamT=[],loopIv=null,prevScale=null;
+  function setModeScale(k){if(!prevScale)prevScale={s:S.scale,r:S.root};S.scale=k;S.root=60;}
+  function stopJam(){jamT.forEach(clearTimeout);jamT=[];if(loopIv){clearInterval(loopIv);loopIv=null;}
+    if(prevScale){S.scale=prevScale.s;S.root=prevScale.r;prevScale=null;}}
+  function jn(deg,dt,vel){jamT.push(setTimeout(()=>{if(!AC)return;const c=centsForDegree(deg);
+    playSynth(freqFromCents(c),vel||84,0.6);noteFeed(c);},dt));}
+  function playJam(i){stopJam();setModeScale(M7[i].k);
+    const ch=M7[i].ch,step=300;
+    jn(0,20,64);jn(4,20,52); // a settling dyad, then the melody walks the mode and leans on its character tone
+    [0,2,4,ch,4,2,ch,0,2,4,ch,4,7,ch,4,0].forEach((d,ix)=>jn(d,240+ix*step,80+(ix%4===0?12:0)));
+  }
+  function startBacking(i){stopJam();setModeScale(M7[i].k);
+    const beat=()=>{jn(0,20,58);jn(4,640,44);jn(0,1280,50);jn(2,1900,40);};
+    beat();loopIv=setInterval(beat,2560);} // gentle root-anchored loop so every piano note lands somewhere warm
+  // ---- progress (local only — recognition, never grades) ----
+  let prog={g:{},cam:{}};try{prog=Object.assign(prog,JSON.parse(localStorage.getItem('slimehedron-learn')||'{}'));}catch(e){}
+  const saveP=()=>{try{localStorage.setItem('slimehedron-learn',JSON.stringify(prog));}catch(e){}};
+  // ---- overlay ----
+  const ov=document.createElement('div');ov.id='learnOverlay';ov.hidden=true;document.body.appendChild(ov);
+  let rounds=0;
+  function stickers(){return '<div class="lStickers">'+M7.map(m=>`<span class="lStk${(prog.g[m.k]|0)>=3?' got':''}" title="${m.n} — match it 3 times">${(prog.g[m.k]|0)>=3?'●':'○'}</span>`).join('')+'</div>';}
+  function home(){stopJam();ov.innerHTML=`<div class="lCard">
+    <h3>the seven modes</h3>
+    <p class="lSub">every mode is a mood. the same seven notes, started from a different place, change how music feels.</p>
+    <div class="lBtns">
+      <button class="btn primary big" data-a="listen">listen — a tour of the seven moods</button>
+      <button class="btn big" data-a="guess">match — which scene fits the sound?</button>
+      <button class="btn big" data-a="create">compose — score a scene yourself</button>
+    </div>${stickers()}</div>`;}
+  function listen(i){i=i||0;stopJam();playJam(i);const m=M7[i];
+    ov.innerHTML=`<div class="lCard"><h3>${i+1} of 7 · ${m.n}</h3>
+      <div class="lBig">${sceneSVG(i)}</div>
+      <div class="lFeed">${m.scene} — ${m.feel}</div>
+      <div class="lRow">${i>0?'<button class="btn" data-a="listen" data-i="'+(i-1)+'">◂ back</button>':''}
+      <button class="btn" data-a="replay" data-i="${i}">↻ hear it again</button>
+      ${i<6?'<button class="btn primary" data-a="listen" data-i="'+(i+1)+'">next ▸</button>':'<button class="btn primary" data-a="home">done — seven moods, seven modes</button>'}</div></div>`;}
+  function guess(){stopJam();rounds++;
+    const n=rounds<4?2:rounds<7?3:4;
+    const ans=Math.floor(Math.random()*7);
+    const opts=[ans];while(opts.length<n){const c=Math.floor(Math.random()*7);if(!opts.includes(c))opts.push(c);}
+    opts.sort(()=>Math.random()-0.5);
+    playJam(ans);
+    ov.innerHTML=`<div class="lCard"><h3>round ${rounds} · listen</h3>
+      <p class="lSub">which scene fits this sound?</p>
+      <div class="lScenes">${opts.map(o=>`<div class="lScene" data-pick="${o}" data-ans="${ans}">${sceneSVG(o)}<b>${M7[o].scene}</b></div>`).join('')}</div>
+      <div class="lFeed" id="lFeed"></div>
+      <div class="lRow"><button class="btn" data-a="replay" data-i="${ans}">↻ hear it again</button><button class="btn" data-a="home">menu</button></div></div>`;}
+  function pick(el){const p=+el.dataset.pick,a=+el.dataset.ans,f=document.getElementById('lFeed');
+    if(p===a){const k=M7[a].k;prog.g[k]=(prog.g[k]|0)+1;saveP();
+      f.textContent=`yes — that's ${M7[a].n}. ${M7[a].feel}.`;
+      ov.querySelectorAll('.lScene').forEach(s=>{if(+s.dataset.pick!==a)s.classList.add('dim');});
+      const row=ov.querySelector('.lRow');
+      if(prog.g[k]===3){const b=document.createElement('button');b.className='btn';b.textContent='find the hidden slime';b.dataset.a='cameo';b.dataset.i=a;row.prepend(b);}
+      const nx=document.createElement('button');nx.className='btn primary';nx.textContent='next round ▸';nx.dataset.a='guess';row.prepend(nx);
+    }else{f.textContent=`not this one — ${M7[p].scene} would sound ${M7[p].feel}. listen again.`;el.classList.add('dim');playJam(a);}}
+  function cameo(i){const m=M7[i];
+    ov.innerHTML=`<div class="lCard"><h3>${m.scene}</h3>
+      <div class="lBig">${sceneSVG(i,`<circle cx="${m.cam[0]}" cy="${m.cam[1]}" r="2" fill="none" stroke="#fff" stroke-width="0.35"><animate attributeName="r" values="2;2.6;2" dur="1.2s" repeatCount="indefinite"/></circle>`)}</div>
+      <div class="lFeed">there — a slime lives in every scene. you found this one.</div>
+      <div class="lRow"><button class="btn primary" data-a="guess">keep matching ▸</button><button class="btn" data-a="home">menu</button></div></div>`;}
+  function create(pickI){stopJam();
+    if(pickI==null){ov.innerHTML=`<div class="lCard"><h3>compose</h3>
+      <p class="lSub">choose a scene. the keys will only play notes from its mode — every choice you make belongs.</p>
+      <div class="lScenes">${M7.map((m,i)=>`<div class="lScene" data-cre="${i}">${sceneSVG(i)}<b>${m.scene}</b></div>`).join('')}</div>
+      <div class="lRow"><button class="btn" data-a="home">menu</button></div></div>`;return;}
+    const m=M7[pickI];startBacking(pickI);
+    const keys=[0,1,2,3,4,5,6,7].map(d=>{const c=degRGB(d%7);
+      return `<button class="pKey" data-deg="${d}" style="background:rgb(${(c[0]+(255-c[0])*.3)|0},${(c[1]+(255-c[1])*.3)|0},${(c[2]+(255-c[2])*.3)|0})">${d+1}</button>`;}).join('');
+    ov.innerHTML=`<div class="lCard"><h3>${m.n}</h3>
+      <div class="lBig">${sceneSVG(pickI)}</div>
+      <div class="pPiano">${keys}</div>
+      <div class="lFeed">every key belongs to ${m.n} — play what the scene feels like. composers all write it differently.</div>
+      <div class="lRow"><button class="btn" data-a="create">other scenes</button><button class="btn" data-a="home">menu</button></div></div>`;}
+  ov.addEventListener('pointerdown',e=>{const k=e.target.closest('.pKey');if(!k)return;
+    const c=centsForDegree(+k.dataset.deg);playSynth(freqFromCents(c),96,0.7);noteFeed(c);
+    k.style.transform='translateY(3px)';setTimeout(()=>k.style.transform='',90);});
+  ov.addEventListener('click',e=>{
+    const sc=e.target.closest('.lScene[data-pick]');if(sc){pick(sc);return;}
+    const cr=e.target.closest('.lScene[data-cre]');if(cr){create(+cr.dataset.cre);return;}
+    const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+    if(a==='home')home();else if(a==='listen')listen(+(b.dataset.i||0));
+    else if(a==='replay')playJam(+b.dataset.i);else if(a==='guess')guess();
+    else if(a==='create')create();else if(a==='cameo')cameo(+b.dataset.i);});
+  function enter(){ // clear the desk: lessons drive the sound, not the physics
+    if(S.slimeMode)$("slimeBig").click();if(drumOn)$("drumBtn").click();if(bandOn)$("bandBtn").click();
+    balls.length=0;initAudio();if(AC&&AC.state==='suspended')AC.resume();if(!S.playing)setPlaying(true);
+    ov.hidden=false;home();}
+  function exit(){stopJam();ov.hidden=true;}
+  return {enter,exit};
+})();
+if(S.mode==='learn')LEARN.enter(); // if the last session ended in learn, reopen the classroom
+
 /* LEARN MODE lives in learn.js — its own file, loaded after this script. */
 
 // ---------- splash: three doors into one instrument (the required audio-unlock tap doubles as the choice) ----------

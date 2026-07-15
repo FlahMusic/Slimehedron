@@ -64,17 +64,6 @@ header .spacer{flex:1}
 .lStickers{display:flex;gap:9px;justify-content:center;margin-top:4px}
 .lStk{color:rgba(150,135,190,.45);font-size:15px}
 .lStk.got{color:var(--accent)}
-/* ---- the pixel piano: crisp keys, slime markers standing on the notes ---- */
-.pxPiano{display:flex;justify-content:center;margin:34px 0 8px;user-select:none;touch-action:manipulation}
-.pxKeys{position:relative;display:inline-flex}
-.pxW{width:38px;height:112px;background:#fff8fc;border:2px solid #5a4f78;margin-right:-2px;border-radius:0 0 5px 5px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-size:12px;font-weight:700;color:#8a7bb0;cursor:pointer;box-sizing:border-box}
-.pxW:active{background:#efe2f8}
-.pxW.hl{background:#ffe7f3}
-.pxB{position:absolute;top:0;width:26px;height:64px;background:#4a4270;border:2px solid #2c2749;border-radius:0 0 4px 4px;cursor:pointer;z-index:2;box-sizing:border-box}
-.pxB:active{background:#5d548a}
-.pxB.hl{background:#7c65c9}
-.pxSlM{position:absolute;top:-28px;width:32px;height:32px;pointer-events:none;z-index:3;animation:pxbob 1.6s ease-in-out infinite}
-@keyframes pxbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
 .btn{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--card-brd);border-radius:14px;padding:9px 16px;cursor:pointer;box-shadow:var(--shadow);transition:.15s;backdrop-filter:blur(8px)}
 .btn:hover{transform:translateY(-1px)}
 .btn:active{transform:translateY(0) scale(.96)}
@@ -218,7 +207,6 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <button class="btn warn" id="clearBtn" title="clear all balls &amp; liquid">clear</button>
   <button class="btn" id="resetBtn" title="start fresh">↺</button>
   <label class="adv" title="lighter graphics for slow devices"><input type="checkbox" id="perfT"> ⚡</label>
-  <label class="adv" title="pixel art style"><input type="checkbox" id="pixT"> ▦</label>
 </header>
 <div id="autoRow"><button class="slimeswitch" id="slimeBig" title="auto-play"><span class="ss-knob"><span class="sic">✨</span></span></button></div>
 <div id="triMixBar">
@@ -1026,7 +1014,6 @@ function drawDebris(){ctx.lineCap="round";ctx.lineWidth=7;
 const lq=document.createElement('canvas');lq.width=W;lq.height=H;const lctx=lq.getContext('2d');
 const loC=document.createElement('canvas');loC.width=W>>2;loC.height=H>>2;const loctx=loC.getContext('2d'); // quarter-res blob canvas: upscaling IS the blur — free metaballs, no filters, every device
 const shC=document.createElement('canvas');shC.width=W;shC.height=H;const shctx=shC.getContext('2d'); // gloss workbench: sheen + rim get composited here, then stamped on
-const pxC=document.createElement('canvas');pxC.width=180;pxC.height=180;const pxctx=pxC.getContext('2d'); // ▦ pixel mode: the whole frame squeezes through here and comes out chunky
 const mcv=document.createElement('canvas');mcv.width=mcv.height=36;const mctx=mcv.getContext('2d',{willReadFrequently:true});
 let mFrame=0;
 // ---- adaptive quality: perf mode thins the particle budget; the render itself is cheap enough for everyone ----
@@ -1130,9 +1117,6 @@ function draw(){
   if(burstFlash>0.01){const g=ctx.createRadialGradient(CX,CY,10,CX,CY,R*1.35);
     g.addColorStop(0,`rgba(255,255,255,${0.45*burstFlash})`);g.addColorStop(0.5,`rgba(255,225,245,${0.28*burstFlash})`);g.addColorStop(1,"rgba(255,255,255,0)");
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(CX,CY,R*1.35,0,7);ctx.fill();}
-  if(window.PIX){ // ▦: downsample the finished frame and blow it back up with smoothing off — everything goes 16-bit
-    pxctx.imageSmoothingEnabled=false;pxctx.clearRect(0,0,180,180);pxctx.drawImage(cv,0,0,180,180);
-    ctx.save();ctx.imageSmoothingEnabled=false;ctx.clearRect(0,0,W,H);ctx.drawImage(pxC,0,0,W,H);ctx.restore();}
 }
 function loop(now){
   // adaptive quality watchdog: sustained slow frames -> drop to lite render (one-way, avoids flip-flop)
@@ -1251,12 +1235,6 @@ function applyMode(m){S.mode=m;
   if(window.LEARN){if(m==='learn')LEARN.enter();else LEARN.exit();}}
 $("modePill").addEventListener('click',()=>applyMode(S.mode==='play'?'learn':S.mode==='learn'?'studio':'play'));
 applyMode((()=>{try{return localStorage.getItem('slimehedron-mode')||'play';}catch(e){return 'play';}})()); // dress the room before the splash lifts
-// ▦ pixel toggle: repaint every slime on screen in its 16-bit wardrobe (canvas pixelates on the next frame by itself)
-$("pixT").checked=window.PIX;
-$("pixT").addEventListener('change',e=>{window.PIX=e.target.checked;
-  try{localStorage.setItem('slimehedron-pix',window.PIX?'1':'0');}catch(e2){}
-  document.querySelectorAll('.slime').forEach(el=>{const b=el.querySelector('.bob');if(b&&el.dataset.fill)b.innerHTML=slimeSVG(cssVar(el.dataset.fill),el.dataset.face||'happy');});
-  if(typeof setKnobFace==='function')setKnobFace('happy');});
 $("voiceTop").addEventListener('change',e=>{const b=$("waveSeg").querySelector(`button[data-w="${e.target.value}"]`);if(b)b.click();else S.wave=e.target.value;}); // kid-friendly voice picker drives the same waveSeg
 $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(b&&b.dataset.w)$("voiceTop").value=b.dataset.w;});
 function applyMix(){if(!AC||!master)return;const t=AC.currentTime; // triangle mix: center = everyone full
@@ -1371,28 +1349,7 @@ function slimeModStep(now){
 function cssVar(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
 
 // ---------- slime buddies ----------
-// pixel-art twin: same cast, 16-bit wardrobe. drives the ▦ toggle and the learn-mode piano slimes.
-window.PIX=false;try{window.PIX=localStorage.getItem('slimehedron-pix')==='1';}catch(e){}
-window.pixSlime=function(fill,face){
-  const D='rgba(44,39,73,.5)',W='rgba(255,255,255,.85)',I='#3c3456',B='#ff8fbe';
-  const rows=[[6,4],[5,6],[4,8],[3,10],[3,10],[2,12],[2,12],[2,12],[2,12],[2,12],[2,12],[3,10]];
-  let r='';
-  rows.forEach((rw,i)=>{r+=`<rect x="${rw[0]}" y="${i+2}" width="${rw[1]}" height="1" fill="${fill}"/>`;});
-  rows.forEach((rw,i)=>{r+=`<rect x="${rw[0]}" y="${i+2}" width="1" height="1" fill="${D}"/><rect x="${rw[0]+rw[1]-1}" y="${i+2}" width="1" height="1" fill="${D}"/>`;});
-  r+=`<rect x="6" y="2" width="4" height="1" fill="${D}"/><rect x="3" y="13" width="10" height="1" fill="${D}"/>`;
-  r+=`<rect x="5" y="3" width="2" height="1" fill="${W}"/><rect x="4" y="4" width="1" height="1" fill="${W}"/>`; // shine
-  r+=`<rect x="3" y="9" width="1" height="1" fill="${B}"/><rect x="12" y="9" width="1" height="1" fill="${B}"/>`; // blush
-  if(face==='wow'||face==='surprise'){ // big eyes + open mouth
-    r+=`<rect x="4" y="6" width="2" height="2" fill="${I}"/><rect x="10" y="6" width="2" height="2" fill="${I}"/><rect x="4" y="6" width="1" height="1" fill="${W}"/><rect x="10" y="6" width="1" height="1" fill="${W}"/><rect x="7" y="9" width="2" height="2" fill="${I}"/>`;
-  }else if(face==='bigeye'){ // wide-eyed flat mouth
-    r+=`<rect x="4" y="5" width="3" height="3" fill="#fff"/><rect x="9" y="5" width="3" height="3" fill="#fff"/><rect x="5" y="6" width="1" height="1" fill="${I}"/><rect x="10" y="6" width="1" height="1" fill="${I}"/><rect x="6" y="10" width="4" height="1" fill="${I}"/>`;
-  }else{ // happy: glint eyes + pixel smile
-    r+=`<rect x="4" y="6" width="2" height="2" fill="${I}"/><rect x="10" y="6" width="2" height="2" fill="${I}"/><rect x="4" y="6" width="1" height="1" fill="${W}"/><rect x="10" y="6" width="1" height="1" fill="${W}"/><rect x="6" y="9" width="1" height="1" fill="${I}"/><rect x="7" y="10" width="2" height="1" fill="${I}"/><rect x="9" y="9" width="1" height="1" fill="${I}"/>`;
-  }
-  return `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" width="100%" height="100%">${r}</svg>`;
-};
 function slimeSVG(fill,face){
-  if(window.PIX)return pixSlime(fill,face);
   const body=`<path d="M40 8 C18 8 11 28 11 44 C11 62 27 66 40 66 C53 66 69 62 69 44 C69 28 62 8 40 8 Z" fill="${fill}"/>
 <path d="M40 8 C18 8 11 28 11 44 C11 62 27 66 40 66 C53 66 69 62 69 44 C69 28 62 8 40 8 Z" fill="url(#slimeSheen)"/>
 <ellipse cx="29" cy="16" rx="7" ry="4" fill="rgba(255,255,255,.55)"/>`;
@@ -1791,7 +1748,122 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
   for(const id in o.seg||{}){const e=$(id),b=e&&e.children[o.seg[id]];if(b)b.click();}
 })();
 
-/* LEARN MODE lives in learn.js — its own file, loaded after this script. */
+// ================= LEARN MODE: the mood machine — the seven modes as seven scenes =================
+window.LEARN=(function(){
+  // each mode: scale key, formal name, scene, feel words, character-tone degree, cameo spot [x,y]
+  const M7=[
+   {k:'major',n:'ionian (major)',scene:'sunny meadow',feel:'bright and settled',ch:4,cam:[13,10]},
+   {k:'dorian',n:'dorian',scene:'twilight forest',feel:'cool and mysterious',ch:5,cam:[8.8,10.8]},
+   {k:'phrygian',n:'phrygian',scene:'desert oasis',feel:'dramatic and far away',ch:1,cam:[5.8,13]},
+   {k:'lydian',n:'lydian',scene:'floating islands',feel:'floating and curious',ch:3,cam:[8.5,9.4]},
+   {k:'mixolydian',n:'mixolydian',scene:'vintage carnival',feel:'warm and playful',ch:6,cam:[13.9,10.1]},
+   {k:'minor',n:'aeolian (minor)',scene:'rainy city',feel:'quiet and thoughtful',ch:5,cam:[15.1,11.6]},
+   {k:'locrian',n:'locrian',scene:'fractured mirror',feel:'unstable and eerie',ch:4,cam:[4,13.4]}
+  ];
+  // pixel scenes: arrays of [x,y,w,h,color] on a 16-grid — every scene hides a slime
+  const ART={
+   major:[[0,0,16,11,'#aee3ff'],[12,1,3,3,'#ffe39c'],[2,2,4,1,'#fff'],[3,1,2,1,'#fff'],[8,3,3,1,'#fff'],[0,11,16,5,'#93d97b'],[2,12,1,1,'#ffb6d6'],[6,13,1,1,'#fff0cf'],[10,13,1,1,'#ffd3e7'],[4,14,1,1,'#fff'],[12,9,3,2,'#9fe6cf'],[12.6,9.5,.5,.5,'#5a4f78'],[13.9,9.5,.5,.5,'#5a4f78'],[13,10.3,1,.3,'#5a4f78']],
+   dorian:[[0,0,16,16,'#4d3f77'],[12,2,2,2,'#fff0cf'],[1,6,3,7,'#274b3d'],[2,4,1,2,'#274b3d'],[6,7,4,6,'#2f5d4a'],[7,5,2,2,'#2f5d4a'],[12,8,3,5,'#274b3d'],[0,13,16,3,'#1e2f45'],[8.2,10.5,.6,.6,'#ffe39c'],[9.4,10.5,.6,.6,'#ffe39c']],
+   phrygian:[[0,0,16,9,'#3a3358'],[2,2,.6,.6,'#fff'],[6,1,.5,.5,'#fff'],[13,3,.6,.6,'#fff'],[10,2,.4,.4,'#fff'],[4,4,.4,.4,'#fff'],[0,9,16,7,'#e6c78e'],[0,12,16,4,'#d6af70'],[11,6,1,4,'#8a6a4a'],[9,5,2,1,'#4a9f6f'],[12,5,2,1,'#4a9f6f'],[10,4,1,1,'#4a9f6f'],[12,4,1,1,'#4a9f6f'],[4,12,4,2,'#9fe6cf'],[5,12.5,.5,.5,'#fff'],[4.8,13,.4,.4,'#5a4f78'],[6.6,13,.4,.4,'#5a4f78']],
+   lydian:[[0,0,16,16,'#d9c6ff'],[1,3,3,1,'#fff'],[11,2,3,1,'#fff'],[13,13,2,1,'#fff'],[8,2,.5,.5,'#fff'],[3,6,6,1,'#93d97b'],[4,7,4,2,'#b98a63'],[9,11,5,1,'#93d97b'],[10,12,3,1.5,'#b98a63'],[7.6,8.8,1.8,1.4,'#9fe6cf'],[7.9,9.2,.4,.4,'#5a4f78'],[8.8,9.2,.4,.4,'#5a4f78']],
+   mixolydian:[[0,0,16,10,'#ffd9a8'],[3,6,10,5,'#ff8a8a'],[4,6,1,5,'#fff6ec'],[6,6,1,5,'#fff6ec'],[8,6,1,5,'#fff6ec'],[10,6,1,5,'#fff6ec'],[5,4,6,1,'#e0576f'],[4,5,8,1,'#e0576f'],[7.5,2.4,.3,1.6,'#5a4f78'],[7.8,2.4,1.2,.8,'#9fe6cf'],[0,11,16,5,'#e8b471'],[13,9.4,1.8,1.6,'#9fe6cf'],[13.3,9.8,.4,.4,'#5a4f78'],[14.2,9.8,.4,.4,'#5a4f78']],
+   minor:[[0,0,16,16,'#31406b'],[1,7,3,9,'#222c4e'],[5,5,3,11,'#1a2340'],[9,8,3,8,'#222c4e'],[13,6,2,10,'#1a2340'],[2,8,.7,.7,'#ffe39c'],[6,7,.7,.7,'#ffe39c'],[6,9.4,.7,.7,'#ffe39c'],[10,9.4,.7,.7,'#ffe39c'],[13.6,7.6,.7,.7,'#ffe39c'],[3,1,.3,2,'#8fa8d9'],[7,2.4,.3,2,'#8fa8d9'],[11,.6,.3,2,'#8fa8d9'],[14,3,.3,2,'#8fa8d9'],[5,3.4,.3,2,'#8fa8d9'],[9,1.4,.3,2,'#8fa8d9'],[14.6,10.5,1,2.4,'#9fe6cf'],[14.8,11,.35,.35,'#5a4f78'],[15.4,11,.35,.35,'#5a4f78']],
+   locrian:[[0,0,16,16,'#454a73'],[2,2,4,1,'#cfe2ff'],[3,4,1,4,'#b8cdf5'],[9,2.6,1,5,'#cfe2ff'],[11,7,4,1,'#b8cdf5'],[5,9,1,4,'#a9bce8'],[12,10.6,1,3,'#cfe2ff'],[7,12,3,1,'#b8cdf5'],[7.8,0,.35,16,'#2c3357'],[0,7.8,16,.35,'#2c3357'],[3,13,1.1,1,'#9fe6cf'],[4.5,13.4,.8,.8,'#9fe6cf'],[5.7,13.1,.6,.6,'#9fe6cf'],[3.3,13.3,.35,.35,'#5a4f78']]
+  };
+  const px=a=>a.map(r=>`<rect x="${r[0]}" y="${r[1]}" width="${r[2]}" height="${r[3]}" fill="${r[4]}"/>`).join('');
+  const sceneSVG=(i,extra)=>`<svg viewBox="0 0 16 16" shape-rendering="crispEdges" style="width:100%;display:block;border-radius:10px">${px(ART[M7[i].k])}${extra||''}</svg>`;
+  // ---- modal jams: generated live by the same synth, always on-brand, nothing pre-recorded ----
+  let jamT=[],loopIv=null,prevScale=null;
+  function setModeScale(k){if(!prevScale)prevScale={s:S.scale,r:S.root};S.scale=k;S.root=60;}
+  function stopJam(){jamT.forEach(clearTimeout);jamT=[];if(loopIv){clearInterval(loopIv);loopIv=null;}
+    if(prevScale){S.scale=prevScale.s;S.root=prevScale.r;prevScale=null;}}
+  function jn(deg,dt,vel){jamT.push(setTimeout(()=>{if(!AC)return;const c=centsForDegree(deg);
+    playSynth(freqFromCents(c),vel||84,0.6);noteFeed(c);},dt));}
+  function playJam(i){stopJam();setModeScale(M7[i].k);
+    const ch=M7[i].ch,step=300;
+    jn(0,20,64);jn(4,20,52); // a settling dyad, then the melody walks the mode and leans on its character tone
+    [0,2,4,ch,4,2,ch,0,2,4,ch,4,7,ch,4,0].forEach((d,ix)=>jn(d,240+ix*step,80+(ix%4===0?12:0)));
+  }
+  function startBacking(i){stopJam();setModeScale(M7[i].k);
+    const beat=()=>{jn(0,20,58);jn(4,640,44);jn(0,1280,50);jn(2,1900,40);};
+    beat();loopIv=setInterval(beat,2560);} // gentle root-anchored loop so every piano note lands somewhere warm
+  // ---- progress (local only — recognition, never grades) ----
+  let prog={g:{},cam:{}};try{prog=Object.assign(prog,JSON.parse(localStorage.getItem('slimehedron-learn')||'{}'));}catch(e){}
+  const saveP=()=>{try{localStorage.setItem('slimehedron-learn',JSON.stringify(prog));}catch(e){}};
+  // ---- overlay ----
+  const ov=document.createElement('div');ov.id='learnOverlay';ov.hidden=true;document.body.appendChild(ov);
+  let rounds=0;
+  function stickers(){return '<div class="lStickers">'+M7.map(m=>`<span class="lStk${(prog.g[m.k]|0)>=3?' got':''}" title="${m.n} — match it 3 times">${(prog.g[m.k]|0)>=3?'●':'○'}</span>`).join('')+'</div>';}
+  function home(){stopJam();ov.innerHTML=`<div class="lCard">
+    <h3>the seven modes</h3>
+    <p class="lSub">every mode is a mood. the same seven notes, started from a different place, change how music feels.</p>
+    <div class="lBtns">
+      <button class="btn primary big" data-a="listen">listen — a tour of the seven moods</button>
+      <button class="btn big" data-a="guess">match — which scene fits the sound?</button>
+      <button class="btn big" data-a="create">compose — score a scene yourself</button>
+    </div>${stickers()}</div>`;}
+  function listen(i){i=i||0;stopJam();playJam(i);const m=M7[i];
+    ov.innerHTML=`<div class="lCard"><h3>${i+1} of 7 · ${m.n}</h3>
+      <div class="lBig">${sceneSVG(i)}</div>
+      <div class="lFeed">${m.scene} — ${m.feel}</div>
+      <div class="lRow">${i>0?'<button class="btn" data-a="listen" data-i="'+(i-1)+'">◂ back</button>':''}
+      <button class="btn" data-a="replay" data-i="${i}">↻ hear it again</button>
+      ${i<6?'<button class="btn primary" data-a="listen" data-i="'+(i+1)+'">next ▸</button>':'<button class="btn primary" data-a="home">done — seven moods, seven modes</button>'}</div></div>`;}
+  function guess(){stopJam();rounds++;
+    const n=rounds<4?2:rounds<7?3:4;
+    const ans=Math.floor(Math.random()*7);
+    const opts=[ans];while(opts.length<n){const c=Math.floor(Math.random()*7);if(!opts.includes(c))opts.push(c);}
+    opts.sort(()=>Math.random()-0.5);
+    playJam(ans);
+    ov.innerHTML=`<div class="lCard"><h3>round ${rounds} · listen</h3>
+      <p class="lSub">which scene fits this sound?</p>
+      <div class="lScenes">${opts.map(o=>`<div class="lScene" data-pick="${o}" data-ans="${ans}">${sceneSVG(o)}<b>${M7[o].scene}</b></div>`).join('')}</div>
+      <div class="lFeed" id="lFeed"></div>
+      <div class="lRow"><button class="btn" data-a="replay" data-i="${ans}">↻ hear it again</button><button class="btn" data-a="home">menu</button></div></div>`;}
+  function pick(el){const p=+el.dataset.pick,a=+el.dataset.ans,f=document.getElementById('lFeed');
+    if(p===a){const k=M7[a].k;prog.g[k]=(prog.g[k]|0)+1;saveP();
+      f.textContent=`yes — that's ${M7[a].n}. ${M7[a].feel}.`;
+      ov.querySelectorAll('.lScene').forEach(s=>{if(+s.dataset.pick!==a)s.classList.add('dim');});
+      const row=ov.querySelector('.lRow');
+      if(prog.g[k]===3){const b=document.createElement('button');b.className='btn';b.textContent='find the hidden slime';b.dataset.a='cameo';b.dataset.i=a;row.prepend(b);}
+      const nx=document.createElement('button');nx.className='btn primary';nx.textContent='next round ▸';nx.dataset.a='guess';row.prepend(nx);
+    }else{f.textContent=`not this one — ${M7[p].scene} would sound ${M7[p].feel}. listen again.`;el.classList.add('dim');playJam(a);}}
+  function cameo(i){const m=M7[i];
+    ov.innerHTML=`<div class="lCard"><h3>${m.scene}</h3>
+      <div class="lBig">${sceneSVG(i,`<circle cx="${m.cam[0]}" cy="${m.cam[1]}" r="2" fill="none" stroke="#fff" stroke-width="0.35"><animate attributeName="r" values="2;2.6;2" dur="1.2s" repeatCount="indefinite"/></circle>`)}</div>
+      <div class="lFeed">there — a slime lives in every scene. you found this one.</div>
+      <div class="lRow"><button class="btn primary" data-a="guess">keep matching ▸</button><button class="btn" data-a="home">menu</button></div></div>`;}
+  function create(pickI){stopJam();
+    if(pickI==null){ov.innerHTML=`<div class="lCard"><h3>compose</h3>
+      <p class="lSub">choose a scene. the keys will only play notes from its mode — every choice you make belongs.</p>
+      <div class="lScenes">${M7.map((m,i)=>`<div class="lScene" data-cre="${i}">${sceneSVG(i)}<b>${m.scene}</b></div>`).join('')}</div>
+      <div class="lRow"><button class="btn" data-a="home">menu</button></div></div>`;return;}
+    const m=M7[pickI];startBacking(pickI);
+    const keys=[0,1,2,3,4,5,6,7].map(d=>{const c=degRGB(d%7);
+      return `<button class="pKey" data-deg="${d}" style="background:rgb(${(c[0]+(255-c[0])*.3)|0},${(c[1]+(255-c[1])*.3)|0},${(c[2]+(255-c[2])*.3)|0})">${d+1}</button>`;}).join('');
+    ov.innerHTML=`<div class="lCard"><h3>${m.n}</h3>
+      <div class="lBig">${sceneSVG(pickI)}</div>
+      <div class="pPiano">${keys}</div>
+      <div class="lFeed">every key belongs to ${m.n} — play what the scene feels like. composers all write it differently.</div>
+      <div class="lRow"><button class="btn" data-a="create">other scenes</button><button class="btn" data-a="home">menu</button></div></div>`;}
+  ov.addEventListener('pointerdown',e=>{const k=e.target.closest('.pKey');if(!k)return;
+    const c=centsForDegree(+k.dataset.deg);playSynth(freqFromCents(c),96,0.7);noteFeed(c);
+    k.style.transform='translateY(3px)';setTimeout(()=>k.style.transform='',90);});
+  ov.addEventListener('click',e=>{
+    const sc=e.target.closest('.lScene[data-pick]');if(sc){pick(sc);return;}
+    const cr=e.target.closest('.lScene[data-cre]');if(cr){create(+cr.dataset.cre);return;}
+    const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
+    if(a==='home')home();else if(a==='listen')listen(+(b.dataset.i||0));
+    else if(a==='replay')playJam(+b.dataset.i);else if(a==='guess')guess();
+    else if(a==='create')create();else if(a==='cameo')cameo(+b.dataset.i);});
+  function enter(){ // clear the desk: lessons drive the sound, not the physics
+    if(S.slimeMode)$("slimeBig").click();if(drumOn)$("drumBtn").click();if(bandOn)$("bandBtn").click();
+    balls.length=0;initAudio();if(AC&&AC.state==='suspended')AC.resume();if(!S.playing)setPlaying(true);
+    ov.hidden=false;home();}
+  function exit(){stopJam();ov.hidden=true;}
+  return {enter,exit};
+})();
+if(S.mode==='learn')LEARN.enter(); // if the last session ended in learn, reopen the classroom
 
 // ---------- splash: three doors into one instrument (the required audio-unlock tap doubles as the choice) ----------
 (function(){
@@ -1802,7 +1874,7 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
     '<div style="font-size:34px;font-weight:700">slimehedron<span style="color:var(--accent)">.</span></div>'+
     '<div id="modeCards">'+
     '<div class="modeCard'+(last==='play'?' last':'')+'" data-m="play"><b>play</b><span>open-ended music making — melody, rhythm and harmony respond as you go</span></div>'+
-    '<div class="modeCard'+(last==='learn'?' last':'')+'" data-m="learn"><b>learn</b><span>piano, chords, intervals and the seven modes — real theory, taught through play</span></div>'+
+    '<div class="modeCard'+(last==='learn'?' last':'')+'" data-m="learn"><b>learn</b><span>the seven modes of music, taught through scenes, listening and composing</span></div>'+
     '<div class="modeCard'+(last==='studio'?' last':'')+'" data-m="studio"><b>studio</b><span>the complete instrument — synthesis, effects, recording and MIDI export</span></div>'+
     '</div>';
   document.body.appendChild(sp);
@@ -1821,6 +1893,5 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
 
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
 </script>
-<script src="learn.js"></script>
 </body>
 </html>
