@@ -187,18 +187,18 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </svg></div>
   <span id="drumCtl" style="display:flex;align-items:center;gap:8px;opacity:.35;pointer-events:none">
     <svg width="16" height="16" viewBox="0 0 24 24" style="flex:none"><use href="#icDrum"/></svg><!-- this cluster = the drums -->
-    <select id="drumKit" style="flex:none;width:auto" title="drum sound"><option value="chip" selected>video game</option><option value="conga">conga</option><option value="bossa">bossa</option><option value="rock">rock</option><option value="beep">robot</option></select>
-    <select id="drumFeel" style="flex:none;width:auto" title="beat feel"><option value="1" selected>normal</option><option value="t">triplet</option><option value="2">double</option><option value="h">half</option></select>
-    <select id="drumSig" style="flex:none;width:auto" title="beats per bar"><option value="16" selected>4/4</option><option value="12">3/4</option><option value="12c">6/8</option><option value="20" title="counts 1-2-3 1-2">5/4</option><option value="14" title="counts 1-2 1-2 1-2-3">7/8</option><option value="18" title="counts 1-2 1-2 1-2 1-2-3">9/8</option></select>
+    <select id="drumKit" style="flex:none;width:auto" title="drum kit"><option value="chip" selected>chiptune</option><option value="conga">conga</option><option value="bossa">bossa nova</option><option value="rock">rock</option><option value="beep">electro</option></select>
+    <select id="drumFeel" style="flex:none;width:auto" title="feel"><option value="1" selected>straight</option><option value="t">triplet</option><option value="2">double-time</option><option value="h">half-time</option></select>
+    <select id="drumSig" style="flex:none;width:auto" title="time signature"><option value="16" selected>4/4</option><option value="12">3/4</option><option value="12c">6/8</option><option value="20" title="counts 1-2-3 1-2">5/4</option><option value="14" title="counts 1-2 1-2 1-2-3">7/8</option><option value="18" title="counts 1-2 1-2 1-2 1-2-3">9/8</option></select>
   </span>
   <span style="display:flex;align-items:center;gap:6px">
     <svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><use href="#icNote"/></svg>
-    <select id="voiceTop" style="flex:none;width:auto" title="melody voice"><option value="sine">smooth</option><option value="triangle" selected>soft</option><option value="sawtooth">buzzy</option><option value="square">beepy</option></select>
-    <span class="sub">tempo</span><input type="range" id="bpmTop" min="40" max="220" value="80" style="width:74px;flex:none" title="speed">
+    <select id="voiceTop" style="flex:none;width:auto" title="oscillator waveform"><option value="sine">∿ sine · smooth</option><option value="triangle" selected>△ triangle · mellow</option><option value="sawtooth">⊿ saw · bright</option><option value="square">⊓ square · buzzy</option></select>
+    <span class="sub">tempo</span><input type="range" id="bpmTop" min="40" max="220" value="80" style="width:74px;flex:none" title="tempo (BPM)">
   </span>
   <div id="advBar" hidden>
   <span style="font-size:15px" title="tape warmth">📼</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:78px;flex:none" title="tape warmth">
-  <span style="font-size:15px" title="swing">🕺</span><input type="range" id="swingSl" min="0" max="100" value="15" style="width:78px;flex:none" title="swing — makes the beat bounce">
+  <svg width="17" height="17" viewBox="0 0 24 24" style="flex:none"><use href="#icSwing"/></svg><input type="range" id="swingSl" min="0" max="100" value="15" style="width:78px;flex:none" title="swing — offbeats land late">
   <span class="sub">random shape</span><div class="toggle on" id="randShapeT" title="new shape after each burst"></div>
   <span class="sub">count-in 3·2·1</span><div class="toggle on" id="countT" title="count down before recording"></div>
   <button class="btn warn" id="clearBtn">clear</button>
@@ -234,6 +234,15 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 <path d="M3.6 21.2 L6.4 18.8" stroke="#fff" stroke-width=".7" opacity=".9" fill="none"/>
 </symbol>
 <symbol id="icNote" viewBox="0 0 24 24"><g stroke="var(--icAcc,var(--ink-soft))" stroke-width="1.6" stroke-linecap="round" opacity=".55" fill="none"><path d="M20.2 3.2 l1.6 -1.6"/><path d="M21.4 7 l2.2 -.6"/></g><path d="M15.4 15 V5 q3.8 1.2 3.2 4.8" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/><ellipse cx="12.2" cy="16.6" rx="4.3" ry="3.5" fill="url(#dropBallG)" stroke="#fff" stroke-width="1.4" transform="rotate(-16 12.2 16.6)"/></symbol>
+<symbol id="icSwing" viewBox="0 0 24 24"><!-- slime guy mid-swing, whoosh lines trailing — the swing control's mascot -->
+<g stroke="var(--icAcc,var(--ink-soft))" stroke-width="1.5" stroke-linecap="round" opacity=".8" fill="none"><path d="M3.4 8.5 q1.6 2 0 4.2"/><path d="M6.6 6.6 q2.1 3 0 6.4"/></g>
+<path d="M3 2.4 H21.5" stroke="var(--icAcc,var(--ink-soft))" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M11.8 2.4 L14.3 16.2 M19.2 2.4 L20.9 16.2" stroke="#8f7fb8" stroke-width="1.1" fill="none"/>
+<path d="M13.6 16.6 L21.6 16.6" stroke="#7c65c9" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+<path d="M17.5 8.2 C15.1 8.2 14.3 10.4 14.3 12.2 C14.3 14.4 16 15.1 17.5 15.1 C19 15.1 20.7 14.4 20.7 12.2 C20.7 10.4 19.9 8.2 17.5 8.2 Z" fill="url(#bassG)" stroke="rgba(255,255,255,.6)" stroke-width=".7"/>
+<circle cx="16.5" cy="11.5" r=".6" fill="#5a4f78"/><circle cx="18.5" cy="11.5" r=".6" fill="#5a4f78"/>
+<path d="M16.8 12.9 q.7 .7 1.4 0" fill="none" stroke="#5a4f78" stroke-width=".9" stroke-linecap="round"/>
+</symbol>
 </defs></svg>
 <main>
   <div id="stage">
@@ -250,7 +259,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <div class="card">
       <h2>⏱️ timing</h2>
       <div class="row"><label>tempo</label><input type="range" id="bpm" min="40" max="220" value="80"><span class="val" id="bpmV">80</span></div>
-      <div class="row"><label>note speed</label>
+      <div class="row"><label title="how many notes fit in each beat">subdivision</label>
         <div class="seg" id="divSeg">
           <button data-d="0.25">1/4</button>
           <button data-d="0.125" class="active">1/8</button>
@@ -260,13 +269,13 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       </div>
       <div class="row"><label>dotted notes</label><div class="toggle" id="dotT"></div></div>
       <div class="row"><label>triplets</label><div class="toggle" id="tripT"></div></div>
-      <div class="row"><label>snap to beat</label><div class="toggle on" id="quantT"></div></div>
+      <div class="row"><label title="snap notes onto the beat">quantize</label><div class="toggle on" id="quantT"></div></div>
       <div class="row"><label>auto-rain</label><div class="toggle" id="rainT"></div></div>
       <div id="rainCfg" style="display:none">
-        <div class="row"><label>how often</label><input type="range" id="rainRate" min="0" max="100" value="50"><span class="val" id="rainRateV">50</span></div>
+        <div class="row"><label title="how often a new ball drops">rain rate</label><input type="range" id="rainRate" min="0" max="100" value="50"><span class="val" id="rainRateV">50</span></div>
       </div>
-      <div class="row"><label>wobble</label><input type="range" id="chaos" min="0" max="100" value="0"><span class="val" id="chaosV">0</span></div>
-      <div class="row"><label>stay broken (sec)</label><input type="range" id="burstSec" min="2" max="20" value="6"><span class="val" id="burstSecV">6</span></div>
+      <div class="row"><label title="randomly bends each bounce">randomness</label><input type="range" id="chaos" min="0" max="100" value="0"><span class="val" id="chaosV">0</span></div>
+      <div class="row"><label title="how long the burst shape stays open">rebuild after (sec)</label><input type="range" id="burstSec" min="2" max="20" value="6"><span class="val" id="burstSecV">6</span></div>
     </div>
 
     <div class="card">
@@ -307,17 +316,17 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <div class="row"><label>internal synth</label><div class="toggle on" id="synthT"></div></div>
       <div class="row"><label>waveform</label>
         <div class="seg" id="waveSeg">
-          <button data-w="sine">sine</button>
-          <button data-w="triangle" class="active">tri</button>
-          <button data-w="sawtooth">saw</button>
-          <button data-w="square">sqr</button>
+          <button data-w="sine" title="smooth &amp; pure">∿ sine</button>
+          <button data-w="triangle" class="active" title="soft &amp; mellow">△ tri</button>
+          <button data-w="sawtooth" title="bright &amp; buzzy">⊿ saw</button>
+          <button data-w="square" title="hollow &amp; buzzy">⊓ sqr</button>
         </div>
       </div>
       <div class="row"><label>sub bass</label><input type="range" id="sub" min="0" max="100" value="0"><span class="val" id="subV">0</span></div>
     </div>
 
     <div class="card">
-      <h2>✏️ note shape (ADSR)</h2>
+      <h2>✏️ envelope (ADSR)</h2>
       <div class="adsr">
         <div class="knob" title="attack: how fast the note starts"><input type="range" id="atk" min="0" max="100" value="0"><span class="k">A<svg width="13" height="9" viewBox="0 0 14 9"><path d="M1 8 L13 1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="kv" id="atkV">0</span></div>
         <div class="knob" title="decay: how fast it settles down"><input type="range" id="dec" min="0" max="100" value="10"><span class="k">D<svg width="13" height="9" viewBox="0 0 14 9"><path d="M1 1 L13 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="kv" id="decV">10</span></div>
@@ -343,7 +352,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <div class="card">
       <h2>🔊 output <span class="pwr on" id="fxPwr" title="delay fx on/off">!</span></h2>
       <div class="row"><label>volume</label><input type="range" id="vol" min="0" max="100" value="55"><span class="val" id="volV">55</span></div>
-      <div class="row"><label>echo</label><input type="range" id="dly" min="0" max="100" value="0"><span class="val" id="dlyV">0</span></div>
+      <div class="row"><label title="echoes that repeat in time with the tempo">delay</label><input type="range" id="dly" min="0" max="100" value="0"><span class="val" id="dlyV">0</span></div>
       <hr>
       <div class="row"><label>send MIDI out</label><div class="toggle" id="midiT"></div></div>
       <div class="row"><label>port</label><select id="midiPort"><option>— enable above —</option></select></div>
