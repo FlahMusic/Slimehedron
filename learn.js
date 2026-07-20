@@ -35,6 +35,8 @@ window.LEARN=(function(){
       d.innerHTML=pixSlime(['#9fe6cf','#c4a9f5','#ffb6d6','#ffd3a8'][i%4],'happy');
       wrap.appendChild(d);});}
   let onKey=null;
+  function setLC(c){try{localStorage.setItem('slimehedron-lastcourse',c);}catch(e){}}
+
 
   // ============ wordless lesson icons ============
   function icoKeys(marks,arc){let k='';
@@ -51,13 +53,19 @@ window.LEARN=(function(){
   // ============ course 0: rhythm — steady beat first (Kodaly/Gordon sequence) ============
   let rhIv=null,rhLast=0,rhGood=0,rhBpm=90;
   function rhStop(){if(rhIv){clearInterval(rhIv);rhIv=null;}}
-  function rhTick(){rhLast=performance.now();try{countTick(false);}catch(e){}
+  let rhBeat=-1;const RHWIN=('ontouchstart' in window)?150:110; // wider window on touch: forgive the DEVICE's latency, not the child's
+  function rhTickSound(acc){if(!AC)return;const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();
+    o.type='sine';o.frequency.setValueAtTime(acc?1850:1450,t);o.frequency.exponentialRampToValueAtTime(acc?1400:1100,t+0.03);
+    g.gain.setValueAtTime(acc?0.5:0.32,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.07);
+    o.connect(g);g.connect(typeof melBus!=='undefined'&&melBus?melBus:AC.destination);o.start(t);o.stop(t+0.09);} // woodblock, not beeper
+  function rhTick(){rhLast=performance.now();rhBeat=(rhBeat+1)%4;rhTickSound(rhBeat===0);
+    const m=$id('rhMeter');if(m)m.textContent=[0,1,2,3].map(i=>i===rhBeat?(i===0?'\u25c9':'\u25cf'):'\u25cb').join('');
     const pad=$id('rhPad');if(pad){pad.classList.add('pulse');setTimeout(()=>pad.classList.remove('pulse'),140);}}
   function rhDots(){const d=$id('rhDots');if(d)d.textContent='\u25cf'.repeat(Math.min(8,rhGood))+'\u25cb'.repeat(Math.max(0,8-rhGood));}
-  function rhythmCourse(bpm){stopJam();rhGood=0;rhBpm=bpm||90;
+  function rhythmCourse(bpm){stopJam();rhGood=0;rhBpm=bpm||90;rhBeat=-1;setLC('rhythm');
     ov.innerHTML=`<div class="lCard"><h3>rhythm</h3>
       <p class="lSub">tap WITH the tick.</p>
-      <div id="rhPad">${pixSlime('#9fe6cf','happy')}</div>
+      <div id="rhPad">${pixSlime('#9fe6cf','happy')}</div>\n      <div id="rhMeter"></div>
       <div class="lStickers" id="rhDots"></div>
       <div class="lFeed" id="lFeed"></div>
       <div class="lRow"><button class="btn" data-a="home">\u2039 back</button></div></div>`;
@@ -67,7 +75,7 @@ window.LEARN=(function(){
   function rhTap(){const per=60000/rhBpm,t=performance.now();
     const d=(t-rhLast)%per,off=Math.min(d,per-d);
     lessonNote(130.81,110,0.5);
-    if(off<110){rhGood++;if((prog.r|0)<rhGood){prog.r=rhGood;saveP();}rhDots();
+    if(off<RHWIN){rhGood++;if((prog.r|0)<rhGood){prog.r=rhGood;saveP();}rhDots();
       lf().textContent='with the beat.';
       if(rhGood>=8){rhStop();lf().textContent=rhBpm<120?'you ARE the beat. now faster \u2192':'steady at every speed. that is tempo.';
         const row=ov.querySelector('.lRow');
@@ -79,7 +87,7 @@ window.LEARN=(function(){
     5:'left of the 3 black keys',7:'in the 3 — left side',9:'in the 3 — right side',
     11:'right of the 3 black keys',12:'left of the NEXT 2 black keys →'};
   let pIdx=0,pFound={};
-  function pianoCourse(){stopJam();pIdx=0;pFound={};pianoView();}
+  function pianoCourse(){stopJam();setLC('piano');pIdx=0;pFound={};pianoView();}
   function pianoView(){const t=WK[pIdx];
     ov.innerHTML=`<div class="lCard"><h3>the piano</h3>
       <p class="lSub">${pIdx===0?'this is one octave. find C — '+HINT[0]+'.':'find '+PN[t]+'.'}</p>
@@ -90,10 +98,18 @@ window.LEARN=(function(){
       if(s===t){pFound[s]=PN[s];decorate([s]);if((prog.p|0)<pIdx+1){prog.p=pIdx+1;saveP();}
         if(pIdx<WK.length-1){lf().textContent=`yes — ${PN[s]}.`;pIdx++;setTimeout(pianoView,850);}
         else{onKey=null;lf().textContent='same name — one octave higher. the picture repeats forever →';
-          const b=document.createElement('button');b.className='btn primary';b.textContent='next: chords ▸';b.dataset.a='crs';b.dataset.c='chords';
+          WK.forEach((ws,i)=>setTimeout(()=>pianoPlay(ws,88),600+i*170)); // the payoff: hear your whole scale climb
+          const b=document.createElement('button');b.className='btn primary';b.textContent='next: black keys ▸';b.dataset.a='pblacks';
           ov.querySelector('.lRow').prepend(b);}}
       else lf().textContent=(PN[s]?PN[s]:'a black key')+`. ${PN[t]} is ${HINT[t]}.`;};}
 
+  function pianoBlacks(){stopJam();setLC('piano');
+    ov.innerHTML=`<div class="lCard"><h3>the black keys</h3>
+      <p class="lSub">the in-between notes. \u266f means one up. \u266d means one down. try them.</p>
+      ${pianoHTML(PN)}
+      <div class="lFeed" id="lFeed">C\u266f sits between C and D — the same key is also D\u266d.</div>
+      <div class="lRow"><button class="btn primary" data-a="crs" data-c="chords">next: chords \u25b8</button><button class="btn" data-a="home">\u2039 back</button></div></div>`;
+    decorate([1,3,6,8,10]);onKey=s=>pianoPlay(s);}
   // ============ course 2: chords ============
   const CHORDS=[
     ['C major','bright and happy',[0,4,7],'C · E · G'],
@@ -119,7 +135,11 @@ window.LEARN=(function(){
         ${cIdx<CHORDS.length-1?`<button class="btn primary" data-a="crs" data-c="chords" data-i="${cIdx+1}">next ▸</button>`:''}
         <button class="btn" data-a="home">‹ back</button></div></div>`;
     if((prog.ch|0)<cIdx+1){prog.ch=cIdx+1;saveP();}
-    decorate(tones);onKey=null;}
+    decorate(tones);setLC('chords');
+    const prev=cIdx>0?CHORDS[cIdx-1][2]:null;
+    const moved=prev?tones.filter(x=>!prev.includes(x)):[];
+    moved.forEach(s=>{const k=ov.querySelector(`.pxKeys [data-s="${s}"]`);if(k)k.classList.add('chg');});
+    onKey=s=>{pianoPlay(s);if(moved.includes(s))lf().textContent=CHORDS[cIdx][3]+' — that is the note that moved.';};}
   function strum(){const tones=CHORDS[cIdx][2];
     tones.forEach((s,i)=>setTimeout(()=>pianoPlay(s,92),i*150));
     setTimeout(()=>tones.forEach(s=>pianoPlay(s,80)),tones.length*150+520);}
@@ -127,15 +147,24 @@ window.LEARN=(function(){
   // ============ course 3: intervals ============
   const IVS=[[2,'2nd','neighbors'],[4,'3rd','sweet'],[5,'4th','a jump'],[7,'5th','strong'],
     [9,'6th','warm'],[11,'7th','leaning'],[12,'octave','same name, higher']];
-  let ivRound=0,ivAns=null;
+  let ivRound=0,ivAns=null,ivSess=0;
   function ivPool(){return ivRound<4?[IVS[0],IVS[3]]:ivRound<8?[IVS[0],IVS[1],IVS[3],IVS[6]]:IVS;}
   function ivPlay(){pianoPlay(0,90);setTimeout(()=>pianoPlay(ivAns[0],90),650);}
-  function ivCourse(){stopJam();ivRound++;
+  function ivEnd(){stopJam();winJingle();
+    ov.innerHTML=`<div class="lCard"><h3>session complete</h3>
+      <div class="confetti">${Array.from({length:13},(_,i)=>`<i style="--i:${i}"></i>`).join('')}</div>
+      <div style="width:96px;height:96px;margin:10px auto">${pixSlime('#ffd3a8','wow',{cap:1})}</div>
+      <div class="lFeed">7 distances heard. good ears.</div>
+      <div class="lRow"><button class="btn primary" data-a="crs" data-c="intervals">again \u25b8</button><button class="btn" data-a="home">\u2039 back</button></div></div>`;}
+  function ivCourse(cont){stopJam();setLC('intervals');
+    if(!cont)ivSess=0;
+    if(ivSess>=7){ivEnd();return;}
+    ivSess++;ivRound++;
     const pool=ivPool();ivAns=pool[Math.floor(Math.random()*pool.length)];
     let opts=[...pool].sort(()=>Math.random()-0.5).slice(0,Math.min(3,pool.length));
     if(!opts.includes(ivAns))opts[Math.floor(Math.random()*opts.length)]=ivAns;
     ivPlay();
-    ov.innerHTML=`<div class="lCard"><h3>intervals</h3>
+    ov.innerHTML=`<div class="lCard"><h3>intervals \u00b7 ${ivSess} of 7</h3>
       <p class="lSub">two notes — how far apart?</p>
       ${pianoHTML(PN)}
       <div class="lRow">${opts.map(o=>`<button class="btn" data-a="ivpick" data-s="${o[0]}">${o[1]} · ${o[2]}</button>`).join('')}</div>
@@ -145,7 +174,8 @@ window.LEARN=(function(){
   function ivPick(s){const f=lf();
     if(s===ivAns[0]){decorate([0,ivAns[0]]);prog.iv=(prog.iv|0)+1;saveP();
       f.textContent=`yes — a ${ivAns[1]}.`;
-      const nx=document.createElement('button');nx.className='btn primary';nx.textContent='next ▸';nx.dataset.a='crs';nx.dataset.c='intervals';
+      const nx=document.createElement('button');nx.className='btn primary';
+      nx.textContent=ivSess>=7?'finish ▸':'next ▸';nx.dataset.a='crs';nx.dataset.c='intervals';nx.dataset.i='1';
       ov.querySelector('.lRow').prepend(nx);}
     else{const g=IVS.find(v=>v[0]===s);
       f.textContent=`that was a ${g[1]}. listen again.`;
@@ -315,8 +345,10 @@ window.LEARN=(function(){
       <button class="btn big" data-a="startsess" data-d="hard" style="background:linear-gradient(150deg,#ffd9e5,#ffedf4)">hard \u00b7 \u25cf\u25cf\u25cf \u00b7 10 rounds</button>
     </div>
     <div class="lRow"><button class="btn" data-a="crs" data-c="modes">\u2039 back</button></div></div>`;}
-  function sessEnd(){stopJam();const D=DIFFS[diff];
+  function winJingle(){[0,400,700,1200,1600,1200].forEach((c,i)=>setTimeout(()=>lessonNote(261.63*Math.pow(2,c/1200),104,0.8),i*95));}
+  function sessEnd(){stopJam();const D=DIFFS[diff];winJingle();
     ov.innerHTML=`<div class="lCard"><h3>session complete</h3>
+      <div class="confetti">${Array.from({length:13},(_,i)=>`<i style="--i:${i}"></i>`).join('')}</div>
       <div style="width:96px;height:96px;margin:10px auto">${pixSlime('#9fe6cf','wow',{cap:1})}</div>
       <div class="lFeed">${D.len} sounds matched. good ears.</div>
       ${stickers()}
@@ -324,7 +356,7 @@ window.LEARN=(function(){
         <button class="btn primary" data-a="startsess" data-d="${diff}">again \u25b8</button>
         ${diff!=='hard'?`<button class="btn" data-a="startsess" data-d="${diff==='easy'?'med':'hard'}">trickier \u25b8</button>`:''}
         <button class="btn" data-a="crs" data-c="modes">\u2039 back</button></div></div>`;}
-  function mHome(){stopJam();onKey=null;ov.innerHTML=`<div class="lCard">
+  function mHome(){stopJam();setLC('modes');onKey=null;ov.innerHTML=`<div class="lCard">
     <h3>the seven modes</h3>
     <p class="lSub">every mode is a mood.</p>
     <div class="lBtns">
@@ -361,18 +393,12 @@ window.LEARN=(function(){
       f.textContent=`yes — ${M7[a].n}. ${M7[a].feel}.`;
       ov.querySelectorAll('.lScene').forEach(s=>{if(+s.dataset.pick!==a)s.classList.add('dim');});
       const row=ov.querySelector('.lRow');
-      if(prog.g[k]===3){const b=document.createElement('button');b.className='btn';b.textContent='find the hidden slime';b.dataset.a='cameo';b.dataset.i=a;row.prepend(b);}
       sessN++;
       const nx=document.createElement('button');nx.className='btn primary';
       if(sessN>=DIFFS[diff].len){nx.textContent='finish \u25b8';nx.dataset.a='sessend';}
       else{nx.textContent='next \u25b8';nx.dataset.a='guess';}
       row.prepend(nx);
     }else{f.textContent=`this scene sounds ${M7[p].feel}. listen again.`;el.classList.add('dim');playJam(a);}} // replay auto-flips song/riff — never the same twice
-  function cameo(i){const m=M7[i];
-    ov.innerHTML=`<div class="lCard"><h3>${m.scene}</h3>
-      <div class="lBig">${sceneIMG(i,0,`<circle cx="${m.cam[0]}" cy="${m.cam[1]}" r="9" fill="none" stroke="#fff" stroke-width="1.6"><animate attributeName="r" values="9;12;9" dur="1.2s" repeatCount="indefinite"/></circle>`)}</div>
-      <div class="lFeed">you found the hidden slime.</div>
-      <div class="lRow"><button class="btn primary" data-a="guess">keep matching ▸</button><button class="btn" data-a="crs" data-c="modes">‹ back</button></div></div>`;}
   function mcreate(pickI){stopJam();
     if(pickI==null){ov.innerHTML=`<div class="lCard"><h3>compose</h3>
       <p class="lSub">pick a scene. every key fits.</p>
@@ -400,8 +426,10 @@ window.LEARN=(function(){
     const f=Math.round(5*Math.min(1,T[0]/T[1]));
     return `<span class="crsDots">${'\u25cf'.repeat(f)}${'\u25cb'.repeat(5-f)}</span>`;}
   const ov=document.createElement('div');ov.id='learnOverlay';ov.hidden=true;document.body.appendChild(ov);
-  function home(){stopJam();onKey=null;ov.innerHTML=`<div class="lCard">
+  function home(){stopJam();onKey=null;let lc='';try{lc=localStorage.getItem('slimehedron-lastcourse')||'';}catch(e){}
+    ov.innerHTML=`<div class="lCard">
     <h3>learn</h3>
+    ${lc?`<div class="lRow" style="margin-bottom:10px"><button class="btn primary" data-a="crs" data-c="${lc}">continue \u00b7 ${lc} \u25b8</button></div>`:''}
     <div class="lBtns">${PANES.map(p=>`<div class="crsPane" data-a="crs" data-c="${p[0]}" style="background:${p[1]}">
       ${p[2]}<span style="flex:1"><b>${p[0]}</b>${crsProg(p[0])}</span><span class="crsSl" style="width:${p[3]}px;height:${p[3]}px">${pixSlime(p[5],'happy',{cap:1,girl:p[4]})}</span></div>`).join('')}
     </div></div>`;}
@@ -420,16 +448,16 @@ window.LEARN=(function(){
     if(a==='home')home();
     else if(a==='crs'){const c=b.dataset.c;
       if(c==='rhythm')rhythmCourse();else if(c==='piano')pianoCourse();else if(c==='chords')chordCourse(+(b.dataset.i||0));
-      else if(c==='intervals')ivCourse();else mHome();}
+      else if(c==='intervals')ivCourse(!!b.dataset.i);else mHome();}
     else if(a==='rhfast')rhythmCourse(126);
+    else if(a==='pblacks')pianoBlacks();
     else if(a==='strum')strum();
     else if(a==='ivpick')ivPick(+b.dataset.s);else if(a==='ivplay')ivPlay();
     else if(a==='listen')listen(+(b.dataset.i||0));else if(a==='replay')playJam(+b.dataset.i,+(b.dataset.r||0));
     else if(a==='matchmenu')matchMenu();
     else if(a==='startsess'){diff=b.dataset.d||'easy';sessN=0;guess();}
     else if(a==='sessend')sessEnd();
-    else if(a==='guess')guess();else if(a==='mcreate')mcreate();
-    else if(a==='cameo')cameo(+b.dataset.i);});
+    else if(a==='guess')guess();else if(a==='mcreate')mcreate();});
   function enter(){
     if(S.slimeMode)$id('slimeBig').click();if(drumOn)$id('drumBtn').click();if(bandOn)$id('bandBtn').click();
     balls.length=0;initAudio();if(AC&&AC.state==='suspended')AC.resume();if(!S.playing)setPlaying(true);
@@ -437,4 +465,4 @@ window.LEARN=(function(){
   function exit(){stopJam();onKey=null;ov.hidden=true;}
   return {enter,exit};
 })();
-if(S.mode==='learn')LEARN.enter();
+// (no auto-enter on load: the three doors always come first)

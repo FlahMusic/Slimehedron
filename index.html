@@ -1331,7 +1331,7 @@ function applyMode(m){S.mode=m;
   document.body.classList.add('mode-'+m);
   try{localStorage.setItem('slimehedron-mode',m);}catch(e){}
   if(window.LEARN){if(m==='learn')LEARN.enter();else LEARN.exit();}} // the ✕ is the only mode switch — no cycling button to confuse anyone
-applyMode((()=>{try{return localStorage.getItem('slimehedron-mode')||'play';}catch(e){return 'play';}})()); // dress the room before the splash lifts
+applyMode('play'); // ALWAYS boot to the doors — a saved mode can never auto-open a room you might not be able to leave
 // ▦ pixel toggle: repaint every slime on screen in its 16-bit wardrobe (canvas pixelates on the next frame by itself)
 $("pixT").checked=window.PIX;
 $("pixT").addEventListener('change',e=>{window.PIX=e.target.checked;
