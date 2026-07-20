@@ -57,11 +57,10 @@ header .spacer{flex:1}
 .mp-learn{background:linear-gradient(135deg,#d9c6ff,#eee4ff)!important}
 .mp-studio{background:linear-gradient(135deg,#ffd3e7,#ffe9f3)!important} /* the mode pill wears its door's color, everywhere */
 /* ---- learn overlay: the mood machine ---- */
-/* the escape hatch: a soft red X, top-right, above EVERY layer, in EVERY mode */
+/* the one way out: soft red ✕, top-right, above every layer, in every mode */
 #exitMode{position:fixed;top:10px;right:12px;z-index:260;font-family:inherit;font-weight:800;font-size:17px;line-height:1;color:#a8415c;
   background:linear-gradient(135deg,#ffc9d6,#ffe3ea);border:2px solid rgba(255,255,255,.95);border-radius:50%;
-  width:38px;height:38px;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;transition:.15s}
-#exitMode:hover{transform:scale(1.08)}
+  width:38px;height:38px;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center}
 @media (max-width:820px){#exitMode{top:6px;right:8px;width:34px;height:34px;font-size:15px}}
 #learnOverlay{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(230,222,250,.5);backdrop-filter:blur(6px)}
 #learnOverlay[hidden]{display:none}
@@ -257,6 +256,8 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <button class="btn big" id="recBtn" title="record" data-l="record"><span id="recDot"></span></button>
   </div>
   <span class="spacer"></span>
+  <button class="btn" id="modePill" title="switch mode" hidden>play</button>
+  <button id="exitMode" title="back to play / learn / studio">✕</button>
   <button class="btn warn" id="clearBtn" title="clear all balls &amp; liquid">clear</button>
   <button class="btn" id="resetBtn" title="start fresh">↺</button>
   <label class="adv" title="lighter graphics for slow devices"><input type="checkbox" id="perfT"> ⚡</label>
@@ -1330,8 +1331,11 @@ function applyMode(m){S.mode=m;
   document.body.classList.remove('mode-play','mode-learn','mode-studio');
   document.body.classList.add('mode-'+m);
   try{localStorage.setItem('slimehedron-mode',m);}catch(e){}
-  if(window.LEARN){if(m==='learn')LEARN.enter();else LEARN.exit();}} // the ✕ is the only mode switch — no cycling button to confuse anyone
-applyMode('play'); // ALWAYS boot to the doors — a saved mode can never auto-open a room you might not be able to leave
+  const p=$("modePill");if(p){p.textContent=m;p.classList.remove('mp-play','mp-learn','mp-studio');p.classList.add('mp-'+m);}
+  if(window.LEARN){if(m==='learn')LEARN.enter();else LEARN.exit();}}
+// ✕ = forget the saved mode and reload → you always land back on the three doors. one line, no new code paths.
+$("exitMode").addEventListener('click',()=>{try{localStorage.removeItem('slimehedron-mode');}catch(e){}location.reload();});
+applyMode((()=>{try{return localStorage.getItem('slimehedron-mode')||'play';}catch(e){return 'play';}})()); // dress the room before the splash lifts
 // ▦ pixel toggle: repaint every slime on screen in its 16-bit wardrobe (canvas pixelates on the next frame by itself)
 $("pixT").checked=window.PIX;
 $("pixT").addEventListener('change',e=>{window.PIX=e.target.checked;
@@ -1897,9 +1901,7 @@ if(window._freshStart){ // first-ever visit: roll the dice — C major is a fine
 /* LEARN MODE lives in learn.js — its own file, loaded after this script. */
 
 // ---------- splash: three doors into one instrument (the required audio-unlock tap doubles as the choice) ----------
-function openDoors(){ // the mode chooser — callable any time, not just at boot
-  if(document.getElementById('splash'))return;
-  if(window.LEARN)LEARN.exit();
+(function(){
   const sp=document.createElement('div');sp.id='splash';
   let last='play';try{last=localStorage.getItem('slimehedron-mode')||'play';}catch(e){}
   sp.innerHTML='<div class="bob" style="width:150px;height:140px;position:relative">'+slimeSVG(cssVar('--mint'),'happy')+
@@ -1922,12 +1924,8 @@ function openDoors(){ // the mode chooser — callable any time, not just at boo
     }else{setPlaying(true);}}
   sp.addEventListener('pointerdown',e=>{
     const card=e.target.closest('.modeCard[data-m]');
-    if(card)boot(card.dataset.m);}); // ONLY a door dismisses the doors — nothing else
-}
-openDoors();
-// always-there escape hatch: floats above every overlay, returns to the three doors
-(function(){const b=document.createElement('button');b.id='exitMode';b.textContent='✕';b.title='back to play / learn / studio';
-  b.addEventListener('click',openDoors);document.body.appendChild(b);})();
+    boot(card?card.dataset.m:last);}); // tap a door to choose — tap anywhere else to resume where you left off
+})();
 // ---------- first-run coach: signal the three essentials, advance on the child's own action ----------
 function startCoach(){
   try{if(localStorage.getItem('slimehedron-coach'))return;}catch(e){}
