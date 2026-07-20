@@ -41,6 +41,12 @@ header .spacer{flex:1}
 .mc-play{background:linear-gradient(150deg,#9fe6cf,#d2f5e8);padding:26px 20px;width:200px} /* the main door stands a little taller */
 .mc-studio{background:linear-gradient(150deg,#ffd3e7,#ffe9f3)}
 .mode-play aside .card:not(#recCard){display:none} /* play: the instrument and your recordings, nothing to study */
+.mode-play aside{display:none} /* no takes yet = no sidebar at all — the stage gets the whole room */
+.mode-play.hasTakes aside{display:flex}
+.mode-play #menuBtn{display:none}
+@media (max-width:820px){.mode-play.hasTakes #menuBtn{display:flex}}
+#keyTop{width:auto;flex:none}
+#scaleTop{max-width:118px;flex:none}
 .mode-play #drumFeel,.mode-play #drumSig{display:none}
 .mode-play #tapeIco,.mode-play #warmSl{display:none}
 .mode-learn aside,.mode-learn #triMixBar,.mode-learn #autoRow{display:none} /* learn: clear the desk, the lesson is the interface */
@@ -260,6 +266,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <select id="drumFeel" style="flex:none;width:auto" title="feel"><option value="1" selected>straight</option><option value="t">triplet</option><option value="2">double-time</option><option value="h">half-time</option></select>
     <select id="drumSig" style="flex:none;width:auto" title="time signature"><option value="16" selected>4/4</option><option value="12">3/4</option><option value="12c">6/8</option><option value="20" title="counts 1-2-3 1-2">5/4</option><option value="14" title="counts 1-2 1-2 1-2-3">7/8</option><option value="18" title="counts 1-2 1-2 1-2 1-2-3">9/8</option></select>
   </span>
+  <span style="display:flex;align-items:center;gap:6px"><span class="sub">key</span><select id="keyTop" title="key"></select><select id="scaleTop" title="scale"></select></span>
   <span style="display:flex;align-items:center;gap:8px">
     <svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><use href="#icNote"/></svg>
     <select id="voiceTop" style="flex:none;width:auto" title="oscillator waveform"><option value="sine">∿ sine · smooth</option><option value="triangle" selected>△ triangle · mellow</option><option value="sawtooth">⊿ saw · bright</option><option value="square">⊓ square · buzzy</option></select>
@@ -723,13 +730,32 @@ function sendMidiAt(note,vel,ch,acT,durSec){
   try{S.midiOut.send([0x90|(ch-1),note,vel],ts);S.midiOut.send([0x80|(ch-1),note,0],ts+durSec*1000);}catch(e){}}
 let curRootDeg=0;
 const BASSPAT={'16':{0:'R',4:'R',6:'F',8:'R',12:'R',14:'O'},'12':{0:'R',4:'F',8:'O'},'12c':{0:'R',6:'F'},'20':{0:'R',8:'R',12:'F',16:'O'}}; // R=root F=fifth O=octave
+let _slimeBars=0;
+const JSCALES=['major','mixolydian','dorian','minor','pentaMaj','lydian'];
+function keyJourney(){ // auto-play's endless road trip: every 16 bars, step the circle of fifths (up a 5th or up a 4th),
+  // sometimes shift the mode too — always a near-neighbor key, so the music flows instead of jumping
+  const step=Math.random()<0.5?7:5,nr=48+((S.root-48+step)%25);
+  $("root").value=nr;$("root").dispatchEvent(new Event('change'));
+  if(Math.random()<0.45){const cur=$("scale").value,pool=JSCALES.filter(s=>s!==cur);
+    const ns=pool[(Math.random()*pool.length)|0];$("scale").value=ns;$("scale").dispatchEvent(new Event('change'));}
+  toast('→ '+NOTE_NAMES[S.root%12]+' '+SCALES[S.scale].n.toLowerCase());}
 function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for the pluck pattern
   if(!bandOn)return;
+  if(S.slimeMode&&++_slimeBars>=16){_slimeBars=0;keyJourney();}
   const n=scaleObj().c.length,rd=(nextRootDeg!=null?nextRootDeg:pickChord(barI))%n;_prevRootDeg=curRootDeg;curRootDeg=rd; // chord follows the melody's center of gravity, bar by bar
   nextRootDeg=pickChord(barI+1)%n;updateChordPill(); // and the NEXT one is already chosen — the pill shows where we're headed
-  const degs=[rd,(rd+2)%n,(rd+4)%n],barDur=drumBar()*drumStepDur();
+  const rawDegs=[rd,(rd+2)%n,(rd+4)%n],barDur=drumBar()*drumStepDur();
+  // voice leading: each pad voice moves to its NEAREST octave of the new chord tone — chords glide instead of leaping
+  if(!window._padV)window._padV=null;
+  const degs=rawDegs.map((d,i)=>{const base=centsForDegree(d);
+    if(!window._padV)return base;
+    const prev=window._padV[i];let best=base,bd=1e9;
+    for(const off of [-1200,0,1200]){const c2=base+off;if(c2<-1300)continue;
+      const dd=Math.abs(c2-prev);if(dd<bd){bd=dd;best=c2;}}
+    return best;});
+  window._padV=degs;
   const pv=0.03*Math.min(1,S.bpMix*2); // soft pad bed with some body — present but under the melody
-  if(S.synth)for(const d of degs){const c=centsForDegree(d),po=AC.createOscillator(),pg=AC.createGain(),plp=AC.createBiquadFilter();
+  if(S.synth)for(const d of degs){const c=d,po=AC.createOscillator(),pg=AC.createGain(),plp=AC.createBiquadFilter(); // d is already voice-led cents
     po.type='triangle';po.frequency.value=freqFromCents(c);          // mellow pad, not buzzy squares
     plp.type='lowpass';plp.frequency.value=2300;plp.Q.value=0.9;      // open the mids with a gentle presence bump so the chords have warmth + body
     pg.gain.setValueAtTime(0,t);pg.gain.linearRampToValueAtTime(pv,t+0.75); // slow gentle bloom (soft attack)
@@ -1235,6 +1261,13 @@ $("root").addEventListener('change',e=>{S.root=parseInt(e.target.value);updateSc
 
 (function(){const ss=$("scale");for(const k in SCALES){const o=document.createElement('option');o.value=k;o.textContent=SCALES[k].n;if(k==="major")o.selected=true;ss.appendChild(o);}
   const rs=$("root");for(let m=48;m<=72;m++){const o=document.createElement('option');o.value=m;o.textContent=NOTE_NAMES[m%12]+(Math.floor(m/12)-1);if(m===60)o.selected=true;rs.appendChild(o);}})();
+(function(){const kt=$("keyTop"),st=$("scaleTop");if(!kt)return; // top-bar key & scale mirror the card selects both ways
+  kt.innerHTML=$("root").innerHTML;st.innerHTML=$("scale").innerHTML;
+  kt.value=$("root").value;st.value=$("scale").value;
+  kt.addEventListener('change',()=>{$("root").value=kt.value;$("root").dispatchEvent(new Event('change'));});
+  st.addEventListener('change',()=>{$("scale").value=st.value;$("scale").dispatchEvent(new Event('change'));});
+  $("root").addEventListener('change',()=>{kt.value=$("root").value;});
+  $("scale").addEventListener('change',()=>{st.value=$("scale").value;});})();
 function updateScaleNote(){const sc=scaleObj();const micro=sc.c.some(c=>c%100!==0);
   $("scaleNote").textContent=`${sc.c.length} notes/oct × ${S.octs} = ${totalDegrees()} pitches mapped around the shape.`+(micro?" ⚡ microtonal — exact on the synth.":"");}
 updateScaleNote();
@@ -1468,7 +1501,8 @@ const GEO={
 const SPOTS=[
   {edge:'bottom',cross:{left:'12%'},fill:'--lav'},{edge:'bottom',cross:{left:'28%'},fill:'--pink'},
   {edge:'bottom',cross:{left:'46%'},fill:'--peach'},{edge:'bottom',cross:{left:'63%'},fill:'--yellow'},
-  {edge:'left',cross:{top:'20%'},fill:'--mint'},{edge:'left',cross:{top:'46%'},fill:'--sky'},{edge:'left',cross:{top:'72%'},fill:'--lav'}
+  {edge:'left',cross:{top:'20%'},fill:'--mint'},{edge:'left',cross:{top:'46%'},fill:'--sky'},{edge:'left',cross:{top:'72%'},fill:'--lav'},
+  {edge:'right',cross:{top:'26%'},fill:'--peach'},{edge:'right',cross:{top:'58%'},fill:'--pink'} // the right side gets friends too — no more lonely worm
 ];
 const chillers=[]; // full-view slimes with cursor physics
 (function(){
@@ -1696,7 +1730,7 @@ $("slimeBig").addEventListener('click',()=>{
   el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop'); // restart squish even on rapid toggles
   setKnobFace('surprise');clearTimeout(el._faceT);el._faceT=setTimeout(()=>{el.classList.remove('pop');setKnobFace('happy');},600);
   initAudio();if(AC&&AC.state==="suspended")AC.resume();setSlimeProcessing(S.slimeMode);
-  if(S.slimeMode){if(!S.playing)setPlaying(true);setSliderValue('spin',14);
+  if(S.slimeMode){if(!S.playing)setPlaying(true);setSliderValue('spin',14);_slimeBars=0; // the key journey starts counting from here
     _modSnap={};for(const m of MODS){const inp=$(m.id);if(inp)_modSnap[m.id]=inp.value;}_slimeOnAt=performance.now(); // remember the patch before the wobble borrows it
     S.quantize=true;$("quantT").classList.add('on');setDivUI(0.0625); // lock everything to 1/16 grid while slimin'
     if(!S.rain){$("rainT").classList.add('on');S.rain=true;$("rainCfg").style.display="block";nextRain=performance.now();}
@@ -1789,6 +1823,7 @@ async function renderTakes(){
   const db=await recDB();if(!db)return;
   const rq=db.transaction('takes').objectStore('takes').getAll();
   rq.onsuccess=()=>{const takes=rq.result||[],card=$("recCard"),list=$("recList");
+    document.body.classList.toggle('hasTakes',takes.length>0); // the sidebar exists only once there is something in it
     card.style.display=takes.length?'block':'none';list.innerHTML='';
     const ext=REC_MIME.includes('mp4')?'m4a':'webm';
     for(const tk of takes){const url=URL.createObjectURL(tk.blob);
@@ -1821,12 +1856,17 @@ function saveState(){const o={r:{},s:{},t:{},seg:{}};
   try{localStorage.setItem('slimehedron2',JSON.stringify(o));}catch(e){}}
 let saveTmr=null;const queueSave=()=>{clearTimeout(saveTmr);saveTmr=setTimeout(saveState,600);};
 addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('click',queueSave,true); // ignore synthetic wobble events — only real tweaks queue a save
-(function restore(){let o=null;try{o=JSON.parse(localStorage.getItem('slimehedron2'));}catch(e){}if(!o)return;
+(function restore(){let o=null;try{o=JSON.parse(localStorage.getItem('slimehedron2'));}catch(e){}if(!o){window._freshStart=1;return;}
   for(const id in o.r||{}){const e=$(id);if(e){e.value=o.r[id];e.dispatchEvent(new Event('input'));}}
   for(const id in o.s||{}){const e=$(id);if(e){e.value=o.s[id];e.dispatchEvent(new Event('change'));}}
   for(const id in o.t||{}){const e=$(id);if(e&&e.classList.contains('on')!==o.t[id])e.click();}
   for(const id in o.seg||{}){const e=$(id),b=e&&e.children[o.seg[id]];if(b)b.click();}
 })();
+
+if(window._freshStart){ // first-ever visit: roll the dice — C major is a fine key and a boring default
+  const roots=[48,50,52,53,55,57,59,62,64,65,67],scales=['major','mixolydian','dorian','minor','pentaMaj','lydian'];
+  $("root").value=roots[(Math.random()*roots.length)|0];$("root").dispatchEvent(new Event('change'));
+  $("scale").value=scales[(Math.random()*scales.length)|0];$("scale").dispatchEvent(new Event('change'));}
 
 /* LEARN MODE lives in learn.js — its own file, loaded after this script. */
 

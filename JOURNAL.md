@@ -61,7 +61,63 @@ lab pass still owed.
 - Owed when a live browser is available: device-lab pass (real touch latency on the
   rhythm pad; iOS audio), and screenshot review of the five-pane learn menu.
 
-### Entry 7 — Syllabus document for external review
+### Entry 7 — Play-mode density & the key journey (2026-07-19)
+Screenshot review showed play mode with a dead 340px right column (the sidebar's cards
+hide in play, but the column remained) — violating the full-bleed-canvas pattern of
+CML/Toca-class products (the play surface IS the interface; edges belong to characters).
+**Changes:** (1) sidebar fully collapses until a recording exists (`hasTakes` class),
+stage takes the room; (2) two new right-edge peeker slimes balance the cast;
+(3) **key + scale selectors join the always-visible bar** — tonality is a primary
+creative choice, not an advanced setting; (4) **fresh installs roll a random friendly
+key/scale** (11 roots × 6 scales) instead of defaulting to C major — variability of
+first experience is a replay driver (product precedent: roguelike onboarding, Toca's
+randomized starting rooms); (5) **the key journey**: with auto-play on, every 16 bars
+the key steps the **circle of fifths** (up a 5th or up a 4th, occasionally shifting
+among six related modes) — nearest-neighbor modulation keeps flow (common-practice
+voice-leading: adjacent keys share 6 of 7 tones) while making the generative stream
+endlessly non-repeating. A toast names each new key — passive theory exposure.
+Verified: full index syntax pass on disk; 24-step modulation simulation stayed in
+range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
+Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
+
+### Entry 8b — CML source comparison: engine upgrades (2026-07-20)
+Compared against Chrome Music Lab's implementation (open-source; Tone.js + recorded
+instrument samples). Findings & actions:
+- **Their per-note quality is samples, not better synthesis.** Adopting Tone.js or
+  sample libraries would cost bundle size and offline capability for little gain over
+  our scheduler. Rejected wholesale adoption; noted a future option: one small
+  CC-licensed piano octave for learn mode if ever desired (~300KB tradeoff).
+- **Fixed lesson voice (shipped).** CML teaching tools use stable friendly timbres;
+  ours previously played whatever studio patch was left behind. Learn mode now has a
+  dedicated mallet voice (additive partials 1/4/9.2, pitch-scaled decay — the marimba
+  recipe) used by the pixel piano, jams, backings and rhythm pad. Zero bytes, stable
+  class-to-class.
+- **Voice-led pads (shipped).** Band chords moved in root position (leaps); now each
+  pad voice moves to its nearest octave of the new chord tone — common-tone/nearest-
+  tone voice leading. Simulated over progressions: all voice moves ≤600 cents (was up
+  to 900+). Audibly smoother accompaniment; standard part-writing practice.
+- **Roadmap (not built):** circle-of-fifths wheel visual (their Arpeggios) — pairs
+  perfectly with our key journey; circular beat-cycle visual for the rhythm course
+  (their Rhythm experiment teaches meter as a loop); Song-Maker-style shareable grid
+  as a future creation surface.
+Backups: index-20260720-092347-voicelead.html, learn-20260720-092347-v6voice.js.
+
+### Entry 8 — Match game: sessions, difficulty, contrast (2026-07-20)
+Field feedback: mode scenes too hard to tell apart at entry level, and no session end
+("it just keeps going"). Fixes, research-grounded:
+- **Session caps.** Assessment-length guidance converges on 5–10 items for children
+  (7 often cited as the sweet spot; longer risks cognitive fatigue), and ear-training
+  practice specifically warns that ears fatigue in long sessions. → easy 5 · medium 7 ·
+  hard 10 rounds, chosen on a difficulty screen before play.
+- **Contrast-aware choices.** New brightness scale (lydian→locrian, standard
+  accidentals ordering). Easy rounds only offer options ≥4 brightness steps apart
+  (e.g., major vs phrygian) — maximum mood contrast; medium ≥2; hard allows neighbors
+  (dorian vs minor). Verified per-mode decoy pools by simulation. Easy sessions always
+  use the iconic song (most tellable); riffs enter at medium+.
+- **A real finish line.** Round counter ("3 of 7") in the header; final correct answer
+  offers "finish ▸" → a completion screen (celebrating slime, sticker recap, again /
+  trickier / back). Closure + optional escalation = the ending the session lacked.
+Backups: `learn-20260720-000106-v5sessions.js`. Full syntax pass on deployed file.
 Added SYLLABUS.md: scope & sequence mapped to the National Core Arts Standards anchor
 processes (Creating / Performing / Responding / Connecting) — the alignment language
 US school buyers and edtech investors look for.

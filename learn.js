@@ -17,7 +17,14 @@ window.LEARN=(function(){
     const gb=[[13,7],[15,8]].map(([s,wi])=>`<div class="pxB gh" data-s="${s}" style="left:${wi*33+21}px"></div>`).join('');
     return `<div class="pxPiano"><div class="pxKeys">${w}${gw}${b}${gb}</div></div>`;
   }
-  function pianoPlay(s,vel){const f=440*Math.pow(2,(60+s-69)/12);playSynth(f,vel||96,0.7);}
+  function lessonNote(freq,vel,dur){if(!AC)return;const t=AC.currentTime,v=(vel||96)/127*0.5;
+    [[1,1],[4,0.25],[9.2,0.07]].forEach(([m,a])=>{const o=AC.createOscillator(),g=AC.createGain();
+      o.type='sine';o.frequency.value=freq*m;
+      const d=(dur||0.9)/Math.sqrt(m);
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*a,t+0.004);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+      o.connect(g);g.connect(typeof melBus!=='undefined'&&melBus?melBus:AC.destination);o.start(t);o.stop(t+d+0.05);});}
+  function pianoPlay(s,vel){const f=440*Math.pow(2,(60+s-69)/12);lessonNote(f,vel||96);}
   function decorate(tones){const wrap=ov.querySelector('.pxKeys');if(!wrap)return;
     wrap.querySelectorAll('.pxSlM').forEach(e=>e.remove());
     wrap.querySelectorAll('[data-s]').forEach(k=>k.classList.toggle('hl',tones.includes(+k.dataset.s)));
@@ -59,7 +66,7 @@ window.LEARN=(function(){
     rhIv=setInterval(rhTick,60000/rhBpm);rhTick();}
   function rhTap(){const per=60000/rhBpm,t=performance.now();
     const d=(t-rhLast)%per,off=Math.min(d,per-d);
-    playSynth(130.81,110,0.9);
+    lessonNote(130.81,110,0.5);
     if(off<110){rhGood++;if((prog.r|0)<rhGood){prog.r=rhGood;saveP();}rhDots();
       lf().textContent='with the beat.';
       if(rhGood>=8){rhStop();lf().textContent=rhBpm<120?'you ARE the beat. now faster \u2192':'steady at every speed. that is tempo.';
@@ -273,7 +280,7 @@ window.LEARN=(function(){
   function stopJam(){rhStop();jamT.forEach(clearTimeout);jamT=[];if(loopIv){clearInterval(loopIv);loopIv=null;}
     if(prevScale){S.scale=prevScale.s;S.root=prevScale.r;prevScale=null;}}
   function jn(deg,dt,vel){jamT.push(setTimeout(()=>{if(!AC)return;const c=centsForDegree(deg);
-    playSynth(freqFromCents(c),vel||84,0.6);noteFeed(c);},dt));}
+    lessonNote(freqFromCents(c),vel||84);},dt));}
   function playTune(i){stopJam();setModeScale(M7[i].k);lastAud=i+':t';
     const m=MEL[M7[i].k],step=310;let t=240;
     jn(0,20,58);jn(4,20,46);
@@ -294,12 +301,35 @@ window.LEARN=(function(){
   const saveP=()=>{try{localStorage.setItem('slimehedron-learn',JSON.stringify(prog));}catch(e){}};
   let rounds=0,lastAns=-1;
   function stickers(){return '<div class="lStickers">'+M7.map(m=>`<span class="lStk${(prog.g[m.k]|0)>=3?' got':''}" title="${m.n}">${(prog.g[m.k]|0)>=3?'●':'○'}</span>`).join('')+'</div>';}
+  // difficulty: choices per round, session length (research: 5-10 items; ears fatigue fast), and
+  // how CONTRASTING the options must be. brightness order: lydian>major>mixolydian>dorian>minor>phrygian>locrian
+  const BRIGHT=[2,0,-2,3,1,-1,-3]; // per M7 index
+  const DIFFS={easy:{ch:2,len:5,gap:4,song:1},med:{ch:3,len:7,gap:2,song:0.65},hard:{ch:4,len:10,gap:1,song:0.45}};
+  let diff='easy',sessN=0;
+  function matchMenu(){stopJam();ov.innerHTML=`<div class="lCard">
+    <h3>match</h3>
+    <p class="lSub">how tricky?</p>
+    <div class="lBtns">
+      <button class="btn big" data-a="startsess" data-d="easy" style="background:linear-gradient(150deg,#d2f5e8,#e8fbf4)">easy \u00b7 \u25cf\u25cb\u25cb \u00b7 5 rounds</button>
+      <button class="btn big" data-a="startsess" data-d="med" style="background:linear-gradient(150deg,#ffe9d9,#fff4ea)">medium \u00b7 \u25cf\u25cf\u25cb \u00b7 7 rounds</button>
+      <button class="btn big" data-a="startsess" data-d="hard" style="background:linear-gradient(150deg,#ffd9e5,#ffedf4)">hard \u00b7 \u25cf\u25cf\u25cf \u00b7 10 rounds</button>
+    </div>
+    <div class="lRow"><button class="btn" data-a="crs" data-c="modes">\u2039 back</button></div></div>`;}
+  function sessEnd(){stopJam();const D=DIFFS[diff];
+    ov.innerHTML=`<div class="lCard"><h3>session complete</h3>
+      <div style="width:96px;height:96px;margin:10px auto">${pixSlime('#9fe6cf','wow',{cap:1})}</div>
+      <div class="lFeed">${D.len} sounds matched. good ears.</div>
+      ${stickers()}
+      <div class="lRow">
+        <button class="btn primary" data-a="startsess" data-d="${diff}">again \u25b8</button>
+        ${diff!=='hard'?`<button class="btn" data-a="startsess" data-d="${diff==='easy'?'med':'hard'}">trickier \u25b8</button>`:''}
+        <button class="btn" data-a="crs" data-c="modes">\u2039 back</button></div></div>`;}
   function mHome(){stopJam();onKey=null;ov.innerHTML=`<div class="lCard">
     <h3>the seven modes</h3>
     <p class="lSub">every mode is a mood.</p>
     <div class="lBtns">
       <button class="btn primary big" data-a="listen">▸ listen — the seven moods</button>
-      <button class="btn big" data-a="guess">? match — sound to scene</button>
+      <button class="btn big" data-a="matchmenu">? match — sound to scene</button>
       <button class="btn big" data-a="mcreate">♪ compose — score a scene</button>
     </div>${stickers()}
     <div class="lRow"><button class="btn" data-a="home">‹ back</button></div></div>`;}
@@ -310,27 +340,33 @@ window.LEARN=(function(){
       <div class="lRow">${i>0?'<button class="btn" data-a="listen" data-i="'+(i-1)+'">◂</button>':''}
       <button class="btn" data-a="replay" data-i="${i}" data-r="2">↻ again</button>
       ${i<6?'<button class="btn primary" data-a="listen" data-i="'+(i+1)+'">next ▸</button>':'<button class="btn primary" data-a="crs" data-c="modes">done</button>'}</div></div>`;}
-  function guess(){stopJam();rounds++;
-    const n=rounds<4?2:rounds<7?3:4;
+  function guess(){stopJam();rounds++;const D=DIFFS[diff];
     let ans=Math.floor(Math.random()*7);
-    if(ans===lastAns)ans=(ans+1+Math.floor(Math.random()*6))%7; // fresh mode every round
+    if(ans===lastAns)ans=(ans+1+Math.floor(Math.random()*6))%7;
     lastAns=ans;
-    const opts=[ans];while(opts.length<n){const c=Math.floor(Math.random()*7);if(!opts.includes(c))opts.push(c);}
-    opts.sort(()=>Math.random()-0.5);
-    const rf=Math.random()<0.55?2:1;
+    // decoys must CONTRAST at easy levels: far-apart brightness only, tightening as difficulty rises
+    let pool=[];for(let c=0;c<7;c++)if(c!==ans&&Math.abs(BRIGHT[c]-BRIGHT[ans])>=D.gap)pool.push(c);
+    if(pool.length<D.ch-1)for(let c=0;c<7;c++)if(c!==ans&&!pool.includes(c))pool.push(c); // relax if the matrix runs dry
+    pool.sort(()=>Math.random()-0.5);
+    const opts=[ans,...pool.slice(0,D.ch-1)].sort(()=>Math.random()-0.5);
+    const rf=Math.random()<D.song?2:1; // easy sessions always get the song — the most tellable version
     playJam(ans,rf);
-    ov.innerHTML=`<div class="lCard"><h3>round ${rounds}</h3>
+    ov.innerHTML=`<div class="lCard"><h3>${sessN+1} of ${D.len}</h3>
       <p class="lSub">which scene fits the sound?</p>
       <div class="lScenes">${opts.map(o=>`<div class="lScene" data-pick="${o}" data-ans="${ans}">${sceneIMG(o,Math.floor(Math.random()*7))}<b>${M7[o].scene}</b></div>`).join('')}</div>
       <div class="lFeed" id="lFeed"></div>
-      <div class="lRow"><button class="btn" data-a="replay" data-i="${ans}" data-r="${rf}">↻ again</button><button class="btn" data-a="crs" data-c="modes">‹ back</button></div></div>`;}
+      <div class="lRow"><button class="btn" data-a="replay" data-i="${ans}" data-r="${rf}">\u21bb again</button><button class="btn" data-a="crs" data-c="modes">\u2039 back</button></div></div>`;}
   function pick(el){const p=+el.dataset.pick,a=+el.dataset.ans,f=lf();
     if(p===a){const k=M7[a].k;prog.g[k]=(prog.g[k]|0)+1;saveP();
       f.textContent=`yes — ${M7[a].n}. ${M7[a].feel}.`;
       ov.querySelectorAll('.lScene').forEach(s=>{if(+s.dataset.pick!==a)s.classList.add('dim');});
       const row=ov.querySelector('.lRow');
       if(prog.g[k]===3){const b=document.createElement('button');b.className='btn';b.textContent='find the hidden slime';b.dataset.a='cameo';b.dataset.i=a;row.prepend(b);}
-      const nx=document.createElement('button');nx.className='btn primary';nx.textContent='next ▸';nx.dataset.a='guess';row.prepend(nx);
+      sessN++;
+      const nx=document.createElement('button');nx.className='btn primary';
+      if(sessN>=DIFFS[diff].len){nx.textContent='finish \u25b8';nx.dataset.a='sessend';}
+      else{nx.textContent='next \u25b8';nx.dataset.a='guess';}
+      row.prepend(nx);
     }else{f.textContent=`this scene sounds ${M7[p].feel}. listen again.`;el.classList.add('dim');playJam(a);}} // replay auto-flips song/riff — never the same twice
   function cameo(i){const m=M7[i];
     ov.innerHTML=`<div class="lCard"><h3>${m.scene}</h3>
@@ -372,7 +408,7 @@ window.LEARN=(function(){
   ov.addEventListener('pointerdown',e=>{
     if(e.target.closest('#rhPad')){rhTap();return;}
     const pk=e.target.closest('.pKey');
-    if(pk){const c=centsForDegree(+pk.dataset.deg);playSynth(freqFromCents(c),96,0.7);noteFeed(c);
+    if(pk){const c=centsForDegree(+pk.dataset.deg);lessonNote(freqFromCents(c),96);
       pk.style.transform='translateY(3px)';setTimeout(()=>pk.style.transform='',90);return;}
     const key=e.target.closest('.pxW,.pxB');
     if(key&&onKey)onKey(+key.dataset.s);
@@ -389,6 +425,9 @@ window.LEARN=(function(){
     else if(a==='strum')strum();
     else if(a==='ivpick')ivPick(+b.dataset.s);else if(a==='ivplay')ivPlay();
     else if(a==='listen')listen(+(b.dataset.i||0));else if(a==='replay')playJam(+b.dataset.i,+(b.dataset.r||0));
+    else if(a==='matchmenu')matchMenu();
+    else if(a==='startsess'){diff=b.dataset.d||'easy';sessN=0;guess();}
+    else if(a==='sessend')sessEnd();
     else if(a==='guess')guess();else if(a==='mcreate')mcreate();
     else if(a==='cameo')cameo(+b.dataset.i);});
   function enter(){
