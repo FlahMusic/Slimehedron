@@ -80,6 +80,50 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 10 — Mobile bug round (2026-07-20)
+Three defects reported from device screenshots; all real, all mine:
+1. **The flicker (root cause found).** The liquid renderer chose between "settled pool"
+   and "goo blobs" from a *bare threshold* (`pooledN>=18 && settle>=0.85`) evaluated
+   every frame. Near the boundary it oscillated — smooth, chunky, smooth — exactly the
+   glitch in the capture. Fixed with **hysteresis**: the state latches; entering pool
+   mode needs 18 drops @0.85 settle, leaving requires falling to 12 @0.55. Simulated a
+   wobbling fill across 300 frames: **24 look-changes → 1**. Also, the adaptive
+   LITE-mode drop now announces itself ("performance mode on") — a silent render
+   change reads as a bug, which is a UX defect regardless of intent.
+2. **Mobile cast decimated.** Phones were hard-limited to 2 peekers and zero chillers
+   (an old "keep small screens clean" rule that outlived the layout). Now phones get
+   7 peekers plus 4 edge-parked chillers (bobbing, no cursor physics since touch has
+   no cursor). Desktop unchanged.
+3. **Gumby redesign.** Hair removed entirely (it read as a wig, not hair). She is now
+   smaller (52px), peeks only her head above the edge until clicked, wears the blue
+   bow, and is orbited by three hand-drawn **blue monarch butterflies** (SVG, replacing
+   the emoji). "Gumby is love" bubble reduced from scale 2.4 → 1.15.
+Verified: full index syntax pass on disk; hysteresis simulation; backup
+`index-20260720-113641-mobilefix.html`.
+
+### Entry 9 — Designer-review fixes round (2026-07-20)
+Expert-review findings executed (cameo feature scrapped per direction — reward too
+distant, art too small to hide anything in):
+- **Celebrations now sound and sparkle.** Win jingle (major arpeggio on the lesson
+  voice) + confetti burst on every session-complete screen. Silent finish lines were
+  the cheapest miss in the product.
+- **The whole cast celebrates the burst.** At 85% fill every on-screen slime goes
+  wide-eyed (anticipation); at burst they all squish and cheer for ~2.4s, including
+  the switch-knob slime. The app's climax finally reads as a climax.
+- **Rhythm course**: warm woodblock metronome replaces the 820Hz beeper; a 4-dot
+  meter cycle shows the strong ONE (meter, not just pulse — Kodály); the on-beat
+  window widens to ±150ms on touch devices so device latency isn't blamed on the kid.
+- **Piano course**: ends with the scale climbing as an audible payoff, then a new
+  black-keys bridge (♯ up / ♭ down, enharmonic C♯=D♭) BEFORE chords — closing the
+  sequencing gap where accidentals appeared unintroduced.
+- **Chords course activated**: the note that moved now glows on the keys, and
+  pressing it confirms — the lesson's one concept is now visible and touchable.
+- **Intervals**: session-capped at 7 rounds (research band) with its own celebration.
+- **Learn home**: "continue · {course} ▸" resume chip. **Splash**: tap anywhere
+  resumes the last mode; cards switch. "the full enchilada" → "the whole studio!"
+  (translator-safe).
+Backups: learn-20260720-095024-v7polish.js, index-20260720-095024-party.html.
+
 ### Entry 8b — CML source comparison: engine upgrades (2026-07-20)
 Compared against Chrome Music Lab's implementation (open-source; Tone.js + recorded
 instrument samples). Findings & actions:

@@ -93,6 +93,12 @@ header .spacer{flex:1}
 .pxB.gh{opacity:.45}
 .pxSlM{position:absolute;top:-30px;width:34px;height:34px;pointer-events:none;z-index:3;animation:pxbob 1.6s ease-in-out infinite}
 @keyframes pxbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.pxW.chg,.pxB.chg{animation:chg 1s ease-in-out infinite} /* the note that MOVED glows — the whole chord lesson in one pulse */
+@keyframes chg{0%,100%{box-shadow:inset -4px -4px 0 rgba(90,79,120,.12),inset 3px 3px 0 rgba(255,255,255,.8),0 0 0 0 rgba(179,136,240,0)}50%{box-shadow:inset -4px -4px 0 rgba(90,79,120,.12),inset 3px 3px 0 rgba(255,255,255,.8),0 0 0 6px rgba(179,136,240,.5)}}
+#rhMeter{font-size:24px;letter-spacing:12px;color:var(--accent);margin:2px 0;min-height:30px} /* the beat cycle: strong ONE, soft two-three-four */
+.confetti{position:relative;height:0;pointer-events:none}
+.confetti i{position:absolute;left:50%;top:0;width:7px;height:7px;border-radius:1px;background:hsl(calc(var(--i)*30),82%,70%);animation:conf 1.15s ease-out forwards;animation-delay:calc(var(--i)*45ms)}
+@keyframes conf{0%{transform:translate(0,0) rotate(0)}100%{transform:translate(calc((var(--i) - 6)*24px),95px) rotate(320deg);opacity:0}}
 /* ---- course panes: one pastel per lesson, mascot grows with the challenge ---- */
 .crsPane{display:flex;align-items:center;gap:14px;padding:12px 18px;border-radius:18px;cursor:pointer;border:2px solid rgba(255,255,255,.9);box-shadow:var(--shadow);transition:.15s;text-align:left}
 .crsPane:hover{transform:translateY(-2px)}
@@ -226,7 +232,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 @keyframes flap{from{transform:scaleX(1) rotate(-10deg)}to{transform:scaleX(.5) rotate(10deg)}}
 .spark{position:absolute;animation:twinkle ease-in-out infinite;pointer-events:none;text-shadow:0 0 6px currentColor}
 @keyframes twinkle{0%,100%{opacity:.15;transform:scale(.5) rotate(0deg)}50%{opacity:1;transform:scale(1.2) rotate(25deg)}}
-.gbubble{position:absolute;bottom:102%;left:54%;transform:translateX(-50%) scale(2.4);transform-origin:50% 100%;background:#fff;border-radius:12px;padding:7px 11px;font-size:12px;font-weight:700;color:#5a4f78;box-shadow:0 4px 12px rgba(150,120,190,.35);white-space:nowrap;opacity:0;transition:.3s;pointer-events:none}
+.gbubble{position:absolute;bottom:104%;left:52%;transform:translateX(-50%) scale(1.15);transform-origin:50% 100%;background:#fff;border-radius:9px;padding:4px 8px;font-size:10px;font-weight:700;color:#5a4f78;box-shadow:0 3px 9px rgba(150,120,190,.3);white-space:nowrap;opacity:0;transition:.3s;pointer-events:none} /* a whisper, not a billboard */
 .gbubble.show{opacity:1}
 .rgirl .gdecor{opacity:0;transition:opacity .4s}
 .rgirl.show .gdecor{opacity:1}
@@ -903,8 +909,15 @@ function segHit(o,segs){
     if(d<o.r){const nx=dx/d,ny=dy/d,vn=o.vx*nx+o.vy*ny;if(vn<0){o.vx-=1.85*vn*nx;o.vy-=1.85*vn*ny;}o.x=cxp+nx*o.r;o.y=cyp+ny*o.r;return e;}}
   return null;
 }
+function slimeParty(ms,face){ // every slime on screen loses their mind together
+  document.querySelectorAll('.slime').forEach(el=>{const b=el.querySelector('.bob');if(!b||!el.dataset.fill)return;
+    b.innerHTML=slimeSVG(cssVar(el.dataset.fill),face||'wow');el.classList.add('squish');
+    setTimeout(()=>{el.classList.remove('squish');b.innerHTML=slimeSVG(cssVar(el.dataset.fill),el.dataset.face||'happy');},ms||2000);});
+  if(typeof setKnobFace==='function'){setKnobFace('surprise');setTimeout(()=>setKnobFace('happy'),ms||2000);}}
+let _hype=false; // one anticipation wave per fill cycle
 function startBreak(now){
   fillState="break";breakAt=now;burstFlash=0.7;frags=[];
+  slimeParty(2400);_hype=false; // THE moment — the whole cast celebrates the burst
   const parts=(S.shape==="circle")?1:2; // each wall shatters into pieces
   for(const e of edges){const ang=Math.atan2(e.by-e.ay,e.bx-e.ax);const hl=Math.hypot(e.bx-e.ax,e.by-e.ay)/2;
     for(let k=0;k<parts;k++){const t0=parts===1?0.5:(k===0?0.25:0.75);
@@ -941,6 +954,7 @@ function fillPhysics(now){
       p.x+=p.vx;p.y+=p.vy;p.vx*=0.985;p.vy*=0.992;bounceInside(p);}
     relaxParticles();relaxParticles(); // double pass = stiffer, calmer liquid
     for(const p of particles)bounceInside(p);
+    if(!_hype&&fillFrac()>0.85){_hype=true;slimeParty(1600,'bigeye');} // it's almost full — the crowd leans in
     if(fillFrac()>=0.9||particles.length>=partCap()*0.98)pressure++;else pressure=Math.max(0,pressure-2);
     if(pressure>40)startBreak(now); // burst only when the barrel is visually brimming
   }else{
@@ -1118,15 +1132,21 @@ function softBlobs(col){ // glossy goo: upscale metaballs + sweeping shine + wet
   shctx.globalCompositeOperation='destination-out';shctx.drawImage(loC,0,5,W,H);shctx.globalCompositeOperation='source-over'; // knock out a shifted copy -> only the top edge survives
   ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=0.4;ctx.drawImage(shC,0,0);ctx.restore();} // = wet rim light on every blob
 function clipShape(){ctx.beginPath();ctx.moveTo(edges[0].ax,edges[0].ay);for(const e of edges)ctx.lineTo(e.bx,e.by);ctx.closePath();ctx.clip();}
+let _poolMode=false; // latched render state — see the flicker fix below
 let surfY=null; // persistent water line with inertia — the surface eases toward the particles instead of teleporting, so it moves like liquid
 function drawParticles(){ // the goo: floats as a blob while young, settles into a gradient pool once heavy — colored by the chord it's made of
-  if(!particles.length){surfY=null;mMask=null;measuredFill=Math.max(0,measuredFill-0.02);drawRipples();return;} // empty tank = no ghost goo left in the mask
+  if(!particles.length){surfY=null;mMask=null;_poolMode=false;measuredFill=Math.max(0,measuredFill-0.02);drawRipples();return;} // empty tank = no ghost goo left in the mask
   const now=performance.now(),LC=liquidColor();
   let pooledN=0;for(const p of particles)if(p.pooled)pooledN++;
   if(fillState==="fill"&&(++mFrame%10===0||!mMask))measureFill(); // fresh mask often — the balls' goo-sense reads from it
   if(fillState==="fill"){
     ctx.save();clipShape(); // NOTHING liquid ever renders outside the geometry — triangles, circles, all of it
-    if(pooledN>=18&&settleAmt()>=0.85){ // heavy enough: a settled pool with a real surface
+    // THE FLICKER FIX: latch the look. entering pool mode needs 18 drops @0.85 settle;
+    // leaving needs to fall well below (12 @0.55). without this gap the render oscillated
+    // between smooth pool and blobby goo every frame right at the threshold.
+    if(!_poolMode&&pooledN>=18&&settleAmt()>=0.85)_poolMode=true;
+    else if(_poolMode&&(pooledN<12||settleAmt()<0.55))_poolMode=false;
+    if(_poolMode){ // heavy enough: a settled pool with a real surface
       const COLS=30,x0=CX-R-30,span=2*(R+30),cw=span/COLS,bot=CY+R*0.99,tgt=new Array(COLS).fill(1e9);
       for(const p of particles){if(!p.pooled)continue;
         const c=Math.max(0,Math.min(COLS-1,((p.x-x0)/span*COLS)|0)),top=p.y-p.r;
@@ -1188,7 +1208,7 @@ function draw(){
 function loop(now){
   // adaptive quality watchdog: sustained slow frames -> drop to lite render (one-way, avoids flip-flop)
   if(!LITE&&_lastFrame){_fpsAcc+=now-_lastFrame;if(++_fpsN>=40){const avg=_fpsAcc/_fpsN;_fpsAcc=0;_fpsN=0;
-    if(avg>46)_slowRun++;else _slowRun=0; if(_slowRun>=5){LITE=true;const pt=document.getElementById('perfT');if(pt)pt.checked=true;}}} // full liquid by default; only auto-drops if truly unplayable (~<21fps sustained)
+    if(avg>46)_slowRun++;else _slowRun=0; if(_slowRun>=5){LITE=true;const pt=document.getElementById('perfT');if(pt)pt.checked=true;toast('performance mode on');}}} // announce it — a silent look-change reads as a glitch // full liquid by default; only auto-drops if truly unplayable (~<21fps sustained)
   _lastFrame=now;
   if(S.playing)update(now);
   draw();requestAnimationFrame(loop);
@@ -1520,7 +1540,7 @@ const chillers=[]; // full-view slimes with cursor physics
     setTimeout(()=>{el.dataset.state="hidden";hide(el);},700);
     const back=2600+Math.random()*2600;
     setTimeout(()=>{setFace(el,"happy");rest(el);el.dataset.state="out";idle(el);},700+back);}
-  (MOB?[SPOTS[4],SPOTS[6]]:SPOTS).forEach((s,i)=>{const g=GEO[s.edge];const el=document.createElement('div');el.className="slime peeker";el.style.position="fixed";
+  (MOB?[SPOTS[0],SPOTS[2],SPOTS[4],SPOTS[5],SPOTS[6],SPOTS[7],SPOTS[8]]:SPOTS).forEach((s,i)=>{const g=GEO[s.edge]; // phones get a full crowd too — they were down to twoconst el=document.createElement('div');el.className="slime peeker";el.style.position="fixed";
     Object.assign(el.style,g.anchor,s.cross);let _r=g.rest,_h=g.hide;if(s.edge==='bottom'){const a=' rotate('+(Math.random()*24-12).toFixed(0)+'deg)';_r+=a;_h+=a;} // upright, each at its own lil angle
     el.dataset.rest=_r;el.dataset.hidden=_h;el.dataset.fill=s.fill;el.dataset.state="out";el.dataset.face="happy";
     el.innerHTML=`<div class="bob" style="animation-delay:${(i*0.35).toFixed(2)}s">${slimeSVG(cssVar(s.fill),"happy")}</div>`;
@@ -1532,12 +1552,17 @@ const chillers=[]; // full-view slimes with cursor physics
       el.querySelector('.bob').innerHTML=slimeSVG(cssVar(fillVar),'surprise');el.classList.add('squish');setTimeout(()=>el.classList.remove('squish'),480);
       setTimeout(()=>{el.querySelector('.bob').innerHTML=slimeSVG(cssVar(fillVar),'happy');el._busy=false;},1500);});
     layer.appendChild(el);chillers.push({el,fillVar,r:size/2,hx:0,hy:0,x:0,y:0,vx:0,vy:0,init:false});}
-  // desktop only: full-view buddies with cursor physics (touch has no cursor, so they'd teleport — skip on phones)
-  if(!MOB){
+  if(!MOB){ // desktop: full-view buddies with cursor physics (touch has no cursor, so they'd teleport)
   chiller('left:1.5%;top:34%;width:74px;height:70px','--peach',0,74);
   chiller('left:2.5%;top:56%;width:70px;height:66px','--mint',0.5,70);
   chiller('left:1%;top:77%;width:78px;height:74px','--sky',1,78);
   chiller('left:2%;bottom:3%;width:62px;height:58px','--pink',1.4,62);
+  }else{ // phones: same friends, parked at the screen edges instead of chasing a cursor
+  chiller('left:-14px;top:30%;width:58px;height:54px','--peach',0,58);
+  chiller('right:-14px;top:44%;width:56px;height:52px','--sky',0.6,56);
+  chiller('left:-16px;top:62%;width:60px;height:56px','--mint',1.1,60);
+  chiller('right:-16px;top:70%;width:54px;height:50px','--pink',1.5,54);
+  chillers.length=0; // parked, not physics-driven — they just bob
   }
   // capture home centers after layout
   requestAnimationFrame(()=>{for(const c of chillers){const b=c.el.getBoundingClientRect();c.hx=b.left+b.width/2;c.hy=b.top+b.height/2;c.x=c.hx;c.y=c.hy;c.init=true;}});
@@ -1628,11 +1653,12 @@ const chillers=[]; // full-view slimes with cursor physics
   tick();
 })();
 
-// ---------- rainbow girl slime: sparkles, butterflies & gumby devotion ----------
+// ---------- rainbow girl slime: bow, blue monarchs & gumby devotion ----------
+const MONARCH=s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="display:block"><g fill="#4a90e2" stroke="#2c5f9e" stroke-width="1"><path d="M12 12 C7 3 1 5 3 11 C4 14 9 14 12 12 Z"/><path d="M12 12 C17 3 23 5 21 11 C20 14 15 14 12 12 Z"/><path d="M12 12 C8 17 4 21 7 22 C10 22.6 12 17 12 12 Z"/><path d="M12 12 C16 17 20 21 17 22 C14 22.6 12 17 12 12 Z"/></g><g fill="#bfe0ff" opacity=".85"><circle cx="6.5" cy="9" r="1.2"/><circle cx="17.5" cy="9" r="1.2"/></g><rect x="11.4" y="9" width="1.2" height="10" rx=".6" fill="#2c3457"/></svg>`;
 (function(){
   const layer=document.getElementById('slimes');
   const el=document.createElement('div');el.className='slime rgirl';
-  el.style.cssText='position:fixed;left:22%;bottom:0;width:66px;height:62px;z-index:51;transform:translateY(31px);transition:transform .5s cubic-bezier(.34,1.56,.64,1)';
+  el.style.cssText='position:fixed;left:22%;bottom:0;width:52px;height:49px;z-index:51;transform:translateY(37px);transition:transform .5s cubic-bezier(.34,1.56,.64,1)'; // smaller, only her head peeks until you find her
   const happy='<path d="M22 35 l5.5 -6 l5.5 6" fill="none" stroke="#5a4f78" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M47 35 l5.5 -6 l5.5 6" fill="none" stroke="#5a4f78" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M33 42 q7 6 14 0" fill="none" stroke="#5a4f78" stroke-width="2.6" stroke-linecap="round"/>';
   const wow='<circle cx="28" cy="33" r="5.5" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="28" cy="34" r="2.4" fill="#5a4f78"/><circle cx="52" cy="33" r="5.5" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="52" cy="34" r="2.4" fill="#5a4f78"/><ellipse cx="40" cy="44" rx="3.5" ry="4.5" fill="#5a4f78"/>';
   el.innerHTML='<div class="gbubble" id="gumbub">Gumby is love</div>'+
@@ -1642,20 +1668,17 @@ const chillers=[]; // full-view slimes with cursor physics
     '<span class="spark" style="left:88%;top:55%;color:#ffe39c;animation-duration:1.6s;animation-delay:.9s">\u2727</span>'+
     '<span class="spark" style="left:2%;top:62%;color:#a6c8ff;animation-duration:2.6s;animation-delay:.2s">\u2727</span>'+
     '<span class="spark" style="left:46%;top:4%;color:#c4a9f5;animation-duration:2s;animation-delay:1.2s">\u2726</span>'+
-    '<span class="bfly" style="animation-duration:8s;font-size:13px"><i>\ud83e\udd8b</i></span>'+
-    '<span class="bfly" style="animation-duration:12s;animation-direction:reverse;font-size:16px;animation-delay:-3s"><i>\ud83e\udd8b</i></span>'+
+    // blue monarchs, drawn not emoji \u2014 they orbit her when she pops out
+    '<span class="bfly" style="animation-duration:7s"><i>'+MONARCH(13)+'</i></span>'+
+    '<span class="bfly" style="animation-duration:11s;animation-direction:reverse;animation-delay:-3s"><i>'+MONARCH(17)+'</i></span>'+
+    '<span class="bfly" style="animation-duration:9s;animation-delay:-5s"><i>'+MONARCH(11)+'</i></span>'+
     '</div>'+
     '<div class="bob" style="position:absolute;inset:0">'+
     '<svg viewBox="0 0 80 72" width="100%" height="100%">'+
     '<defs><linearGradient id="rgrad" x1="0" y1="0" x2="1" y2="1">'+
     '<stop offset="0" stop-color="#ffb3ba"/><stop offset=".25" stop-color="#ffdfba"/><stop offset=".45" stop-color="#ffffba"/><stop offset=".65" stop-color="#baffc9"/><stop offset=".82" stop-color="#bae1ff"/><stop offset="1" stop-color="#e3baff"/></linearGradient></defs>'+
     '<path d="M40 8 C18 8 11 28 11 44 C11 62 27 66 40 66 C53 66 69 62 69 44 C69 28 62 8 40 8 Z" fill="url(#rgrad)"/>'+
-    '<path d="M13 26 C5 32 1 46 3 60 C8 54 8 42 12 34 Z" fill="#7a5236"/>'+
-    '<path d="M15 32 C10 42 10 54 14 63 C17 56 16 44 18 37 Z" fill="#7a5236"/>'+
-    '<path d="M67 26 C75 32 79 46 77 60 C72 54 72 42 68 34 Z" fill="#7a5236"/>'+
-    '<path d="M65 32 C70 42 70 54 66 63 C63 56 64 44 62 37 Z" fill="#7a5236"/>'+
-    '<path d="M40 5 C24 5 14 16 12 30 C16 25 19 24 21 27 C24 21 28 19 31 23 C34 18 39 17 40 21 C43 17 47 18 50 23 C53 19 57 21 59 27 C62 24 65 25 68 30 C66 16 56 5 40 5 Z" fill="#7a5236"/>'+
-    '<path d="M56 10 C50 3 44 8 52 13 C44 12 46 20 53 15 C60 20 64 13 56 13 C64 8 60 4 56 10 Z" fill="#6db3ff"/><circle cx="55.5" cy="11.5" r="1.6" fill="#3f7fd6"/>'+
+    '<path d="M55 12 C49 5 43 10 51 15 C43 14 45 22 52 17 C59 22 63 15 55 15 C63 10 59 6 55 12 Z" fill="#6db3ff"/><circle cx="54.5" cy="13.5" r="1.8" fill="#3f7fd6"/>'+ // just the bow — no hair
     '<ellipse cx="21" cy="41" rx="4.5" ry="2.8" fill="#ff8fbe" opacity=".6"/><ellipse cx="59" cy="41" rx="4.5" ry="2.8" fill="#ff8fbe" opacity=".6"/>'+
     '<g id="gFace">'+happy+'</g></svg></div>';
   layer.appendChild(el);
@@ -1663,7 +1686,7 @@ const chillers=[]; // full-view slimes with cursor physics
   let tmr=null;
   el.addEventListener('click',()=>{
     el.classList.add('show');el.style.transform='translateY(0)';faceG().innerHTML=wow;bub.classList.add('show');
-    clearTimeout(tmr);tmr=setTimeout(()=>{el.classList.remove('show');el.style.transform='translateY(31px)';bub.classList.remove('show');faceG().innerHTML=happy;},4500);
+    clearTimeout(tmr);tmr=setTimeout(()=>{el.classList.remove('show');el.style.transform='translateY(37px)';bub.classList.remove('show');faceG().innerHTML=happy;},4500);
   });
 })();
 
@@ -1880,21 +1903,21 @@ if(window._freshStart){ // first-ever visit: roll the dice — C major is a fine
     '<div id="modeCards">'+
     '<div class="modeCard mc-learn'+(last==='learn'?' last':'')+'" data-m="learn"><b>learn</b><span>explore new ideas!</span></div>'+
     '<div class="modeCard mc-play'+(last==='play'?' last':'')+'" data-m="play"><b>play</b><span>have fun!</span></div>'+
-    '<div class="modeCard mc-studio'+(last==='studio'?' last':'')+'" data-m="studio"><b>studio</b><span>the full enchilada</span></div>'+
+    '<div class="modeCard mc-studio'+(last==='studio'?' last':'')+'" data-m="studio"><b>studio</b><span>the whole studio!</span></div>'+
     '</div>';
   document.body.appendChild(sp);
-  sp.addEventListener('pointerdown',e=>{
-    const card=e.target.closest('.modeCard[data-m]');if(!card)return;
-    sp.classList.add('gone');setTimeout(()=>sp.remove(),600);
+  function boot(m){sp.classList.add('gone');setTimeout(()=>sp.remove(),600);
     enableMotion();initAudio();if(AC.state==="suspended")AC.resume();
-    applyMode(card.dataset.m);
-    if(card.dataset.m==='play'){ // play: full band from the first second
+    applyMode(m);
+    if(m==='play'){ // play: full band from the first second
       if(!S.slimeMode)$("slimeBig").click();
       if(!drumOn)$("drumBtn").click();
       if(!bandOn)$("bandBtn").click();
-      setTimeout(startCoach,900); // first visit only: three quick pointers, then out of the way forever
-    }else{setPlaying(true);} // studio: transport running, canvas quiet — you build the sound yourself
-  });
+      setTimeout(startCoach,900);
+    }else{setPlaying(true);}}
+  sp.addEventListener('pointerdown',e=>{
+    const card=e.target.closest('.modeCard[data-m]');
+    boot(card?card.dataset.m:last);}); // tap a door to choose — tap anywhere else to resume where you left off
 })();
 // ---------- first-run coach: signal the three essentials, advance on the child's own action ----------
 function startCoach(){
