@@ -62,6 +62,17 @@ header .spacer{flex:1}
   background:linear-gradient(135deg,#d9c6ff,#c4f0e2);border:2px solid rgba(255,255,255,.95);border-radius:14px;
   padding:9px 14px;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;gap:5px;transition:.15s}
 #exitMode:hover{transform:translateY(-1px)}
+/* the computer-keyboard map: white keys on the home row, black keys above, Z/X octave */
+#kbMap{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--card-brd);
+  border-radius:14px;padding:9px 12px;backdrop-filter:blur(8px);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:5px;align-items:center}
+#kbMap[hidden]{display:none}
+#kbMap .krow{display:flex;gap:4px}
+#kbMap b{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;
+  background:#fff8fc;border:2px solid #5a4f78;color:#5a4f78;transition:.09s}
+#kbMap b.blk{background:#4a4270;border-color:#2c2749;color:#fff}
+#kbMap b.gap{background:none;border:none}
+#kbMap b.lit{background:var(--accent);color:#fff;transform:translateY(2px)}
+#kbMap .knote{font-size:10px;font-weight:700;color:var(--ink-soft);letter-spacing:.3px}
 body:has(#splash:not(.gone)) #exitMode{display:none} /* already at the doors — nothing to go back to */
 header h1{margin-left:78px} /* the title steps aside for the back button */
 @media (max-width:820px){#exitMode{top:6px;left:8px;padding:7px 11px;font-size:12px}header h1{margin-left:0}}
@@ -283,7 +294,9 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <select id="drumFeel" style="flex:none;width:auto" title="feel"><option value="1" selected>straight</option><option value="t">triplet</option><option value="2">double-time</option><option value="h">half-time</option></select>
     <select id="drumSig" style="flex:none;width:auto" title="time signature"><option value="16" selected>4/4</option><option value="12">3/4</option><option value="12c">6/8</option><option value="20" title="counts 1-2-3 1-2">5/4</option><option value="14" title="counts 1-2 1-2 1-2-3">7/8</option><option value="18" title="counts 1-2 1-2 1-2 1-2-3">9/8</option></select>
   </span>
-  <span style="display:flex;align-items:center;gap:6px"><span class="sub">key</span><select id="keyTop" title="key"></select><select id="scaleTop" title="scale"></select></span>
+  <span style="display:flex;align-items:center;gap:6px"><span class="sub">key</span><select id="keyTop" title="key"></select><select id="scaleTop" title="scale"></select>
+    <button class="btn" id="kbBtn" title="play with your computer keyboard">⌨ keys</button>
+    <label class="adv" title="every note snaps into your key and scale"><input type="checkbox" id="scaleLockT" checked> scale</label></span>
   <span style="display:flex;align-items:center;gap:8px">
     <svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><use href="#icNote"/></svg>
     <select id="voiceTop" style="flex:none;width:auto" title="oscillator waveform"><option value="sine">∿ sine · smooth</option><option value="triangle" selected>△ triangle · mellow</option><option value="sawtooth">⊿ saw · bright</option><option value="square">⊓ square · buzzy</option></select>
@@ -353,6 +366,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <div id="stage">
     <canvas id="cv" width="720" height="720"></canvas>
     <div class="hint">tap to drop balls · <b>space</b> = rain</div>
+    <div id="kbMap" hidden></div>
     <div id="chordPill" hidden><b id="chordNow">—</b><span id="chordNext"></span><div id="chordProg"><i id="chordProgI"></i></div></div>
   </div>
   <aside>
@@ -462,6 +476,11 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <hr>
       <div class="row"><label>send MIDI out</label><div class="toggle" id="midiT"></div></div>
       <div class="row"><label>port</label><select id="midiPort"><option>— enable above —</option></select></div>
+      <hr>
+      <div class="row"><label title="play slimehedron from a MIDI keyboard or sequencer">MIDI in</label><div class="toggle" id="midiInT"></div></div>
+      <div class="row"><label>device</label><select id="midiIn"><option value="-1">— enable above —</option></select></div>
+      <div class="row"><label>channel</label><select id="midiInCh"></select></div>
+      <div class="row"><label title="follow your DAW's tempo and start/stop">clock sync</label><div class="toggle" id="midiClkT"></div></div>
       <div class="row" style="align-items:flex-start"><label>MIDI ch</label>
         <div class="chGrid">
           <div class="chCol"><span>🎵</span><select id="chMel" class="chSel"></select></div>
@@ -1338,6 +1357,26 @@ function applyMode(m){S.mode=m;
   try{localStorage.setItem('slimehedron-mode',m);}catch(e){}
   const p=$("modePill");if(p){p.textContent=m;p.classList.remove('mp-play','mp-learn','mp-studio');p.classList.add('mp-'+m);}
   if(window.LEARN){if(m==='learn')LEARN.enter();else LEARN.exit();}}
+// ---- keyboard instrument + MIDI-in wiring ----
+(function(){
+  const blk={KeyW:'C♯',KeyE:'D♯',KeyT:'F♯',KeyY:'G♯',KeyU:'A♯',KeyO:'C♯',KeyP:'D♯'};
+  const wht={KeyA:'C',KeyS:'D',KeyD:'E',KeyF:'F',KeyG:'G',KeyH:'A',KeyJ:'B',KeyK:'C',KeyL:'D',Semicolon:'E',Quote:'F'};
+  const topRow=['KeyW','KeyE','gap','KeyT','KeyY','KeyU','gap','KeyO','KeyP'];
+  const midRow=['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon','Quote'];
+  const m=$("kbMap");if(!m)return;
+  m.innerHTML='<div class="krow">'+topRow.map(k=>k==='gap'?'<b class="gap"></b>':`<b class="blk" data-k="${k}">${k.replace('Key','').replace('Semicolon',';').replace('Quote','’')}</b>`).join('')+'</div>'+
+    '<div class="krow">'+midRow.map(k=>`<b data-k="${k}">${k.replace('Key','').replace('Semicolon',';').replace('Quote','’')}</b>`).join('')+'</div>'+
+    '<div class="knote">A = do · Z / X = octave down / up</div>';
+  $("kbBtn").addEventListener('click',()=>{kbOn=!kbOn;$("kbBtn").classList.toggle('on',kbOn);m.hidden=!kbOn;
+    toast(kbOn?'keyboard on — letters play notes':'keyboard off');});
+  $("scaleLockT").addEventListener('change',e=>{S.scaleLock=e.target.checked;});
+  S.scaleLock=true;
+  const ch=$("midiInCh");if(ch){ch.innerHTML='<option value="0">all (omni)</option>'+Array.from({length:16},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join('');
+    ch.addEventListener('change',()=>{S.midiInCh=+ch.value;});}
+  S.midiInCh=0;S.midiClock=false;
+  $("midiInT").addEventListener('click',()=>{const on=$("midiInT").classList.toggle('on');if(on)enableMidiIn();});
+  $("midiClkT").addEventListener('click',()=>{S.midiClock=$("midiClkT").classList.toggle('on');clkTimes=[];});
+})();
 // ✕ = forget the saved mode and reload → you always land back on the three doors. one line, no new code paths.
 $("exitMode").addEventListener('click',()=>{try{localStorage.removeItem('slimehedron-mode');}catch(e){}location.reload();});
 applyMode((()=>{try{return localStorage.getItem('slimehedron-mode')||'play';}catch(e){return 'play';}})()); // dress the room before the splash lifts
@@ -1403,17 +1442,74 @@ addEventListener('devicemotion',e=>{
   if(mag>42&&nw-lastShake>3000&&fillState==="fill"&&particles.length>60){lastShake=nw;startBreak(nw);burstFlash=1;} // shake it til it breaks
 });
 
-// keyboard autonomy: space = balls, A = auto play, D = drums, R = record, arrows = tempo
+// ================= PLAY IT YOURSELF: computer keyboard + MIDI in =================
+// Ableton/Live-style layout: home row = white keys, row above = black keys, Z/X = octave.
+const KEYMAP={KeyA:0,KeyW:1,KeyS:2,KeyE:3,KeyD:4,KeyF:5,KeyT:6,KeyG:7,KeyY:8,KeyH:9,KeyU:10,KeyJ:11,
+  KeyK:12,KeyO:13,KeyL:14,KeyP:15,Semicolon:16,Quote:17};
+let kbOct=0,kbOn=false; // kbOn: letters become an instrument instead of shortcuts
+function snapToScale(midi){ // Scale lock: nudge any note to the nearest note of your key & scale
+  if(!S.scaleLock)return midi;
+  const sc=scaleObj().c,root=S.root;
+  let rel=midi-root,oct=Math.floor(rel/12),semi=((rel%12)+12)%12,best=0,bd=1e9;
+  for(const c of sc){const s=c/100,d=Math.abs(s-semi);if(d<bd){bd=d;best=s;}}
+  if(Math.abs(12-semi)<bd){best=12;} // wrapping up to the octave is closer than any degree
+  return root+oct*12+best;}
+function noteFlash(midi){const n=edges.length;if(!n)return; // light up the wall that owns this pitch
+  const e=edges[((midi%n)+n)%n];if(e)e.flash=1;}
+function playNote(midi,vel){ // one door for every performance: keyboard, MIDI in, anything later
+  initAudio();if(AC&&AC.state==='suspended')AC.resume();
+  const m=snapToScale(Math.round(midi));if(m<12||m>120)return;
+  const cents=(m-S.root)*100;
+  playSynth(freqFromCents(cents),vel||96,0.75);
+  noteFeed(cents);sendMidi(cents,vel||96);noteFlash(m);
+  if(!S.playing)setPlaying(true);}
+// ---- MIDI INPUT: hot-plug detection, channel filter, and MIDI-clock tempo sync ----
+let midiIns=[],clkTimes=[],clkOn=false;
+function midiMsg(d){
+  const st=d[0],cmd=st&0xF0,ch=(st&0x0F)+1;
+  if(st===0xF8){ // 24 clocks per quarter note — average the last 24 for a stable BPM
+    if(!S.midiClock)return;
+    clkTimes.push(performance.now());if(clkTimes.length>25)clkTimes.shift();
+    if(clkTimes.length===25){ // 24 intervals = one quarter note
+      const quarterMs=clkTimes[24]-clkTimes[0],bpm=Math.round(60000/quarterMs);
+      if(bpm>=40&&bpm<=220&&Math.abs(bpm-S.bpm)>=1){const el=$("bpm");el.value=bpm;el.dispatchEvent(new Event('input'));}}
+    return;}
+  if(st===0xFA||st===0xFB){if(S.midiClock&&!S.playing)setPlaying(true);clkTimes=[];return;} // start / continue
+  if(st===0xFC){if(S.midiClock&&S.playing)setPlaying(false);return;}                        // stop
+  if(S.midiInCh!==0&&ch!==S.midiInCh)return; // 0 = omni
+  if(cmd===0x90&&d[2]>0)playNote(d[1],d[2]);
+  else if(cmd===0xB0&&d[1]===1){const el=$("cut");if(el){el.value=Math.round(d[2]/127*100);el.dispatchEvent(new Event('input'));}} // mod wheel → cutoff
+}
+function bindMidiIns(access){
+  midiIns=[...access.inputs.values()];
+  const sel=$("midiIn");if(!sel)return;
+  const prev=sel.value;
+  sel.innerHTML=midiIns.length?midiIns.map((p,i)=>`<option value="${i}">${p.name}</option>`).join(''):'<option value="-1">no devices</option>';
+  if(prev&&sel.querySelector(`option[value="${prev}"]`))sel.value=prev;
+  midiIns.forEach(p=>{p.onmidimessage=ev=>{const s=$("midiIn");if(s&&midiIns[+s.value]!==p&&+s.value>=0)return;midiMsg(ev.data);};});
+  toast(midiIns.length?'MIDI: '+midiIns.length+' device'+(midiIns.length>1?'s':''):'no MIDI devices');}
+async function enableMidiIn(){
+  if(!navigator.requestMIDIAccess){toast('MIDI not supported here');return;}
+  try{const access=await navigator.requestMIDIAccess();
+    bindMidiIns(access);
+    access.onstatechange=()=>bindMidiIns(access); // USB hot-plug: devices appear/vanish live
+  }catch(e){toast('MIDI permission denied');}}
+// keyboard autonomy: space = balls, A = auto play, D = drums, arrows = tempo (recording is button-only — no hotkey to fat-finger mid-take)
 let lastKb=0;
 addEventListener('keydown',e=>{
   const tg=e.target.tagName;if(tg==='SELECT'||tg==='INPUT'||tg==='TEXTAREA')return;
+  if(kbOn&&!e.repeat){ // instrument mode: letters are keys, not shortcuts
+    if(e.code==='KeyZ'){kbOct=Math.max(-3,kbOct-1);toast('octave '+(kbOct>=0?'+':'')+kbOct);return;}
+    if(e.code==='KeyX'){kbOct=Math.min(3,kbOct+1);toast('octave '+(kbOct>=0?'+':'')+kbOct);return;}
+    if(KEYMAP[e.code]!==undefined){e.preventDefault();playNote(60+kbOct*12+KEYMAP[e.code],100);
+      const k=document.querySelector(`#kbMap [data-k="${e.code}"]`);if(k){k.classList.add('lit');setTimeout(()=>k.classList.remove('lit'),160);}
+      return;}}
   if(e.code==='Space'||e.code==='Enter'||e.code==='ShiftLeft'||e.code==='ShiftRight'){e.preventDefault(); // hold any of them for a ball rainstorm
     const nw=performance.now();if(nw-lastKb<110)return;lastKb=nw;
     initAudio();if(AC.state==='suspended')AC.resume();
     spawn(CX+(Math.random()-.5)*R*1.2,CY-R*0.45);if(!S.playing)setPlaying(true);}
   else if(e.code==='KeyA'&&!e.repeat)$("slimeBig").click();
   else if(e.code==='KeyD'&&!e.repeat)$("drumBtn").click();
-  else if(e.code==='KeyR'&&!e.repeat)$("recBtn").click();
   else if(e.code==='ArrowUp'||e.code==='ArrowDown'){e.preventDefault();
     const el=$("bpm");el.value=parseFloat(el.value)+(e.code==='ArrowUp'?2:-2);el.dispatchEvent(new Event('input'));}
 });

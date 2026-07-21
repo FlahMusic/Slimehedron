@@ -80,6 +80,26 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 11 — Playable input: computer keyboard + MIDI in (2026-07-20)
+Added deliberate note entry alongside the generative ball mechanic.
+- **Computer keyboard** uses the DAW-standard layout (Ableton/Logic/FL all share it):
+  home row A S D F G H J K L ; ' = white keys, W E T Y U O P = black keys, **Z/X = octave
+  down/up**. A ⌨ toggle flips letters between shortcuts and instrument so existing
+  hotkeys (A/D/R) aren't lost. An on-screen map shows the layout and lights each key.
+- **Scale lock** (checkbox "scale", on by default) snaps every played note into the
+  chosen key/scale. Unit-tested: chromatic input in C major returns only white-key
+  names; in D dorian it returns that mode's tones; unlocking passes semitones through.
+- **MIDI input** implemented to spec against the Web MIDI standard patterns used by
+  established open-source browser instruments: `requestMIDIAccess()`, **hot-plug via
+  `access.onstatechange`** (USB devices appear/vanish live), per-device message hooks,
+  **channel filter with omni** (mirrors the existing output channel mapping), note-on
+  with velocity-0 treated as note-off, and CC1 (mod wheel) mapped to filter cutoff.
+- **Clock sync**: 0xF8 timing clocks averaged over 24 intervals → BPM (verified exact
+  at 90/120/140), 0xFA/0xFB start-continue and 0xFC stop drive the transport.
+- All input paths funnel through one `playNote()` — synth voice, chord-brain feed,
+  MIDI echo out, and a wall flash for visual feedback.
+Backup: index-20260720-202204-keys-midiin.html.
+
 ### Entry 10 — Mobile bug round (2026-07-20)
 Three defects reported from device screenshots; all real, all mine:
 1. **The flicker (root cause found).** The liquid renderer chose between "settled pool"
