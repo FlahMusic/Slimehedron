@@ -80,6 +80,27 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 14 — iOS recording, hair removal, filter-safety (2026-07-22)
+**Slime hair removed.** The girl/teacher slimes had brown hair rects splaying behind the
+body (`opt.girl` block + `H='#8a5a3a'`). Flah: "looks like shit." Gone entirely — slimes
+are hairless; the girl marker is the pink bow alone, teachers keep cap + round glasses.
+Verified visually in-browser across all 5 variants (plain, cap, cap+bow, bow, celebrate).
+**iOS recording overhaul (the #1 reported blocker).** MediaRecorder off a
+MediaStreamDestination writes silent/corrupt files on iOS Safari. Now: detect iOS (or any
+browser lacking MediaRecorder) → capture raw PCM via ScriptProcessor tapped off the master
+limiter (silent gain sink keeps it pumping on iOS), encode 16-bit stereo WAV inline (no
+lib), same IndexedDB persist + playback/share list. WAV encoder verified with ffprobe:
+pcm_s16le, 44100Hz, stereo, header byte-exact. Desktop keeps MediaRecorder (webm/mp4);
+take list now derives extension per-take so old + new takes both export correctly.
+**Filter rendering — already safe, one gap closed.** The liquid metaball never used
+`ctx.filter` blur; it's a low-res canvas upscaled with bilinear smoothing + composite ops,
+so it renders identically on iOS (no SVG-mask fallback needed). The only real filter gap was
+CSS `backdrop-filter` missing its `-webkit-` prefix on ~8 surfaces (cards, buttons, overlay)
+— added, so the frosted glass survives on older iOS Safari instead of flattening.
+**Icon header — already icon-first**; added `aria-label`s to every icon button + the ⌨ pill
+so screen readers name them (title alone isn't a reliable accessible name).
+Backup: index-20260722-165830-ioswav-nohair.html.
+
 ### Entry 13 — Play becomes the kids' room + polyphony cap (2026-07-21)
 The earlier declutter was too timid — play still looked like a DAW. Decision (with Flah):
 play IS the kids mode; studio is where you go nuts. Research basis: young children engage
