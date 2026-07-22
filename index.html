@@ -70,7 +70,21 @@ header .spacer{flex:1}
   padding:9px 14px;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;gap:5px;transition:.15s}
 #exitMode:hover{transform:translateY(-1px)}
 /* the computer-keyboard map: white keys on the home row, black keys above, Z/X octave */
-#kbMap{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--card-brd);
+/* keyboard-play: floating pill (all modes, same spot) + translucent reference map, DAW-standard layout */
+#kbBtn{position:fixed;right:14px;bottom:14px;z-index:260;border-radius:999px;padding:10px 15px;font-size:19px;line-height:1;
+  background:linear-gradient(135deg,#e7dbff,#d2f5e8);border:2px solid #fff;box-shadow:0 4px 14px rgba(120,110,160,.35);
+  color:var(--ink);cursor:pointer;transition:transform .12s}
+#kbBtn:active{transform:scale(.93)}
+#kbBtn.on{background:linear-gradient(135deg,#9fe6cf,#b388f0);color:#fff;box-shadow:0 4px 16px rgba(130,100,200,.45)}
+body:has(#splash:not(.gone)) #kbBtn{display:none}
+#kbMap{position:fixed;bottom:66px;left:50%;transform:translateX(-50%);z-index:259;max-width:96vw;overflow-x:auto;
+  background:rgba(255,255,255,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border:1px solid rgba(255,255,255,.85);border-radius:16px;padding:10px 14px;
+  display:flex;flex-direction:column;gap:5px;align-items:center;box-shadow:0 8px 28px rgba(90,79,120,.28)}
+#kbMap b i{display:block;font-size:8px;opacity:.72;font-style:normal;line-height:1;margin-top:1px}
+#kbMap b.fn{background:#ffd3a8;border-color:#e0a86a;width:auto;padding:0 8px}
+#kbMap #kbOctV{background:#fff;width:auto;padding:0 8px}
+#kbMapOld{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--card-brd);
   border-radius:14px;padding:9px 12px;backdrop-filter:blur(8px);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:5px;align-items:center}
 #kbMap[hidden]{display:none}
 #kbMap .krow{display:flex;gap:4px}
@@ -140,6 +154,7 @@ header h1{margin-left:78px} /* the title steps aside for the back button */
 @media (max-width:430px){.pxPiano{transform:scale(.8);transform-origin:top center;margin:24px 0 -8px}} /* small phones: shrink the block, keep key geometry exact */
 .pxW.nxt{background:#e8fff5;animation:chg 1s ease-in-out infinite} /* scale lessons: the NEXT key glows */
 .pxB.nxt{background:#4c6b5e;animation:chg 1s ease-in-out infinite}
+.pxW.pl{background:#c9f2e4}.pxB.pl{background:#57c9a5} /* live note flash: see every MIDI note land on the keybed */
 .pxPiano.two{overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;padding-bottom:6px} /* two octaves: scroll if it must */
 .pxPiano.two .pxKeys{margin:0 auto}
 @media (max-width:560px){.pxPiano.two{transform:none;margin:24px -14px 8px}
@@ -275,6 +290,9 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 <!-- body-level, NOT inside header: header has z-index:70 which creates a stacking context,
      and a fixed child can never paint above the learn overlay from inside it. -->
 <button id="exitMode" title="back to play / learn / studio">← back</button>
+<!-- keyboard-play lives at body level: one button, one spot, every mode, every screen size -->
+<button id="kbBtn" title="play notes with your computer keyboard or a MIDI keyboard">⌨</button>
+<div id="kbMap" hidden></div>
 <header>
   <h1>slimehedron<span class="dot">.</span></h1>
   <span class="spacer"></span>
@@ -309,7 +327,6 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <select id="drumSig" style="flex:none;width:auto" title="time signature"><option value="16" selected>4/4</option><option value="12">3/4</option><option value="12c">6/8</option><option value="20" title="counts 1-2-3 1-2">5/4</option><option value="14" title="counts 1-2 1-2 1-2-3">7/8</option><option value="18" title="counts 1-2 1-2 1-2 1-2-3">9/8</option></select>
   </span>
   <span style="display:flex;align-items:center;gap:6px"><span class="sub">key</span><select id="keyTop" title="key"></select><select id="scaleTop" title="scale"></select>
-    <button class="btn" id="kbBtn" title="play with your computer keyboard">⌨ keys</button>
     <label class="adv" title="every note snaps into your key and scale"><input type="checkbox" id="scaleLockT" checked> scale</label></span>
   <span style="display:flex;align-items:center;gap:8px">
     <svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><use href="#icNote"/></svg>
@@ -380,7 +397,6 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <div id="stage">
     <canvas id="cv" width="720" height="720"></canvas>
     <div class="hint">tap to drop balls · <b>space</b> = rain</div>
-    <div id="kbMap" hidden></div>
     <div id="chordPill" hidden><b id="chordNow">—</b><span id="chordNext"></span><div id="chordProg"><i id="chordProgI"></i></div></div>
   </div>
   <aside>
@@ -1387,9 +1403,10 @@ function applyMode(m){S.mode=m;
   const topRow=['KeyW','KeyE','gap','KeyT','KeyY','KeyU','gap','KeyO','KeyP'];
   const midRow=['KeyA','KeyS','KeyD','KeyF','KeyG','KeyH','KeyJ','KeyK','KeyL','Semicolon','Quote'];
   const m=$("kbMap");if(!m)return;
-  m.innerHTML='<div class="krow">'+topRow.map(k=>k==='gap'?'<b class="gap"></b>':`<b class="blk" data-k="${k}">${k.replace('Key','').replace('Semicolon',';').replace('Quote','’')}</b>`).join('')+'</div>'+
-    '<div class="krow">'+midRow.map(k=>`<b data-k="${k}">${k.replace('Key','').replace('Semicolon',';').replace('Quote','’')}</b>`).join('')+'</div>'+
-    '<div class="knote">A = do · Z / X = octave down / up</div>';
+  const cap=k=>k.replace('Key','').replace('Semicolon',';').replace('Quote','’');
+  m.innerHTML='<div class="krow" style="margin-left:14px">'+topRow.map(k=>k==='gap'?'<b class="gap"></b>':`<b class="blk" data-k="${k}">${cap(k)}<i>${blk[k]}</i></b>`).join('')+'</div>'+
+    '<div class="krow">'+midRow.map(k=>`<b data-k="${k}">${cap(k)}<i>${wht[k]}</i></b>`).join('')+'</div>'+
+    '<div class="krow"><b class="fn" data-k="KeyZ">Z<i>oct −</i></b><b id="kbOctV">oct 0</b><b class="fn" data-k="KeyX">X<i>oct +</i></b><span class="knote">· notes snap to your scale</span></div>';
   $("kbBtn").addEventListener('click',()=>{kbOn=!kbOn;$("kbBtn").classList.toggle('on',kbOn);m.hidden=!kbOn;
     toast(kbOn?'keyboard on — letters play notes':'keyboard off');});
   $("scaleLockT").addEventListener('change',e=>{S.scaleLock=e.target.checked;});
@@ -1399,6 +1416,11 @@ function applyMode(m){S.mode=m;
   S.midiInCh=0;S.midiClock=false;
   $("midiInT").addEventListener('click',()=>{const on=$("midiInT").classList.toggle('on');if(on)enableMidiIn();});
   $("midiClkT").addEventListener('click',()=>{S.midiClock=$("midiClkT").classList.toggle('on');clkTimes=[];});
+  // MIDI in is ON by default — a music app should just hear your keyboard, like every synth.
+  // (enable waits for the first gesture: Chrome gates the MIDI permission behind user activation.)
+  $("midiInT").classList.add('on');
+  const _mi=()=>{enableMidiIn();window.removeEventListener('pointerdown',_mi);window.removeEventListener('keydown',_mi);};
+  window.addEventListener('pointerdown',_mi);window.addEventListener('keydown',_mi);
 })();
 // ✕ = forget the saved mode and reload → you always land back on the three doors. one line, no new code paths.
 $("exitMode").addEventListener('click',()=>{try{localStorage.removeItem('slimehedron-mode');}catch(e){}location.reload();});
@@ -1536,8 +1558,10 @@ let lastKb=0;
 addEventListener('keydown',e=>{
   const tg=e.target.tagName;if(tg==='SELECT'||tg==='INPUT'||tg==='TEXTAREA')return;
   if((kbOn||S.mode==='learn')&&!e.repeat){ // instrument mode: letters are keys, not shortcuts. learn lessons: always on — no toggle hunting
-    if(e.code==='KeyZ'){kbOct=Math.max(-3,kbOct-1);toast('octave '+(kbOct>=0?'+':'')+kbOct);return;}
-    if(e.code==='KeyX'){kbOct=Math.min(3,kbOct+1);toast('octave '+(kbOct>=0?'+':'')+kbOct);return;}
+    if(e.code==='KeyZ'||e.code==='KeyX'){
+      kbOct=e.code==='KeyZ'?Math.max(-3,kbOct-1):Math.min(3,kbOct+1);
+      const ov2=$("kbOctV");if(ov2)ov2.textContent='oct '+(kbOct>=0?'+':'')+kbOct;
+      toast('octave '+(kbOct>=0?'+':'')+kbOct);return;}
     if(KEYMAP[e.code]!==undefined){e.preventDefault();playNote(60+kbOct*12+KEYMAP[e.code],100);
       const k=document.querySelector(`#kbMap [data-k="${e.code}"]`);if(k){k.classList.add('lit');setTimeout(()=>k.classList.remove('lit'),160);}
       return;}}

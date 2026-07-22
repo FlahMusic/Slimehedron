@@ -27,7 +27,9 @@ window.LEARN=(function(){
       g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*a,t+0.004);
       g.gain.exponentialRampToValueAtTime(0.0001,t+d);
       o.connect(g);g.connect(typeof melBus!=='undefined'&&melBus?melBus:AC.destination);o.start(t);o.stop(t+d+0.05);});}
-  function pianoPlay(s,vel){const f=440*Math.pow(2,(60+s-69)/12);lessonNote(f,vel||96);}
+  function flashKey(s){const k=ov.querySelector(`.pxKeys [data-s="${s}"]`);if(!k)return;
+    k.classList.add('pl');setTimeout(()=>k.classList.remove('pl'),240);}
+  function pianoPlay(s,vel){const f=440*Math.pow(2,(60+s-69)/12);lessonNote(f,vel||96);flashKey(s);}
   function decorate(tones){const wrap=ov.querySelector('.pxKeys');if(!wrap)return;
     wrap.querySelectorAll('.pxSlM').forEach(e=>e.remove());
     wrap.querySelectorAll('[data-s]').forEach(k=>k.classList.toggle('hl',tones.includes(+k.dataset.s)));
@@ -244,13 +246,22 @@ window.LEARN=(function(){
 
   // ============ course 4: the seven modes ============
   const M7=[
-   {k:'major',n:'ionian (major)',scene:'bright & sunny',feel:'bright and happy',ch:4},
-   {k:'dorian',n:'dorian',scene:'cool folk night',feel:'cool and mysterious',ch:5},
-   {k:'phrygian',n:'phrygian',scene:'desert night',feel:'far away and dramatic',ch:1},
-   {k:'lydian',n:'lydian',scene:'dreamy & floating',feel:'floating and curious',ch:3},
-   {k:'mixolydian',n:'mixolydian',scene:'warm festival',feel:'warm and playful',ch:6},
-   {k:'minor',n:'aeolian (minor)',scene:'grey & rainy',feel:'quiet and sad',ch:5},
-   {k:'locrian',n:'locrian',scene:'strange & shifting',feel:'strange and uneasy',ch:4}
+   // feel = short emotive tag (quiz feedback); why = the defining scale degree + how scores actually use it.
+   // characterizations follow standard modal-harmony teaching and film-scoring practice.
+   {k:'major',n:'ionian (major)',scene:'bright & sunny',feel:'bright and settled',ch:4,
+    why:'the major scale — no altered tones, so every phrase can land at home. scores use it for comfort, heroes, and endings that work out.'},
+   {k:'dorian',n:'dorian',scene:'cool folk night',feel:'minor, but hopeful',ch:5,
+    why:'minor with a raised 6th — sad colors that keep moving forward. the mode of sea shanties, medieval folk, and cool jazz.'},
+   {k:'phrygian',n:'phrygian',scene:'desert night',feel:'dark and tense',ch:1,
+    why:'minor with a lowered 2nd — that half step leaning on the root makes instant tension. flamenco lives here; scores use it for menace and battles.'},
+   {k:'lydian',n:'lydian',scene:'dreamy & floating',feel:'floating and full of wonder',ch:3,
+    why:'major with a raised 4th — one tone lifts everything off the ground. the film-scoring mode for magic, flying, and space.'},
+   {k:'mixolydian',n:'mixolydian',scene:'warm festival',feel:'warm and easygoing',ch:6,
+    why:'major with a lowered 7th — bright, but relaxed instead of formal. the backbone of rock, blues, and celtic dance tunes.'},
+   {k:'minor',n:'aeolian (minor)',scene:'grey & rainy',feel:'sad and serious',ch:5,
+    why:'the natural minor scale — lowered 3rd, 6th and 7th all pull downward. scores use it for grief, weight, and villains with reasons.'},
+   {k:'locrian',n:'locrian',scene:'strange & shifting',feel:'unstable',ch:4,
+    why:'the only mode with a diminished 5th — its home chord cannot rest. composers use it in passing, for tension that refuses to resolve.'}
   ];
 
   // ---------- pixel-art scene generator: real pixels, dithered skies, shaded sprites, 7 seeds per mode ----------
@@ -525,34 +536,34 @@ window.LEARN=(function(){
   // and "again" in a quiz repeats the exact same take (that's ear training, not a jukebox).
   const MELS={
    major:[
-    {t:'ode to joy',seq:[[2,1],[2,1],[3,1],[4,1],[4,1],[3,1],[2,1],[1,1],[0,1],[0,1],[1,1],[2,1],[2,1.5],[1,.5],[1,2]]},
-    {t:'frère jacques',seq:[[0,1],[1,1],[2,1],[0,1],[0,1],[1,1],[2,1],[0,1],[2,1],[3,1],[4,2],[2,1],[3,1],[4,2],[4,.5],[5,.5],[4,.5],[3,.5],[2,1],[0,1],[0,2]]},
-    {t:'mary had a little lamb',seq:[[2,1],[1,1],[0,1],[1,1],[2,1],[2,1],[2,2],[1,1],[1,1],[1,2],[2,1],[4,1],[4,2],[2,1],[1,1],[0,1],[1,1],[2,1],[2,1],[2,1],[1,1],[1,1],[2,1],[1,1],[0,2]]},
-    {t:'when the saints go marching in',seq:[[0,1],[2,1],[3,1],[4,3],[0,1],[2,1],[3,1],[4,3],[0,1],[2,1],[3,1],[4,1],[2,1],[0,1],[2,1],[1,3]]}],
+    {t:'ode to joy',s:1,seq:[[2,1],[2,1],[3,1],[4,1],[4,1],[3,1],[2,1],[1,1],[0,1],[0,1],[1,1],[2,1],[2,1.5],[1,.5],[1,2]]},
+    {t:'frère jacques',s:1,seq:[[0,1],[1,1],[2,1],[0,1],[0,1],[1,1],[2,1],[0,1],[2,1],[3,1],[4,2],[2,1],[3,1],[4,2],[4,.5],[5,.5],[4,.5],[3,.5],[2,1],[0,1],[0,2]]},
+    {t:'mary had a little lamb',s:1,seq:[[2,1],[1,1],[0,1],[1,1],[2,1],[2,1],[2,2],[1,1],[1,1],[1,2],[2,1],[4,1],[4,2],[2,1],[1,1],[0,1],[1,1],[2,1],[2,1],[2,1],[1,1],[1,1],[2,1],[1,1],[0,2]]},
+    {t:'when the saints go marching in',s:1,seq:[[0,1],[2,1],[3,1],[4,3],[0,1],[2,1],[3,1],[4,3],[0,1],[2,1],[3,1],[4,1],[2,1],[0,1],[2,1],[1,3]]}],
    dorian:[
-    {t:'drunken sailor',seq:[[7,.5],[7,.5],[7,.5],[7,.5],[7,.5],[7,.5],[7,.5],[7,.5],[6,.5],[6,.5],[6,.5],[6,.5],[6,.5],[6,.5],[6,.5],[6,.5],[7,.5],[7,.5],[7,.5],[7,.5],[7,.5],[8,.5],[9,.5],[10,.5],[11,1],[7,1.5]]},
-    {t:'scarborough air (trad.)',seq:[[0,1.5],[0,.5],[4,2],[4,1],[5,1],[4,2],[2,1],[3,.5],[2,.5],[1,1],[0,2]]},
-    {t:'dorian groove (pattern)',seq:[[0,1],[2,.5],[3,.5],[4,1],[5,1],[4,1],[3,.5],[2,.5],[0,1],[5,1],[4,1],[0,2]]}],
+    {t:'drunken sailor',s:1,seq:[[7,.5],[7,.5],[7,.5],[7,.5],[7,.5],[7,.5],[7,.5],[7,.5],[6,.5],[6,.5],[6,.5],[6,.5],[6,.5],[6,.5],[6,.5],[6,.5],[7,.5],[7,.5],[7,.5],[7,.5],[7,.5],[8,.5],[9,.5],[10,.5],[11,1],[7,1.5]]},
+    {t:'scarborough fair',s:1,seq:[[0,1.5],[0,.5],[4,2],[4,1],[5,1],[4,2],[2,1],[3,.5],[2,.5],[1,1],[0,2]]},
+    {t:'raised-6th groove',seq:[[0,1],[2,.5],[3,.5],[4,1],[5,1],[4,1],[3,.5],[2,.5],[0,1],[5,1],[4,1],[0,2]]}],
    phrygian:[
-    {t:'sakura sakura',seq:[[3,1],[3,1],[4,2],[3,1],[3,1],[4,2],[3,1],[4,1],[5,1],[4,1],[3,1],[4,.5],[3,.5],[1,2],[0,2]]},
-    {t:'andalusian fall (pattern)',seq:[[7,1],[6,1],[5,1],[4,1],[7,1],[6,1],[5,1],[4,2],[5,.5],[6,.5],[5,1],[4,2]]},
-    {t:'phrygian gate (pattern)',seq:[[0,.5],[1,.5],[0,.5],[1,.5],[0,1],[3,1],[1,1],[0,1],[4,1],[1,1],[0,2]]}],
+    {t:'sakura sakura',s:1,seq:[[3,1],[3,1],[4,2],[3,1],[3,1],[4,2],[3,1],[4,1],[5,1],[4,1],[3,1],[4,.5],[3,.5],[1,2],[0,2]]},
+    {t:'andalusian descent',seq:[[7,1],[6,1],[5,1],[4,1],[7,1],[6,1],[5,1],[4,2],[5,.5],[6,.5],[5,1],[4,2]]},
+    {t:'flat-2 pulse',seq:[[0,.5],[1,.5],[0,.5],[1,.5],[0,1],[3,1],[1,1],[0,1],[4,1],[1,1],[0,2]]}],
    lydian:[
-    {t:'cloud waltz (ours)',seq:[[0,1],[2,1],[4,1],[3,2],[4,1],[6,1],[4,1],[3,2],[2,1],[3,1],[4,1],[2,1],[0,2]]},
-    {t:'lift-off (pattern)',seq:[[0,1],[2,1],[3,1],[4,2],[3,1],[4,1],[6,1],[7,2],[6,1],[4,1],[3,1],[4,2]]},
-    {t:'floating steps (pattern)',seq:[[4,1],[3,1],[4,1],[7,1],[4,1],[3,1],[2,1],[3,1],[4,1],[0,2]]}],
+    {t:'lydian waltz',seq:[[0,1],[2,1],[4,1],[3,2],[4,1],[6,1],[4,1],[3,2],[2,1],[3,1],[4,1],[2,1],[0,2]]},
+    {t:'sharp-4 lift',seq:[[0,1],[2,1],[3,1],[4,2],[3,1],[4,1],[6,1],[7,2],[6,1],[4,1],[3,1],[4,2]]},
+    {t:'floating steps',seq:[[4,1],[3,1],[4,1],[7,1],[4,1],[3,1],[2,1],[3,1],[4,1],[0,2]]}],
    mixolydian:[
-    {t:'old joe clark',seq:[[4,.5],[4,.5],[4,1],[5,.5],[6,1],[6,.5],[5,.5],[4,.5],[2,1],[1,.5],[2,.5],[4,1],[6,1],[4,2]]},
-    {t:'back porch (pattern)',seq:[[4,.5],[5,.5],[6,1],[4,1],[2,1],[4,1],[6,1],[4,1],[2,.5],[1,.5],[0,2]]},
-    {t:'flat-seven turn (pattern)',seq:[[0,1],[2,1],[4,1],[6,1],[4,1],[2,1],[6,1],[4,1],[2,1],[0,2]]}],
+    {t:'old joe clark',s:1,seq:[[4,.5],[4,.5],[4,1],[5,.5],[6,1],[6,.5],[5,.5],[4,.5],[2,1],[1,.5],[2,.5],[4,1],[6,1],[4,2]]},
+    {t:'flat-7 stroll',seq:[[4,.5],[5,.5],[6,1],[4,1],[2,1],[4,1],[6,1],[4,1],[2,.5],[1,.5],[0,2]]},
+    {t:'flat-7 turnaround',seq:[[0,1],[2,1],[4,1],[6,1],[4,1],[2,1],[6,1],[4,1],[2,1],[0,2]]}],
    minor:[
-    {t:'god rest ye merry gentlemen',seq:[[0,1],[0,1],[4,1],[4,1],[3,1],[2,1],[1,1],[0,1],[1,1],[2,1],[3,1],[4,1],[2,1],[1,1],[0,2]]},
-    {t:'greensleeves air (trad.)',seq:[[7,1],[9,1],[10,1.5],[11,.5],[12,1],[11,1],[10,1],[8,1.5],[6,.5],[8,1],[7,2]]},
-    {t:'la lament (pattern)',seq:[[4,1],[3,1],[2,1],[0,1],[2,1],[3,1],[2,1],[1,1],[0,2],[4,1],[3,1],[2,2]]}],
+    {t:'god rest ye merry gentlemen',s:1,seq:[[0,1],[0,1],[4,1],[4,1],[3,1],[2,1],[1,1],[0,1],[1,1],[2,1],[3,1],[4,1],[2,1],[1,1],[0,2]]},
+    {t:'greensleeves',s:1,seq:[[7,1],[9,1],[10,1.5],[11,.5],[12,1],[11,1],[10,1],[8,1.5],[6,.5],[8,1],[7,2]]},
+    {t:'natural minor lament',seq:[[4,1],[3,1],[2,1],[0,1],[2,1],[3,1],[2,1],[1,1],[0,2],[4,1],[3,1],[2,2]]}],
    locrian:[
-    {t:'the wobble house (ours)',seq:[[0,1],[1,1],[0,1],[4,1],[3,1],[4,.5],[3,.5],[1,1],[0,1],[4,2],[0,2]]},
-    {t:'unstable steps (pattern)',seq:[[0,1],[4,1],[1,1],[4,1],[0,.5],[1,.5],[0,1],[4,1],[1,1],[0,2]]},
-    {t:'tritone tumble (pattern)',seq:[[4,1],[3,1],[4,1],[0,1],[6,1],[4,1],[1,1],[0,1],[4,1],[0,2]]}]
+    {t:'locrian walk',seq:[[0,1],[1,1],[0,1],[4,1],[3,1],[4,.5],[3,.5],[1,1],[0,1],[4,2],[0,2]]},
+    {t:'unstable steps',seq:[[0,1],[4,1],[1,1],[4,1],[0,.5],[1,.5],[0,1],[4,1],[1,1],[0,2]]},
+    {t:'tritone tumble',seq:[[4,1],[3,1],[4,1],[0,1],[6,1],[4,1],[1,1],[0,1],[4,1],[0,2]]}]
   };
   const FEELNM=['steady','lilt','brisk'];
   let jamT=[],loopIv=null,prevScale=null,lastAud='',_sel=null,_cap=''; // _sel = last exact take, _cap = caption for the UI
@@ -560,14 +571,17 @@ window.LEARN=(function(){
   function stopJam(){rhStop();jamT.forEach(clearTimeout);jamT=[];if(loopIv){clearInterval(loopIv);loopIv=null;}
     if(prevScale){S.scale=prevScale.s;S.root=prevScale.r;prevScale=null;}}
   function jn(deg,dt,vel){jamT.push(setTimeout(()=>{if(!AC)return;const c=centsForDegree(deg);
-    lessonNote(freqFromCents(c),vel||84);},dt));}
+    lessonNote(freqFromCents(c),vel||84);
+    let s=Math.round(c/100);while(s>24)s-=12;flashKey(s); // every played note lands visibly on the keybed
+    const pk=ov.querySelector(`.pKey[data-deg="${deg}"]`); // compose pads pulse too
+    if(pk){pk.style.transform='translateY(3px)';setTimeout(()=>pk.style.transform='',90);}},dt));}
   function playTune(i,fix){stopJam();setModeScale(M7[i].k);lastAud=i+':t';
     const bank=MELS[M7[i].k];let ei,fi;
     if(fix&&_sel&&_sel.i===i){ei=_sel.ei;fi=_sel.fi;} // "again" = the SAME take
     else{let g=0;do{ei=(Math.random()*bank.length)|0;fi=(Math.random()*3)|0;g++;}
       while(g<9&&_sel&&_sel.i===i&&_sel.ei===ei&&_sel.fi===fi);} // never the same take twice in a row
     _sel={i,ei,fi};const e=bank[ei];
-    _cap='“'+e.t+'”'+(fi?' · '+FEELNM[fi]:'');
+    _cap=e.s?'“'+e.t+'”':''; // real songs get their name. teaching patterns get NO title — the sound is the lesson
     const step=fi===2?230:310;let t=240;
     jn(0,20,58);jn(4,20,46);
     e.seq.forEach(([d,l],ix)=>{const dur=fi===1?l*(ix%2===0?1.32:0.68):l; // lilt: long-short pairs
@@ -614,10 +628,10 @@ window.LEARN=(function(){
         ${diff!=='hard'?`<button class="btn" data-a="startsess" data-d="${diff==='easy'?'med':'hard'}">trickier \u25b8</button>`:''}
         <button class="btn" data-a="crs" data-c="modes">\u2039 back</button></div></div>`;}
   function mHome(){stopJam();setLC('modes');onKey=null;ov.innerHTML=`<div class="lCard">
-    <h3>the seven modes</h3>
-    <p class="lSub">every mode is a mood.</p>
+    <h3>the modes</h3>
+    <p class="lSub">seven scales from the same notes — brightest to darkest, one altered tone at a time.</p>
     <div class="lBtns">
-      <button class="btn primary big" data-a="listen">▸ listen — the seven moods</button>
+      <button class="btn primary big" data-a="listen">▸ listen — all seven modes</button>
       <button class="btn big" data-a="matchmenu">? match — sound to scene</button>
       <button class="btn big" data-a="mcreate">♪ compose — score a scene</button>
     </div>${stickers()}
@@ -625,10 +639,12 @@ window.LEARN=(function(){
   function listen(i){i=i||0;stopJam();playTune(i);const m=M7[i];
     ov.innerHTML=`<div class="lCard"><h3>${i+1} of 7 · ${m.n}</h3>
       <div class="lBig">${sceneIMG(i,Math.floor(Math.random()*7))}</div>
-      <div class="lFeed">${_cap} — ${m.feel}</div>
+      <div class="lFeed">${_cap?_cap+' · ':''}<b>${m.feel}</b><br><span style="opacity:.78">${m.why}</span></div>
+      ${pianoHTML(null,1)}
       <div class="lRow">${i>0?'<button class="btn" data-a="listen" data-i="'+(i-1)+'">◂</button>':''}
       <button class="btn" data-a="replay" data-i="${i}" data-r="2">↻ again</button>
-      ${i<6?'<button class="btn primary" data-a="listen" data-i="'+(i+1)+'">next ▸</button>':'<button class="btn primary" data-a="crs" data-c="modes">done</button>'}</div></div>`;}
+      ${i<6?'<button class="btn primary" data-a="listen" data-i="'+(i+1)+'">next ▸</button>':'<button class="btn primary" data-a="crs" data-c="modes">done</button>'}</div></div>`;
+    onKey=s=>pianoPlay(s);} // play along on the keybed — touch, letters, or MIDI
   function guess(){stopJam();rounds++;const D=DIFFS[diff];
     let ans=Math.floor(Math.random()*7);
     if(ans===lastAns)ans=(ans+1+Math.floor(Math.random()*6))%7;

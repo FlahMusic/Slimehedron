@@ -11,7 +11,7 @@ Free. No accounts. No ads. Works offline. All vocabulary is real music terminolo
 | 2 | **the piano** *(8 lessons)* | note names → major & natural minor scales (white then black roots) → pentatonics → the seven modes | guided scale-runner: climb the glowing keys by touch, computer keyboard, or MIDI keyboard | every root of every lesson climbed |
 | 3 | **intervals** | distance between notes | hear two notes, choose the distance; slimes stand the distance apart on the keys | correct picks accumulate |
 | 4 | **chords** | 3rds stacking; maj/min/sus/dim/aug/7ths | build C-chords on the piano; hear one note move and change the mood | all 9 chord types visited |
-| 5 | **the seven modes** *(capstone)* | mode = mood; scale structure | scene-matching ear training + composing over mode backings with an in-key piano | 7 mode stickers + hidden-slime cameos |
+| 5 | **the modes** *(capstone)* | modal color: one altered scale degree changes the character (per standard modal-harmony teaching and film-scoring practice) | scene-matching ear training + composing over mode backings with an in-key piano | 7 mode stickers |
 
 ## Design principles (research-backed)
 
