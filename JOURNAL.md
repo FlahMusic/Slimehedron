@@ -80,6 +80,58 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 13 — Play becomes the kids' room + polyphony cap (2026-07-21)
+The earlier declutter was too timid — play still looked like a DAW. Decision (with Flah):
+play IS the kids mode; studio is where you go nuts. Research basis: young children engage
+through immediate cause-and-effect and instant per-touch feedback; tempo and volume are the
+only parameters reliably perceivable pre-10, and parameter menus suppress engagement
+(consistent across early-childhood music-app studies and expert app reviews). So play now
+shows exactly: ▶ play, drop-ball (enlarged — it's the main toy), 🎲 new shape (kids-only
+button, always jumps to a DIFFERENT shape), clear, the slime auto-play switch, and the
+stage. The entire control bar (mixer, kit, key/scale, voice, tempo, swing, FX) plus
+drums/band/record buttons and perf/pixel toggles are hidden in play — same engine,
+zero homework. Studio is unchanged.
+**Polyphony cap (MAXBALLS=12).** Kids spam the drop button; unbounded balls turned it into
+noise. Classic polysynths ran 4–8 voices; auditory-streaming research says listeners track
+at most ~3–4 independent lines (Bregman 1990, *Auditory Scene Analysis*; Huron 2001,
+*Tone and Voice*) and textures past ~10 concurrent events perceptually fuse. Cap = 12 with
+oldest-ball recycling at every spawn point (rain, drop, MIDI/keyboard shots) — spamming
+now *changes the texture* instead of stacking chaos, so trolling stays musical.
+Backup: index-20260721-203700-kidsplay.html.
+
+### Entry 12 — Full pass: play declutter, performance input, piano curriculum, scene/melody expansion (2026-07-21)
+**Play-mode declutter.** The bar had quietly re-absorbed studio features. Play now hides
+swing (auto-play wobbles it anyway) on all sizes; on phones it also hides keys/voice/FX/
+scale-lock. Mobile play bar = triangle · kit · key · tempo. (Mayer's coherence principle:
+extraneous elements measurably reduce learning; same logic applies to a play surface.)
+**Performance input.** Any keyboard/MIDI note in play/studio: sound fires ON the press
+(zero latency), a muted ball simultaneously shoots from the geometry's center at the wall
+owning that pitch (~100ms flight, first impact flashes/splashes without re-triggering, then
+the ball is a normal citizen). Auto ball-dropping halts instantly on human input
+(`manualHold`); slime mode reclaims the stage at the next geometry reset. Instrument
+logic: the performer's note IS the event — the visual chases it, never the reverse.
+**Learn plays through your keys.** Lessons accept computer-keyboard letters (auto-enabled,
+Ableton home-row layout) and MIDI input; far octaves fold onto the visible keybed. Rhythm
+lessons treat any note as a tap. On phones the lesson keybed is full-size and scrollable
+instead of shrunken (Fitts's law: targets must be finger-sized).
+**Piano is now an 8-lesson course** (find the keys → major scales on white roots by
+circle-of-fifths order C G F D A E B → natural minor from A → black-root majors
+B♭ E♭ A♭ D♭ G♭ → black-root minors C♯ F♯ G♯ E♭ B♭ → major/minor pentatonic → the seven
+modes as white-key rotations). Guided glowing-key runner, W/H formula shown, payoff run +
+jingle per scale. Correct terminology, minimal words.
+**Melody bank.** 22 base entries × 3 rhythmic feels (steady/lilt/brisk) ≈ 9–12 audible
+variants per mode; PD additions: Frère Jacques, Mary Had a Little Lamb, When the Saints,
+Scarborough (trad reading), Greensleeves (trad reading), + mode-defining patterns
+(Andalusian cadence line, etc.). "Again" now replays the identical take — ear training
+requires an invariant stimulus.
+**Scene engine v2.** 160×120 (4× the pixels), 36-component sprite library, 7 genuinely
+distinct compositions per mode (49 total), each with a resident slime; seeded micro-
+variation inside each composition. Associations follow standard film-scoring practice
+(pastoral ionian, folk/sea dorian, iberian phrygian, dreamlike lydian, festive mixolydian,
+melancholy aeolian, unstable locrian). All 49 rendered and visually inspected in-browser.
+Backups: index/learn-20260721-165649-fullpass. Dev tool: preview-scenes.html renders the
+full 49-scene proof sheet.
+
 ### Entry 11 — Playable input: computer keyboard + MIDI in (2026-07-20)
 Added deliberate note entry alongside the generative ball mechanic.
 - **Computer keyboard** uses the DAW-standard layout (Ableton/Logic/FL all share it):

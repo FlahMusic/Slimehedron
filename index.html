@@ -47,8 +47,15 @@ header .spacer{flex:1}
 @media (max-width:820px){.mode-play.hasTakes #menuBtn{display:flex}}
 #keyTop{width:auto;flex:none}
 #scaleTop{max-width:118px;flex:none}
-.mode-play #drumFeel,.mode-play #drumSig{display:none}
-.mode-play #tapeIco,.mode-play #warmSl{display:none}
+/* ============ PLAY = the kids' room ============
+   under-10s engage through immediate cause-and-effect and instant feedback, not parameter menus
+   (see JOURNAL entry 13). so play is: drop balls · slime auto-play · new shape · clear.
+   every knob, select, and slider is studio furniture now. same engine, zero homework. */
+.mode-play #triMixBar{display:none} /* the whole control bar: mixer, kit, key, voice, tempo, FX — gone */
+.mode-play #drumBtn,.mode-play #bandBtn,.mode-play #recBtn,.mode-play #resetBtn,.mode-play header .adv{display:none}
+.mode-play #dropBtn{transform:scale(1.22);margin:0 6px} /* the main toy gets the big button */
+#newShapeBtn{display:none} /* kids-only control: studio picks shapes deliberately */
+.mode-play #newShapeBtn{display:inline-flex}
 .mode-learn aside,.mode-learn #triMixBar,.mode-learn #autoRow{display:none} /* learn: clear the desk, the lesson is the interface */
 .mode-learn .btngroup,.mode-learn #clearBtn{display:none} /* no stray instruments during class — the lesson owns the sound */
 .btn.big[data-l]{flex-direction:column;gap:3px}
@@ -131,6 +138,12 @@ header h1{margin-left:78px} /* the title steps aside for the back button */
 #coach{position:fixed;z-index:220;width:250px;background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:10px 12px;font-size:13px;font-weight:700;color:var(--ink);display:flex;gap:8px;align-items:center}
 #coach .coachTxt{flex:1;line-height:1.35}
 @media (max-width:430px){.pxPiano{transform:scale(.8);transform-origin:top center;margin:24px 0 -8px}} /* small phones: shrink the block, keep key geometry exact */
+.pxW.nxt{background:#e8fff5;animation:chg 1s ease-in-out infinite} /* scale lessons: the NEXT key glows */
+.pxB.nxt{background:#4c6b5e;animation:chg 1s ease-in-out infinite}
+.pxPiano.two{overflow-x:auto;justify-content:flex-start;-webkit-overflow-scrolling:touch;padding-bottom:6px} /* two octaves: scroll if it must */
+.pxPiano.two .pxKeys{margin:0 auto}
+@media (max-width:560px){.pxPiano.two{transform:none;margin:24px -14px 8px}
+  .pxPiano.two .pxKeys{zoom:1.2;margin:0}} /* phones: full-size scrollable keybed — fingers need real keys, not a shrunken toy */
 .btn{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--card-brd);border-radius:14px;padding:9px 16px;cursor:pointer;box-shadow:var(--shadow);transition:.15s;backdrop-filter:blur(8px)}
 .btn:hover{transform:translateY(-1px)}
 .btn:active{transform:translateY(0) scale(.96)}
@@ -270,6 +283,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <button class="btn big" id="drumBtn" title="drums" data-l="drums"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icDrum"/></svg></button>
     <button class="btn big" id="bandBtn" title="backing band" data-l="band"><svg width="45" height="34" viewBox="0 0 32 24"><use href="#icBass"/></svg></button>
     <button class="btn big" id="dropBtn" title="drop a ball" data-l="ball"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icBall"/></svg></button>
+    <button class="btn big" id="newShapeBtn" title="new shape!">🎲</button>
     <button class="btn big" id="recBtn" title="record" data-l="record"><span id="recDot"></span></button>
   </div>
   <span class="spacer"></span>
@@ -302,10 +316,10 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <select id="voiceTop" style="flex:none;width:auto" title="oscillator waveform"><option value="sine">∿ sine · smooth</option><option value="triangle" selected>△ triangle · mellow</option><option value="sawtooth">⊿ saw · bright</option><option value="square">⊓ square · buzzy</option></select>
     <span style="display:flex;flex-direction:column;gap:3px"><!-- tempo with swing tucked right under it, where groove lives -->
       <span style="display:flex;align-items:center;gap:6px"><span class="sub">tempo</span><input type="range" id="bpmTop" min="40" max="220" value="80" style="width:74px;flex:none" title="tempo (BPM)"></span>
-      <span style="display:flex;align-items:center;gap:6px"><svg width="28" height="28" viewBox="0 0 24 24" style="flex:none"><use href="#icSwing"/></svg><input type="range" id="swingSl" min="0" max="100" value="15" style="width:58px;flex:none" title="swing — offbeats land late"></span>
+      <span id="swingWrap" style="display:flex;align-items:center;gap:6px"><svg width="28" height="28" viewBox="0 0 24 24" style="flex:none"><use href="#icSwing"/></svg><input type="range" id="swingSl" min="0" max="100" value="15" style="width:58px;flex:none" title="swing — offbeats land late"></span>
     </span>
   </span>
-  <span style="display:flex;align-items:center;gap:6px"><!-- FX school: hands-on tape + delay, no menus required -->
+  <span id="fxWrap" style="display:flex;align-items:center;gap:6px"><!-- FX school: hands-on tape + delay, no menus required -->
     <span style="font-size:15px" id="tapeIco" title="tape saturation">📼</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:58px;flex:none" title="tape saturation — warm, worn cassette color">
     <svg width="34" height="26" viewBox="0 0 32 24" style="flex:none"><use href="#icDelay"/></svg><span class="sub">delay</span><input type="range" id="dlyTop" min="0" max="100" value="0" style="width:58px;flex:none" title="delay — echoes in time with the tempo">
   </span>
@@ -873,6 +887,7 @@ function rebuild(){edges=buildEdges(S.shape);}
 // ---------- balls ----------
 const balls=[];const BR=9;let hueIdx=0; // 12 chromatic hues like 12 notes, cycling so no two in a row match
 function spawn(x,y){const ang=Math.random()*Math.PI*2, sp=ballSpeed();
+  if(balls.length>=MAXBALLS)balls.shift(); // polyphony cap: recycle the oldest ball — spam changes the texture, never piles chaos
   balls.push({x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,hue:((hueIdx++)%12)/12,trail:[]});
   if(balls.length>80)balls.shift();}
 function velForHit(){return S.velRand?Math.round(S.velMin+Math.random()*(S.velMax-S.velMin)):S.velFix;}
@@ -972,6 +987,7 @@ function commitReform(){
   S.shape=nextShape==="circle"?"circle":parseInt(nextShape,10);
   const sl=document.getElementById('shape');if(sl)sl.value=String(nextShape);
   rebuild();particles=[];frags=null;fillState="fill";pressure=0;formGlow=1;measuredFill=0;nextRain=0; // fresh shape = empty barrel, instant pluck
+  manualHold=false; // fresh geometry = auto-play may take the stage back (until the next human note)
 }
 function fillPhysics(now){
   if(fillState==="fill"){
@@ -1044,6 +1060,7 @@ function step(){
           if(dist<BR){const vn=b.vx*e.nx+b.vy*e.ny;
             if(vn<0){b.vx-=2*vn*e.nx;b.vy-=2*vn*e.ny;jitter(b);b.x+=(BR-dist)*e.nx;b.y+=(BR-dist)*e.ny;e.flash=1;
               const nw=performance.now();
+              if(b.mute){b.mute=0;e.flash=1;splash(b.x,b.y,e.nx,e.ny,e.hue);}else
               if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
                 const gd=gooAt(b.x,b.y),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
                 if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
@@ -1081,6 +1098,8 @@ function tickInterval(){let beat=60/S.bpm;let d=S.div*4*beat;
   if(S.dotted)d*=1.5;
   if(!S.triplet&&S.swing>0.01)d*=(tickCount%2===0?1+S.swing*0.5:1-S.swing*0.5); // MPC-style: offbeats lean late, up to 75/25
   return d*1000;}
+const MAXBALLS=12; // classic polysynths ran 4-8 voices; listeners stop tracking independent lines past ~4 and
+// dense textures past ~10 events fuse into mush (auditory streaming: Bregman 1990; Huron 2001). 12 keeps it alive but musical.
 function spawnRain(){const a=Math.random()*Math.PI*2,r=Math.random()*R*0.35;spawn(CX+Math.cos(a)*r,CY+Math.sin(a)*r-R*0.35);}
 function rainIntervalMs(){const bars=4-S.rainRate*3.9;return Math.max(200,bars*4*(60000/S.bpm));} // ~4 bars per drop at default rate
 function transport(now){
@@ -1096,8 +1115,8 @@ function transport(now){
         else{playSynth(freqFromCents(p.cents),p.vel,p.imp);sendMidi(p.cents,p.vel);}}
       pendingNotes.length=0;}
   }
-  if((S.rain||S.slimeMode)&&balls.length===0)spawnRain(); // watchdog: always at least one ball in play
-  if(S.rain&&now>=nextRain){spawnRain();let iv=rainIntervalMs();if(S.rainAmt>0)iv*=(1+(Math.random()-0.5)*2*S.rainAmt);nextRain=now+iv;}
+  if((S.rain||S.slimeMode)&&balls.length===0&&!manualHold)spawnRain(); // watchdog — unless a human has the stage
+  if(S.rain&&now>=nextRain&&!manualHold){spawnRain();let iv=rainIntervalMs();if(S.rainAmt>0)iv*=(1+(Math.random()-0.5)*2*S.rainAmt);nextRain=now+iv;}
 }
 
 // ---------- draw ----------
@@ -1306,6 +1325,10 @@ bindToggle("velRandT","velRand",on=>{$("velFixedRow").style.display=on?"none":"f
 bindToggle("midiT","midi",on=>{if(on)enableMidi();});
 
 $("shape").addEventListener('change',e=>{S.shape=e.target.value==="circle"?"circle":parseInt(e.target.value);rebuild();particles=[];debris=[];frags=null;fillState="fill";measuredFill=0;});
+$("newShapeBtn").addEventListener('click',()=>{ // kids' dice: always a DIFFERENT shape, instantly
+  const sel=$("shape"),n=sel.options.length;
+  sel.selectedIndex=(sel.selectedIndex+1+Math.floor(Math.random()*(n-1)))%n;
+  sel.dispatchEvent(new Event('change'));});
 $("scale").addEventListener('change',e=>{S.scale=e.target.value;rebuild();updateScaleNote();});
 $("root").addEventListener('change',e=>{S.root=parseInt(e.target.value);updateScaleNote();});
 
@@ -1456,12 +1479,26 @@ function snapToScale(midi){ // Scale lock: nudge any note to the nearest note of
   return root+oct*12+best;}
 function noteFlash(midi){const n=edges.length;if(!n)return; // light up the wall that owns this pitch
   const e=edges[((midi%n)+n)%n];if(e)e.flash=1;}
-function playNote(midi,vel){ // one door for every performance: keyboard, MIDI in, anything later
+let manualHold=false; // a human is playing: auto ball-dropping yields the stage
+function shootBall(cents){ // fire a ball from the center straight at the wall that owns this pitch — the press IS the shot
+  const sc=scaleObj().c,len=sc.length,td=totalDegrees();
+  const rem=((Math.round(cents)%1200)+1200)%1200;let idx=0,bd=1e9;
+  for(let i=0;i<len;i++){const d=Math.min(Math.abs(sc[i]-rem),1200-Math.abs(sc[i]-rem));if(d<bd){bd=d;idx=i;}}
+  const oct=Math.max(0,Math.min(Math.floor(cents/1200),Math.ceil(td/len)-1));
+  const deg=Math.min(td-1,oct*len+idx);
+  const ei=Math.min(edges.length-1,Math.round(deg/td*edges.length));
+  const e=edges[ei];if(!e)return;
+  const mx=(e.ax+e.bx)/2,my=(e.ay+e.by)/2,dx=mx-CX,dy=my-CY,d=Math.hypot(dx,dy)||1,sp=d/7; // ~7 frames to the wall: a visible zap
+  if(balls.length>=MAXBALLS)balls.shift();
+  balls.push({x:CX,y:CY,vx:dx/d*sp,vy:dy/d*sp,hue:((hueIdx++)%12)/12,trail:[],mute:1});} // mute: the wall hit won't re-trigger — you already heard the press
+function playNote(midi,vel){ // one door for every performance: computer keyboard, MIDI, anything later
   initAudio();if(AC&&AC.state==='suspended')AC.resume();
   const m=snapToScale(Math.round(midi));if(m<12||m>120)return;
+  if(S.mode==='learn'&&window.LEARN&&LEARN.noteIn){LEARN.noteIn(m,vel||96);return;} // lessons take the wheel
   const cents=(m-S.root)*100;
-  playSynth(freqFromCents(cents),vel||96,0.75);
+  playSynth(freqFromCents(cents),vel||96,0.75); // sound on the press — zero delay
   noteFeed(cents);sendMidi(cents,vel||96);noteFlash(m);
+  manualHold=true;shootBall(cents); // and the matching ball zaps out as you watch
   if(!S.playing)setPlaying(true);}
 // ---- MIDI INPUT: hot-plug detection, channel filter, and MIDI-clock tempo sync ----
 let midiIns=[],clkTimes=[],clkOn=false;
@@ -1498,7 +1535,7 @@ async function enableMidiIn(){
 let lastKb=0;
 addEventListener('keydown',e=>{
   const tg=e.target.tagName;if(tg==='SELECT'||tg==='INPUT'||tg==='TEXTAREA')return;
-  if(kbOn&&!e.repeat){ // instrument mode: letters are keys, not shortcuts
+  if((kbOn||S.mode==='learn')&&!e.repeat){ // instrument mode: letters are keys, not shortcuts. learn lessons: always on — no toggle hunting
     if(e.code==='KeyZ'){kbOct=Math.max(-3,kbOct-1);toast('octave '+(kbOct>=0?'+':'')+kbOct);return;}
     if(e.code==='KeyX'){kbOct=Math.min(3,kbOct+1);toast('octave '+(kbOct>=0?'+':'')+kbOct);return;}
     if(KEYMAP[e.code]!==undefined){e.preventDefault();playNote(60+kbOct*12+KEYMAP[e.code],100);

@@ -1,0 +1,14 @@
+<!doctype html><meta charset="utf-8"><title>scene proof sheet</title>
+<body style="background:#241f47;margin:0;padding:8px;font:11px system-ui;color:#cfc4ef">
+<script>window.S={scale:'major',root:60};window.degRGB=()=>[0,0,0];window.centsForDegree=d=>d*100;
+window.freqFromCents=()=>440;window.pixSlime=()=>'';window.setPlaying=()=>{};window.initAudio=()=>{};
+window.drumOn=false;window.bandOn=false;</script>
+<script src="learn.js"></script>
+<script>const names=['ionian (major)','dorian','phrygian','lydian','mixolydian','aeolian (minor)','locrian'];
+for(let i=0;i<7;i++){const lab=document.createElement('div');lab.textContent=names[i];lab.style.cssText='grid-column:1/-1;padding:4px 2px 1px;font-weight:700';
+  document.body.appendChild(lab);
+  const row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:repeat(7,1fr);gap:5px';
+  for(let v=0;v<7;v++){const img=new Image();img.src=LEARN._scene(i,v);
+    img.style.cssText='width:100%;display:block;image-rendering:pixelated;border-radius:6px';row.appendChild(img);}
+  document.body.appendChild(row);}</script>
+</body>
