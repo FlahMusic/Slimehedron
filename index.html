@@ -748,10 +748,12 @@ let bandOn=false,progIdx=0;
 const PROGS=[[0,4,5,3],[0,5,3,4],[5,3,0,4],[0,3,4,3]]; // I-V-vi-IV, 50s doo-wop, axis, plagal rock — fallback until the melody has spoken
 // ---- the chord brain: listen to what the melody's been playing, harmonize with THAT ----
 const noteHisto=new Array(24).fill(0);let _prevRootDeg=0; // slow-decay histogram of recent scale degrees: new notes shout, old notes whisper
-function noteFeed(cents){const sc=scaleObj().c,n=sc.length,rem=((Math.round(cents)%1200)+1200)%1200;
+function noteFeed(cents,w){const sc=scaleObj().c,n=sc.length,rem=((Math.round(cents)%1200)+1200)%1200;
   let best=0,bd=1e9;for(let i=0;i<n;i++){const d=Math.min(Math.abs(sc[i]-rem),1200-Math.abs(sc[i]-rem));if(d<bd){bd=d;best=i;}}
-  for(let i=0;i<n;i++)noteHisto[i]*=0.93;noteHisto[best]+=1;}
-function pickChord(barI){const n=scaleObj().c.length;let total=0;for(let i=0;i<n;i++)total+=noteHisto[i];
+  for(let i=0;i<n;i++)noteHisto[i]*=0.93;noteHisto[best]+=w||1;}
+function pickChord(barI){const n=scaleObj().c.length;
+  for(let i=0;i<n;i++)noteHisto[i]*=0.86; // time decay every bar: the brain listens to NOW, not last minute's rain
+  let total=0;for(let i=0;i<n;i++)total+=noteHisto[i];
   if(total<3){const pr=PROGS[progIdx];return pr[barI%pr.length]%n;} // nothing to listen to yet: classic progression
   const sc=[];for(let r=0;r<n;r++){
     let s=noteHisto[r]*1.6+noteHisto[(r+2)%n]+noteHisto[(r+4)%n]+0.05; // how much of the recent melody lives inside this chord
@@ -1092,11 +1094,14 @@ function step(){
       if(Math.hypot(b.x-CX,b.y-CY)>R+260)balls.splice(bi,1); // escaped into open space
     }
     // no gravity = steady tempo speed; the more gravity, the more they free-fall & settle (smooth across the whole slider)
+    if(b.mute&&(b.muteN=(b.muteN||0)+1)>40)b.mute=0; // safety: a shot that never lands rejoins normal physics
+    if(!b.mute){ // shot balls fly TRUE — no tempo normalizer, no drag, no goo — until first impact. then they're citizens.
     const sp=Math.hypot(b.vx,b.vy)||1;const k=(ts/sp)*(1-g)+g;b.vx*=k;b.vy*=k;
     if(g>0){b.vx*=(1-g*0.06);b.vy*=(1-g*0.015);} // drag grows with gravity so they land & settle instead of skating forever
+    }
     // slime is thick: balls wading through the pool drag at their own per-ball rate, and deeper = thicker —
     // arrival times smear apart naturally, so a full tank plays looser than an empty one
-    if(fillState==="fill"&&mMask){
+    if(fillState==="fill"&&mMask&&!b.mute){
       const gd=gooAt(b.x,b.y),under=gd>0.3;
       if(under){if(!b.visc)b.visc=0.80+Math.random()*0.12; // each ball is born with its own tolerance for goo (up to ~28% slower deep inside — you should SEE them wade)
         const depth=Math.min(1,(gd-0.3)/0.6),drag=1-(1-b.visc)*(0.5+0.9*depth);
@@ -1519,7 +1524,7 @@ function playNote(midi,vel){ // one door for every performance: computer keyboar
   if(S.mode==='learn'&&window.LEARN&&LEARN.noteIn){LEARN.noteIn(m,vel||96);return;} // lessons take the wheel
   const cents=(m-S.root)*100;
   playSynth(freqFromCents(cents),vel||96,0.75); // sound on the press — zero delay
-  noteFeed(cents);sendMidi(cents,vel||96);noteFlash(m);
+  noteFeed(cents,3);sendMidi(cents,vel||96);noteFlash(m); // weight 3: a deliberate press outvotes a bouncing ball — the chords and band follow YOU
   manualHold=true;shootBall(cents); // and the matching ball zaps out as you watch
   if(!S.playing)setPlaying(true);}
 // ---- MIDI INPUT: hot-plug detection, channel filter, and MIDI-clock tempo sync ----
