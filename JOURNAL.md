@@ -80,6 +80,24 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 15 — Touch keybed + Safari MIDI grace (2026-07-22)
+**Playable on-screen keybed.** The kbMap was reference-only; now every pad is a real key —
+`pointerdown` on `b[data-k]` routes through the same `playNote()` path as a physical keypress
+(multi-touch = chords, verified A/D/G → MIDI 60/64/67 in-browser). Z/X pads shift octave with
+a live readout.
+**Mobile shows note names, not letters.** Physical-key letters mean nothing on a touchscreen,
+so `@media (pointer:coarse)` hides the `.kl` letter span and promotes the note name (C, C♯…),
+and grows pads to 40×46px — a proper finger target.
+**Repositioned bottom-LEFT** (`env(safe-area-inset-bottom)` aware). The back button is
+top-left, so bottom-left is clear — no longer overlaps studio's bottom-right advanced panel.
+**Double-tap zoom killed** via `touch-action:manipulation` on html/body (canvas keeps its own
+`touch-action:none`), so the pads stop fighting the finger on iOS Safari.
+**Safari "MIDI not available" fixed.** iOS/Safari has no Web MIDI API; the auto-enable-on-first-
+gesture was firing a toast. Now feature-gated (`HAS_MIDI`): if absent, no auto-attempt, no
+toast — the MIDI rows dim with "not supported in this browser" and point users at the on-screen
+keyboard, which works everywhere. Chrome/Edge/Opera keep full MIDI in/out + hot-plug.
+Backup: index-20260722-201036-touchkeys-safarimidi.html.
+
 ### Entry 14 — iOS recording, hair removal, filter-safety (2026-07-22)
 **Slime hair removed.** The girl/teacher slimes had brown hair rects splaying behind the
 body (`opt.girl` block + `H='#8a5a3a'`). Flah: "looks like shit." Gone entirely — slimes
