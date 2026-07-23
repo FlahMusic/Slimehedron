@@ -80,6 +80,24 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 16 — Keybed docking, studio chord window, door copy (2026-07-22)
+**Ball velocity — not changed.** Verified `ballSpeed()=(S.bpm/80)*3.4` is byte-identical
+across every backup and bpm default is 80. Base speed is purely tempo-driven; the perceived
+speed-up is the tempo slider and/or the MAXBALLS=12 cap making motion easier to track.
+**Studio chord-progression window was missing.** The `#chordPill` (current + next chord)
+only shows while `bandOn`. On boot, play auto-enables slime+drums+band but studio booted
+bare — so the pill never appeared there. Fix: studio boot now starts drums+band (no
+auto-slime — you drive it), so the chord window is live from bar 1, matching the "full"
+promise. Play unchanged.
+**Keybed no longer covers the tank.** It was fixed bottom-center over the canvas. Now:
+lowered to bottom:12px, and toggling it adds `body.kb-open`, which gives `#stage` a
+padding-bottom (150px desktop / 215px touch). Because the canvas is `max-height:100%` in a
+border-box flex stage, it shrinks upward and the keybed gets its own reserved strip below —
+verified 142px clearance in-browser, zero overlap. The ⌨ toggle lifts above the keybed too.
+**Studio door copy** "the whole studio!" → "make anything" (matches the short, active voice
+of "have fun!" / "explore new ideas!").
+Backup: index-20260722-212229-kbdock-studioband.html.
+
 ### Entry 15 — Touch keybed + Safari MIDI grace (2026-07-22)
 **Playable on-screen keybed.** The kbMap was reference-only; now every pad is a real key —
 `pointerdown` on `b[data-k]` routes through the same `playNote()` path as a physical keypress
