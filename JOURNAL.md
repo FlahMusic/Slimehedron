@@ -80,6 +80,85 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 21 — Capacitor app scaffold + native MIDI bridge (2026-07-22)
+Decision: app-wrap (Capacitor) over VST — reuses the whole web app verbatim AND fixes the mobile-MIDI
+wall (WKWebView has no Web MIDI, same as Safari; native CoreMIDI bridges around it). VST/AU stays the
+parked Rust pro-product.
+- Web bones get ONE tiny hook: `window.slimeMidiIn = d => midiMsg(d)` — a wrapper feeds MIDI bytes in;
+  no-op in a browser.
+- New `app/` subfolder = Capacitor project (verified CLI 8.4.2 installs clean): `capacitor.config.json`
+  (io.flahmusic.slimehedron), `package.json`, `www/` (copy of index/learn/sw/manifest/icons +
+  `midi-bridge.js`, script tag appended to the www copy only — source index.html stays clean).
+- `native-midi/NativeMidiPlugin.swift` = iOS CoreMIDI input plugin (UMP reader, auto-connects all
+  sources, hot-plug via MIDIClient notify) → `notifyListeners("midi",{bytes})`.
+- `native-midi/midi-bridge.js` = JS shim: `Capacitor.Plugins.NativeMidi` → `window.slimeMidiIn`.
+- README has exact build steps (npm i → cap add ios/android → drag Swift in → run). Android Kotlin
+  plugin noted as the parallel follow-up. Full iOS build/test needs the user's Mac + Xcode (sandbox
+  can't compile native).
+
+Research (Bar & Neta / curve-appeal literature): young kids prefer round, curved, symmetric shapes
+(safety instinct); circle is the ideal, but our mechanic needs walls-as-notes. So: near-round high-sided
+polygons + the culturally-beloved heart & star lead the PLAY cycle (KIDCYCLE = heart,12,star,8,6,10,5,rhombus).
+- `shapeVerts()` registry: numbers 3–12 = regular polygons; names = heart (parametric curve, 18 pts),
+  star (5-point), rhombus, trapezoid, parallelogram. Add a case → new shape, no other wiring.
+- **Concave-safe collision**: inward normals now set by centroid direction (correct for star/heart since
+  their centroid sees every wall's interior side), and ball containment switched to ray-casting
+  point-in-polygon (`inPoly`) so spikes and the heart dip behave. Sim-verified: star tip inside, star
+  notch outside, heart body inside, heart dip outside, square normals inward.
+- Shape select gains ♥ ★ ◆ ▱ ▰; studio random pool includes them; play leads with rounded/loved shapes.
+- Left ELI5 "tweak me" comments on shapeVerts/KIDCYCLE for the human.
+Backup: index-20260722-234126-shapes-heartstar.html.
+
+### Entry 19 — Unified division menu + play-mode candy buttons (2026-07-22)
+- **One division menu (studio):** the word-based feel dropdown + the numeric subdivision segment +
+  the dotted/triplet toggles collapsed into a single `#divSel`: 1/2, 1/4, 1/8, 1/8T, 1/16, 1/16T, 1/32
+  (T = triplet). It drives the note grid (S.div) AND the drum feel together; old rows hidden but kept
+  for save/load compat. No more numbers-vs-words confusion.
+- **Play mode side candy buttons** (fill the empty side space, desktop + mobile): LEFT = 4 glossy
+  pastel oscillator-wave buttons (sine/tri/saw/square, each a soft SVG wave in its own pastel), RIGHT =
+  4 drum-kit buttons (drum icon + pastel number 1–4 = chiptune/conga/bossa/rock; tap again to stop).
+  All round (24px radius), inset+drop shadow gloss, sheen overlay, backdrop blur — matches the logo
+  language, zero sharp corners. Verified the glass/gloss look in-browser.
+Backup: index-20260722-232808-division-candybtns.html.
+
+### Entry 18 — Direct chord override, transport decouple, chromatic, shapes, pop drama (2026-07-22)
+- **MIDI clock stops hijacking the transport.** Arps (MiniFreak etc.) blast Start/Stop on every
+  phrase, which was start/stopping the whole app. Now clock = TEMPO ONLY: 0xFA/0xFB/0xFC no longer
+  touch play/pause. Only the top pause stops it — drums/band vibe out when you stop playing.
+- **Chord follow is now a DIRECT override, not a histogram guess.** Human notes (MIDI or on-screen
+  keys) record scale-degrees; `manualRoot()` triad-matches {r,r+2,r+4} to what you actually played and
+  flips the chord ON the keypress (not next bar). Verified: C-E-G→C, E-G-B→Em, F-A-C→F. While you're
+  playing, pickChord's weighted roulette is bypassed entirely and keyJourney won't drift the key —
+  physical input owns the harmony (incl. under slime mode). Auto resumes ~1.6s after hands off.
+- **Chromatic is studio's default** (all 12 notes — no "major scale BS off the rip"); still selectable
+  everywhere (it was already in SCALES).
+- **Shapes:** removed circle (no walls = no notes, killed the vibe). Now triangle→dodecagon (3–12),
+  teaching every regular polygon. Manual shots now fire on each note's OWN radial angle so they SPLAY
+  evenly around the tank instead of clumping to one side on triangles/squares.
+- **Burst pop drama back:** walls kick out hard on the finale (kick 2.6–4.8 + spin), then reel home
+  fast (~0.45s free-fly, then strong pull) into the breathing collidable cage — dramatic AND no tunnel gap.
+- **"even" → "straight"** (the real musical term; triplet stays triplet). Studio gets it straight.
+Backup: index-20260722-230807-chordoverride-shapes.html.
+
+### Entry 17 — MIDI persistence + learn, clock de-jitter, always-live cage, UI cleanup (2026-07-22)
+- **MIDI device retained** across pages/refresh: saved by device NAME (index shuffles) in
+  localStorage `slimehedron-midi` {dev,ch,clk,on}; channel/clock/on-state restored too. Set once, done.
+- **Clock-sync fader de-jittered**: incoming clock BPM now EMA-smoothed (0.7/0.3) + a ±2 deadband
+  + 300ms throttle before the fader moves. Sim: arpeggiator wobble that moved the thumb ~16×/sec
+  now moves it ~1.3×/sec and settles; a real 120→160 change still tracks.
+- **MIDI Learn** (studio, under clock sync): "＋ assign CC" → click any slider/select (dashed
+  highlight) → wiggle a knob to bind it; mappings listed with ✕ remove, saved in `slimehedron-cc`.
+  CC scales to each control's min/max (ranges) or option count (selects); CC1 still defaults to
+  cutoff until mapped. Verified: CC0/127 → tempo 40/220, CC127 → 5-option select idx 4.
+- **"straight" → "even"** (feel dropdown); triplet → "triplet swing" for clarity.
+- **Removed the ⚡ perf and ▦ pixel checkboxes** from the header on all pages (unintuitive; auto-perf
+  still engages on sustained slow frames). window.PIX pinned false.
+- **Always-live geometry cage**: walls no longer shatter into short half-shards with gaps. Each edge
+  becomes ONE full-length collidable wall that jostles/rotates loosely near the boundary during break
+  (sim: stays within ~9–41px of R, never a hole) and glides home on reform — so notes bounce in every
+  state (fill/break/reform), no more tunnelling through the "spawning" shape.
+Backup: index-20260722-224846-midilearn-cage.html.
+
 ### Entry 16 — Keybed docking, studio chord window, door copy (2026-07-22)
 **Ball velocity — not changed.** Verified `ballSpeed()=(S.bpm/80)*3.4` is byte-identical
 across every backup and bpm default is 80. Base speed is purely tempo-driven; the perceived
