@@ -56,6 +56,21 @@ header .spacer{flex:1}
 .mode-play #dropBtn{transform:scale(1.22);margin:0 6px} /* the main toy gets the big button */
 #newShapeBtn{display:none} /* kids-only control: studio picks shapes deliberately */
 .mode-play #newShapeBtn{display:inline-flex}
+.mode-play #slimes .chill{display:none} /* play: the candy buttons live in the side margins now, so the side-parked slimes step aside (peekers around the tank stay) */
+/* play-mode tempo: turtle=slow, rabbit=fast (the standard kids-music tempo metaphor), tucked under Clear top-right */
+#playTempo{display:none}
+.mode-play #playTempo{position:fixed;top:60px;right:14px;z-index:60;display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.62);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border:2px solid rgba(255,255,255,.9);border-radius:999px;padding:6px 13px;box-shadow:0 5px 16px rgba(120,110,160,.28)}
+#playTempo span{font-size:17px;line-height:1;filter:saturate(.9)}
+#playTempo input{width:104px;accent-color:var(--lav)}
+/* DAW-style editable tempo box (Ableton/Logic convention: type or drag the number) — soft to match the UI */
+.numin{width:58px;font-family:inherit;font-weight:800;font-size:14px;color:var(--ink);text-align:center;
+  background:rgba(255,255,255,.75);border:1.5px solid var(--card-brd);border-radius:10px;padding:4px 6px;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:var(--shadow)}
+.numin:focus{outline:none;border-color:var(--lav);box-shadow:0 0 0 3px rgba(179,136,240,.25)}
+.numin::-webkit-inner-spin-button,.numin::-webkit-outer-spin-button{opacity:.5;height:22px}
+@media (max-width:820px){.mode-play #playTempo{top:56px;padding:5px 11px}#playTempo input{width:88px}}
 .mode-learn aside,.mode-learn #triMixBar,.mode-learn #autoRow{display:none} /* learn: clear the desk, the lesson is the interface */
 .mode-learn .btngroup,.mode-learn #clearBtn{display:none} /* no stray instruments during class — the lesson owns the sound */
 .btn.big[data-l]{flex-direction:column;gap:3px}
@@ -343,6 +358,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 <div id="kbMap" hidden></div>
 <!-- play mode: big soft candy buttons in the side space — pick a sound (left), pick a beat (right) -->
 <div id="playSide"><div class="psCol left" id="psWaves"></div><div class="psCol right" id="psDrums"></div></div>
+<div id="playTempo" title="tempo — turtle is slow, rabbit is fast"><span>🐢</span><input type="range" id="playBpm" min="40" max="200" value="80" aria-label="tempo"><span>🐰</span></div>
 <header>
   <h1>slimehedron<span class="dot">.</span></h1>
   <span class="spacer"></span>
@@ -380,7 +396,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><use href="#icNote"/></svg>
     <select id="voiceTop" style="flex:none;width:auto" title="oscillator waveform"><option value="sine">∿ sine · smooth</option><option value="triangle" selected>△ triangle · mellow</option><option value="sawtooth">⊿ saw · bright</option><option value="square">⊓ square · buzzy</option></select>
     <span style="display:flex;flex-direction:column;gap:3px"><!-- tempo with swing tucked right under it, where groove lives -->
-      <span style="display:flex;align-items:center;gap:6px"><span class="sub">tempo</span><input type="range" id="bpmTop" min="40" max="220" value="80" style="width:74px;flex:none" title="tempo (BPM)"></span>
+      <span style="display:flex;align-items:center;gap:6px"><span class="sub">tempo</span><input type="number" id="bpmNum" class="numin" min="40" max="220" step="0.01" value="80" title="type an exact BPM (up to 2 decimals)"><span class="sub" style="font-size:10px">BPM</span><input type="range" id="bpmTop" min="40" max="220" value="80" style="width:64px;flex:none" title="tempo (BPM)"></span>
       <span id="swingWrap" style="display:flex;align-items:center;gap:6px"><svg width="28" height="28" viewBox="0 0 24 24" style="flex:none"><use href="#icSwing"/></svg><input type="range" id="swingSl" min="0" max="100" value="15" style="width:58px;flex:none" title="swing — offbeats land late"></span>
     </span>
   </span>
@@ -1387,10 +1403,23 @@ function loop(now){
   if(S.playing)update(now);
   draw();requestAnimationFrame(loop);
 }
-function update(now){ // one sim tick — shared by the rAF loop (visible) and the worker heartbeat (hidden)
-  if(S.slimeMode)slimeModStep(now);if(S.spin!==0){rot+=S.spin*0.0003;rebuild();}transport(now);
+// ONE physics tick. Everything that MOVES lives here so it can run on a fixed clock (below).
+function simTick(now){
+  if(S.slimeMode)slimeModStep(now);
+  if(S.spin!==0){rot+=S.spin*0.0003;rebuild();}
   curSegs=(fillState==="fill")?null:computeSegs();
   step();fillPhysics(now);
+}
+// FIXED TIMESTEP: physics used to run once per drawn frame, so a 30fps phone moved balls half as fast
+// as a 60fps desktop (and a 144Hz monitor ran too fast). Now we run exactly 60 ticks per real second on
+// every device — same ball speed everywhere. Audio (transport) is already time-based, so it stays per-frame.
+let _acc=0,_lastTick=0;const FIXED=1000/60,MAXTICKS=5;
+function update(now){ // shared by the rAF loop (visible) and the worker heartbeat (hidden tab)
+  transport(now);
+  const dt=_lastTick?Math.min(250,now-_lastTick):FIXED;_lastTick=now;
+  _acc+=dt;let n=0;
+  while(_acc>=FIXED&&n<MAXTICKS){simTick(now);_acc-=FIXED;n++;}
+  if(n>=MAXTICKS)_acc=0; // fell way behind (tab stalled) — drop the backlog instead of spiraling
 }
 requestAnimationFrame(loop);
 // background groove: rAF freezes in hidden tabs, but worker timers don't — so a worker heartbeat
@@ -1420,7 +1449,19 @@ if('mediaSession' in navigator){
 // ---------- UI ----------
 const $=id=>document.getElementById(id);
 function bindRange(id,key,fn){const el=$(id),v=$(id+"V");el.addEventListener('input',()=>{const raw=parseFloat(el.value);S[key]=fn?fn(raw):raw;if(v)v.textContent=Math.round(raw);});}
-bindRange("bpm","bpm",v=>{if(delayNode&&AC)delayNode.delayTime.setTargetAtTime(60/v*0.75,AC.currentTime,0.15);return v;}); // smooth so tempo changes don't crunch
+// ONE tempo brain: slider drag, typed BPM box, turtle/rabbit, and MIDI clock all flow through here,
+// so S.bpm, the tempo-synced DELAY, and every control stay in lockstep — smoothly, no crunch.
+function setBpm(v,fromEl){v=Math.max(40,Math.min(220,+v||80));S.bpm=Math.round(v*100)/100; // keep 2 decimals of fine-tune
+  if(delayNode&&AC)delayNode.delayTime.setTargetAtTime(60/S.bpm*0.75,AC.currentTime,0.15); // dotted-8th echo tracks tempo, glides over 150ms
+  const rv=Math.round(S.bpm);
+  ['bpm','bpmTop','playBpm'].forEach(id=>{const e=$(id);if(e&&e!==fromEl&&+e.value!==rv)e.value=rv;}); // sliders are whole-number (coarse)
+  const nb=$("bpmNum");if(nb&&nb!==fromEl&&document.activeElement!==nb)nb.value=S.bpm.toFixed(2); // the box shows decimals (don't fight typing)
+  const bv=$("bpmV");if(bv)bv.textContent=(S.bpm%1?S.bpm.toFixed(2):String(rv));}
+['bpm','bpmTop','playBpm'].forEach(id=>{const e=$(id);if(e)e.addEventListener('input',()=>setBpm(e.value,e));});
+(function(){const nb=$("bpmNum");if(!nb)return; // typed box: commit on change/enter, clamp politely
+  const commit=()=>setBpm(nb.value,nb);
+  nb.addEventListener('change',commit);
+  nb.addEventListener('keydown',e=>{if(e.key==='Enter')nb.blur();});})();
 $("octs").addEventListener('input',e=>{S.octs=parseInt(e.target.value);$("octsV").textContent=e.target.value;rebuild();updateScaleNote();});
 bindRange("chaos","chaos",v=>v/100);
 bindRange("grav","grav",v=>v/100);bindRange("spin","spin");
@@ -1493,8 +1534,7 @@ $("divSel").addEventListener('change',e=>{const v=e.target.value,trip=v.endsWith
   setDivUI(map[base]||0.125); // sets S.div + keeps divSeg in sync for save/load
   S.triplet=trip;drumFeel=trip?'t':'1';
   const tt=$("tripT");if(tt)tt.classList.toggle('on',trip);});
-$("bpmTop").addEventListener('input',e=>{const b=$("bpm");b.value=e.target.value;b.dispatchEvent(new Event('input'));}); // top-bar tempo mirrors the card slider
-$("bpm").addEventListener('input',()=>{const t=$("bpmTop");if(t&&t.value!==$("bpm").value)t.value=$("bpm").value;});
+// (tempo sliders + typed box are all wired through setBpm above — one brain, no duplicate mirrors)
 // top delay fader: in manual mode it IS the delay knob; in slime auto mode your hand wins for 10s, then it drifts home to the liquid level
 let dlyGrab=0,_dlyHand=0;
 $("dlyTop").addEventListener('input',e=>{const x=Math.pow(e.target.value/100,2)*0.5;
@@ -1697,7 +1737,7 @@ function midiMsg(d){
         const rb=Math.round(_clkBpm);
         // only nudge the fader when it truly drifts, and no faster than ~3x/sec — no more spazzing thumb
         if(Math.abs(rb-Math.round(S.bpm))>=2&&performance.now()-_clkLast>300){_clkLast=performance.now();
-          const el=$("bpm");el.value=rb;el.dispatchEvent(new Event('input'));}}}
+          setBpm(rb);}}} // MIDI clock owns tempo the same way — flows through the one brain, delay tracks it too
     return;}
   if(st===0xFA||st===0xFB){clkTimes=[];_clkBpm=0;return;} // arps blast start/continue on every phrase — DON'T yank the transport, just resync tempo
   if(st===0xFC){return;} // sequencer stop no longer freezes the whole vibe; only the top pause stops it — drums/band keep flowing
@@ -1752,7 +1792,7 @@ addEventListener('keydown',e=>{
   else if(e.code==='KeyA'&&!e.repeat)$("slimeBig").click();
   else if(e.code==='KeyD'&&!e.repeat)$("drumBtn").click();
   else if(e.code==='ArrowUp'||e.code==='ArrowDown'){e.preventDefault();
-    const el=$("bpm");el.value=parseFloat(el.value)+(e.code==='ArrowUp'?2:-2);el.dispatchEvent(new Event('input'));}
+    setBpm(S.bpm+(e.code==='ArrowUp'?2:-2));}
 });
 cv.addEventListener('pointerdown',e=>{initAudio();if(AC.state==="suspended")AC.resume();const r=cv.getBoundingClientRect();const x=(e.clientX-r.left)*(W/r.width),y=(e.clientY-r.top)*(H/r.height);spawn(x,y);if(!S.playing)setPlaying(true);});
 

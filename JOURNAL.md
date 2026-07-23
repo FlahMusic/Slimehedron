@@ -80,6 +80,32 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 23 — Editable BPM field + one tempo brain (2026-07-23)
+- **Typed tempo (studio):** DAW-standard editable number box (Ableton/Logic convention — type or drag,
+  shows 2 decimals) next to the tempo slider. Sliders stay whole-number (coarse); the box does the fine
+  0.01 tuning. Clamps 40–220, garbage → 80.
+- **One tempo brain, `setBpm()`:** slider drag, typed box, turtle/rabbit, arrow keys, AND MIDI clock all
+  route through it. It sets S.bpm (2-decimal), the tempo-synced DELAY (dotted-8th = 60/bpm*0.75, glided
+  via setTargetAtTime 150ms so no crunch), and syncs every control. Removed the old duplicate mirror
+  handlers + bindRange. Sim-verified: 120→0.375s delay, 128.50 keeps decimals, clamps, delay tracks tempo
+  incl. MIDI clock. Passed dev-loadtest (LOAD OK).
+Backup: index-20260723-091821-tempo-numbox.html.
+
+### Entry 22 — Fixed-timestep physics + play tempo + slime/button overlap (2026-07-23)
+- **Ball speed now device-independent.** Physics ran once per drawn frame, so a 30fps phone moved balls
+  half as fast as a 60fps desktop (and 144Hz ran too fast). Split the tick into `simTick()` and drove it
+  from a **fixed-timestep accumulator** (60 Hz, max 5 catch-up ticks, backlog dropped on stall). Audio
+  stays per-frame (already time-based). Sim: 60/30/144fps all → ~300 ticks / 5s. Ball-hit note timing now
+  matches across devices too.
+- **Play tempo control** (mobile + desktop): 🐢 slider 🐰 — the standard kids-music tempo metaphor
+  (turtle=slow, rabbit=fast; metronome is the grown-up symbol). Glass pill under Clear, top-right, synced
+  with #bpm and #bpmTop three-ways.
+- **Side slimes no longer block the candy buttons:** `.mode-play #slimes .chill{display:none}` — the
+  side-parked chillers step aside in play (the wave/drum buttons are the new side decoration); peekers
+  around the tank stay.
+- Verified via dev-loadtest.js (LOAD OK) + timestep sim before shipping.
+Backup: index-20260723-090939-fixedstep-tempo-slimefix.html.
+
 ### Entry 21 — Capacitor app scaffold + native MIDI bridge (2026-07-22)
 Decision: app-wrap (Capacitor) over VST — reuses the whole web app verbatim AND fixes the mobile-MIDI
 wall (WKWebView has no Web MIDI, same as Safari; native CoreMIDI bridges around it). VST/AU stays the
