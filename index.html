@@ -1508,6 +1508,9 @@ function applyMode(m){S.mode=m;
   try{localStorage.setItem('slimehedron-mode',m);}catch(e){}
   const p=$("modePill");if(p){p.textContent=m;p.classList.remove('mp-play','mp-learn','mp-studio');p.classList.add('mp-'+m);}
   if(window.LEARN){if(m==='learn')LEARN.enter();else LEARN.exit();}}
+// MIDI-Learn state must exist BEFORE the wiring IIFE below runs (it calls ccRender at load).
+let ccMap={},ccLearn=false,ccArm=null;
+try{ccMap=JSON.parse(localStorage.getItem('slimehedron-cc')||'{}');}catch(e){}
 // ---- keyboard instrument + MIDI-in wiring ----
 (function(){
   const blk={KeyW:'C♯',KeyE:'D♯',KeyT:'F♯',KeyY:'G♯',KeyU:'A♯',KeyO:'C♯',KeyP:'D♯'};
@@ -1705,9 +1708,7 @@ function midiMsg(d){
     if(ccMap[cc]){ccApply(cc,v);return;}
     if(cc===1){const el=$("cut");if(el){el.value=Math.round(v/127*100);el.dispatchEvent(new Event('input'));}}} // default: mod wheel → cutoff (until you map it)
 }
-// ---- MIDI Learn: map any knob to any on-screen control, saved in the browser ----
-let ccMap={},ccLearn=false,ccArm=null;
-try{ccMap=JSON.parse(localStorage.getItem('slimehedron-cc')||'{}');}catch(e){}
+// ---- MIDI Learn: map any knob to any on-screen control, saved in the browser (state declared above the IIFE) ----
 function ccSave(){try{localStorage.setItem('slimehedron-cc',JSON.stringify(ccMap));}catch(e){}}
 function ccLabel(id){const el=document.getElementById(id);if(!el)return id;
   const lab=el.closest('.row')?.querySelector('label');return (lab?lab.textContent:(el.title||id)).trim();}
