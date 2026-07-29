@@ -80,6 +80,20 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 27 — Simply-Piano-style grading: scale game + parent view (2026-07-29)
+CEO gap #2 (no performance grading) → built it, in the Simply-Piano lesson shape.
+- **Color feedback**: every played key flashes green (right) / red (wrong) in the piano lessons.
+- **Scale game** (`scaleGame`): after the guided glow-runner, "play it yourself ▸" starts a graded,
+  no-hints round — play the scale bottom-to-top; a wrong note WAITS for the correct one (SP-style),
+  and you're scored 1–3 ⭐ by mistakes (0=3⭐, 1–2=2⭐, 3+=1⭐). Best stars saved per lesson (prog.pg);
+  a win also feeds the daily streak. This is the "C-major / X-scale check" — you learn the notes and
+  find out if you got it. Grading sim verified.
+- **Parent tracking** (`grownups`): a "📊 for grown-ups" button on the learn home → a summary of what
+  the child learned (streak, per-course progress, scale-game stars) — the trust/dashboard layer.
+- Deploy confirmed working end-to-end (fetched live index.html: streak/bass/worm/tempo/heart all present).
+  deploy.bat fixed (git identity auto-set). dev-test.js self-test gate all green.
+Backup: index/learn-20260729-171916-scalegame.
+
 ### Entry 26 — Daily streak / goal / reward — the retention loop (2026-07-29)
 CEO-scout gap #1 (no reason to return) → built the come-back-tomorrow loop.
 - `window.slimeStar()` on any win (a burst in play, throttled 2.5s; every learn win via winJingle in

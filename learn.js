@@ -30,6 +30,7 @@ window.LEARN=(function(){
   function flashKey(s){const k=ov.querySelector(`.pxKeys [data-s="${s}"]`);if(!k)return;
     k.classList.add('pl');setTimeout(()=>k.classList.remove('pl'),240);}
   function pianoPlay(s,vel){const f=440*Math.pow(2,(60+s-69)/12);lessonNote(f,vel||96);flashKey(s);}
+  function keyFX(s,cls){const k=ov.querySelector('.pxKeys [data-s="'+s+'"]');if(k){k.classList.add(cls);setTimeout(()=>k.classList.remove(cls),340);}} // green/red right/wrong flash
   function decorate(tones){const wrap=ov.querySelector('.pxKeys');if(!wrap)return;
     wrap.querySelectorAll('.pxSlM').forEach(e=>e.remove());
     wrap.querySelectorAll('[data-s]').forEach(k=>k.classList.toggle('hl',tones.includes(+k.dataset.s)));
@@ -136,19 +137,59 @@ window.LEARN=(function(){
       if(s>=0){const k=ov.querySelector(`.pxKeys [data-s="${s}"]`);if(k)k.classList.add('nxt');}};
     glow(seq[0]);
     onKey=s=>{pianoPlay(s);
-      if(s===seq[step]){const k=ov.querySelector(`.pxKeys [data-s="${s}"]`);if(k)k.classList.add('hl');
+      if(s===seq[step]){keyFX(s,'ok');const k=ov.querySelector(`.pxKeys [data-s="${s}"]`);if(k)k.classList.add('hl');
         step++;
         if(step>=seq.length){onKey=null;glow(-1);
           prog.pl[li]=Math.max(prog.pl[li]|0,ri+1);saveP();
-          lf().textContent=name+'. hear it whole —';
-          seq.forEach((ss,ix)=>setTimeout(()=>pianoPlay(ss,88),480+ix*150)); // the payoff run
+          lf().innerHTML='that&rsquo;s '+name+'! now <b>play it yourself</b> for stars ⭐';
+          seq.forEach((ss,ix)=>setTimeout(()=>pianoPlay(ss,88),320+ix*130)); // hear it whole
           const row=ov.querySelector('.lRow'),b=document.createElement('button');b.className='btn primary';
-          if(ri<tot-1){b.textContent=chip(ri+1)+' ▸';b.dataset.a='plsn';b.dataset.l=li;b.dataset.r=ri+1;}
-          else if(li<PLESSONS.length-1){winJingle();b.textContent='next lesson ▸';b.dataset.a='plsn';b.dataset.l=li+1;b.dataset.r=0;}
-          else{winJingle();b.textContent='all eight done ▸';b.dataset.a='pmenu';}
+          b.textContent='play it yourself ▸';b.dataset.a='pgame';b.dataset.l=li;b.dataset.r=ri; // → the graded game
           row.prepend(b);}
         else glow(seq[step]);}
-      else lf().textContent=(PN[s]||'in between')+' — the glowing key comes next.';};}
+      else{keyFX(s,'err');lf().textContent=(PN[s]||'in between')+' — try the glowing key.';}};}
+  // ---- the SCALE GAME: play it yourself, no hints, graded with stars (Simply-Piano-style mastery) ----
+  function scaleGame(li,ri){stopJam();setLC('piano');prog.pl=prog.pl||{};
+    const L=PLESSONS[li],tot=L.modes?7:L.roots.length;
+    const root=L.modes?MODESL[ri][1]:L.roots[ri];
+    const name=L.modes?MODESL[ri][0]:L.lbl[root]+' '+L.kind;
+    const ivs=L.modes?MODESL[ri][2]:L.iv.iv,seq=ivs.map(v=>root+v);
+    let step=0,mistakes=0;
+    ov.innerHTML=`<div class="lCard"><h3>${name} · your turn!</h3>
+      <p class="lSub">play the scale bottom to top — no hints this time. green = right, red = try again. you've got this!</p>
+      ${pianoHTML(null,1)}
+      <div class="lFeed" id="lFeed">play the first note&hellip;</div>
+      <div class="lRow"><button class="btn" data-a="plsn" data-l="${li}" data-r="${ri}">‹ show me again</button></div></div>`;
+    onKey=s=>{pianoPlay(s);
+      if(s===seq[step]){keyFX(s,'ok');step++;
+        if(step>=seq.length){onKey=null;const stars=mistakes===0?3:mistakes<=2?2:1;
+          prog.pg=prog.pg||{};const key=li+'-'+ri;prog.pg[key]=Math.max(prog.pg[key]||0,stars);saveP();
+          winJingle(); // a win → a streak star too
+          lf().innerHTML='<span style="font-size:26px;letter-spacing:2px">'+'⭐'.repeat(stars)+'☆'.repeat(3-stars)+'</span><br>'+(mistakes===0?'perfect — you nailed it!':mistakes<=2?'great job!':'you did it!');
+          const row=ov.querySelector('.lRow'),nxt=document.createElement('button');nxt.className='btn primary';
+          if(ri<tot-1){nxt.textContent='next ▸';nxt.dataset.a='plsn';nxt.dataset.l=li;nxt.dataset.r=ri+1;}
+          else if(li<PLESSONS.length-1){nxt.textContent='next lesson ▸';nxt.dataset.a='plsn';nxt.dataset.l=li+1;nxt.dataset.r=0;}
+          else{nxt.textContent='‹ lessons';nxt.dataset.a='pmenu';}
+          const again=document.createElement('button');again.className='btn';again.textContent='↻ again';again.dataset.a='pgame';again.dataset.l=li;again.dataset.r=ri;
+          row.prepend(again);row.prepend(nxt);}
+      }else{keyFX(s,'err');mistakes++;lf().textContent='oops — that was '+(PN[s]||'a black key')+'. keep climbing up!';}}; // wait for the right note, Simply-Piano style
+  }
+  // ---- for grown-ups: a parent-facing summary of what the child has actually learned ----
+  function grownups(){stopJam();onKey=null;
+    let streak=0;try{streak=(JSON.parse(localStorage.getItem('slimehedron-streak')||'{}').streak)||0;}catch(e){}
+    const pianoStars=Object.values(prog.pg||{}).reduce((a,b)=>a+b,0),modesGot=M7.filter(m=>(prog.g[m.k]|0)>=3).length;
+    const rows=[
+      ['rhythm','keeping a steady beat',((prog.r|0)>=8?'✓ mastered':(prog.r|0)+'/8 on-beat taps')],
+      ['piano','note names, scales & modes',Object.keys(prog.pl||{}).length+'/8 lessons · '+pianoStars+' ⭐ in scale games'],
+      ['intervals','hearing the distance between notes',(Math.min(prog.iv|0,10))+' heard correctly'],
+      ['chords','how harmony is built',(prog.ch|0)+'/9 chord types explored'],
+      ['modes','the seven musical moods',modesGot+'/7 matched by ear']
+    ];
+    ov.innerHTML=`<div class="lCard"><h3>for grown-ups</h3>
+      <p class="lSub">what your child has been learning — real music theory, no accounts, no ads.</p>
+      <div class="lRow" style="justify-content:center;margin:2px 0 8px"><b style="font-size:19px;color:#e0863f">🔥 ${streak}-day streak</b></div>
+      <div class="lBtns" style="gap:8px">${rows.map(r=>`<div class="crsPane" style="background:rgba(255,255,255,.55);cursor:default"><span style="flex:1"><b>${r[0]}</b><div style="font-size:12px;opacity:.72">${r[1]}</div></span><span style="font-size:12px;font-weight:800;color:#5a4f78;text-align:right;max-width:130px">${r[2]}</span></div>`).join('')}</div>
+      <div class="lRow"><button class="btn" data-a="home">‹ back</button></div></div>`;}
   function pianoView(){const t=WK[pIdx];
     ov.innerHTML=`<div class="lCard"><h3>the piano</h3>
       <p class="lSub">${pIdx===0?'this is one octave. find C — '+HINT[0]+'.':'find '+PN[t]+'.'}</p>
@@ -711,7 +752,8 @@ window.LEARN=(function(){
     ${lc?`<div class="lRow" style="margin-bottom:10px"><button class="btn primary" data-a="crs" data-c="${lc}">continue \u00b7 ${lc} \u25b8</button></div>`:''}
     <div class="lBtns">${PANES.map(p=>`<div class="crsPane" data-a="crs" data-c="${p[0]}" style="background:${p[1]}">
       ${p[2]}<span style="flex:1"><b>${p[0]}</b>${crsProg(p[0])}</span><span class="crsSl" style="width:${p[3]}px;height:${p[3]}px">${pixSlime(p[5],'happy',{cap:1,girl:p[4]})}</span></div>`).join('')}
-    </div></div>`;}
+    </div>
+    <div class="lRow" style="margin-top:10px"><button class="btn" data-a="grown" style="font-size:12px;opacity:.85">📊 for grown-ups</button></div></div>`;}
   ov.addEventListener('pointerdown',e=>{
     if(e.target.closest('#rhPad')){rhTap();return;}
     const pk=e.target.closest('.pKey');
@@ -731,6 +773,8 @@ window.LEARN=(function(){
     else if(a==='pmenu')pianoMenu();
     else if(a==='pkeys'){pIdx=0;pFound={};pianoView();}
     else if(a==='plsn')scaleLesson(+b.dataset.l,+(b.dataset.r||0));
+    else if(a==='pgame')scaleGame(+b.dataset.l,+(b.dataset.r||0));
+    else if(a==='grown')grownups();
     else if(a==='rhfast')rhythmCourse(126);
     else if(a==='pblacks')pianoBlacks();
     else if(a==='strum')strum();
