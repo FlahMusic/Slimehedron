@@ -1,0 +1,11 @@
+{
+  "appId": "io.flahmusic.slimehedron",
+  "appName": "Slimehedron",
+  "webDir": "www",
+  "backgroundColor": "#e6def5",
+  "ios": { "contentInset": "always", "backgroundColor": "#e6def5" },
+  "android": { "backgroundColor": "#e6def5" },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 0 }
+  }
+}

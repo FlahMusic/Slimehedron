@@ -1,0 +1,20 @@
+{
+  "name": "slimehedron-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Slimehedron — native iOS/Android wrapper (Capacitor) of the web app, adds real MIDI in/out via CoreMIDI / android.media.midi.",
+  "scripts": {
+    "sync": "cap sync",
+    "ios": "cap open ios",
+    "android": "cap open android",
+    "copy": "cap copy"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/ios": "^8.4.2",
+    "@capacitor/android": "^8.4.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.4.2"
+  }
+}
