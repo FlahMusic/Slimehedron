@@ -80,6 +80,26 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 41 — Play-mode layout cleanup (2026-07-30)
+- Flah flagged real amateur-hour issues; MEASURED them live first (share/clear overlap 64×35, tempo bar 312px
+  huge, COF wheel sitting ON the geometry, worm box poking into drum col). Fixes:
+  1. TEMPO: killed the giant slider, built a compact rotary dial (#tempoDial, SVG knob, drag/wheel to turn
+     turtle→rabbit, syncs via _tempoDialRender to the one tempo brain). Lives in the header LEFT of pause.
+  2. SHARE+CLEAR: were both pinning top-right and stacking. Now grouped into a #topRight flex row (applyMode
+     wraps them on entering play, restores on leaving) → side-by-side, can't overlap.
+  3. COF WHEEL: moved from position:absolute top-center (over the play field) to position:fixed bottom-left,
+     above the keyboard button, hidden when keybed open. Off the geometry entirely. (COF already shows all 12
+     keys incl. sharps = the circle of fourths is the same ring read the other way.)
+  4. WORM: moved LEFT (right 124→250 desktop, 52→96 mobile) + slimmed, so it clears the drum column.
+  5. SLIMES: thinned the margin crowd (was up to 7×2 per side → max 4, one even column) + carved out the worm's
+     bottom-right zone so nothing sits on it.
+  6. HINT: "tap to drop balls · space = rain" → "tap here to drop notes · or use ⌨ keyboard mode (bottom-left)".
+- HONEST NOTE: could not fully verify share/clear + COF positions on the LIVE page — the Chrome-extension CSS
+  injection wouldn't apply my test rules to those specific buttons (rules present in CSSOM but computed values
+  ignored — a harness quirk, not a cascade error). The flex-container fix is textbook-correct (2 static children
+  in a flex row cannot overlap). Needs a screenshot AFTER Flah deploys to confirm visually. dev-test green.
+  Backup: index-*-layoutfixes.
+
 ### Entry 40 — License finalized + ko-fi wired (2026-07-30)
 - Flah added GitHub's canonical AGPL via the license picker AND dropped the full text locally as LICENSE.txt
   (661 lines, verified real AGPL-3.0). Now 3 non-conflicting files: LICENSE.txt (legal text), LICENSE.md

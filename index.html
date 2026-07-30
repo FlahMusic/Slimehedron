@@ -64,19 +64,22 @@ header .spacer{flex:1}
 #newShapeBtn{display:none} /* kids-only control: studio picks shapes deliberately */
 .mode-play #newShapeBtn{display:inline-flex}
 /* play-mode tempo: turtle=slow, rabbit=fast (the standard kids-music tempo metaphor), tucked under Clear top-right */
-#playTempo{display:none}
-.mode-play #playTempo{display:flex;align-items:center;justify-content:center;gap:10px;width:max-content;margin:4px auto 10px;
-  background:rgba(255,255,255,.64);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
-  border:2px solid rgba(255,255,255,.9);border-radius:999px;padding:7px 16px;box-shadow:0 5px 16px rgba(120,110,160,.28)}
-#playTempo span{font-size:24px;line-height:1}
-#playTempo input{width:150px;accent-color:var(--lav)}
+/* compact rotary tempo dial — lives in the header next to pause. turn between turtle (slow) and rabbit (fast). */
+#tempoDial{display:none}
+.mode-play #tempoDial{display:flex;align-items:center;gap:6px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none;
+  background:rgba(255,255,255,.6);border:2px solid rgba(255,255,255,.9);border-radius:999px;padding:4px 10px;box-shadow:0 4px 12px rgba(120,110,160,.24);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#tempoDial .td-ico{font-size:17px;line-height:1;opacity:.75}
+#tempoDial svg{display:block;overflow:visible}
+#tempoDial .td-track{fill:none;stroke:rgba(120,110,160,.18);stroke-width:5}
+#tempoDial .td-fill{fill:none;stroke:var(--lav);stroke-width:5;stroke-linecap:round;transform:rotate(-90deg);transform-origin:28px 28px;stroke-dasharray:132;stroke-dashoffset:66;transition:stroke-dashoffset .08s}
+#tempoDial .td-knob{fill:#fff;stroke:var(--lav);stroke-width:2.5;transform-origin:28px 28px;transition:transform .08s}
 /* DAW-style editable tempo box (Ableton/Logic convention: type or drag the number) — soft to match the UI */
 .numin{width:58px;font-family:inherit;font-weight:800;font-size:14px;color:var(--ink);text-align:center;
   background:rgba(255,255,255,.75);border:1.5px solid var(--card-brd);border-radius:10px;padding:4px 6px;
   -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:var(--shadow)}
 .numin:focus{outline:none;border-color:var(--lav);box-shadow:0 0 0 3px rgba(179,136,240,.25)}
 .numin::-webkit-inner-spin-button,.numin::-webkit-outer-spin-button{opacity:.5;height:22px}
-@media (max-width:820px){.mode-play #playTempo{padding:6px 13px;gap:8px;margin:2px auto 8px}#playTempo span{font-size:21px}#playTempo input{width:120px}}
+@media (max-width:820px){.mode-play #tempoDial{padding:3px 7px;gap:4px}#tempoDial .td-ico{font-size:14px}#tempoDial svg{width:38px;height:38px}}
 .mode-learn aside,.mode-learn #triMixBar,.mode-learn #autoRow{display:none} /* learn: clear the desk, the lesson is the interface */
 .mode-learn .btngroup,.mode-learn #clearBtn{display:none} /* no stray instruments during class — the lesson owns the sound */
 .btn.big[data-l]{flex-direction:column;gap:3px}
@@ -97,6 +100,9 @@ header .spacer{flex:1}
 #shareApp:hover{transform:translateY(-1px)}
 #shareApp.done{background:linear-gradient(135deg,#9fe6cf,#9fe6cf)}
 .mode-learn #shareApp{display:none} /* lessons in progress: no distraction */
+/* play mode: share + clear share ONE fixed flex row top-right so they lay out side-by-side and can never overlap */
+.mode-play #topRight{position:fixed;top:10px;right:12px;z-index:261;display:flex;gap:8px;align-items:center}
+.mode-play #topRight #shareApp,.mode-play #topRight #clearBtn{position:static;top:auto;right:auto;left:auto;margin:0}
 @media (max-width:820px){#shareApp span{display:none}#shareApp{padding:9px 11px}} /* phone: just the icon, saves the top bar */
 /* the computer-keyboard map: white keys on the home row, black keys above, Z/X octave */
 /* keyboard-play: floating pill (all modes, same spot) + translucent reference map, DAW-standard layout */
@@ -254,9 +260,11 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 #chordPill{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--card-brd);border-radius:12px;padding:6px 14px 8px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:var(--shadow);text-align:center;pointer-events:none;min-width:96px} /* floats over the tank, never catches a click */
 #chordPill b{font-size:17px;letter-spacing:.5px}
 #chordNext{font-size:11px;color:var(--ink-soft);font-weight:700;margin-left:8px}
-/* circle of fifths — floats top-center over the tank. play: read-only key glow. studio: clickable keys. */
-#cofWheel{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:118px;height:118px;pointer-events:none;filter:drop-shadow(0 4px 12px rgba(0,0,0,.18))}
+/* circle of fifths — pinned bottom-left ABOVE the keyboard button, OFF the play field (never over the geometry). */
+#cofWheel{position:fixed;left:14px;bottom:64px;top:auto;transform:none;width:104px;height:104px;pointer-events:none;z-index:30;filter:drop-shadow(0 4px 12px rgba(0,0,0,.14))}
 .mode-studio #cofWheel{pointer-events:auto} /* studio: you can click a key */
+body.kb-open #cofWheel{display:none} /* keybed open = hide it, no crowding */
+@media (max-width:820px){#cofWheel{width:80px;height:80px;left:8px;bottom:58px}} /* phone: smaller, still tucked in the corner above the keyboard toggle */
 #cofSvg{width:100%;height:100%;overflow:visible}
 #cofSvg .cofRing{fill:var(--card);stroke:var(--card-brd);stroke-width:1}
 #cofSvg .cofNode{cursor:default;transition:none}
@@ -404,6 +412,12 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <h1>slimehedron<span class="dot">.</span></h1>
   <span class="spacer"></span>
   <div class="btngroup"><!-- transport + instruments live together as one unbreakable row, every screen size -->
+    <div id="tempoDial" title="tempo — turn toward the turtle for slow, the rabbit for fast" aria-label="tempo">
+      <span class="td-ico td-turtle">🐢</span>
+      <svg viewBox="0 0 56 56" width="46" height="46"><circle class="td-track" cx="28" cy="28" r="21"/><circle class="td-fill" cx="28" cy="28" r="21"/><circle class="td-knob" cx="28" cy="7" r="5.5"/></svg>
+      <span class="td-ico td-rabbit">🐰</span>
+      <input type="range" id="playBpm" min="40" max="200" value="80" aria-label="tempo" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px">
+    </div>
     <button class="btn primary big" id="playBtn" title="play / pause" aria-label="play or pause">▶</button>
     <button class="btn big" id="drumBtn" title="drums" aria-label="drums" data-l="drums"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icDrum"/></svg></button>
     <button class="btn big" id="bandBtn" title="backing band" aria-label="backing band" data-l="band"><svg width="45" height="34" viewBox="0 0 32 24"><use href="#icBass"/></svg></button>
@@ -417,7 +431,6 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <button class="btn" id="resetBtn" title="start fresh">↺</button>
 </header>
 <div id="autoRow"><button class="slimeswitch" id="slimeBig" title="auto-play"><span class="ss-knob"><span class="sic">✨</span></span></button></div>
-<div id="playTempo" title="tempo — turtle is slow, rabbit is fast"><span>🐢</span><input type="range" id="playBpm" min="40" max="200" value="80" aria-label="tempo"><span>🐰</span></div>
 <div id="triMixBar">
   <div id="triMix" title="drag to mix: melody / drums / band">
     <svg viewBox="-14 -18 128 124" width="108" height="104" style="display:block;overflow:visible">
@@ -502,7 +515,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 <main>
   <div id="stage">
     <canvas id="cv" width="720" height="720"></canvas>
-    <div class="hint">tap to drop balls · <b>space</b> = rain</div>
+    <div class="hint">tap here to drop notes · or use ⌨ keyboard mode (bottom-left)</div>
     <div id="chordPill" hidden><b id="chordNow">—</b><span id="chordNext"></span><div id="chordProg"><i id="chordProgI"></i></div></div>
     <div id="cofWheel" hidden><svg viewBox="0 0 132 132" id="cofSvg" aria-label="circle of fifths — current key"></svg></div>
   </div>
@@ -1577,12 +1590,31 @@ function setBpm(v,fromEl){v=Math.max(40,Math.min(220,+v||80));S.bpm=Math.round(v
   const rv=Math.round(S.bpm);
   ['bpm','bpmTop','playBpm'].forEach(id=>{const e=$(id);if(e&&e!==fromEl&&+e.value!==rv)e.value=rv;}); // sliders are whole-number (coarse)
   const nb=$("bpmNum");if(nb&&nb!==fromEl&&document.activeElement!==nb)nb.value=S.bpm.toFixed(2); // the box shows decimals (don't fight typing)
-  const bv=$("bpmV");if(bv)bv.textContent=(S.bpm%1?S.bpm.toFixed(2):String(rv));}
+  const bv=$("bpmV");if(bv)bv.textContent=(S.bpm%1?S.bpm.toFixed(2):String(rv));
+  if(window._tempoDialRender)window._tempoDialRender();} // keep the rotary dial in sync too
 ['bpm','bpmTop','playBpm'].forEach(id=>{const e=$(id);if(e)e.addEventListener('input',()=>setBpm(e.value,e));});
 (function(){const nb=$("bpmNum");if(!nb)return; // typed box: commit on change/enter, clamp politely
   const commit=()=>setBpm(nb.value,nb);
   nb.addEventListener('change',commit);
   nb.addEventListener('keydown',e=>{if(e.key==='Enter')nb.blur();});})();
+// rotary tempo dial: knob sweeps a 270° arc (turtle→rabbit). drag around it, or drag up/down. syncs to the tempo brain.
+(function(){const dial=$("tempoDial");if(!dial)return;const knob=dial.querySelector('.td-knob'),fill=dial.querySelector('.td-fill'),svg=dial.querySelector('svg');
+  const MIN=40,MAX=200,ARC=270,START=-135; // sweep from -135° to +135°
+  function render(){const bpm=Math.max(MIN,Math.min(MAX,S.bpm||80)),t=(bpm-MIN)/(MAX-MIN);
+    knob.style.transform='rotate('+(START+t*ARC)+'deg)';
+    fill.style.strokeDashoffset=String(132-t*132);}
+  window._tempoDialRender=render;render();
+  let drag=false;
+  function fromPoint(e){const r=svg.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+    let a=Math.atan2((e.clientY)-cy,(e.clientX)-cx)*180/Math.PI+90; // 0° = up
+    if(a>180)a-=360; a=Math.max(-135,Math.min(135,a));
+    const t=(a-START)/ARC;setBpm(Math.round(MIN+t*(MAX-MIN)));render();}
+  dial.addEventListener('pointerdown',e=>{drag=true;dial.setPointerCapture(e.pointerId);fromPoint(e);e.preventDefault();});
+  dial.addEventListener('pointermove',e=>{if(drag)fromPoint(e);});
+  dial.addEventListener('pointerup',()=>drag=false);dial.addEventListener('pointercancel',()=>drag=false);
+  // wheel to fine-tune
+  dial.addEventListener('wheel',e=>{e.preventDefault();setBpm((S.bpm||80)+(e.deltaY<0?2:-2));render();},{passive:false});
+})();
 $("octs").addEventListener('input',e=>{S.octs=parseInt(e.target.value);$("octsV").textContent=e.target.value;rebuild();updateScaleNote();});
 bindRange("chaos","chaos",v=>v/100);
 bindRange("grav","grav",v=>v/100);bindRange("spin","spin");
@@ -1675,6 +1707,17 @@ function applyMode(m){S.mode=m;
   if(pill&&m==='play')pill.hidden=true; // no chord names for kids
   if(sn)sn.style.display=(m==='play')?'none':''; // no "5 notes/oct…" text in play
   if(wheel&&!wheel.hidden){_cofPrevPc=null;updateWheel();}
+  // play mode: group share + clear into one top-right flex row so they lay out side-by-side and can never overlap
+  const share=$("shareApp"),clr=$("clearBtn");let tr=$("topRight");
+  if(m==='play'){
+    if(!tr){tr=document.createElement('div');tr.id='topRight';document.body.appendChild(tr);}
+    if(share&&share.parentElement!==tr)tr.appendChild(share);
+    if(clr&&clr.parentElement!==tr)tr.appendChild(clr);
+  }else if(tr){ // leaving play: put them back where they belong
+    if(share)document.body.appendChild(share);
+    if(clr){const hdr=document.querySelector('header');if(hdr)hdr.appendChild(clr);}
+    tr.remove();
+  }
   if(window.LEARN){if(m==='learn')LEARN.enter();else LEARN.exit();}}
 // MIDI-Learn state must exist BEFORE the wiring IIFE below runs (it calls ccRender at load).
 let ccMap={},ccLearn=false,ccArm=null;
@@ -2096,18 +2139,19 @@ const chillers=[]; // full-view slimes with cursor physics
     const r=cv.getBoundingClientRect(),W=window.innerWidth,H=window.innerHeight;
     const btn=matchMedia('(max-width:820px)').matches?58:104; // reserve the candy-button column so slimes never sit on it
     const y0=Math.max(110,r.top-150),y1=Math.min(H-82,r.bottom+130); // fill the whole tall side margin, above & below the tank
-    function band(x0,x1){const w=x1-x0;if(w<64)return; // too tight (phones) → skip; peekers cover those
-      const cols=w>200?2:1; // wide desktop margin → two staggered columns of buddies for real presence
-      const sub=w/cols,size=Math.max(46,Math.min(84,sub*0.72));
-      const n=Math.max(2,Math.min(7,Math.floor((y1-y0)/(size+34))));
-      for(let cc=0;cc<cols;cc++)for(let i=0;i<n;i++){
-        const cx=x0+sub*(cc+0.5)+(Math.random()-0.5)*Math.max(0,sub-size-8);
-        const cy=y0+(i+0.5+(cc?0.5:0))/n*(y1-y0)+(Math.random()-0.5)*22;
+    // ONE evenly-spaced column per margin — a few friendly buddies, not a cluttered crowd. (user: scatter, don't clutter)
+    function band(x0,x1,avoid){const w=x1-x0;if(w<64)return; // too tight (phones) → skip; peekers cover those
+      const size=Math.max(44,Math.min(72,w*0.5));
+      const n=Math.max(2,Math.min(4,Math.floor((y1-y0)/(size+90)))); // FEWER, well-spaced (was up to 7×2)
+      for(let i=0;i<n;i++){
+        const cx=x0+w*0.5+(Math.random()-0.5)*Math.max(0,w-size-10);
+        const cy=y0+(i+0.5)/n*(y1-y0)+(Math.random()-0.5)*18;
         if(cy>y1-size*0.4)continue;
-        const sz=size*(0.82+Math.random()*0.3);
+        if(avoid&&cy>avoid.top&&cy<avoid.bottom&&cx>avoid.left)continue; // don't sit on the worm
+        const sz=size*(0.85+Math.random()*0.25);
         addFill(cx-sz/2,cy-sz/2,sz,FILLCOLS[_ci++%FILLCOLS.length]);}}
-    band(btn+8,r.left-6);            // left margin, between buttons and tank
-    band(r.right+6,W-btn-8);         // right margin
+    band(btn+8,r.left-6);                                   // left margin, between buttons and tank
+    band(r.right+6,W-btn-8,{top:H-380,bottom:H,left:W-320}); // right margin — carve out the worm's bottom-right zone
   }
   requestAnimationFrame(fillMargins);let _fmT;addEventListener('resize',()=>{clearTimeout(_fmT);_fmT=setTimeout(fillMargins,220);});
   chillers.length=0; // margin slimes just bob — no cursor physics (lighter with a big crowd)
@@ -2145,8 +2189,8 @@ const chillers=[]; // full-view slimes with cursor physics
 (function(){
   const layer=document.getElementById('slimes');
   const el=document.createElement('div');el.className='slime';
-  const _wmob=matchMedia('(max-width:820px)').matches; // sit BESIDE the drum buttons, and BEHIND them (z6<40) so his box never blocks a click
-  el.style.cssText='position:fixed;bottom:0;right:'+(_wmob?52:124)+'px;width:'+(_wmob?90:132)+'px;height:'+(_wmob?300:400)+'px;z-index:6;pointer-events:auto;will-change:transform';
+  const _wmob=matchMedia('(max-width:820px)').matches; // sit well LEFT of the drum button column (which owns the right edge) so he never pokes over a button
+  el.style.cssText='position:fixed;bottom:0;right:'+(_wmob?96:250)+'px;width:'+(_wmob?76:120)+'px;height:'+(_wmob?260:360)+'px;z-index:6;pointer-events:auto;will-change:transform';
   el.title='psst — tap me to double-time!';
   const VB_W=150, VB_H=480, HEAD_Y=44, cx=VB_W/2, N=14;
   el.innerHTML='<svg viewBox="0 0 '+VB_W+' '+VB_H+'" width="100%" height="100%" preserveAspectRatio="xMidYMax meet">'+
