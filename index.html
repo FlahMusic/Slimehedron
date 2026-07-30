@@ -905,6 +905,9 @@ function updateChordPill(){const p=document.getElementById('chordPill');if(!p)re
   document.getElementById('chordNow').textContent=chordName(curRootDeg);
   document.getElementById('chordNext').textContent=nextRootDeg!=null?'→ '+chordName(nextRootDeg):'';
   document.getElementById('chordProgI').style.background=`linear-gradient(90deg,${aurora(curRootDeg/n,62)},${aurora((nextRootDeg==null?curRootDeg:nextRootDeg)/n,62)})`;} // bar fills FROM this chord's color INTO the next one's
+// minor vs major tonality of the current scale, for correct wheel labeling (Am vs C). checks the 3rd degree:
+// a flat/minor 3rd (~300 cents) = minor family (minor pentatonic, aeolian, dorian, phrygian, locrian); else major.
+function isMinorScale(){const c=scaleObj().c;for(const cents of c){const iv=((Math.round(cents)%1200)+1200)%1200;if(iv===300||iv===400)return iv===300;}return false;}
 // ---- CIRCLE OF FIFTHS wheel: the ONLY key indicator kids need. 12 nodes in fifths order; the current key glows.
 // play = read-only glow + a soft arc that traces the fifth-step when the key moves. studio = click a key to set+pin it.
 const COF=[0,7,2,9,4,11,6,1,8,3,10,5]; // C G D A E B F# C# G# D# A# F — pitch classes clockwise by fifths
@@ -924,7 +927,9 @@ function buildWheel(){const svg=document.getElementById('cofSvg');if(!svg||_cofB
 function updateWheel(){const w=document.getElementById('cofWheel');if(!w||w.hidden)return;buildWheel();
   const svg=document.getElementById('cofSvg'),pc=((S.root%12)+12)%12,i=COF.indexOf(pc);
   svg.querySelectorAll('.cofNode').forEach(g=>g.classList.toggle('cofActive',+g.dataset.pc===pc));
-  const hub=document.getElementById('cofHub');if(hub)hub.textContent=NOTE_NAMES[pc].replace('#','♯');
+  // hub shows the TONIC + its tonality so there's no theory ambiguity: "Am" for a minor scale, "C" for a major one.
+  // (a lone "A" could mean A major OR A minor — the little "m" makes it unambiguous, standard circle-of-fifths convention.)
+  const hub=document.getElementById('cofHub');if(hub)hub.textContent=NOTE_NAMES[pc].replace('#','♯')+(isMinorScale()?'m':'');
   // soft trail: when the key moves, arc from the OLD key node to the NEW one so kids SEE the fifth-step travel round the ring
   if(_cofPrevPc!=null&&_cofPrevPc!==pc){const a=COF.indexOf(_cofPrevPc),b=i;if(a>=0&&b>=0){
     const [x1,y1]=cofPos(a),[x2,y2]=cofPos(b),tr=document.getElementById('cofTrail');
@@ -992,11 +997,15 @@ const KITBASS={
 let _bassGroove=0,_bassBars=0,_lastBassCents=null;
 let _slimeBars=0,_keyPinned=false; // _keyPinned: user picked a key/scale by hand → slime stops rotating until slime is toggled off/on
 function keyJourney(){ // ear-friendly walk: every 16 bars the root moves exactly ONE step on the circle of fifths
-  // (up OR down a fifth), and the SCALE never changes — so the finger shape stays familiar, only the home note moves.
-  const step=Math.random()<0.5?7:-7; // +a fifth (A→E) or −a fifth (A→D): always a neighbour, never a random/atonal jump
+  // (up OR down a fifth) — always a neighbour, never a random/atonal jump.
+  const step=Math.random()<0.5?7:-7; // +a fifth (A→E) or −a fifth (A→D)
   let nr=S.root+step;while(nr<52)nr+=12;while(nr>64)nr-=12; // keep the root in a comfy octave
+  // play mode: sometimes ALSO flip between minor & major pentatonic to keep it fresh (they share the same 5-note
+  // "no wrong notes" family, so it stays kid-safe — just a brighter/darker mood). ~40% of moves flip the tonality.
+  if(S.mode==='play'&&Math.random()<0.4){const flip=isMinorScale()?'pentaMaj':'pentaMin';
+    _keyProgrammatic=true;$("scale").value=flip;$("scale").dispatchEvent(new Event('change'));_keyProgrammatic=false;}
   _keyProgrammatic=true;$("root").value=nr;$("root").dispatchEvent(new Event('change'));_keyProgrammatic=false; // auto-move: don't trip the pin
-  updateWheel(); // the wheel is the star: glow the new key + trace the fifth-step arc
+  updateWheel(); // the wheel is the star: glow the new key (Am/C…) + trace the fifth-step arc
   if(S.mode!=='play')toast('→ '+NOTE_NAMES[((nr%12)+12)%12]+' '+SCALES[S.scale].n.toLowerCase());} // play: silent, the wheel says it all
 function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for the pluck pattern
   if(!bandOn)return;

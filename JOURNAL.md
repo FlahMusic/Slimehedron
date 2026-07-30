@@ -80,6 +80,22 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 45 — Tonality-correct wheel (Am/C) + major/minor pentatonic rotation (2026-07-30)
+Theory-correctness pass (Flah asked, rightly, before launch). Researched: A minor pentatonic & C major pentatonic
+are the SAME 5 notes — tonality is defined by which note is the tonic/home (Berklee, National Guitar Academy,
+guitarmusictheory.com). Our wheel highlights S.root = the tonic = correct. BUT a lone "A" is ambiguous (A major or
+A minor?) vs the standard 2-ring circle-of-fifths (outer MAJOR caps / inner minor lowercase — Soundtrap/Musicca).
+Fixes (both theory-correct):
+1. HUB LABEL now shows tonality: "Am" for a minor scale, "C" for major — zero ambiguity. New isMinorScale() reads
+   the 3rd degree (flat 3rd/300¢ = minor family, natural 3rd/400¢ = major). Verified correct across ALL 9 scales:
+   minor/dorian/phrygian/locrian/pentaMin → "m"; major/lydian/mixolydian/pentaMaj → none.
+2. MAJOR↔MINOR PENTATONIC ROTATION in play+slime: keyJourney now flips between pentaMaj/pentaMin on ~40% of the
+   16-bar key moves (they share the same no-wrong-notes 5-note family, so it stays kid-safe — just brighter/darker
+   mood). The scale change fires the normal handler (rebuild() updates the note geometry) and updateWheel() reflects
+   the new tonality (e.g. Em → B → C♯m → G♯…). Simulated 12 moves: healthy 5-minor/7-major mix, all labels valid.
+dev-test PASS, load-test PASS. Backup: index-*-majmin-tonality. TODO Flah: deploy.bat, then watch the hub letter
+show Am/C etc. and hear it brighten/darken as it rotates.
+
 ### Entry 44 — COF relocated+enlarged, slimes balanced, background-tab clock fix (2026-07-30)
 All inspected on the live DOM first, then fixed, then measured. No guessing.
 
