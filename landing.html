@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>slimehedron — free music for everyone</title>
-<meta name="description" content="a free music toy for kids. tap to make music and learn as you play. no login, no ads, works offline.">
+<meta name="description" content="a free music app for kids of any age. make music and learn as you play. no login, no ads, works offline.">
 <meta property="og:title" content="slimehedron — free music for everyone">
 <meta property="og:description" content="tap to make music and learn as you play. free, no login, works offline.">
 <meta property="og:type" content="website">
@@ -47,7 +47,8 @@
 
   h1{font-size:clamp(42px,9vw,66px);font-weight:700;letter-spacing:-1.5px;margin:14px 0 6px;z-index:2}
   h1 .d{color:var(--mint-deep)}
-  .tag{font-size:clamp(17px,4vw,21px);color:var(--ink-soft);font-weight:600;max-width:440px;z-index:2}
+  .tag{font-size:clamp(19px,4.4vw,24px);color:var(--ink);font-weight:700;max-width:460px;z-index:2}
+  .sub{font-size:clamp(14px,3.4vw,16.5px);color:var(--ink-soft);font-weight:600;max-width:400px;margin-top:6px;z-index:2}
 
   .play{display:inline-flex;align-items:center;gap:10px;margin:30px 0 16px;z-index:2;
     background:linear-gradient(135deg,var(--mint),var(--mint-deep));color:#fff;text-decoration:none;
@@ -63,10 +64,6 @@
     box-shadow:0 4px 12px rgba(90,79,120,.07)}
   .chip.c1{color:var(--mint-deep)} .chip.c2{color:#e8853a} .chip.c3{color:#e05c95} .chip.c4{color:#8a6fe0} .chip.c5{color:#c99a00}
 
-  .teach{margin-top:26px;font-size:13px;color:var(--ink-soft);font-weight:600;display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:center;z-index:2}
-  .copy{background:var(--lav);color:#fff;border:0;border-radius:11px;padding:6px 13px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;transition:.14s}
-  .copy:hover{background:#a48ce8;transform:scale(1.05)} .copy.done{background:var(--mint);color:var(--ink)}
-  #blurb{position:absolute;left:-9999px}
 
   .foot{position:absolute;bottom:14px;font-size:12px;color:var(--ink-soft);font-weight:600;z-index:2}
   .heart{color:var(--pink)}
@@ -88,6 +85,7 @@
 <div class="hero" id="hero"></div>
 <h1>slimehedron<span class="d">.</span></h1>
 <p class="tag">music is meant for everyone.</p>
+<p class="sub">a free way for kids of any age to play and learn music.</p>
 
 <a class="play" href="index.html">▸ play now</a>
 
@@ -96,14 +94,8 @@
   <span class="chip c2">no ads</span>
   <span class="chip c3">works offline</span>
   <span class="chip c4">no data collected</span>
-  <span class="chip c5">free forever</span>
+  <span class="chip c5">free</span>
 </div>
-
-<div class="teach">
-  <span>teachers &amp; parents — grab a blurb to share</span>
-  <button class="copy" id="copyBtn">copy</button>
-</div>
-<div id="blurb">slimehedron is a free music toy for kids — tap to make music and learn real theory as you play (rhythm, notes, chords, modes). works on any phone, tablet or computer, even offline. no accounts, no ads, no data collected. play free: https://flahmusic.github.io/Slimehedron</div>
 
 <div class="foot">made with <span class="heart">♥</span> for kids everywhere</div>
 
@@ -137,12 +129,6 @@
   put('fl1',LAV,'happy');put('fl2',PEACH,'wow');put('fl3',PINK,'bigeye');put('fl4',MINT,'happy');
   ['fl1','fl2','fl3','fl4'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.style.width=el.style.height=(i%2?54:68)+'px';});
 
-  document.getElementById('copyBtn').addEventListener('click',function(){
-    navigator.clipboard.writeText(document.getElementById('blurb').innerText).then(function(){
-      var b=document.getElementById('copyBtn');b.textContent='copied ✓';b.classList.add('done');
-      setTimeout(function(){b.textContent='copy';b.classList.remove('done');},2000);
-    });
-  });
   if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js');});
 </script>
 </body>

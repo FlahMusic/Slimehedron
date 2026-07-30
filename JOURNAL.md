@@ -80,6 +80,18 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 37 — Landing polish + share moved into the app (2026-07-29)
+- Flah scrutiny pass. Fixes: (1)+(2) tagline "music is meant for everyone." kept but was pure vibe/no info —
+  added concrete sub-line "a free way for kids of any age to play and learn music" so a teacher SEES it teaches.
+  (3) "free forever" chip → "free" (forever read as unprovable/salesy). Removed the word "toy" everywhere
+  (meta description too) — positioned as a learning app, not a toy.
+- Killed the weird hidden copy-blurb (invisible text you paste elsewhere — amateur, nobody does that).
+- Share button: removed from landing (you share AFTER trying, not before), added a quiet 🔗 share button to the
+  APP top-right (mirrors ← back, hidden in learn mode, icon-only on phone). Uses navigator.share (native sheet)
+  on mobile, copy-link fallback on desktop. Share text calls it "a free music app where kids learn as they play."
+- Domain: Flah will spend ~$8 on a .org later, not yet — pinned for when we circle back (CNAME → same GH Pages).
+- Verified: landing checks pass, app share checks pass, dev-test green. Backups: index-*-preshare, landing-v5-*.
+
 ### Entry 36 — Landing v3: gutted to one screen, less purple, trust-by-showing (2026-07-29)
 - Flah: v2 "reads like a scammy AI course-funnel, way too much text, too purple, doesn't sound like me
   (lowercase, no fluff)." Researched what actually signals legit vs scam: 94% of first impression is VISUAL

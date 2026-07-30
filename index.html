@@ -83,6 +83,14 @@ header .spacer{flex:1}
   background:linear-gradient(135deg,#d9c6ff,#c4f0e2);border:2px solid rgba(255,255,255,.95);border-radius:14px;
   padding:9px 14px;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;gap:5px;transition:.15s}
 #exitMode:hover{transform:translateY(-1px)}
+/* quiet share button, top-right — only after someone's here playing (never on the landing page). mirrors the back button. */
+#shareApp{position:fixed;top:10px;right:12px;z-index:260;font-family:inherit;font-weight:700;font-size:13px;line-height:1;color:#463d66;
+  background:linear-gradient(135deg,#c4f0e2,#d9c6ff);border:2px solid rgba(255,255,255,.95);border-radius:14px;
+  padding:9px 13px;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;gap:5px;transition:.15s}
+#shareApp:hover{transform:translateY(-1px)}
+#shareApp.done{background:linear-gradient(135deg,#9fe6cf,#9fe6cf)}
+.mode-learn #shareApp{display:none} /* lessons in progress: no distraction */
+@media (max-width:820px){#shareApp span{display:none}#shareApp{padding:9px 11px}} /* phone: just the icon, saves the top bar */
 /* the computer-keyboard map: white keys on the home row, black keys above, Z/X octave */
 /* keyboard-play: floating pill (all modes, same spot) + translucent reference map, DAW-standard layout */
 /* left corner: back button is top-left, so bottom-left is clear — keeps clear of studio's bottom-right advanced panel */
@@ -377,6 +385,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 <!-- body-level, NOT inside header: header has z-index:70 which creates a stacking context,
      and a fixed child can never paint above the learn overlay from inside it. -->
 <button id="exitMode" title="back to play / learn / studio">← back</button>
+<button id="shareApp" title="share slimehedron with a friend">🔗 <span>share</span></button>
 <!-- keyboard-play lives at body level: one button, one spot, every mode, every screen size -->
 <button id="kbBtn" title="play notes with your computer keyboard or a MIDI keyboard" aria-label="keyboard play">⌨</button>
 <div id="kbMap" hidden></div>
@@ -1717,6 +1726,12 @@ try{ccMap=JSON.parse(localStorage.getItem('slimehedron-cc')||'{}');}catch(e){}
 })();
 // ✕ = forget the saved mode and reload → you always land back on the three doors. one line, no new code paths.
 $("exitMode").addEventListener('click',()=>{try{localStorage.removeItem('slimehedron-mode');}catch(e){}location.reload();});
+// share: native share sheet on phones, copy-link on desktop. lives here (in the app) not the landing page — you share AFTER you've tried it.
+$("shareApp").addEventListener('click',()=>{const b=$("shareApp"),url='https://flahmusic.github.io/Slimehedron',
+  msg='slimehedron — a free music app where kids learn as they play. no login, no ads, works offline.';
+  if(navigator.share){navigator.share({title:'slimehedron',text:msg,url}).catch(()=>{});}
+  else navigator.clipboard.writeText(msg+' '+url).then(()=>{b.classList.add('done');b.innerHTML='✓ <span>copied</span>';
+    setTimeout(()=>{b.classList.remove('done');b.innerHTML='🔗 <span>share</span>';},2000);});});
 // iOS Safari ignores user-scalable=no, so double-tap still zooms. Block it in JS — but never on real controls,
 // so buttons/lessons keep working. This makes the whole app feel locked-in like a native app.
 document.addEventListener('gesturestart',e=>e.preventDefault()); // no pinch-zoom
