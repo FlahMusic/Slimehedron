@@ -20,13 +20,16 @@ window.LEARN=(function(){
     const gb=two?'':[[13,7],[15,8]].map(([s,wi])=>`<div class="pxB gh" data-s="${s}" style="left:${wi*33+21}px"></div>`).join('');
     return `<div class="pxPiano${two?' two':''}"><div class="pxKeys">${w}${gw}${b}${gb}</div></div>`;
   }
-  function lessonNote(freq,vel,dur){if(!AC)return;const t=AC.currentTime,v=(vel||96)/127*0.5;
-    [[1,1],[4,0.25],[9.2,0.07]].forEach(([m,a])=>{const o=AC.createOscillator(),g=AC.createGain();
-      o.type='sine';o.frequency.value=freq*m;
-      const d=(dur||0.9)/Math.sqrt(m);
-      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*a,t+0.004);
+  function lessonNote(freq,vel,dur){if(!AC)return;const t=AC.currentTime,v=(vel||96)/127*0.44;
+    const out=(typeof melBus!=='undefined'&&melBus)?melBus:AC.destination;
+    const lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=Math.min(8500,freq*5+900);lp.Q.value=0.5;lp.connect(out);
+    // warm music-box tone: HARMONIC partials (2×,3×) not the old metallic 9.2×, soft attack (no click), gentle lowpass, a hair of detune
+    [[1,1,0],[2,0.28,3],[3,0.10,-4]].forEach(([m,a,det])=>{const o=AC.createOscillator(),g=AC.createGain();
+      o.type='sine';o.frequency.value=freq*m;o.detune.value=det;
+      const d=(dur||0.95)/Math.sqrt(m);
+      g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v*a,t+0.014);
       g.gain.exponentialRampToValueAtTime(0.0001,t+d);
-      o.connect(g);g.connect(typeof melBus!=='undefined'&&melBus?melBus:AC.destination);o.start(t);o.stop(t+d+0.05);});}
+      o.connect(g);g.connect(lp);o.start(t);o.stop(t+d+0.05);});}
   function flashKey(s){const k=ov.querySelector(`.pxKeys [data-s="${s}"]`);if(!k)return;
     k.classList.add('pl');setTimeout(()=>k.classList.remove('pl'),240);}
   function pianoPlay(s,vel){const f=440*Math.pow(2,(60+s-69)/12);lessonNote(f,vel||96);flashKey(s);}
@@ -622,7 +625,7 @@ window.LEARN=(function(){
     else{let g=0;do{ei=(Math.random()*bank.length)|0;fi=(Math.random()*3)|0;g++;}
       while(g<9&&_sel&&_sel.i===i&&_sel.ei===ei&&_sel.fi===fi);} // never the same take twice in a row
     _sel={i,ei,fi};const e=bank[ei];
-    _cap=e.s?'“'+e.t+'”':''; // real songs get their name. teaching patterns get NO title — the sound is the lesson
+    _cap=e.s?'“'+e.t+'”':'the sound of '+M7[i].n.replace(/ \(.*/,''); // famous PD songs get their name; the 3 modes with no famous song show an honest "the sound of X"
     const step=fi===2?230:310;let t=240;
     jn(0,20,58);jn(4,20,46);
     e.seq.forEach(([d,l],ix)=>{const dur=fi===1?l*(ix%2===0?1.32:0.68):l; // lilt: long-short pairs
@@ -700,7 +703,7 @@ window.LEARN=(function(){
     playJam(ans,rf);
     ov.innerHTML=`<div class="lCard"><h3>${sessN+1} of ${D.len}</h3>
       <p class="lSub">which scene fits the sound?</p>
-      <div class="lScenes">${opts.map(o=>`<div class="lScene" data-pick="${o}" data-ans="${ans}">${sceneIMG(o,Math.floor(Math.random()*7))}<b>${M7[o].scene}</b></div>`).join('')}</div>
+      <div class="lScenes">${opts.map(o=>`<div class="lScene" data-pick="${o}" data-ans="${ans}">${sceneIMG(o,Math.floor(Math.random()*7))}<b>${M7[o].n}</b><i>${M7[o].scene}</i></div>`).join('')}</div>
       <div class="lFeed" id="lFeed"></div>
       <div class="lRow"><button class="btn" data-a="replay" data-i="${ans}" data-r="${rf}">\u21bb again</button><button class="btn" data-a="crs" data-c="modes">\u2039 back</button></div></div>`;}
   function pick(el){const p=+el.dataset.pick,a=+el.dataset.ans,f=lf();
@@ -717,7 +720,7 @@ window.LEARN=(function(){
   function mcreate(pickI){stopJam();
     if(pickI==null){ov.innerHTML=`<div class="lCard"><h3>compose</h3>
       <p class="lSub">pick a scene. every key fits.</p>
-      <div class="lScenes">${M7.map((m,i)=>`<div class="lScene" data-cre="${i}">${sceneIMG(i,Math.floor(Math.random()*7))}<b>${m.scene}</b></div>`).join('')}</div>
+      <div class="lScenes">${M7.map((m,i)=>`<div class="lScene" data-cre="${i}">${sceneIMG(i,Math.floor(Math.random()*7))}<b>${m.n}</b><i>${m.scene}</i></div>`).join('')}</div>
       <div class="lRow"><button class="btn" data-a="crs" data-c="modes">‹ back</button></div></div>`;return;}
     const m=M7[pickI];startBacking(pickI);
     onKey=s=>{ // computer/MIDI keys land on the nearest scale degree — every key still fits

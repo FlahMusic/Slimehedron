@@ -80,6 +80,46 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 30 — Semitone chord detect, per-kit grooves, keybed fit, zoom lock (2026-07-29)
+- **Chord detection fixed for pentatonic (& any scale).** manualRoot stacked SCALE degrees {r,r+2,r+4} —
+  wrong in a 5-note scale, so E-A-C never became A minor. Rewrote it to detect the root in real SEMITONES
+  (fit major/minor triad {root,+3/+4,+7}), then map back to the nearest scale degree. Responds to 1 note
+  or 3. Sim: E-A-C→A minor ✓, single A→A ✓. noteManual now stores pitch class.
+- **Each drum kit gets its own bass groove** (KITBASS, 2 grooves/kit, rotate every 16 bars) — chip bouncy,
+  conga latin-tumbao, bossa syncopated, rock driving 8ths, electro pumping — so the backing isn't monotonous.
+- **Mobile keybed fits** now (starts at C, no side-scroll): keys shrink to `min(42px, (100vw-74)/11)`,
+  overflow hidden. The old "starts at D" was just overflow scrolling to the middle.
+- **Double-tap zoom locked** (iOS ignores user-scalable=no): JS `gesturestart` + `touchend` double-tap
+  preventer, excluding real controls so buttons/lessons still work — feels native.
+Passed dev-test. Backup: index-20260729-212429-chorddetect-kitgrooves.
+
+### Entry 29 — Kid-friendly modulation, mode names, kb-button fix (2026-07-29)
+- **Keyboard button hidden in learn** (`.mode-learn #kbBtn{display:none}`) — it overlapped the compose
+  scene cards; learn has its own lesson piano + letter-keys already work there.
+- **Real mode names on the learn cards** (match + compose): now show the mode name (ionian, dorian…) as
+  the bold title with the friendly description under it — teaches the real vocabulary.
+- **Play-mode modulation reworked to be ear-friendly** (per Flah's spec): base = **A minor pentatonic**
+  (the no-wrong-notes scale), and keyJourney now moves the root exactly ONE circle-of-fifths step (±a
+  fifth) every 16 bars, SCALE UNCHANGED — familiar finger shape, only the home note moves, never a random
+  or atonal jump. Sim: A→D→G→C… all verified as fifth-neighbours, in a comfy octave.
+Passed dev-test. Backup: index/learn-20260729-211511-pentmod-modenames.
+
+### Entry 28 — Modal melodies audit + warm voice (2026-07-29)
+Research (cited): canonical PD teaching tunes exist for only 4 modes — ionian (Ode to Joy etc.),
+dorian (Scarborough Fair + Drunken Sailor), mixolydian (Old Joe Clark), aeolian (Greensleeves +
+God Rest Ye). Phrygian lives in flamenco, and lydian/locrian have NO famous PD songs (lydian's famous
+examples = Simpsons/Jetsons = copyrighted; locrian ≈ no repertoire). Compositions are PD (no attribution);
+recordings carry separate copyright — real audio needs CC0 (Musopen: 1800 CC0/CC-BY-SA recordings).
+Pedagogy (Kodály/Orff): pentatonic BEFORE modes; modes are advanced — our capstone placement is correct.
+- **Warmed the demo voice** (lessonNote): dropped the metallic 9.2× partial + clicky 4ms attack; now
+  harmonic 2×/3× partials, 14ms soft attack, gentle lowpass, slight detune = soft music-box, not a beep.
+  This is the main anti-"cheesy" fix.
+- **Honest labels**: real famous tunes show their name; the 3 modes with none now show "the sound of X"
+  (a flavor phrase, not a fake song title).
+Bank now: major 4 songs, dorian 2, phrygian 1, mixo 1, minor 2, lydian 0, locrian 0 (+flavor phrases).
+Proposed next (needs greenlight): Musopen CC0 real-instrument audio for the 4 song-modes.
+Backup: learn/index-20260729-173434-modemelody-voice.
+
 ### Entry 27 — Simply-Piano-style grading: scale game + parent view (2026-07-29)
 CEO gap #2 (no performance grading) → built it, in the Simply-Piano lesson shape.
 - **Color feedback**: every played key flashes green (right) / red (wrong) in the piano lessons.

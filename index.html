@@ -92,6 +92,7 @@ header .spacer{flex:1}
 #kbBtn:active{transform:scale(.93)}
 #kbBtn.on{background:linear-gradient(135deg,#9fe6cf,#b388f0);color:#fff;box-shadow:0 4px 16px rgba(130,100,200,.45)}
 body:has(#splash:not(.gone)) #kbBtn{display:none}
+.mode-learn #kbBtn{display:none} /* learn has its own lesson piano — the floating key toggle just overlaps the cards */
 #kbMap{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:259;max-width:97vw;overflow-x:auto;
   background:rgba(255,255,255,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
   border:1px solid rgba(255,255,255,.85);border-radius:16px;padding:10px 14px;touch-action:manipulation;
@@ -140,12 +141,13 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 #kbMap .knote{font-size:10px;font-weight:700;color:var(--ink-soft);letter-spacing:.3px;align-self:center}
 /* TOUCH: no physical keys to reference, so the note name IS the key — big, tappable, letters hidden */
 @media (pointer:coarse){
-  #kbMap b{width:40px;height:46px;font-size:15px;border-radius:9px}
+  #kbMap{overflow-x:hidden;padding:9px 8px} /* fit the whole keybed on screen — no more side-scrolling */
+  #kbMap b{width:min(42px,calc((100vw - 74px)/11));height:46px;font-size:min(15px,3.4vw);border-radius:8px} /* shrink to fit 11 keys, C first */
   #kbMap b .kl{display:none}
-  #kbMap b i{font-size:15px;opacity:1;margin-top:0}
-  #kbMap b.fn{height:46px;font-size:13px}
-  #kbMap b.fn i{font-size:9px}
-  #kbMap .krow{gap:5px}
+  #kbMap b i{font-size:min(15px,3.4vw);opacity:1;margin-top:0}
+  #kbMap b.fn{height:46px;font-size:11px}
+  #kbMap b.fn i{font-size:8px}
+  #kbMap .krow{gap:min(4px,0.8vw)}
   #kbMap .knote{display:none}
 }
 html,body{touch-action:manipulation} /* kill the double-tap zoom that makes the pads fight you (canvas re-enables its own touch) */
@@ -170,6 +172,7 @@ header h1{margin-left:78px} /* the title steps aside for the back button */
 .lScene:hover{transform:translateY(-2px);border-color:var(--card-brd)}
 .lScene.dim{opacity:.35;pointer-events:none}
 .lScene b{display:block;font-size:11.5px;margin-top:5px;font-weight:700}
+.lScene i{display:block;font-size:10px;font-weight:600;font-style:normal;opacity:.68;margin-top:1px} /* the real mode name on top, the friendly description under it */
 .lBig{width:min(62vw,280px);margin:0 auto 8px}
 .lFeed{min-height:22px;font-size:13.5px;font-weight:700;margin:8px 0;color:var(--ink)}
 .lRow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:8px}
@@ -878,31 +881,43 @@ let manualNotes=[]; // {deg,t}
 function degOf(cents){const sc=scaleObj().c,len=sc.length,rem=((Math.round(cents)%1200)+1200)%1200;let idx=0,bd=1e9;
   for(let i=0;i<len;i++){const d=Math.min(Math.abs(sc[i]-rem),1200-Math.abs(sc[i]-rem));if(d<bd){bd=d;idx=i;}}return idx;}
 function manualActive(){return manualNotes.length&&performance.now()-manualNotes[manualNotes.length-1].t<1600;}
-function manualRoot(){const now=performance.now(),n=scaleObj().c.length;
-  const recent=manualNotes.filter(x=>now-x.t<1600).map(x=>((x.deg%n)+n)%n);if(!recent.length)return null;
-  const set=new Set(recent),last=recent[recent.length-1];
-  let best=0,bs=-1; // find the triad {r, r+2, r+4} that best fits the notes you actually played
-  for(let r=0;r<n;r++){let s=0;for(const dd of [r,(r+2)%n,(r+4)%n])if(set.has(dd))s++;
-    if(set.has(r))s+=0.6; if(r===last)s+=0.3; // the root you played, and your latest note, both vote
-    if(s>bs){bs=s;best=r;}}
-  return best;}
-function noteManual(cents){manualNotes.push({deg:degOf(cents),t:performance.now()});if(manualNotes.length>16)manualNotes.shift();
+function manualRoot(){const now=performance.now();
+  const recent=manualNotes.filter(x=>now-x.t<1600);if(!recent.length)return null;
+  const set=new Set(recent.map(x=>x.pc)),last=recent[recent.length-1].pc,single=set.size===1;
+  // detect the chord ROOT in real semitones (works in ANY scale — pentatonic too). one note or three, it adapts.
+  let bestPc=last,bs=-1;
+  for(let r=0;r<12;r++){ if(!single&&!set.has(r))continue; // the root is a note you actually played
+    for(const third of [3,4]){let s=0;for(const iv of [0,third,7])if(set.has((r+iv)%12))s++; // fit a major/minor triad
+      if(set.has(r))s+=0.7; if(r===last)s+=0.3; // the root itself + your latest note both vote
+      if(s>bs){bs=s;bestPc=r;}}}
+  // map that root pitch-class back to the nearest scale degree so the bass & pads can voice it
+  const sc=scaleObj().c,root0=((S.root%12)+12)%12,n=sc.length;let bestDeg=0,bd=99;
+  for(let i=0;i<n;i++){const degPc=((root0+Math.round(sc[i]/100))%12+12)%12,d=Math.min((degPc-bestPc+12)%12,(bestPc-degPc+12)%12);if(d<bd){bd=d;bestDeg=i;}}
+  return bestDeg;}
+function noteManual(cents){manualNotes.push({deg:degOf(cents),pc:((S.root+Math.round(cents/100))%12+12)%12,t:performance.now()});if(manualNotes.length>16)manualNotes.shift();
   if(bandOn){const r=manualRoot();if(r!=null){_prevRootDeg=curRootDeg;curRootDeg=r;nextRootDeg=r;updateChordPill();}}} // flips the chord on the KEYPRESS, not next bar
 const BASSPAT={'16':{0:'R',4:'R',6:'F',8:'R',12:'R',14:'O'},'12':{0:'R',4:'F',8:'O'},'12c':{0:'R',6:'F'},'20':{0:'R',8:'R',12:'F',16:'O'}}; // odd time sigs
 // 4/4 basslines that ROTATE every 16 bars for motion — the classic shapes (StudyBass / Yamaha):
 // 0 roots+fifths · 1 root-fifth-octave country walk · 2 triad arpeggio · 3 driving eighths into a lead-in.
 // all land on the root at beat 1, so switching between them never jumps. tokens: R root, F fifth, T third, O octave, A stepwise lead-in to the next chord.
 const BASSGROOVES=[{0:'R',8:'F'},{0:'R',6:'F',8:'O',12:'F'},{0:'R',4:'T',8:'F',12:'O'},{0:'R',4:'R',8:'F',14:'A'}];
+// EACH DRUM KIT gets its OWN bass feel so the backing isn't monotonous — 2 grooves per kit, rotating every 16 bars:
+const KITBASS={
+  chip:  [{0:'R',4:'F',8:'O',12:'F'},{0:'R',4:'R',8:'F',12:'T'}],                     // bouncy chiptune
+  conga: [{0:'R',3:'R',6:'F',10:'R',12:'F',14:'T'},{0:'R',6:'F',8:'O',11:'F',14:'R'}], // busy latin tumbao
+  bossa: [{0:'R',6:'F',10:'R',14:'F'},{0:'R',7:'O',8:'R',13:'F'}],                     // sparse, syncopated bossa
+  rock:  [{0:'R',4:'R',8:'R',12:'R',14:'A'},{0:'R',4:'R',8:'F',12:'R',14:'A'}],        // driving 8ths + lead-in
+  beep:  [{0:'R',8:'R',4:'F',12:'F'},{0:'R',2:'R',8:'R',10:'F',14:'O'}]                // pumping electro
+};
 let _bassGroove=0,_bassBars=0,_lastBassCents=null;
 let _slimeBars=0;
 const JSCALES=['major','mixolydian','dorian','minor','pentaMaj','lydian'];
-function keyJourney(){ // auto-play's endless road trip: every 16 bars, step the circle of fifths (up a 5th or up a 4th),
-  // sometimes shift the mode too — always a near-neighbor key, so the music flows instead of jumping
-  const step=Math.random()<0.5?7:5,nr=48+((S.root-48+step)%25);
+function keyJourney(){ // ear-friendly walk: every 16 bars the root moves exactly ONE step on the circle of fifths
+  // (up OR down a fifth), and the SCALE never changes — so the finger shape stays familiar, only the home note moves.
+  const step=Math.random()<0.5?7:-7; // +a fifth (A→E) or −a fifth (A→D): always a neighbour, never a random/atonal jump
+  let nr=S.root+step;while(nr<52)nr+=12;while(nr>64)nr-=12; // keep the root in a comfy octave
   $("root").value=nr;$("root").dispatchEvent(new Event('change'));
-  if(Math.random()<0.45){const cur=$("scale").value,pool=JSCALES.filter(s=>s!==cur);
-    const ns=pool[(Math.random()*pool.length)|0];$("scale").value=ns;$("scale").dispatchEvent(new Event('change'));}
-  toast('→ '+NOTE_NAMES[S.root%12]+' '+SCALES[S.scale].n.toLowerCase());}
+  toast('→ '+NOTE_NAMES[((nr%12)+12)%12]+' '+SCALES[S.scale].n.toLowerCase());}
 function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for the pluck pattern
   if(!bandOn)return;
   if(++_bassBars%16===0)_bassGroove=(_bassGroove+1)%BASSGROOVES.length; // rotate the bass feel every 16 bars for motion
@@ -957,7 +972,7 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
   while(drumTime<AC.currentTime+0.12){
     const st=drumStep%loop, inBar=st%bar, barI=(st/bar)|0, hum=0.92+Math.random()*0.16; // ±8% human wobble on every hit
     if(inBar===0)bandBar(drumTime,barI);
-    if(bandOn){const bp=(drumSig==='16')?BASSGROOVES[_bassGroove]:BASSPAT[drumSig],tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));if(tok)bassNote(tok,drumTime,hum);}
+    if(bandOn){const set=(drumSig==='16')?(KITBASS[drumKit]||BASSGROOVES):null,bp=set?set[_bassGroove%set.length]:BASSPAT[drumSig],tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));if(tok)bassNote(tok,drumTime,hum);}
     if(!drumOn){drumTime+=drumStepDur();drumStep++;continue;} // band without drums: same grid, silent kit
     if(drumTriplet()){ // the REAL shuffle: "ting — ting-a" — the hat SKIPS the middle triplet (that gap is the whole feel)
       const vm=KITVOICE[drumKit],sub=inBar%3;
@@ -1636,6 +1651,12 @@ try{ccMap=JSON.parse(localStorage.getItem('slimehedron-cc')||'{}');}catch(e){}
 })();
 // ✕ = forget the saved mode and reload → you always land back on the three doors. one line, no new code paths.
 $("exitMode").addEventListener('click',()=>{try{localStorage.removeItem('slimehedron-mode');}catch(e){}location.reload();});
+// iOS Safari ignores user-scalable=no, so double-tap still zooms. Block it in JS — but never on real controls,
+// so buttons/lessons keep working. This makes the whole app feel locked-in like a native app.
+document.addEventListener('gesturestart',e=>e.preventDefault()); // no pinch-zoom
+let _lastTE=0;document.addEventListener('touchend',e=>{const n=Date.now();
+  if(n-_lastTE<=350&&!e.target.closest('button,select,input,a,.modeCard,.crsPane,.lScene,[data-a]'))e.preventDefault();
+  _lastTE=n;},{passive:false});
 applyMode((()=>{try{return localStorage.getItem('slimehedron-mode')||'play';}catch(e){return 'play';}})()); // dress the room before the splash lifts
 window.PIX=false; // pixel + perf toggles retired from the UI (auto-perf still kicks in on slow frames)
 $("voiceTop").addEventListener('change',e=>{const b=$("waveSeg").querySelector(`button[data-w="${e.target.value}"]`);if(b)b.click();else S.wave=e.target.value;}); // kid-friendly voice picker drives the same waveSeg
@@ -2402,6 +2423,9 @@ window.slimeStar=function(){ // any little win → a star; the FIRST star of a n
     enableMotion();initAudio();if(AC.state==="suspended")AC.resume();
     applyMode(m);
     if(m==='play'){ // play: full band from the first second, slime jams by itself
+      // base key = A minor pentatonic: the "no wrong notes" scale, warm & kid/parent-friendly, familiar shape as it modulates
+      const sc=$("scale");if(sc){sc.value='pentaMin';sc.dispatchEvent(new Event('change'));}
+      const rt=$("root");if(rt){rt.value='57';rt.dispatchEvent(new Event('change'));} // A3
       if(!S.slimeMode)$("slimeBig").click();
       if(!drumOn)$("drumBtn").click();
       if(!bandOn)$("bandBtn").click();
