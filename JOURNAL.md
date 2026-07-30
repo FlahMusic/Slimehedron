@@ -80,6 +80,32 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 43 — ROOT-CAUSED the worm + tempo knob (tested on live DOM, no guessing) (2026-07-30)
+Flah (rightly) called out that the worm was STILL on the drums after many attempts, and the tempo dial looked
+wrong + laggy. Stopped guessing at CSS — inspected the live element to find the real causes.
+
+1. WORM — root cause found: the worm's animation loop (tick(), line ~2244) sets `el.style.left` EVERY FRAME,
+   which overrode every CSS `right` value I'd tried. The `left` was computed from `asideEl.left - tank.right`;
+   in play mode there's no sidebar so it fell back to `innerWidth-wPx-4` = hard against the right edge, ON the
+   drum column. FIX: compute the right boundary from the drum column (#psDrums) when it's visible, and place the
+   worm centered in the gap between the tank and that column, with a hard stop so it can never cross into it.
+   SECOND bug in my first attempt: used `drumsEl.offsetParent!==null` to detect the drums — but #psDrums is
+   position:fixed, so offsetParent is ALWAYS null → detection failed → fell back to screen edge. Fixed to check
+   the real getBoundingClientRect box. VERIFIED on live DOM: drums at x1188, worm now placed x971–1075 =
+   113px clearance, fully off the buttons.
+   Also: resting worm was 74% sunk (basically hidden) → now 55% sunk so the head+neck poke out, and resting
+   wiggle raised 0.22→0.42 so the poking head visibly wiggles (Flah's ask).
+
+2. TEMPO KNOB — was a custom SVG ring (filled weird, didn't match the app, and re-rendered the ring every
+   pointermove via atan2 tracking = the jitter/lag Flah felt on a fast laptop). REPLACED with the app's own
+   `.rknob` component (the exact class + drag-up/down logic every other knob uses: dot rotates -135°..+135°,
+   no per-frame redraw). VERIFIED on live DOM that .rknob renders as the standard 3D gradient knob with a
+   vertical indicator — now identical to the rest of the UI, smooth. Added a guard so enhanceKnobs() doesn't
+   inject a duplicate knob before #playBpm.
+
+Method going forward (per Flah): inspect/analyze → fix the real cause → test the fix → back up → done. No guessing.
+dev-test PASS, load-test PASS. Backup: index-*-wormknobfix. TODO Flah: deploy.bat, then eyeball worm + tempo knob.
+
 ### Entry 42 — Overnight: layout verified live, sleep-fix, humanized audio, code comb (2026-07-30)
 Autonomous session while Flah slept. All work verified (dev-test PASS, load-test PASS, learn.js OK, live smoke
 test 0 errors). Everything below is in the LOCAL file and needs ONE deploy.

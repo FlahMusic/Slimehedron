@@ -64,15 +64,13 @@ header .spacer{flex:1}
 #newShapeBtn{display:none} /* kids-only control: studio picks shapes deliberately */
 .mode-play #newShapeBtn{display:inline-flex}
 /* play-mode tempo: turtle=slow, rabbit=fast (the standard kids-music tempo metaphor), tucked under Clear top-right */
-/* compact rotary tempo dial — lives in the header next to pause. turn between turtle (slow) and rabbit (fast). */
+/* tempo dial — the app's standard rknob (drag up/down) flanked by turtle/rabbit, in the header next to pause. */
 #tempoDial{display:none}
-.mode-play #tempoDial{display:flex;align-items:center;gap:6px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none;
-  background:rgba(255,255,255,.6);border:2px solid rgba(255,255,255,.9);border-radius:999px;padding:4px 10px;box-shadow:0 4px 12px rgba(120,110,160,.24);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.mode-play #tempoDial{display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.6);border:2px solid rgba(255,255,255,.9);border-radius:999px;padding:6px 13px;box-shadow:0 4px 12px rgba(120,110,160,.24);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 #tempoDial .td-ico{font-size:17px;line-height:1;opacity:.75}
-#tempoDial svg{display:block;overflow:visible}
-#tempoDial .td-track{fill:none;stroke:rgba(120,110,160,.18);stroke-width:5}
-#tempoDial .td-fill{fill:none;stroke:var(--lav);stroke-width:5;stroke-linecap:round;transform:rotate(-90deg);transform-origin:28px 28px;stroke-dasharray:132;stroke-dashoffset:66;transition:stroke-dashoffset .08s}
-#tempoDial .td-knob{fill:#fff;stroke:var(--lav);stroke-width:2.5;transform-origin:28px 28px;transition:transform .08s}
+#tempoKnob{width:34px;height:34px} /* a touch bigger than the mixer knobs since it's a headline control */
+#tempoKnob .kdot{width:3.5px;height:14px}
 /* DAW-style editable tempo box (Ableton/Logic convention: type or drag the number) — soft to match the UI */
 .numin{width:58px;font-family:inherit;font-weight:800;font-size:14px;color:var(--ink);text-align:center;
   background:rgba(255,255,255,.75);border:1.5px solid var(--card-brd);border-radius:10px;padding:4px 6px;
@@ -413,9 +411,9 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <span class="spacer"></span>
   <div class="btngroup"><!-- transport + instruments live together as one unbreakable row, every screen size -->
     <div id="tempoDial" title="tempo — turn toward the turtle for slow, the rabbit for fast" aria-label="tempo">
-      <span class="td-ico td-turtle">🐢</span>
-      <svg viewBox="0 0 56 56" width="46" height="46"><circle class="td-track" cx="28" cy="28" r="21"/><circle class="td-fill" cx="28" cy="28" r="21"/><circle class="td-knob" cx="28" cy="7" r="5.5"/></svg>
-      <span class="td-ico td-rabbit">🐰</span>
+      <span class="td-ico">🐢</span>
+      <div id="tempoKnob" class="rknob"><div class="kdot"></div></div>
+      <span class="td-ico">🐰</span>
       <input type="range" id="playBpm" min="40" max="200" value="80" aria-label="tempo" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px">
     </div>
     <button class="btn primary big" id="playBtn" title="play / pause" aria-label="play or pause">▶</button>
@@ -1620,23 +1618,19 @@ function setBpm(v,fromEl){v=Math.max(40,Math.min(220,+v||80));S.bpm=Math.round(v
   const commit=()=>setBpm(nb.value,nb);
   nb.addEventListener('change',commit);
   nb.addEventListener('keydown',e=>{if(e.key==='Enter')nb.blur();});})();
-// rotary tempo dial: knob sweeps a 270° arc (turtle→rabbit). drag around it, or drag up/down. syncs to the tempo brain.
-(function(){const dial=$("tempoDial");if(!dial)return;const knob=dial.querySelector('.td-knob'),fill=dial.querySelector('.td-fill'),svg=dial.querySelector('svg');
-  const MIN=40,MAX=200,ARC=270,START=-135; // sweep from -135° to +135°
-  function render(){const bpm=Math.max(MIN,Math.min(MAX,S.bpm||80)),t=(bpm-MIN)/(MAX-MIN);
-    knob.style.transform='rotate('+(START+t*ARC)+'deg)';
-    fill.style.strokeDashoffset=String(132-t*132);}
+// tempo knob: uses the SAME rknob interaction as every other knob in the app (drag up/down, dot rotates -135°..+135°).
+// no per-frame ring redraw, no atan2 tracking = smooth, no jitter. drives the hidden #playBpm which feeds the one tempo brain.
+(function(){const k=$("tempoKnob");if(!k)return;const dot=k.querySelector('.kdot'),inp=$("playBpm");
+  const MIN=+inp.min||40,MAX=+inp.max||200;
+  function render(){const t=(Math.max(MIN,Math.min(MAX,S.bpm||80))-MIN)/((MAX-MIN)||1);
+    dot.style.transform='translate(-50%,-100%) rotate('+(-135+t*270).toFixed(1)+'deg)';}
   window._tempoDialRender=render;render();
-  let drag=false;
-  function fromPoint(e){const r=svg.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
-    let a=Math.atan2((e.clientY)-cy,(e.clientX)-cx)*180/Math.PI+90; // 0° = up
-    if(a>180)a-=360; a=Math.max(-135,Math.min(135,a));
-    const t=(a-START)/ARC;setBpm(Math.round(MIN+t*(MAX-MIN)));render();}
-  dial.addEventListener('pointerdown',e=>{drag=true;dial.setPointerCapture(e.pointerId);fromPoint(e);e.preventDefault();});
-  dial.addEventListener('pointermove',e=>{if(drag)fromPoint(e);});
-  dial.addEventListener('pointerup',()=>drag=false);dial.addEventListener('pointercancel',()=>drag=false);
-  // wheel to fine-tune
-  dial.addEventListener('wheel',e=>{e.preventDefault();setBpm((S.bpm||80)+(e.deltaY<0?2:-2));render();},{passive:false});
+  let drag=false,ly=0;
+  k.addEventListener('pointerdown',e=>{drag=true;ly=e.clientY;k.setPointerCapture(e.pointerId);e.preventDefault();});
+  k.addEventListener('pointermove',e=>{if(!drag)return;const dy=ly-e.clientY;ly=e.clientY; // drag up = faster (matches all other knobs)
+    setBpm(Math.round((S.bpm||80)+dy*(MAX-MIN)/170));render();});
+  k.addEventListener('pointerup',()=>drag=false);k.addEventListener('lostpointercapture',()=>drag=false);
+  k.addEventListener('wheel',e=>{e.preventDefault();setBpm(Math.round((S.bpm||80)+(e.deltaY<0?2:-2)));render();},{passive:false});
 })();
 $("octs").addEventListener('input',e=>{S.octs=parseInt(e.target.value);$("octsV").textContent=e.target.value;rebuild();updateScaleNote();});
 bindRange("chaos","chaos",v=>v/100);
@@ -2009,7 +2003,7 @@ function mark(inp){inp.dataset.touched=performance.now();}
 function enhanceKnobs(){
   document.querySelectorAll('input[type=range]').forEach(inp=>{
     inp.addEventListener('pointerdown',()=>mark(inp)); // EVERY slider marks as human-touched — the wobble must never fight your hand (swing lived in advBar and never got marked = the snap-back bug)
-    if(inp.closest('#advBar')||inp.closest('#triMixBar'))return; // top-bar sliders stay plain — no redundant/clutter knobs
+    if(inp.closest('#advBar')||inp.closest('#triMixBar')||inp.id==='playBpm')return; // top-bar sliders + the tempo knob (built manually) stay plain — no duplicate knob
     const min=parseFloat(inp.min)||0,max=parseFloat(inp.max)||100;
     const k=document.createElement('div');k.className='rknob';k.title=inp.title||'';const hue=hashHue(inp.id||'x');
     k.style.setProperty('--kc',`hsl(${hue},68%,82%)`);k.style.setProperty('--kc2',`hsl(${hue},58%,62%)`);
@@ -2237,18 +2231,27 @@ const chillers=[]; // full-view slimes with cursor physics
     if(S.playing&&!drumOn)wBeat+=dt*S.bpm/60000;
     const mob=matchMedia('(max-width:820px)').matches, rc=cv.getBoundingClientRect();
     let wPx,hPx,leftPx;
-    if(mob){wPx=70;hPx=Math.round(innerHeight*0.42);leftPx=4;}
-    else{const ar=asideEl.getBoundingClientRect(),gap=ar.left-rc.right;
-      wPx=Math.min(112,Math.max(70,gap-14));hPx=Math.round(innerHeight*0.52);
-      leftPx=gap>=84?Math.round(rc.right+(gap-wPx)/2):innerWidth-wPx-4;}
-    el.style.width=wPx+'px';el.style.height=hPx+'px';el.style.left=leftPx+'px';
+    // right boundary = the drum-button column if it's showing (play mode), else the sidebar, else the screen edge.
+    // the worm sits in the empty gap between the tank and that boundary, and NEVER under the drum buttons.
+    // #psDrums is position:fixed, so offsetParent is always null — check its real rendered box instead.
+    const drumsEl=document.getElementById('psDrums');
+    let dr=null; if(drumsEl){const b=drumsEl.getBoundingClientRect(); if(b.width>0&&b.height>0&&getComputedStyle(drumsEl).display!=='none')dr=b;}
+    const asideR=asideEl.getBoundingClientRect();
+    const rightBound=dr?dr.left:(asideR.width?asideR.left:innerWidth);
+    if(mob){wPx=64;hPx=Math.round(innerHeight*0.40);leftPx=4;}
+    else{const gap=rightBound-rc.right;
+      wPx=Math.min(104,Math.max(64,gap-24));hPx=Math.round(innerHeight*0.52);
+      leftPx=Math.round(rc.right+Math.max(8,(gap-wPx)/2));                 // centered in the gap, left of the drums
+      if(leftPx+wPx>rightBound-10)leftPx=rightBound-wPx-10;}               // hard stop: never cross into the drum column
+    el.style.width=wPx+'px';el.style.height=hPx+'px';el.style.left=leftPx+'px';el.style.right='auto';
     // ---- ground cycle: rest ~4 bars (only the head pokes), then rise & wiggle ~8 bars, loop ----
     const bt=beats(), bar=Math.floor(bt/4), cyc=((bar%12)+12)%12, up=cyc>=4;
     rise+=((up?1:0)-rise)*0.045;                                   // smooth emerge / sink
-    el.style.transform='translateY('+((1-rise)*hPx*0.74).toFixed(1)+'px)'; // sink into the dirt, head still poking
+    // resting: sink only ~55% so the head + a bit of neck stay visible and can wiggle (was 74% = basically hidden)
+    el.style.transform='translateY('+((1-rise)*hPx*0.55).toFixed(1)+'px)';
     const autoDbl=up&&(((cyc-4)&3)===3);                          // every 4th wiggle bar = 1 bar of double-time
     const dbl=(now<dblUntil)||autoDbl;setFace(dbl);
-    const u=bt*(dbl?2:1), wig=0.22+0.78*rise;                     // calm underground, full wiggle up top
+    const u=bt*(dbl?2:1), wig=0.42+0.58*rise;                     // resting head still wiggles noticeably, full wiggle up top
     let sw=Math.sin(u*Math.PI);if(dbl)sw=Math.sign(sw)*Math.pow(Math.abs(sw),0.6);
     const amp=(dbl?48:34)*wig, hue=((150+Math.floor(bt)*26)%360+360)%360, span=VB_H-HEAD_Y-20;
     const pts=[];
