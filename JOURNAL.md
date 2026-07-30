@@ -80,6 +80,33 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 44 — COF relocated+enlarged, slimes balanced, background-tab clock fix (2026-07-30)
+All inspected on the live DOM first, then fixed, then measured. No guessing.
+
+1. COF HIDING BEHIND WAVE BUTTONS — measured: COF bottom-left (x14-118, y361-465) overlapped the wave-button
+   column (x18-92, y96-434) by 74×73 on short screens. Per Flah's direction (his red circle: under the title),
+   moved COF to top-left UNDER the "slimehedron" title (left:96, top:62 — right of the wave column, verified
+   CLEARS the wave buttons, x96-228). Made it BIGGER (132px, was 104), TRANSLUCENT (ring rgba .28, opacity .92)
+   so it blends with the bg, and READABLE: labels 8px→10px, center key hub 13px→26px (big glanceable letter).
+   Active key highlights in accent purple. Mobile: 104px, top-left under title.
+
+2. SLIMES ALL ON THE LEFT — root cause: SPOTS peeker array was 4 bottom + 3 left + 2 right (left-heavy), AND the
+   fillMargins side-bands can't place anyone when the tank spans nearly full width (negative margin). Also found
+   chiller() is defined-but-never-called (dead code, harmless). Rebalanced SPOTS to 5 bottom (spread 14%→88%
+   full width) + 3 left + 3 right (1:1). Fixed the phone subset indices for the new 11-spot array. Simulated:
+   3 left / 3 right / full-width bottom = balanced.
+
+3. BACKGROUND-TAB CLOCK LAG — root cause + AUTHORITATIVE fix: the drum scheduler looked ahead only 120ms, but
+   browsers throttle background timers (the worker heartbeat can drop to ~1s), so it woke up late and 120ms
+   couldn't bridge the gap → intermittent lag. Per Chris Wilson's "A Tale of Two Clocks" (web.dev/articles/
+   audio-scheduling — THE canonical Web Audio scheduling reference): the audio clock (AC.currentTime) stays
+   sample-accurate in background; you just widen the scheduling lookahead to cover irregular JS wake-ups.
+   FIX: lookahead = 1.2s when document.hidden, 120ms when visible. Pre-schedules enough audio to bridge throttled
+   heartbeats = no gaps, no drift, zero cost when foreground.
+
+dev-test PASS, load-test PASS. COF placement verified clears buttons on live DOM. Backup: index-*-cofslimeclock.
+TODO Flah: deploy.bat, then check COF (readable, under title, off buttons), slimes both sides, and tab-out clock.
+
 ### Entry 43 — ROOT-CAUSED the worm + tempo knob (tested on live DOM, no guessing) (2026-07-30)
 Flah (rightly) called out that the worm was STILL on the drums after many attempts, and the tempo dial looked
 wrong + laggy. Stopped guessing at CSS — inspected the live element to find the real causes.

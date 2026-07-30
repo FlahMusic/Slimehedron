@@ -258,22 +258,22 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 #chordPill{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--card-brd);border-radius:12px;padding:6px 14px 8px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:var(--shadow);text-align:center;pointer-events:none;min-width:96px} /* floats over the tank, never catches a click */
 #chordPill b{font-size:17px;letter-spacing:.5px}
 #chordNext{font-size:11px;color:var(--ink-soft);font-weight:700;margin-left:8px}
-/* circle of fifths — pinned bottom-left ABOVE the keyboard button, OFF the play field (never over the geometry). */
-#cofWheel{position:fixed;left:14px;bottom:64px;top:auto;transform:none;width:104px;height:104px;pointer-events:none;z-index:30;filter:drop-shadow(0 4px 12px rgba(0,0,0,.14))}
+/* circle of fifths — top-left, right under the "slimehedron" title. bigger + translucent so it blends with the bg
+   but still clearly highlights the active key, with a big readable key letter in the middle. never over the play field. */
+#cofWheel{position:fixed;left:96px;top:62px;bottom:auto;transform:none;width:132px;height:132px;pointer-events:none;z-index:30;opacity:.92;filter:drop-shadow(0 3px 10px rgba(120,110,160,.16))}
 .mode-studio #cofWheel{pointer-events:auto} /* studio: you can click a key */
 body.kb-open #cofWheel{display:none} /* keybed open = hide it, no crowding */
-@media (max-width:820px){#cofWheel{width:80px;height:80px;left:8px;bottom:58px}} /* phone: smaller, still tucked in the corner above the keyboard toggle */
+@media (max-width:820px){#cofWheel{width:104px;height:104px;left:70px;top:50px}} /* phone: under the title, right of the wave buttons */
 #cofSvg{width:100%;height:100%;overflow:visible}
-#cofSvg .cofRing{fill:var(--card);stroke:var(--card-brd);stroke-width:1}
+#cofSvg .cofRing{fill:rgba(255,255,255,.28);stroke:rgba(255,255,255,.6);stroke-width:1} /* translucent — blends with the bg */
 #cofSvg .cofNode{cursor:default;transition:none}
 .mode-studio #cofSvg .cofNode{cursor:pointer}
-#cofSvg .cofDot{fill:var(--card-brd);transition:r .25s ease,fill .25s ease}
-#cofSvg .cofLbl{font:700 8px system-ui,sans-serif;fill:var(--ink-soft);text-anchor:middle;dominant-baseline:central;pointer-events:none;transition:fill .25s ease}
-#cofSvg .cofActive .cofDot{fill:var(--accent, #7fd4c0)}
-#cofSvg .cofActive .cofLbl{fill:#fff}
-#cofSvg #cofTrail{fill:none;stroke:var(--accent,#7fd4c0);stroke-width:3;stroke-linecap:round;opacity:0}
-#cofSvg #cofHub{font:800 13px system-ui,sans-serif;fill:var(--ink);text-anchor:middle;dominant-baseline:central}
-@media (max-width:820px){#cofWheel{width:96px;height:96px;top:6px}}
+#cofSvg .cofDot{fill:rgba(150,140,185,.35);transition:r .25s ease,fill .25s ease}
+#cofSvg .cofLbl{font:700 10px system-ui,sans-serif;fill:var(--ink);opacity:.7;text-anchor:middle;dominant-baseline:central;pointer-events:none;transition:fill .25s ease} /* readable now (was 8px) */
+#cofSvg .cofActive .cofDot{fill:var(--accent,#b388f0);r:8.5}
+#cofSvg .cofActive .cofLbl{fill:#fff;opacity:1;font-weight:800}
+#cofSvg #cofTrail{fill:none;stroke:var(--accent,#b388f0);stroke-width:3;stroke-linecap:round;opacity:0}
+#cofSvg #cofHub{font:800 26px system-ui,sans-serif;fill:var(--ink);text-anchor:middle;dominant-baseline:central} /* BIG center key letter, easy to read at a glance */
 #chordProg{height:3px;border-radius:2px;background:rgba(170,160,200,.3);margin-top:5px;overflow:hidden}
 #chordProg i{display:block;height:100%;width:0;border-radius:2px;transition:width .12s linear}
 aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px;position:relative;z-index:70}
@@ -1060,7 +1060,11 @@ function humanVoice(v){
 function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums, bass, pads & midi
   if((!drumOn&&!bandOn)||!AC)return;
   const sig=SIGS[drumSig],bar=drumBar(),loop=bar*4;
-  while(drumTime<AC.currentTime+0.12){
+  // schedule-ahead window: 120ms normally, but WIDER when the tab is hidden — browsers throttle background timers
+  // (the worker heartbeat can drop to ~1s), so we pre-schedule enough audio to bridge those irregular wake-ups.
+  // the Web Audio clock (AC.currentTime) stays sample-accurate regardless, so wider lookahead = no gaps, no drift.
+  const _look=document.hidden?1.2:0.12;
+  while(drumTime<AC.currentTime+_look){
     const st=drumStep%loop, inBar=st%bar, barI=(st/bar)|0, hum=0.92+Math.random()*0.16; // ±8% human wobble on every hit
     if(inBar===0)bandBar(drumTime,barI);
     if(bandOn){const set=(drumSig==='16')?(KITBASS[drumKit]||BASSGROOVES):null,bp=set?set[_bassGroove%set.length]:BASSPAT[drumSig],tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));if(tok)bassNote(tok,drumTime,hum);}
@@ -2105,11 +2109,12 @@ const GEO={
   left:{anchor:{left:'0'},rest:`translateX(${-(SW-PEEK)}px) rotate(90deg)`,hide:`translateX(${-(SW+OUT)}px) rotate(90deg)`},
   right:{anchor:{right:'0'},rest:`translateX(${SW-PEEK}px) rotate(-90deg)`,hide:`translateX(${SW+OUT}px) rotate(-90deg)`}
 };
+// evenly balanced: bottom slimes spread across the FULL width, and equal left/right so no side looks empty.
 const SPOTS=[
-  {edge:'bottom',cross:{left:'12%'},fill:'--lav'},{edge:'bottom',cross:{left:'28%'},fill:'--pink'},
-  {edge:'bottom',cross:{left:'46%'},fill:'--peach'},{edge:'bottom',cross:{left:'63%'},fill:'--yellow'},
-  {edge:'left',cross:{top:'20%'},fill:'--mint'},{edge:'left',cross:{top:'46%'},fill:'--sky'},{edge:'left',cross:{top:'72%'},fill:'--lav'},
-  {edge:'right',cross:{top:'26%'},fill:'--peach'},{edge:'right',cross:{top:'58%'},fill:'--pink'} // the right side gets friends too — no more lonely worm
+  {edge:'bottom',cross:{left:'14%'},fill:'--lav'},{edge:'bottom',cross:{left:'34%'},fill:'--pink'},
+  {edge:'bottom',cross:{left:'54%'},fill:'--peach'},{edge:'bottom',cross:{left:'74%'},fill:'--yellow'},{edge:'bottom',cross:{left:'88%'},fill:'--mint'},
+  {edge:'left',cross:{top:'22%'},fill:'--mint'},{edge:'left',cross:{top:'50%'},fill:'--sky'},{edge:'left',cross:{top:'76%'},fill:'--lav'},
+  {edge:'right',cross:{top:'22%'},fill:'--peach'},{edge:'right',cross:{top:'50%'},fill:'--pink'},{edge:'right',cross:{top:'76%'},fill:'--sky'} // right now matches left, 1:1
 ];
 const chillers=[]; // full-view slimes with cursor physics
 (function(){try{
@@ -2128,7 +2133,8 @@ const chillers=[]; // full-view slimes with cursor physics
     const back=2600+Math.random()*2600;
     setTimeout(()=>{setFace(el,"happy");rest(el);el.dataset.state="out";idle(el);},700+back);}
   // phones get a full crowd too — they were down to two
-  (MOB?[SPOTS[0],SPOTS[2],SPOTS[4],SPOTS[5],SPOTS[6],SPOTS[7],SPOTS[8]]:SPOTS).forEach((s,i)=>{const g=GEO[s.edge];const el=document.createElement('div');el.className="slime peeker peek-"+s.edge;el.style.position="fixed";
+  // phone: a balanced handful (2 bottom, 2 left, 2 right) so the small screen still feels populated on both sides
+  (MOB?[SPOTS[0],SPOTS[3],SPOTS[5],SPOTS[7],SPOTS[8],SPOTS[10]]:SPOTS).forEach((s,i)=>{const g=GEO[s.edge];const el=document.createElement('div');el.className="slime peeker peek-"+s.edge;el.style.position="fixed";
     Object.assign(el.style,g.anchor,s.cross);let _r=g.rest,_h=g.hide;if(s.edge==='bottom'){const a=' rotate('+(Math.random()*24-12).toFixed(0)+'deg)';_r+=a;_h+=a;} // upright, each at its own lil angle
     el.dataset.rest=_r;el.dataset.hidden=_h;el.dataset.fill=s.fill;el.dataset.state="out";el.dataset.face="happy";
     el.innerHTML=`<div class="bob" style="animation-delay:${(i*0.35).toFixed(2)}s">${slimeSVG(cssVar(s.fill),"happy")}</div>`;
