@@ -80,6 +80,29 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 40 — License finalized + ko-fi wired (2026-07-30)
+- Flah added GitHub's canonical AGPL via the license picker AND dropped the full text locally as LICENSE.txt
+  (661 lines, verified real AGPL-3.0). Now 3 non-conflicting files: LICENSE.txt (legal text), LICENSE.md
+  (plain-english explainer, updated to point at LICENSE.txt), NOTICE (boilerplate). deploy.bat force-push is now
+  safe — LICENSE.txt lives locally so it won't be wiped.
+- Wired ko-fi: splash "☕ support" link → https://ko-fi.com/flahmusic (was github placeholder).
+- dev-test green. Ready to deploy.
+
+### Entry 39 — AGPL-3.0 license + copyright notices + donation-ready credit (2026-07-29)
+- Locked down IP. Repo had NO license = legal limbo (can't enforce). Added AGPL-3.0: free forever, but anyone
+  who copies/modifies/web-hosts it MUST keep it open-source + credit Flah — blocks scammers reskinning/selling it.
+- Files: LICENSE.md (plain-language terms + AGPL ref + explicit "donations are NOT a sale, don't affect license"),
+  NOTICE (standard AGPL copyright boilerplate). Added AGPL copyright header comment to index.html, landing.html,
+  learn.js (travels with the single-file app when copied). Splash now shows quiet "© 2026 FlahMusic · free & open ·
+  source · ☕ support" line — support link is a PLACEHOLDER (github) to swap for Ko-fi/GitHub Sponsors.
+- Confirmed for Flah: donations/coffee money do NOT nullify AGPL (Sonic Pi/Blender model — free code + tip jar).
+- Still need (manual, told Flah): (1) add the exact full AGPL text as a file named LICENSE via GitHub's
+  "Add file → license picker" (canonical text, can't fetch in sandbox). (2) make a Ko-fi or GitHub Sponsors
+  account, swap the spSupport href. (3) optional later: register with US Copyright Office (~$65) for max remedies.
+- Social/GTM answers given: YouTube Shorts #1 for new/education accounts (highest small-account reach + evergreen
+  search tail), TikTok #2, skip Reels. Post native video not links; human framing not ads; r/musiceducation +
+  music-teacher FB groups for niche. dev-test green. Backup: index-*-agpl.
+
 ### Entry 38 — Live QA pass, footer overlap fix (2026-07-29)
 - Viewed live landing + app splash in browser (desktop 1440 + mobile 390). App mode-select splash = clean,
   demo-ready (big glasses slime, 3 clear doors, share top-right sits well). Landing hero clean.

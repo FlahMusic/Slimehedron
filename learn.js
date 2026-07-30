@@ -1,3 +1,5 @@
+// Slimehedron — Copyright © 2026 FlahMusic (Flah). AGPL-3.0. Any distributed/web-hosted
+// version must stay open-source under the same license + keep credit. github.com/FlahMusic/Slimehedron
 // ================= slimehedron LEARN MODE =================
 // four courses on colored panes · pixel-art scene generator (7 seeded looks per mode) ·
 // iconic public-domain melodies · never the same track twice in a row.

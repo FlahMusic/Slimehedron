@@ -1,4 +1,11 @@
 <!doctype html>
+<!--
+  Slimehedron — Copyright © 2026 FlahMusic (Flah).
+  Free & open-source under the GNU Affero General Public License v3 (AGPL-3.0).
+  You may use, share, and modify this — but any distributed or web-hosted version
+  MUST stay open-source under the same license and keep this notice + credit intact.
+  Full terms: https://www.gnu.org/licenses/agpl-3.0.txt  ·  https://github.com/FlahMusic/Slimehedron
+-->
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
@@ -270,6 +277,8 @@ aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;pa
 .mode-play .peek-left,.mode-play .peek-right{display:none} /* play: the candy buttons own the side edges — side peekers would collide, so they step out */
 /* daily streak badge on the splash doors */
 .streakBadge{margin-top:16px;font-size:14px;font-weight:600;color:#5a4f78;background:rgba(255,255,255,.6);border:1.5px solid rgba(255,255,255,.85);border-radius:999px;padding:7px 18px;box-shadow:var(--shadow);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.spCredit{position:fixed;bottom:12px;left:0;right:0;text-align:center;font-size:11.5px;font-weight:600;color:rgba(90,79,120,.6)} /* quiet credit + tip jar on the splash */
+.spCredit a{color:rgba(90,79,120,.8);text-decoration:none;font-weight:700} .spCredit a:hover{text-decoration:underline}
 .streakBadge b{color:#e0863f;font-size:17px}
 aside::-webkit-scrollbar{width:8px}
 aside::-webkit-scrollbar-thumb{background:rgba(180,170,210,.5);border-radius:8px}
@@ -2498,7 +2507,8 @@ window.slimeStar=function(){ // any little win → a star; the FIRST star of a n
     '<div class="modeCard mc-play'+(last==='play'?' last':'')+'" data-m="play"><b>play</b><span>have fun!</span></div>'+
     '<div class="modeCard mc-studio'+(last==='studio'?' last':'')+'" data-m="studio"><b>studio</b><span>make anything</span></div>'+
     '</div>'+
-    '<div class="streakBadge"></div>'; // the come-back hook: your streak greets you at the doors
+    '<div class="streakBadge"></div>'+
+    '<div class="spCredit">© 2026 FlahMusic · free &amp; open · <a href="https://github.com/FlahMusic/Slimehedron" target="_blank" rel="noopener">source</a> · <a id="spSupport" href="https://ko-fi.com/flahmusic" target="_blank" rel="noopener">☕ support</a></div>'; // credit + tip jar
   document.body.appendChild(sp);renderStreak();
   function boot(m){sp.classList.add('gone');setTimeout(()=>sp.remove(),600);
     enableMotion();initAudio();if(AC.state==="suspended")AC.resume();
