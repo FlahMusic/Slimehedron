@@ -80,6 +80,42 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 42 — Overnight: layout verified live, sleep-fix, humanized audio, code comb (2026-07-30)
+Autonomous session while Flah slept. All work verified (dev-test PASS, load-test PASS, learn.js OK, live smoke
+test 0 errors). Everything below is in the LOCAL file and needs ONE deploy.
+
+1. LAYOUT FIXES VERIFIED ON LIVE DEPLOY (Flah pushed entry-41 changes; I confirmed on the real page + screenshot):
+   ✓ tempo rotary dial in header left of pause (was 312px slider)
+   ✓ share + clear side-by-side top-right, NOT stacked (the #topRight flex container works — my earlier
+     "still overlapping" live tests were a polluted-DOM harness quirk, exactly as suspected)
+   ✓ circle-of-fifths bottom-left, OFF the geometry
+   ✓ hint reworded, worm clear of drum buttons, slimes scattered more evenly
+   (NOTE: getBoundingClientRect via the Chrome extension gave flaky/contradictory numbers for `right`-positioned
+   elements — the SCREENSHOT was the reliable judge. Confirmed good visually.)
+
+2. PHONE-SLEEP AUDIO DROP FIXED (research-backed):
+   - Added Screen Wake Lock (navigator.wakeLock) — keeps the screen awake while playing so the OS never naps the
+     audio. Supported modern Chrome/Android + iOS 16.4+. Graceful no-op if denied/unsupported.
+   - acquireWake/releaseWake tied to setPlaying (hold lock only while playing). Re-acquired on return via
+     visibilitychange/focus/pageshow (auto-released when tab hides).
+   - wakeAudio() on return resumes AC + restarts the silent keepalive so it SELF-HEALS without a manual refresh.
+   - iOS caveat: Safari still hard-suspends AudioContext ~27-30s after backgrounding (Apple limitation, no full
+     fix) — but now it recovers on return instead of needing a refresh, and wake lock prevents the sleep entirely.
+
+3. HUMANIZED DRUMS (research: real drummers ghost hats, lock kicks):
+   - New humanVoice(v) adds per-instrument velocity + micro-timing variance, routed through dHit:
+     hats/cymbals ±22% vel / ±5.5ms (ghosting), kick ±5% / ±1.4ms (tight), snare in between. Slow tempo breathes
+     a touch more. All timing <8ms = musical, never sloppy. dHit clamps t≥now so nothing schedules in the past.
+   - Considered PolyBLEP anti-aliasing oscillators but SKIPPED: needs an AudioWorklet (lag risk on mobile) and the
+     existing 14kHz master lowpass already tames the worst aliasing. Not worth the risk per the "no added lag" ask.
+
+4. CODE COMB: no leaks (timers debounced/intentional), tempo dial wired to the one tempo brain + MIDI-clock safe,
+   share/clear reparent is idempotent, learn.js clean. 3 console.warn are intentional guards. No bugs found to fix.
+
+MORNING TODO FOR FLAH: run deploy.bat to push the sleep-fix + humanized drums live (the layout fixes are already
+up). Then on your phone: play a bit, lock the screen / let it sleep, confirm audio keeps going or recovers on
+unlock without a refresh. Backup: index-*-nightsession.
+
 ### Entry 41 — Play-mode layout cleanup (2026-07-30)
 - Flah flagged real amateur-hour issues; MEASURED them live first (share/clear overlap 64×35, tempo bar 312px
   huge, COF wheel sitting ON the geometry, worm box poking into drum col). Fixes:

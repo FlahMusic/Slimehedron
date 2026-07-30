@@ -835,7 +835,10 @@ const KITTONE={ // same engine, different shells — so chip vs rock actually SO
   conga:{kf:150,ke:45,kd:0.3,kv:0.85,sf:1800,sd:0.09,sb:190,hf:7500,hd:0.03},
   beep:{kf:185,ke:62,kd:0.18,kv:0.78,sf:2300,sd:0.06,sb:215,hf:9000,hd:0.024}
 };
-function dHit(v,t,a){a=a||1;sendMidiAt(DRUMN[v]||38,Math.min(127,(90*a)|0),S.chDrum,t,0.15);
+function dHit(v,t,a){a=a||1;
+  // per-instrument human feel: nudge velocity + micro-timing (hats ghost, kick locks). t stays ≥ now so it never schedules in the past.
+  if(typeof humanVoice==='function'){const h=humanVoice(v);a*=h.v;t=Math.max(AC.currentTime,t+h.t);}
+  sendMidiAt(DRUMN[v]||38,Math.min(127,(90*a)|0),S.chDrum,t,0.15);
   if(v==='K'){const o=AC.createOscillator(),g=AC.createGain(),T=KITTONE[drumKit]||KITTONE.chip;o.type='sine'; // kick: pitch dive + body, sized per kit
     o.frequency.setValueAtTime(T.kf,t);o.frequency.exponentialRampToValueAtTime(T.ke,t+Math.min(0.12,T.kd*0.35));
     g.gain.setValueAtTime(0.85*a*T.kv,t);g.gain.exponentialRampToValueAtTime(0.001,t+T.kd);
@@ -1044,6 +1047,17 @@ function bassNote(tok,t,hum){ // chip bass pluck: square through a warm LP + tri
     o.connect(lp);sub.connect(sg);sg.connect(lp);lp.connect(g);g.connect(bandBus);
     o.start(t);o.stop(t+0.32);sub.start(t);sub.stop(t+0.32);}
   sendMidiAt(Math.round(S.root+c/100)-12,96,S.chBass,t,0.25);
+}
+// per-instrument humanization (research: real drummers vary hats a LOT for ghosting, keep kicks tight; and nudge
+// timing a hair off the grid — fast grids stay tight, slow grids breathe). returns {v:velMult, t:secondsOffset}.
+// classifies by drum voice: hi=hats (loose), lo=kick (tight), mid=snare (medium). keeps musical intent, just adds life.
+function humanVoice(v){
+  const loose = (v==='h'||v==='C'||v==='c'); // hats/cymbals ghost the most
+  const tight = (v==='K');                    // kick stays solid
+  const velVar = loose?0.22 : tight?0.05 : 0.13;                 // ±velocity spread by instrument
+  const timeVar = (loose?0.006 : tight?0.0015 : 0.004);          // seconds: hats drift, kick locks (scaled to tempo below)
+  const tempoScale = Math.min(1.4, 110/Math.max(60,S.bpm));      // slow tempo → a touch more human drift; fast → tighter
+  return { v: 1+(Math.random()*2-1)*velVar, t:(Math.random()*2-1)*timeVar*tempoScale };
 }
 function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums, bass, pads & midi
   if((!drumOn&&!bandOn)||!AC)return;
@@ -1573,7 +1587,16 @@ const _keep=document.createElement('audio');
   v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);ws(36,'data');v.setUint32(40,n*2,true);
   _keep.src=URL.createObjectURL(new Blob([b],{type:'audio/wav'}));_keep.loop=true;_keep.volume=0.01;_keep.setAttribute('playsinline','');})();
 addEventListener('pointerdown',()=>{if(S.playing&&_keep.paused)_keep.play().catch(()=>{});},{capture:true}); // autoplay rules want a gesture; any tap re-arms it
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&AC&&AC.state==='suspended')AC.resume();}); // coming back = wake the audio if the OS napped it
+// SCREEN WAKE LOCK: keep the phone from sleeping while the music plays, so it never naps the audio in the first place.
+// (supported on modern Chrome/Android + iOS 16.4+. auto-released when the tab hides, so we re-acquire on return.)
+let _wakeLock=null;
+async function acquireWake(){try{if('wakeLock' in navigator && !document.hidden && S.playing){_wakeLock=await navigator.wakeLock.request('screen');
+  _wakeLock.addEventListener('release',()=>{_wakeLock=null;});}}catch(e){_wakeLock=null;}} // denied/unsupported = graceful no-op
+function releaseWake(){try{if(_wakeLock){_wakeLock.release();_wakeLock=null;}}catch(e){}}
+// coming back to the app: resume the audio if the OS napped it, and re-grab the wake lock (both self-heal, no refresh needed).
+function wakeAudio(){if(AC&&AC.state==='suspended')AC.resume().catch(()=>{});if(S.playing){if(_keep.paused)_keep.play().catch(()=>{});acquireWake();}}
+document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseWake();else wakeAudio();});
+addEventListener('focus',wakeAudio); addEventListener('pageshow',wakeAudio); // extra nets: some phones fire focus/pageshow but not visibilitychange
 if('mediaSession' in navigator){
   navigator.mediaSession.metadata=new MediaMetadata({title:'slime jam',artist:'slimehedron'});
   navigator.mediaSession.setActionHandler('play',()=>{if(AC&&AC.state==='suspended')AC.resume();setPlaying(true);_keep.play().catch(()=>{});});
@@ -1667,6 +1690,7 @@ updateScaleNote();
 
 function setPlaying(p){S.playing=p;$("playBtn").textContent=p?"⏸ pause":"▶ play";$("playBtn").classList.toggle('on',p);if(p){lastTick=performance.now();if(window._wormReset)window._wormReset();}
   try{if(p)_keep.play().catch(()=>{});else _keep.pause();}catch(e){} // media session mirrors the transport
+  if(typeof acquireWake==='function'){if(p)acquireWake();else releaseWake();} // hold the screen awake only while playing
   if(AC&&hissG)hissG.gain.setTargetAtTime(p?S.warm*0.0005:0,AC.currentTime,0.6);} // hiss fades in with the music, gone when paused
 $("drumBtn").addEventListener('click',()=>{initAudio();if(AC.state==="suspended")AC.resume();initDrums();
   drumOn=!drumOn;$("drumBtn").classList.toggle('on',drumOn);
