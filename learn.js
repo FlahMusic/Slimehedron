@@ -185,7 +185,7 @@ window.LEARN=(function(){
       ['rhythm','keeping a steady beat',((prog.r|0)>=8?'✓ mastered':(prog.r|0)+'/8 on-beat taps')],
       ['piano','note names, scales & modes',Object.keys(prog.pl||{}).length+'/8 lessons · '+pianoStars+' ⭐ in scale games'],
       ['intervals','hearing the distance between notes',(Math.min(prog.iv|0,10))+' heard correctly'],
-      ['chords','how harmony is built',(prog.ch|0)+'/9 chord types explored'],
+      ['chords','triads, inversions, 7ths — played by hand',(prog.ch|0)+'/12 chords played (not just heard)'],
       ['modes','the seven musical moods',modesGot+'/7 matched by ear']
     ];
     ov.innerHTML=`<div class="lCard"><h3>for grown-ups</h3>
@@ -216,36 +216,58 @@ window.LEARN=(function(){
       <div class="lRow"><button class="btn primary" data-a="plsn" data-l="1" data-r="0">next: major scales \u25b8</button><button class="btn" data-a="pmenu">\u2039 lessons</button></div></div>`;
     prog.pl=prog.pl||{};prog.pl[0]=1;saveP(); // lesson 1 complete: keys found, black keys met
     decorate([1,3,6,8,10]);onKey=s=>pianoPlay(s);}
-  // ============ course 2: chords ============
+  // ============ course 2: chords — STAGED like a real method book, and you must PLAY each chord to move on ============
+  // each row: [name, kid-desc, semitone tones (from C), note spelling, stage label]. Stages unfold hardest-last:
+  // 1) major/minor triads  2) their inversions  3) suspended  4) 7th chords  5) augmented/diminished colour.
   const CHORDS=[
-    ['C major','bright and happy',[0,4,7],'C · E · G'],
-    ['C minor','middle note down one key — now it is sad',[0,3,7],'C · E♭ · G'],
-    ['C sus4','middle note up to F — it wants to move',[0,5,7],'C · F · G'],
-    ['C sus2','middle note down to D — open sky',[0,2,7],'C · D · G'],
-    ['C diminished','minor + top note down — spooky',[0,3,6],'C · E♭ · G♭'],
-    ['C augmented','major + top note up — like a dream',[0,4,8],'C · E · G♯'],
-    ['C major 7','major + one more note — warm jazz',[0,4,7,11],'C · E · G · B'],
-    ['C minor 7','minor + one more note — smooth',[0,3,7,10],'C · E♭ · G · B♭'],
-    ['C7','major + a low 7 — blues power',[0,4,7,10],'C · E · G · B♭']
+    // — stage 1: the two triads everything is built from —
+    ['C major','bright & happy — the sunshine chord',[0,4,7],'C · E · G','triads'],
+    ['C minor','slide the middle note down one — now it is sad',[0,3,7],'C · E♭ · G','triads'],
+    // — stage 2: inversions (same 3 notes, re-stacked) —
+    ['C major · 1st inversion','same notes, lowest one jumps up an octave — E on the bottom',[4,7,12],'E · G · C','inversions'],
+    ['C major · 2nd inversion','do it again — now G is on the bottom',[7,12,16],'G · C · E','inversions'],
+    ['C minor · 1st inversion','the sad chord, flipped — E♭ on the bottom',[3,7,12],'E♭ · G · C','inversions'],
+    // — stage 3: suspended (no happy/sad 3rd — it hangs, wanting to move) —
+    ['C sus2','middle note DOWN to D — wide open sky',[0,2,7],'C · D · G','suspended'],
+    ['C sus4','middle note UP to F — it leans, wanting home',[0,5,7],'C · F · G','suspended'],
+    // — stage 4: 7th chords (add a 4th note for colour) —
+    ['C major 7','major + one more on top — dreamy jazz',[0,4,7,11],'C · E · G · B','7th chords'],
+    ['C minor 7','minor + one more — smooth & cool',[0,3,7,10],'C · E♭ · G · B♭','7th chords'],
+    ['C7 (dominant)','major + a LOW 7 — bluesy, pulls hard home',[0,4,7,10],'C · E · G · B♭','7th chords'],
+    // — stage 5: the colour chords —
+    ['C augmented','major + top note UP — floating, unresolved',[0,4,8],'C · E · G♯','colour'],
+    ['C diminished','minor + top note DOWN — spooky & tense',[0,3,6],'C · E♭ · G♭','colour']
   ];
-  let cIdx=0;
+  let cIdx=0,_chDone=false,_chHit=[]; // _chHit tracks which tones the child has correctly pressed this lesson
   function chordCourse(i){stopJam();cIdx=Math.max(0,Math.min(CHORDS.length-1,i||0));
-    const[name,desc,tones,spell]=CHORDS[cIdx];
+    const[name,desc,tones,spell,stage]=CHORDS[cIdx];
+    _chDone=false;_chHit=[];
     ov.innerHTML=`<div class="lCard"><h3>chords · ${name}</h3>
-      <p class="lSub">${desc}.</p>
-      ${pianoHTML(PN)}
-      <div class="lFeed">${spell}</div>
+      <p class="lSub"><i style="opacity:.6;font-style:normal;font-weight:800;letter-spacing:.4px;text-transform:uppercase;font-size:10px">${stage} · ${cIdx+1}/${CHORDS.length}</i><br>${desc}.</p>
+      ${pianoHTML(PN,true)}
+      <div class="lFeed" id="lFeed">${spell}</div>
       <div class="lRow">
         <button class="btn primary" data-a="strum">▸ hear it</button>
         ${cIdx>0?`<button class="btn" data-a="crs" data-c="chords" data-i="${cIdx-1}">◂</button>`:''}
-        ${cIdx<CHORDS.length-1?`<button class="btn primary" data-a="crs" data-c="chords" data-i="${cIdx+1}">next ▸</button>`:''}
-        <button class="btn" data-a="home">‹ back</button></div></div>`;
-    if((prog.ch|0)<cIdx+1){prog.ch=cIdx+1;saveP();}
+        <button class="btn" data-a="home">‹ back</button></div>
+      <div class="lSub" id="chGoal" style="margin-top:8px;font-weight:800;color:#7a5cc0">now YOU play it — press all ${tones.length} slime notes ✨</div></div>`;
     decorate(tones);setLC('chords');
-    const prev=cIdx>0?CHORDS[cIdx-1][2]:null;
-    const moved=prev?tones.filter(x=>!prev.includes(x)):[];
-    moved.forEach(s=>{const k=ov.querySelector(`.pxKeys [data-s="${s}"]`);if(k)k.classList.add('chg');});
-    onKey=s=>{pianoPlay(s);if(moved.includes(s))lf().textContent=CHORDS[cIdx][3]+' — that is the note that moved.';};}
+    // green when they hit a chord tone, red when they miss. all tones hit -> unlock "next".
+    onKey=s=>{pianoPlay(s);
+      if(_chDone)return;
+      if(tones.includes(s)){if(!_chHit.includes(s)){_chHit.push(s);keyFX(s,'ok');
+          document.getElementById('chGoal').textContent=`nice! ${_chHit.length}/${tones.length}`;
+          if(_chHit.length===tones.length)chordCleared();}
+      }else keyFX(s,'err');};}
+  function chordCleared(){_chDone=true;
+    if((prog.ch|0)<cIdx+1){prog.ch=cIdx+1;saveP();} // credit only counts a chord you actually PLAYED
+    const g=document.getElementById('chGoal');if(g){g.textContent='✓ you played it!';g.style.color='#2fa36b';}
+    const tones=CHORDS[cIdx][2];tones.forEach((s,i)=>setTimeout(()=>pianoPlay(s,84),i*70)); // reward: hear the whole chord ring
+    const row=ov.querySelector('.lRow');
+    if(row&&cIdx<CHORDS.length-1){const nx=document.createElement('button');nx.className='btn primary';
+      nx.textContent='next ▸';nx.dataset.a='crs';nx.dataset.c='chords';nx.dataset.i=String(cIdx+1);row.prepend(nx);}
+    else if(row&&cIdx===CHORDS.length-1){const dn=document.createElement('button');dn.className='btn primary';
+      dn.textContent='🏆 finish';dn.dataset.a='home';row.prepend(dn);winJingle();}}
   function strum(){const tones=CHORDS[cIdx][2];
     tones.forEach((s,i)=>setTimeout(()=>pianoPlay(s,92),i*150));
     setTimeout(()=>tones.forEach(s=>pianoPlay(s,80)),tones.length*150+520);}
@@ -745,7 +767,7 @@ window.LEARN=(function(){
     ['chords','linear-gradient(150deg,#cfe2ff,#e9f2ff)',icoKeys([0,2,4]),60,1,'#a6c8ff'],
     ['modes','linear-gradient(150deg,#ffe0ee,#fff0f7)',icoModes,68,0,'#ffb6d6']
   ];
-  function crsProg(c){const T={rhythm:[prog.r|0,8],piano:[Object.keys(prog.pl||{}).length,8],intervals:[Math.min(prog.iv|0,10),10],chords:[prog.ch|0,9],modes:[M7.filter(m=>(prog.g[m.k]|0)>=3).length,7]}[c];
+  function crsProg(c){const T={rhythm:[prog.r|0,8],piano:[Object.keys(prog.pl||{}).length,8],intervals:[Math.min(prog.iv|0,10),10],chords:[prog.ch|0,12],modes:[M7.filter(m=>(prog.g[m.k]|0)>=3).length,7]}[c];
     const f=Math.round(5*Math.min(1,T[0]/T[1]));
     return `<span class="crsDots">${'\u25cf'.repeat(f)}${'\u25cb'.repeat(5-f)}</span>`;}
   const ov=document.createElement('div');ov.id='learnOverlay';ov.hidden=true;document.body.appendChild(ov);

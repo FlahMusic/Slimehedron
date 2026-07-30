@@ -239,6 +239,20 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 #chordPill{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--card-brd);border-radius:12px;padding:6px 14px 8px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:var(--shadow);text-align:center;pointer-events:none;min-width:96px} /* floats over the tank, never catches a click */
 #chordPill b{font-size:17px;letter-spacing:.5px}
 #chordNext{font-size:11px;color:var(--ink-soft);font-weight:700;margin-left:8px}
+/* circle of fifths — floats top-center over the tank. play: read-only key glow. studio: clickable keys. */
+#cofWheel{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:118px;height:118px;pointer-events:none;filter:drop-shadow(0 4px 12px rgba(0,0,0,.18))}
+.mode-studio #cofWheel{pointer-events:auto} /* studio: you can click a key */
+#cofSvg{width:100%;height:100%;overflow:visible}
+#cofSvg .cofRing{fill:var(--card);stroke:var(--card-brd);stroke-width:1}
+#cofSvg .cofNode{cursor:default;transition:none}
+.mode-studio #cofSvg .cofNode{cursor:pointer}
+#cofSvg .cofDot{fill:var(--card-brd);transition:r .25s ease,fill .25s ease}
+#cofSvg .cofLbl{font:700 8px system-ui,sans-serif;fill:var(--ink-soft);text-anchor:middle;dominant-baseline:central;pointer-events:none;transition:fill .25s ease}
+#cofSvg .cofActive .cofDot{fill:var(--accent, #7fd4c0)}
+#cofSvg .cofActive .cofLbl{fill:#fff}
+#cofSvg #cofTrail{fill:none;stroke:var(--accent,#7fd4c0);stroke-width:3;stroke-linecap:round;opacity:0}
+#cofSvg #cofHub{font:800 13px system-ui,sans-serif;fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+@media (max-width:820px){#cofWheel{width:96px;height:96px;top:6px}}
 #chordProg{height:3px;border-radius:2px;background:rgba(170,160,200,.3);margin-top:5px;overflow:hidden}
 #chordProg i{display:block;height:100%;width:0;border-radius:2px;transition:width .12s linear}
 aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px;position:relative;z-index:70}
@@ -472,6 +486,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <canvas id="cv" width="720" height="720"></canvas>
     <div class="hint">tap to drop balls · <b>space</b> = rain</div>
     <div id="chordPill" hidden><b id="chordNow">—</b><span id="chordNext"></span><div id="chordProg"><i id="chordProgI"></i></div></div>
+    <div id="cofWheel" hidden><svg viewBox="0 0 132 132" id="cofSvg" aria-label="circle of fifths — current key"></svg></div>
   </div>
   <aside>
     <div id="dragBar"></div>
@@ -845,13 +860,45 @@ function pickChord(barI){const n=scaleObj().c.length;
 let nextRootDeg=null; // the brain decides one bar ahead so the pill can show where we're going
 function chordName(rd){const c0=centsForDegree(rd),a=((Math.round((centsForDegree(rd+2)-c0)/100))%12+12)%12,b=((Math.round((centsForDegree(rd+4)-c0)/100))%12+12)%12;
   const root=NOTE_NAMES[(((S.root+Math.round(c0/100))%12)+12)%12];
-  const q=(a===4&&b===7)?'':(a===3&&b===7)?'m':(a===3&&b===6)?'dim':(a===4&&b===8)?'aug':(a===5)?'sus4':(a===2)?'sus2':'~'; // ~ = microtonal, no earth name for it
+  // name the triad by its real intervals. pentatonic often stacks {0,3,7} or {0,4,7} through gapped degrees →
+  // now reads a proper m / major instead of falling to sus4. only truly off-grid (microtonal) triads get a plain root, no junk symbol.
+  let q; if(b===7&&(a===4||a===3))q=(a===3)?'m':'';        // clean major / minor
+  else if(a===3&&b===6)q='dim'; else if(a===4&&b===8)q='aug'; // diminished / augmented
+  else if(b===7&&a===5)q='sus';  else if(b===7&&a===2)q='sus'; // suspended (kept generic — kids never see this anyway)
+  else if(b===7)q='';            // any other in-key stack over a perfect 5th: just call it by its root, no cryptic symbol
+  else q='';                     // fallback: bare root name (never "~")
   return root+q;}
 function updateChordPill(){const p=document.getElementById('chordPill');if(!p)return;
   const n=scaleObj().c.length;
   document.getElementById('chordNow').textContent=chordName(curRootDeg);
   document.getElementById('chordNext').textContent=nextRootDeg!=null?'→ '+chordName(nextRootDeg):'';
   document.getElementById('chordProgI').style.background=`linear-gradient(90deg,${aurora(curRootDeg/n,62)},${aurora((nextRootDeg==null?curRootDeg:nextRootDeg)/n,62)})`;} // bar fills FROM this chord's color INTO the next one's
+// ---- CIRCLE OF FIFTHS wheel: the ONLY key indicator kids need. 12 nodes in fifths order; the current key glows.
+// play = read-only glow + a soft arc that traces the fifth-step when the key moves. studio = click a key to set+pin it.
+const COF=[0,7,2,9,4,11,6,1,8,3,10,5]; // C G D A E B F# C# G# D# A# F — pitch classes clockwise by fifths
+const COF_LBL=["C","G","D","A","E","B","F♯","C♯","G♯","D♯","A♯","F"]; // kid-plain letters (sharp side only, no double-naming)
+let _cofBuilt=false,_cofPrevPc=null;
+function cofPos(i){const ang=(i/12)*2*Math.PI-Math.PI/2;return [66+Math.cos(ang)*47,66+Math.sin(ang)*47];}
+function buildWheel(){const svg=document.getElementById('cofSvg');if(!svg||_cofBuilt)return;
+  let h='<circle class="cofRing" cx="66" cy="66" r="63"/><path id="cofTrail"/>';
+  for(let i=0;i<12;i++){const [x,y]=cofPos(i);
+    h+=`<g class="cofNode" data-pc="${COF[i]}"><circle class="cofDot" cx="${x}" cy="${y}" r="7"/><text class="cofLbl" x="${x}" y="${y}">${COF_LBL[i]}</text></g>`;}
+  h+='<text id="cofHub" x="66" y="66">A</text>';
+  svg.innerHTML=h;_cofBuilt=true;
+  // studio: click a key node -> set that root and PIN it (slime rotation stops until slime is toggled off/on)
+  svg.addEventListener('click',e=>{if(S.mode!=='studio')return;const g=e.target.closest('.cofNode');if(!g)return;
+    const pc=+g.dataset.pc,cur=((S.root%12)+12)%12;let nr=S.root+(((pc-cur+18)%12)-6); // nearest octave placement of that key
+    $("root").value=String(nr);$("root").dispatchEvent(new Event('change'));_keyPinned=true;});}
+function updateWheel(){const w=document.getElementById('cofWheel');if(!w||w.hidden)return;buildWheel();
+  const svg=document.getElementById('cofSvg'),pc=((S.root%12)+12)%12,i=COF.indexOf(pc);
+  svg.querySelectorAll('.cofNode').forEach(g=>g.classList.toggle('cofActive',+g.dataset.pc===pc));
+  const hub=document.getElementById('cofHub');if(hub)hub.textContent=NOTE_NAMES[pc].replace('#','♯');
+  // soft trail: when the key moves, arc from the OLD key node to the NEW one so kids SEE the fifth-step travel round the ring
+  if(_cofPrevPc!=null&&_cofPrevPc!==pc){const a=COF.indexOf(_cofPrevPc),b=i;if(a>=0&&b>=0){
+    const [x1,y1]=cofPos(a),[x2,y2]=cofPos(b),tr=document.getElementById('cofTrail');
+    tr.setAttribute('d',`M${x1} ${y1} Q 66 66 ${x2} ${y2}`);tr.style.transition='none';tr.style.opacity='0.9';
+    requestAnimationFrame(()=>{tr.style.transition='opacity 1.1s ease';tr.style.opacity='0';});}}
+  _cofPrevPc=pc;}
 // ---- liquid color theory: the pool IS the chord — a pastel blend of its three note colors, melting into the next chord's blend as the bar plays out ----
 function degRGB(d){const td=totalDegrees(),h=auroraHue((((d%td)+td)%td)/td),s=0.74,l=0.62; // same color wheel the walls and notes already use
   const a=s*Math.min(l,1-l),f=nn=>{const k=(nn+h/30)%12;return (l-a*Math.max(-1,Math.min(k-3,9-k,1)))*255;};
@@ -895,7 +942,8 @@ function manualRoot(){const now=performance.now();
   for(let i=0;i<n;i++){const degPc=((root0+Math.round(sc[i]/100))%12+12)%12,d=Math.min((degPc-bestPc+12)%12,(bestPc-degPc+12)%12);if(d<bd){bd=d;bestDeg=i;}}
   return bestDeg;}
 function noteManual(cents){manualNotes.push({deg:degOf(cents),pc:((S.root+Math.round(cents/100))%12+12)%12,t:performance.now()});if(manualNotes.length>16)manualNotes.shift();
-  if(bandOn){const r=manualRoot();if(r!=null){_prevRootDeg=curRootDeg;curRootDeg=r;nextRootDeg=r;updateChordPill();}}} // flips the chord on the KEYPRESS, not next bar
+  // chord-follower is a STUDIO feature only. play mode = kids: no chord chasing, the band just grooves in the current key.
+  if(bandOn&&S.mode!=='play'){const r=manualRoot();if(r!=null){_prevRootDeg=curRootDeg;curRootDeg=r;nextRootDeg=r;updateChordPill();}}}
 const BASSPAT={'16':{0:'R',4:'R',6:'F',8:'R',12:'R',14:'O'},'12':{0:'R',4:'F',8:'O'},'12c':{0:'R',6:'F'},'20':{0:'R',8:'R',12:'F',16:'O'}}; // odd time sigs
 // 4/4 basslines that ROTATE every 16 bars for motion — the classic shapes (StudyBass / Yamaha):
 // 0 roots+fifths · 1 root-fifth-octave country walk · 2 triad arpeggio · 3 driving eighths into a lead-in.
@@ -910,19 +958,19 @@ const KITBASS={
   beep:  [{0:'R',8:'R',4:'F',12:'F'},{0:'R',2:'R',8:'R',10:'F',14:'O'}]                // pumping electro
 };
 let _bassGroove=0,_bassBars=0,_lastBassCents=null;
-let _slimeBars=0;
-const JSCALES=['major','mixolydian','dorian','minor','pentaMaj','lydian'];
+let _slimeBars=0,_keyPinned=false; // _keyPinned: user picked a key/scale by hand → slime stops rotating until slime is toggled off/on
 function keyJourney(){ // ear-friendly walk: every 16 bars the root moves exactly ONE step on the circle of fifths
   // (up OR down a fifth), and the SCALE never changes — so the finger shape stays familiar, only the home note moves.
   const step=Math.random()<0.5?7:-7; // +a fifth (A→E) or −a fifth (A→D): always a neighbour, never a random/atonal jump
   let nr=S.root+step;while(nr<52)nr+=12;while(nr>64)nr-=12; // keep the root in a comfy octave
-  $("root").value=nr;$("root").dispatchEvent(new Event('change'));
-  toast('→ '+NOTE_NAMES[((nr%12)+12)%12]+' '+SCALES[S.scale].n.toLowerCase());}
+  _keyProgrammatic=true;$("root").value=nr;$("root").dispatchEvent(new Event('change'));_keyProgrammatic=false; // auto-move: don't trip the pin
+  updateWheel(); // the wheel is the star: glow the new key + trace the fifth-step arc
+  if(S.mode!=='play')toast('→ '+NOTE_NAMES[((nr%12)+12)%12]+' '+SCALES[S.scale].n.toLowerCase());} // play: silent, the wheel says it all
 function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for the pluck pattern
   if(!bandOn)return;
   if(++_bassBars%16===0)_bassGroove=(_bassGroove+1)%BASSGROOVES.length; // rotate the bass feel every 16 bars for motion
-  const man=manualActive()?manualRoot():null; // a human playing OWNS the harmony — auto logic yields
-  if(man==null&&S.slimeMode&&++_slimeBars>=16){_slimeBars=0;keyJourney();} // and the key never drifts under your fingers
+  const man=(S.mode!=='play'&&manualActive())?manualRoot():null; // studio: a human playing OWNS the harmony. play: no chord chasing, kids just jam.
+  if(man==null&&S.slimeMode&&!_keyPinned&&++_slimeBars>=16){_slimeBars=0;keyJourney();} // rotate keys every 16 bars — UNLESS the user pinned a key by hand
   const n=scaleObj().c.length;let rd;
   if(man!=null){rd=man%n;nextRootDeg=man%n;} // hold YOUR chord — no roulette, no lag
   else{rd=(nextRootDeg!=null?nextRootDeg:pickChord(barI))%n;nextRootDeg=pickChord(barI+1)%n;} // auto only when hands are off
@@ -1224,16 +1272,25 @@ function step(){
   for(let bi=balls.length-1;bi>=0;bi--){
     const b=balls[bi];
     b.r=BR;
-    b.vy+=gy;b.x+=b.vx;b.y+=b.vy;
-    b.trail.push([b.x,b.y]);if(b.trail.length>7)b.trail.shift();
-    if(fillState==="fill"){
-      // ray-cast containment (concave-safe: star spikes & heart dip work). fallback margin keeps near-edge balls in.
-      let inside=inPoly(b.x,b.y,edges._verts);
-      if(!inside){let near=true;for(const e of edges){if((b.x-e.ax)*e.nx+(b.y-e.ay)*e.ny<-BR*1.5){near=false;break;}}inside=near;}
-      if(inside){
+    b.vy+=gy;
+    // SUBSTEP the move so a fast ball (esp. high-octave shots at sp=R/7) can never leap past a wall in one frame.
+    // move at most ~half a radius per micro-step, re-checking geometry each time = zero tunneling, ever.
+    const dist0=Math.hypot(b.vx,b.vy),sub=Math.max(1,Math.min(8,Math.ceil(dist0/(BR*0.5)))),isub=1/sub;
+    let killed=false;
+    for(let s=0;s<sub;s++){
+      b.x+=b.vx*isub;b.y+=b.vy*isub;
+      if(fillState==="fill"){
+        // WALL BOUNCE runs UNCONDITIONALLY (not gated behind inPoly): any wall within BR that the ball is moving
+        // OUT of reflects it. The old code only bounced when inPoly()==true, so a ball whose center crossed the wall
+        // plane read "outside" and skipped the bounce entirely -> tunneled straight through. This can't happen now.
+        let hitWall=false;
         for(const e of edges){const dist=(b.x-e.ax)*e.nx+(b.y-e.ay)*e.ny;
-          if(dist<BR){const vn=b.vx*e.nx+b.vy*e.ny;
-            if(vn<0){b.vx-=2*vn*e.nx;b.vy-=2*vn*e.ny;jitter(b);b.x+=(BR-dist)*e.nx;b.y+=(BR-dist)*e.ny;e.flash=1;
+          if(dist<BR){ // only when the ball is on/behind this wall's inward face…
+            // …and actually within this finite segment's span (not off past a corner, so corners stay open to escape)
+            const ex=e.bx-e.ax,ey=e.by-e.ay,L2=ex*ex+ey*ey||1,t=((b.x-e.ax)*ex+(b.y-e.ay)*ey)/L2;
+            if(t<-0.05||t>1.05)continue;
+            const vn=b.vx*e.nx+b.vy*e.ny;
+            if(vn<0){hitWall=true;b.vx-=2*vn*e.nx;b.vy-=2*vn*e.ny;jitter(b);b.x+=(BR-dist)*e.nx;b.y+=(BR-dist)*e.ny;e.flash=1;
               const nw=performance.now();
               if(b.mute){b.mute=0;e.flash=1;splash(b.x,b.y,e.nx,e.ny,e.hue);}else
               if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
@@ -1242,14 +1299,16 @@ function step(){
                 const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0; // how gooed-up THIS ball is right now
                 trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1))*(1-goo*0.45),goo); // goo-slathered hits ring softer & rounder
                 splash(b.x,b.y,e.nx,e.ny,e.hue);}}}} // splash carries the note's color into the pool
-      }else{ // caught outside a fresh shape: float free, no wall spam, drift off into space
-        if(b.x<-80||b.x>W+80||b.y<-80||b.y>H+80){balls.splice(bi,1);continue;}
+        // despawn only a ball that truly left the arena through an open corner (never bounced, wandered far off-screen)
+        if(!hitWall&&!inPoly(b.x,b.y,edges._verts)&&(b.x<-80||b.x>W+80||b.y<-80||b.y>H+80)){balls.splice(bi,1);killed=true;break;}
+      }else{ // broken open — bounce off the fragments, trickle out through the gaps
+        const hit=segHit(b,curSegs||computeSegs());
+        if(hit){jitter(b);if(hit.f)hit.f.flash=1;trigger(hit.cents,0.4+Math.random()*0.6);}
+        if(Math.hypot(b.x-CX,b.y-CY)>R+260){balls.splice(bi,1);killed=true;break;} // escaped into open space
       }
-    }else{ // broken open — bounce off the fragments, trickle out through the gaps
-      const hit=segHit(b,curSegs||computeSegs());
-      if(hit){jitter(b);if(hit.f)hit.f.flash=1;trigger(hit.cents,0.4+Math.random()*0.6);}
-      if(Math.hypot(b.x-CX,b.y-CY)>R+260)balls.splice(bi,1); // escaped into open space
     }
+    if(killed)continue;
+    b.trail.push([b.x,b.y]);if(b.trail.length>7)b.trail.shift();
     // no gravity = steady tempo speed; the more gravity, the more they free-fall & settle (smooth across the whole slider)
     if(b.mute&&(b.muteN=(b.muteN||0)+1)>40)b.mute=0; // safety: a shot that never lands rejoins normal physics
     if(!b.mute){ // shot balls fly TRUE — no tempo normalizer, no drag, no goo — until first impact. then they're citizens.
@@ -1423,8 +1482,8 @@ function draw(){
   ctx.clearRect(0,0,W,H);
   drawParticles();
   drawShape();drawDebris();drawBalls();
-  const cp=document.getElementById('chordPill'); // chord pill: only exists on screen while the band plays
-  if(cp){cp.hidden=!bandOn;if(bandOn){const bar=drumBar();document.getElementById('chordProgI').style.width=((drumStep%bar)/bar*100).toFixed(1)+'%';}}
+  const cp=document.getElementById('chordPill'); // chord pill: band-only, and NEVER in play mode (kids read the wheel, not chord names)
+  if(cp){cp.hidden=!bandOn||S.mode==='play';if(bandOn&&S.mode!=='play'){const bar=drumBar();document.getElementById('chordProgI').style.width=((drumStep%bar)/bar*100).toFixed(1)+'%';}}
   if(burstFlash>0.01){const g=ctx.createRadialGradient(CX,CY,10,CX,CY,R*1.35);
     g.addColorStop(0,`rgba(255,255,255,${0.45*burstFlash})`);g.addColorStop(0.5,`rgba(255,225,245,${0.28*burstFlash})`);g.addColorStop(1,"rgba(255,255,255,0)");
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(CX,CY,R*1.35,0,7);ctx.fill();}
@@ -1539,8 +1598,9 @@ $("newShapeBtn").addEventListener('click',()=>{ // kids' dice: always a DIFFEREN
   const sel=$("shape"),n=sel.options.length;
   sel.selectedIndex=(sel.selectedIndex+1+Math.floor(Math.random()*(n-1)))%n;
   sel.dispatchEvent(new Event('change'));});
-$("scale").addEventListener('change',e=>{S.scale=e.target.value;rebuild();updateScaleNote();});
-$("root").addEventListener('change',e=>{S.root=parseInt(e.target.value);updateScaleNote();});
+let _keyProgrammatic=false; // true only while keyJourney() moves the key itself, so its own change doesn't trip the pin
+$("scale").addEventListener('change',e=>{S.scale=e.target.value;rebuild();updateScaleNote();if(!_keyProgrammatic)_keyPinned=true;updateWheel();}); // human picks a scale = pin it
+$("root").addEventListener('change',e=>{S.root=parseInt(e.target.value);updateScaleNote();if(!_keyProgrammatic)_keyPinned=true;updateWheel();}); // human picks a key = pin it
 
 (function(){const ss=$("scale");for(const k in SCALES){const o=document.createElement('option');o.value=k;o.textContent=SCALES[k].n;if(k==="major")o.selected=true;ss.appendChild(o);}
   const rs=$("root");for(let m=48;m<=72;m++){const o=document.createElement('option');o.value=m;o.textContent=NOTE_NAMES[m%12]+(Math.floor(m/12)-1);if(m===60)o.selected=true;rs.appendChild(o);}})();
@@ -1591,6 +1651,12 @@ function applyMode(m){S.mode=m;
   document.body.classList.add('mode-'+m);
   try{localStorage.setItem('slimehedron-mode',m);}catch(e){}
   const p=$("modePill");if(p){p.textContent=m;p.classList.remove('mp-play','mp-learn','mp-studio');p.classList.add('mp-'+m);}
+  // play & studio show the circle-of-fifths wheel as the key indicator; play HIDES the chord pill + wordy scale note (kids just watch the wheel)
+  const wheel=$("cofWheel"),pill=$("chordPill"),sn=$("scaleNote");
+  if(wheel)wheel.hidden=(m==='learn');
+  if(pill&&m==='play')pill.hidden=true; // no chord names for kids
+  if(sn)sn.style.display=(m==='play')?'none':''; // no "5 notes/oct…" text in play
+  if(wheel&&!wheel.hidden){_cofPrevPc=null;updateWheel();}
   if(window.LEARN){if(m==='learn')LEARN.enter();else LEARN.exit();}}
 // MIDI-Learn state must exist BEFORE the wiring IIFE below runs (it calls ccRender at load).
 let ccMap={},ccLearn=false,ccArm=null;
@@ -2214,7 +2280,7 @@ $("slimeBig").addEventListener('click',()=>{
   el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop'); // restart squish even on rapid toggles
   setKnobFace('surprise');clearTimeout(el._faceT);el._faceT=setTimeout(()=>{el.classList.remove('pop');setKnobFace('happy');},600);
   initAudio();if(AC&&AC.state==="suspended")AC.resume();setSlimeProcessing(S.slimeMode);
-  if(S.slimeMode){if(!S.playing)setPlaying(true);setSliderValue('spin',14);_slimeBars=0; // the key journey starts counting from here
+  if(S.slimeMode){if(!S.playing)setPlaying(true);setSliderValue('spin',14);_slimeBars=0;_keyPinned=false; // toggling slime ON un-pins: the auto key-rotation resumes from here
     _modSnap={};for(const m of MODS){const inp=$(m.id);if(inp)_modSnap[m.id]=inp.value;}_slimeOnAt=performance.now(); // remember the patch before the wobble borrows it
     S.quantize=true;$("quantT").classList.add('on');setDivUI(0.0625); // lock everything to 1/16 grid while slimin'
     if(!S.rain){$("rainT").classList.add('on');S.rain=true;$("rainCfg").style.display="block";nextRain=performance.now();}
@@ -2422,20 +2488,24 @@ window.slimeStar=function(){ // any little win → a star; the FIRST star of a n
   function boot(m){sp.classList.add('gone');setTimeout(()=>sp.remove(),600);
     enableMotion();initAudio();if(AC.state==="suspended")AC.resume();
     applyMode(m);
+    _keyProgrammatic=true; // boot-time key setup is automatic, must NOT pin (so slime can rotate from the start)
     if(m==='play'){ // play: full band from the first second, slime jams by itself
       // base key = A minor pentatonic: the "no wrong notes" scale, warm & kid/parent-friendly, familiar shape as it modulates
       const sc=$("scale");if(sc){sc.value='pentaMin';sc.dispatchEvent(new Event('change'));}
       const rt=$("root");if(rt){rt.value='57';rt.dispatchEvent(new Event('change'));} // A3
+      _keyProgrammatic=false;_keyPinned=false;
       if(!S.slimeMode)$("slimeBig").click();
       if(!drumOn)$("drumBtn").click();
       if(!bandOn)$("bandBtn").click();
       setTimeout(startCoach,900);
     }else if(m==='studio'){ // studio: band + drums running so the chord progression window is live from the first bar (you drive it, no auto-slime)
       const sc=$("scale");if(sc){sc.value='chromatic';sc.dispatchEvent(new Event('change'));} // let 'em cook — all 12 notes, no scale pigeonhole
+      _keyProgrammatic=false;_keyPinned=false;
       if(!drumOn)$("drumBtn").click();
       if(!bandOn)$("bandBtn").click();
       setPlaying(true);
-    }else{setPlaying(true);}}
+    }else{setPlaying(true);}
+    _keyProgrammatic=false;}
   sp.addEventListener('pointerdown',e=>{
     const card=e.target.closest('.modeCard[data-m]');
     boot(card?card.dataset.m:last);}); // tap a door to choose — tap anywhere else to resume where you left off

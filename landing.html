@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>slimehedron — free music for everyone</title>
+<meta name="description" content="a free music toy for kids. tap to make music and learn as you play. no login, no ads, works offline.">
+<meta property="og:title" content="slimehedron — free music for everyone">
+<meta property="og:description" content="tap to make music and learn as you play. free, no login, works offline.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="slimehedron-mascot.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#7fd8bd">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --mint:#7fd8bd; --mint-deep:#34ad8a;
+    --peach:#ffcfa0; --pink:#ff9ec6; --lav:#b9a3f0; --sun:#ffd66b;
+    --ink:#4a4266; --ink-soft:#8b7fae;
+    --glass:rgba(255,255,255,.66); --glass-brd:rgba(255,255,255,.92);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font:16px/1.5 'Quicksand',system-ui,sans-serif;color:var(--ink);font-weight:600;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;
+    padding:24px;position:relative;overflow:hidden;
+    background:
+      radial-gradient(680px 480px at 12% 6%, #c6f2e3 0%, transparent 56%),
+      radial-gradient(640px 480px at 90% 8%, #ffe1c2 0%, transparent 54%),
+      radial-gradient(620px 560px at 84% 98%, #ffd6e9 0%, transparent 56%),
+      radial-gradient(620px 560px at 8% 94%, #e7ddff 0%, transparent 56%),
+      #fbfbff;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* floating decor slimes — the personality, kept in the corners so the middle stays clean */
+  .floaty{position:absolute;pointer-events:none;opacity:.6;filter:drop-shadow(0 8px 12px rgba(90,79,120,.12))}
+  @keyframes drift{0%,100%{transform:translateY(0) rotate(var(--r,0))}50%{transform:translateY(-13px) rotate(var(--r,0))}}
+
+  .hero{width:138px;height:138px;position:relative;animation:bob 3.4s ease-in-out infinite;z-index:2}
+  .hero svg{filter:drop-shadow(0 13px 22px rgba(52,173,138,.32))}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+
+  h1{font-size:clamp(42px,9vw,66px);font-weight:700;letter-spacing:-1.5px;margin:14px 0 6px;z-index:2}
+  h1 .d{color:var(--mint-deep)}
+  .tag{font-size:clamp(17px,4vw,21px);color:var(--ink-soft);font-weight:600;max-width:440px;z-index:2}
+
+  .play{display:inline-flex;align-items:center;gap:10px;margin:30px 0 16px;z-index:2;
+    background:linear-gradient(135deg,var(--mint),var(--mint-deep));color:#fff;text-decoration:none;
+    font-size:23px;font-weight:700;padding:19px 52px;border-radius:24px;
+    box-shadow:0 15px 32px rgba(52,173,138,.44);
+    transition:transform .14s cubic-bezier(.34,1.56,.64,1),box-shadow .14s}
+  .play:hover{transform:translateY(-3px) scale(1.04) rotate(-1.5deg);box-shadow:0 20px 44px rgba(52,173,138,.54)}
+  .play:active{transform:scale(.97)}
+
+  .chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:540px;z-index:2}
+  .chip{background:var(--glass);border:1.5px solid var(--glass-brd);border-radius:999px;
+    padding:7px 15px;font-size:13.5px;font-weight:700;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+    box-shadow:0 4px 12px rgba(90,79,120,.07)}
+  .chip.c1{color:var(--mint-deep)} .chip.c2{color:#e8853a} .chip.c3{color:#e05c95} .chip.c4{color:#8a6fe0} .chip.c5{color:#c99a00}
+
+  .teach{margin-top:26px;font-size:13px;color:var(--ink-soft);font-weight:600;display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:center;z-index:2}
+  .copy{background:var(--lav);color:#fff;border:0;border-radius:11px;padding:6px 13px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;transition:.14s}
+  .copy:hover{background:#a48ce8;transform:scale(1.05)} .copy.done{background:var(--mint);color:var(--ink)}
+  #blurb{position:absolute;left:-9999px}
+
+  .foot{position:absolute;bottom:14px;font-size:12px;color:var(--ink-soft);font-weight:600;z-index:2}
+  .heart{color:var(--pink)}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <linearGradient id="slimeSheen" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="rgba(255,255,255,.4)"/><stop offset=".5" stop-color="rgba(255,255,255,0)"/>
+  </linearGradient>
+</defs></svg>
+
+<div class="floaty" style="top:12%;left:5%;--r:-8deg;animation:drift 6.4s ease-in-out infinite" id="fl1"></div>
+<div class="floaty" style="top:18%;right:6%;--r:9deg;animation:drift 7.4s ease-in-out infinite .7s" id="fl2"></div>
+<div class="floaty" style="bottom:12%;left:7%;--r:6deg;animation:drift 6.9s ease-in-out infinite 1.2s" id="fl3"></div>
+<div class="floaty" style="bottom:16%;right:7%;--r:-6deg;animation:drift 7.1s ease-in-out infinite .3s" id="fl4"></div>
+
+<div class="hero" id="hero"></div>
+<h1>slimehedron<span class="d">.</span></h1>
+<p class="tag">music is meant for everyone.</p>
+
+<a class="play" href="index.html">▸ play now</a>
+
+<div class="chips">
+  <span class="chip c1">no login</span>
+  <span class="chip c2">no ads</span>
+  <span class="chip c3">works offline</span>
+  <span class="chip c4">no data collected</span>
+  <span class="chip c5">free forever</span>
+</div>
+
+<div class="teach">
+  <span>teachers &amp; parents — grab a blurb to share</span>
+  <button class="copy" id="copyBtn">copy</button>
+</div>
+<div id="blurb">slimehedron is a free music toy for kids — tap to make music and learn real theory as you play (rhythm, notes, chords, modes). works on any phone, tablet or computer, even offline. no accounts, no ads, no data collected. play free: https://flahmusic.github.io/Slimehedron</div>
+
+<div class="foot">made with <span class="heart">♥</span> for kids everywhere</div>
+
+<script>
+  function slimeSVG(fill,face){
+    var body='<path d="M40 8 C18 8 11 28 11 44 C11 62 27 66 40 66 C53 66 69 62 69 44 C69 28 62 8 40 8 Z" fill="'+fill+'"/>'
+      +'<path d="M40 8 C18 8 11 28 11 44 C11 62 27 66 40 66 C53 66 69 62 69 44 C69 28 62 8 40 8 Z" fill="url(#slimeSheen)"/>'
+      +'<ellipse cx="29" cy="16" rx="7" ry="4" fill="rgba(255,255,255,.55)"/>';
+    var f;
+    if(face==='wow'){
+      f='<circle cx="30" cy="25" r="6" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="30.5" cy="26" r="2.6" fill="#5a4f78"/>'
+       +'<circle cx="50" cy="25" r="6" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="50.5" cy="26" r="2.6" fill="#5a4f78"/>'
+       +'<ellipse cx="22" cy="35" rx="5" ry="3" fill="#ff8fbe" opacity=".6"/><ellipse cx="58" cy="35" rx="5" ry="3" fill="#ff8fbe" opacity=".6"/>'
+       +'<ellipse cx="40" cy="36" rx="4.5" ry="5.5" fill="#5a4f78"/>';
+    }else if(face==='bigeye'){
+      f='<circle cx="30" cy="26" r="7" fill="#fff" stroke="#5a4f78" stroke-width="2.5"/><circle cx="30" cy="27" r="3.6" fill="#5a4f78"/><circle cx="31.6" cy="24.8" r="1.4" fill="#fff"/>'
+       +'<circle cx="50" cy="26" r="7" fill="#fff" stroke="#5a4f78" stroke-width="2.5"/><circle cx="50" cy="27" r="3.6" fill="#5a4f78"/><circle cx="51.6" cy="24.8" r="1.4" fill="#fff"/>'
+       +'<path d="M33 39 h14 q-7 11 -14 0 Z" fill="#5a4f78"/>';
+    }else{
+      f='<path d="M24 26 l5.5 -7 l5.5 7" fill="none" stroke="#5a4f78" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>'
+       +'<path d="M45 26 l5.5 -7 l5.5 7" fill="none" stroke="#5a4f78" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>'
+       +'<ellipse cx="22" cy="34" rx="4.5" ry="2.8" fill="#ff8fbe" opacity=".55"/><ellipse cx="58" cy="34" rx="4.5" ry="2.8" fill="#ff8fbe" opacity=".55"/>'
+       +'<path d="M34 35 q6 5 12 0" fill="none" stroke="#5a4f78" stroke-width="2.6" stroke-linecap="round"/>';
+    }
+    return '<svg viewBox="0 0 80 72" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">'+body+f+'</svg>';
+  }
+  var GLASSES='<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0"><g fill="none" stroke="#5a4f78" stroke-width="2.2" stroke-linecap="round" opacity=".85"><circle cx="29" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><circle cx="51" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><path d="M37.5 24 q2.5 -2 5 0"/><path d="M21.5 23.5 l-5 -1.5"/><path d="M58.5 23.5 l5 -1.5"/></g></svg>';
+  var MINT='#9fe6cf',LAV='#c4a9f5',PEACH='#ffd3a8',PINK='#ffb6d6';
+  function put(id,fill,face,g){var el=document.getElementById(id);if(el)el.innerHTML=slimeSVG(fill,face)+(g?GLASSES:'');}
+  put('hero',MINT,'happy',true);
+  put('fl1',LAV,'happy');put('fl2',PEACH,'wow');put('fl3',PINK,'bigeye');put('fl4',MINT,'happy');
+  ['fl1','fl2','fl3','fl4'].forEach(function(id,i){var el=document.getElementById(id);if(el)el.style.width=el.style.height=(i%2?54:68)+'px';});
+
+  document.getElementById('copyBtn').addEventListener('click',function(){
+    navigator.clipboard.writeText(document.getElementById('blurb').innerText).then(function(){
+      var b=document.getElementById('copyBtn');b.textContent='copied ✓';b.classList.add('done');
+      setTimeout(function(){b.textContent='copy';b.classList.remove('done');},2000);
+    });
+  });
+  if('serviceWorker' in navigator)addEventListener('load',function(){navigator.serviceWorker.register('sw.js');});
+</script>
+</body>
+</html>

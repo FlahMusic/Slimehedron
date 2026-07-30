@@ -80,6 +80,99 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 36 — Landing v3: gutted to one screen, less purple, trust-by-showing (2026-07-29)
+- Flah: v2 "reads like a scammy AI course-funnel, way too much text, too purple, doesn't sound like me
+  (lowercase, no fluff)." Researched what actually signals legit vs scam: 94% of first impression is VISUAL
+  (Stanford web-credibility), formed in ~50ms — design quality + a real working product beat text promises.
+- Rebuilt: ONE screen, no scroll-to-convince, no <section> funnel. Lowercase everything ("tap to make music.
+  no wrong notes. just fun."). ~25 visible words. One big "play free" button. 5 tiny trust chips
+  (no login/no ads/works offline/no data/free). Strongest trust move: a LIVE embedded preview of the actual
+  app (iframe, pointer-events off, whole card links to play) — proof it's a real touchable toy, which a scam
+  site can't fake. Used 1 preview not 3 (3 live audio-app iframes = heavy, would kill the "loads fast" signal).
+- Palette de-purpled: mint (#3fb894) is now the primary accent + button; purple demoted to one decor slime.
+  Vibrant 4-corner pastel wash (mint/peach/pink/lav) instead of purple soup. Kept real slime art + floaties.
+- SW/manifest/offline all still intact. Backups: landing-v1-soulless-*, landing-v2-toomuch-*.
+
+### Entry 35 — Landing page redesign (real soul) + offline/PWA + GTM answers (2026-07-29)
+- Flah: v1 landing "looked like AI made it in seconds, no soul" — no slimes, wrong font. Rebuilt:
+  Quicksand font (matches app), REAL slimeSVG art embedded (sheen/blush/^_^ faces, hero wears the glasses),
+  4 floating drifting decor slimes, bouncy spring hovers, offline callout. Benchmarked vs Chrome Music Lab
+  (playful minimal) + Sonic Pi (trust markers + clear get-it path); landed between the two.
+- OFFLINE was already built: sw.js (service worker) + manifest.json + SW registration in index.html = app is
+  already an installable PWA that works offline. Added landing.html + mascot to SW cache, bumped v7→v8,
+  registered SW + linked manifest on landing.html so install/offline works from the landing page too.
+  This IS the "braindead one-click, works on a cracked old iPhone offline" answer — open once, it self-installs,
+  "Add to Home Screen" makes it an app icon. No app store, no account.
+- GTM answers given: MIDI = NOT a landing headline (jargon, scares parents) — keep as small studio-card line.
+  The page IS the pitch (paste link, page sells, they click Play — Flah's not in the loop). Social: ONE video
+  account (TikTok OR YT Shorts), 3 real clips > 5 empty logo profiles; don't make FB/IG shells.
+- All soul + offline checks pass. Backup of soulless v1: backups/landing-v1-soulless-*.
+- TODO Flah: deploy.bat pushes landing.html + sw.js v8 live.
+
+### Entry 34 — Landing page for teacher/parent distribution (2026-07-29)
+- Built landing.html (repo root): hero w/ mascot, "Play free — no sign-up" CTA → index.html, trust badges
+  (free / no login / no ads / NO DATA COLLECTED / any browser), 3-doors + what-they-learn cards, a copy-to-
+  clipboard "for teachers" blurb, and a 60-sec "how to share" step list. App palette (#b388f0 accent). Validated
+  structurally (links, claims, copy button, og:image all present).
+- GTM research logged: free kids-music tools spread via TEACHERS + parents, not ads/investors — Chrome Music Lab
+  (living-room side project → teacher FB groups + TpT), Sonic Pi (postdoc project → millions, Patreon-funded),
+  Blob Opera (delight-driven). Slimehedron is built for this exact lane; web toy IS the product for Flah's
+  "free for kids everywhere" goal. Blocker was a teacher-facing front page — now built.
+- Domain guidance given: Porkbun ~$8/yr .org flat renewal, Cloudflare ~$8.50 .org at-cost (transfer-in only).
+  Recommend a .org for a free-education vibe; point it at GitHub Pages via CNAME (no re-hosting needed).
+- TODO Flah: deploy.bat to push landing.html live, then it's at flahmusic.github.io/Slimehedron/landing.html.
+
+### Entry 33 — Chord course: staged curriculum + play-to-proceed gate (2026-07-29)
+- **Problem:** chord lessons only SHOWED + played a chord, then "next" — passive, and only root-position triads.
+- **Rebuilt as a method-book progression (12 chords, hardest last):**
+  triads (C major, C minor) → inversions (maj 1st/2nd, min 1st) → suspended (sus2, sus4) →
+  7th chords (maj7, min7, dominant 7) → colour (augmented, diminished). Stages are labeled + contiguous.
+- **Play-to-proceed gate:** you must PLAY the chord (press all its tones on the keybed — touch/keys/MIDI) before
+  "next" unlocks. Right tones flash green, wrong flash red (same keyFX as the scale game). Progress credit
+  (prog.ch) now only counts chords actually played, not just heard. Two-octave keybed so inversions/7ths fit.
+  Finishing all 12 fires winJingle + a daily star. Updated grownups() + crsProg counters 9→12.
+- **Verified:** learn.js syntax OK, dev-test green; sim confirms 12 chords, correct difficulty order
+  (triads→inversions→suspended→7th→colour), contiguous stages, and the gate clears ONLY when every tone is
+  pressed (dupes/wrong notes don't block). Backup: index/learn-20260729-224731-chordcourse.
+
+### Entry 32 — Circle of fifths wheel, chord-name cleanup, key-pin rule (2026-07-29)
+- **Killed the `F~` / everything-sus4 garbage.** Old chordName stacked SCALE degrees {rd,rd+2,rd+4} and named
+  the interval — in pentatonic that's gapped, so it read sus4/sus2, and microtonal read `~`. Rewrote it to
+  name by real semitone intervals: clean major/m/dim/aug, generic "sus", and a BARE root name for anything
+  off-grid (never a cryptic symbol). Verified C major → `C Dm Em F G Am Bdim` exactly.
+- **Chord follower is now STUDIO-ONLY.** Removed from play mode entirely (kids don't know what F♯m means and it
+  confused the display). noteManual + bandBar skip chord-chasing when S.mode==='play'; the chord pill is force-
+  hidden in play.
+- **Circle of fifths wheel = the key indicator.** New SVG wheel (#cofWheel), 12 nodes in true fifths order
+  (C G D A E B F♯ C♯ G♯ D♯ A♯ F — verified each step is +7 semis). Current key glows; on a key shift it draws a
+  soft arc from old→new node so kids SEE the fifth-step travel (research: COF works for kids as a wordless visual
+  roadmap, not as a labeled theory chart — so play strips all sharps/flats/chord text). Play HIDES the wordy
+  "5 notes/oct…" scale note too. Studio: same wheel but CLICKABLE — click a key → sets root + pins it.
+- **Slime key-pin rule.** New _keyPinned flag. Slime rotates the key every 16 bars along the circle of fifths
+  (±a fifth, scale unchanged) BY DEFAULT. If the user picks a key/scale via menu OR clicks the wheel → pinned,
+  rotation stops indefinitely. Toggling slime OFF→ON un-pins and resumes rotation. _keyProgrammatic guard keeps
+  keyJourney's own auto-moves (and boot setup) from tripping the pin. Play slime stays on pentatonic (casual);
+  studio slime rides chromatic but still walks fifths so it never jumps around atonally.
+- **Verified:** dev-test green; sims confirm diatonic names, fifths order, nearest-octave click math, and the
+  full pin lifecycle (auto-rotate → user pin stops it → re-toggle resumes). Backup: index-20260729-222935-cof-wheel.
+- TODO for Flah: eyeball the wheel glow/trail + studio click on device after deploy.bat.
+
+### Entry 31 — Ball tunneling fix: high-octave shots flew through walls (2026-07-29)
+- **Bug:** on mobile, high-octave touchpad shots (fired at sp=R/7, fast) sometimes flew clean through the
+  geometry and still triggered a note — self-fixed on shape reset. TWO root causes:
+  1. `step()` moved the ball a full frame of velocity then checked walls only at the new position — a fast
+     ball could leap from inside to fully past a wall in one frame (classic tunneling).
+  2. The wall-bounce loop was gated behind `if(inPoly())`. Once a ball's center crossed the wall plane,
+     inPoly read "outside" and the bounce was SKIPPED entirely — so it kept going.
+- **Fix (two defenses):**
+  1. **Substep** the integrate+collide: move ≤ half a ball-radius per micro-step (up to 8), re-checking
+     geometry each time. Device-independent (based on velocity, not framerate).
+  2. **Unconditional wall bounce:** reflect off any wall within BR that the ball is moving OUT of,
+     independent of inPoly. Finite-segment span test (t in [-0.05,1.05]) keeps corners open for the
+     fresh-shape escape behavior. inPoly now only decides genuine off-screen despawn.
+- **Verified:** sim of 400 fast balls fired at random angles from center of a box — OLD logic escaped
+  400/400, NEW escaped 0/400. dev-test green. Backup: index-20260729-221302-tunnelfix.
+
 ### Entry 30 — Semitone chord detect, per-kit grooves, keybed fit, zoom lock (2026-07-29)
 - **Chord detection fixed for pentatonic (& any scale).** manualRoot stacked SCALE degrees {r,r+2,r+4} —
   wrong in a 5-note scale, so E-A-C never became A minor. Rewrote it to detect the root in real SEMITONES
