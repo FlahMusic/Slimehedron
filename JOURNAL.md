@@ -80,6 +80,15 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 38 — Live QA pass, footer overlap fix (2026-07-29)
+- Viewed live landing + app splash in browser (desktop 1440 + mobile 390). App mode-select splash = clean,
+  demo-ready (big glasses slime, 3 clear doors, share top-right sits well). Landing hero clean.
+- BUG found: landing footer "made with ♥…" was position:absolute bottom:14px → collided/overlapped the trust
+  chips when content height ≈ viewport (amateur-hour look). Fixed: footer → normal flow (margin-top:30px) so it
+  can never overlap; body stays flex-centered. Only remaining absolute els are decorative floaties (corners,
+  pointer-events:none — can't collide). Backup: landing-v6-footerfix-*.
+- TODO Flah: redeploy so the footer fix goes live.
+
 ### Entry 37 — Landing polish + share moved into the app (2026-07-29)
 - Flah scrutiny pass. Fixes: (1)+(2) tagline "music is meant for everyone." kept but was pure vibe/no info —
   added concrete sub-line "a free way for kids of any age to play and learn music" so a teacher SEES it teaches.
