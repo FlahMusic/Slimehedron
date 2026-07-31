@@ -80,6 +80,23 @@ Verified: full index syntax pass on disk; 24-step modulation simulation stayed i
 range and visited 11 of 12 keys. Journey ticks on the band's bar clock (band on).
 Backups: `index-20260719-233218-playmode.html`, `learn-20260719-233218.js`.
 
+### Entry 46 — Mobile declutter: share arrow, top spacing, COF, slimes, side buttons (2026-07-30)
+From Flah's real iPhone screenshot (360px). NOTE: Chrome-extension window resize does NOT reflow the page to
+mobile width (viewport stayed 1280), so I worked from the actual @media(max-width:820px) rules + the screenshot,
+not a fake-width live page.
+1. SHARE: chain-link 🔗 → green SEND ARROW (SVG paper-plane), colored like the play button, shrunk. "A kid doesn't
+   know what a chain link is" — an arrow = send/share instantly. .done state keeps the ink color readable.
+2. TOP CLUTTER: mobile header padding 8px→52px top so the tempo/pause row clears the floating share+clear buttons;
+   gaps 6→10px; hid the redundant title text on phone to reclaim vertical space (back button + doors already brand it).
+3. COF: nestled under the back button (mobile left:6, top:40, 92px) instead of over the wave buttons.
+4. SLIMES VANISHED — root cause: left/right edge peekers hide BEHIND the side button columns on a narrow phone.
+   Switched mobile to 5 BOTTOM peekers only, spread 8/30/52/72/92% (20%+ gaps = no stacking), colors varied. The
+   rgirl easter egg (left:22%) no longer collides with a peeker.
+5. SIDE BUTTONS CLIPPING GEOMETRY: .psBtn 52→44px, columns left/right 8→4px, AND .mode-play main gets 56px side
+   padding on mobile so the hexagon is inset and never sits under the buttons.
+dev-test PASS, load-test PASS, slime gaps verified 20%+. Backup: index-*-mobilecleanup. TODO Flah: deploy.bat +
+eyeball on the actual iPhone (I can't get a true mobile viewport through the extension to screenshot-confirm).
+
 ### Entry 45 — Tonality-correct wheel (Am/C) + major/minor pentatonic rotation (2026-07-30)
 Theory-correctness pass (Flah asked, rightly, before launch). Researched: A minor pentatonic & C major pentatonic
 are the SAME 5 notes — tonality is defined by which note is the tonic/home (Berklee, National Guitar Academy,
