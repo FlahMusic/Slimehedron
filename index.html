@@ -2100,33 +2100,15 @@ window.pixSlime=function(fill,face,opt){ // opt: {cap:1} teacher's cap · {girl:
     r+=`<rect x="11" y="1" width="1" height="1" fill="${P}"/><rect x="12" y="0" width="2" height="2" fill="${P}"/><rect x="14" y="1" width="1" height="1" fill="${P}"/>`;}
   return `<svg viewBox="0 0 16 16" shape-rendering="crispEdges" width="100%" height="100%">${r}</svg>`;
 };
+// MINI SLIMES: hand-drawn crayon art (the ones you made). two color families + rainbow, each with 3
+// expressions so click/spook reactions still animate by swapping frames. colors map by palette hex so
+// none of the placement code below had to change — only which family a slime belongs to.
+const MINI={green:{happy:'grn',blink:'grn3',wow:'grn2'},violet:{happy:'violet',blink:'violet3',wow:'violet2'},rainbow:{happy:'bo',blink:'bo',wow:'bo'}};
+const HEX2CHAR={'#9fe6cf':'green','#a6c8ff':'green','#ffe39c':'green','#c4a9f5':'violet','#ffb6d6':'violet','#ffc0a8':'violet'};
 function slimeSVG(fill,face){
-  if(window.PIX)return pixSlime(fill,face);
-  const body=`<path d="M40 8 C18 8 11 28 11 44 C11 62 27 66 40 66 C53 66 69 62 69 44 C69 28 62 8 40 8 Z" fill="${fill}"/>
-<path d="M40 8 C18 8 11 28 11 44 C11 62 27 66 40 66 C53 66 69 62 69 44 C69 28 62 8 40 8 Z" fill="url(#slimeSheen)"/>
-<ellipse cx="29" cy="16" rx="7" ry="4" fill="rgba(255,255,255,.55)"/>`;
-  let f;
-  if(face==="wow"){
-    f=`<path d="M15 8 l1.3 3.6 l3.6 1.3 l-3.6 1.3 l-1.3 3.6 l-1.3 -3.6 l-3.6 -1.3 l3.6 -1.3 Z" fill="#fff" opacity=".9"/>
-<circle cx="30" cy="25" r="6" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="30.5" cy="26" r="2.6" fill="#5a4f78"/>
-<circle cx="50" cy="25" r="6" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="50.5" cy="26" r="2.6" fill="#5a4f78"/>
-<ellipse cx="22" cy="35" rx="5" ry="3" fill="#ff8fbe" opacity=".6"/><ellipse cx="58" cy="35" rx="5" ry="3" fill="#ff8fbe" opacity=".6"/>
-<ellipse cx="40" cy="36" rx="4.5" ry="5.5" fill="#5a4f78"/>`;
-  }else if(face==="bigeye"){
-    f=`<circle cx="30" cy="26" r="7" fill="#fff" stroke="#5a4f78" stroke-width="2.5"/><circle cx="30" cy="27" r="3.6" fill="#5a4f78"/><circle cx="31.6" cy="24.8" r="1.4" fill="#fff"/>
-<circle cx="50" cy="26" r="7" fill="#fff" stroke="#5a4f78" stroke-width="2.5"/><circle cx="50" cy="27" r="3.6" fill="#5a4f78"/><circle cx="51.6" cy="24.8" r="1.4" fill="#fff"/>
-<path d="M33 39 h14 q-7 11 -14 0 Z" fill="#5a4f78"/>`;
-  }else if(face==="surprise"){
-    f=`<circle cx="30" cy="25" r="6.5" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="30" cy="25.5" r="3" fill="#5a4f78"/>
-<circle cx="50" cy="25" r="6.5" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="50" cy="25.5" r="3" fill="#5a4f78"/>
-<ellipse cx="40" cy="43" rx="4.2" ry="5.2" fill="#5a4f78"/>`;
-  }else{
-    f=`<path d="M24 26 l5.5 -7 l5.5 7" fill="none" stroke="#5a4f78" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M45 26 l5.5 -7 l5.5 7" fill="none" stroke="#5a4f78" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
-<ellipse cx="22" cy="34" rx="4.5" ry="2.8" fill="#ff8fbe" opacity=".55"/><ellipse cx="58" cy="34" rx="4.5" ry="2.8" fill="#ff8fbe" opacity=".55"/>
-<path d="M34 35 q6 5 12 0" fill="none" stroke="#5a4f78" stroke-width="2.6" stroke-linecap="round"/>`;
-  }
-  return `<svg viewBox="0 0 80 72" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">${body}${f}</svg>`;
+  const ch=MINI[fill]?fill:(HEX2CHAR[(fill||'').toLowerCase()]||'green');
+  const fr=(face==='wow'||face==='surprise'||face==='bigeye')?'wow':(face==='blink'?'blink':'happy');
+  return `<img src="minis/${MINI[ch][fr]}.png" alt="" draggable="false" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none">`;
 }
 // the auto-play switch's knob = the glasses-slime logo, reused from the splash art (face swappable for toggle reactions)
 const SS_GLASSES='<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0"><g fill="none" stroke="#5a4f78" stroke-width="2.2" stroke-linecap="round" opacity=".85"><circle cx="29" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><circle cx="51" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><path d="M37.5 24 q2.5 -2 5 0"/><path d="M21.5 23.5 l-5 -1.5"/><path d="M58.5 23.5 l5 -1.5"/></g></svg>'; // wireframe specs, not welding goggles — face stays visible at knob size
@@ -2140,11 +2122,12 @@ const GEO={
   right:{anchor:{right:'0'},rest:`translateX(${SW-PEEK}px) rotate(-90deg)`,hide:`translateX(${SW+OUT}px) rotate(-90deg)`}
 };
 // evenly balanced: bottom slimes spread across the FULL width, and equal left/right so no side looks empty.
+// green & violet alternate around the room so no zone reads all-one-color (green#mint / violet#lav map to the two families)
 const SPOTS=[
-  {edge:'bottom',cross:{left:'14%'},fill:'--lav'},{edge:'bottom',cross:{left:'34%'},fill:'--pink'},
-  {edge:'bottom',cross:{left:'54%'},fill:'--peach'},{edge:'bottom',cross:{left:'74%'},fill:'--yellow'},{edge:'bottom',cross:{left:'88%'},fill:'--mint'},
-  {edge:'left',cross:{top:'22%'},fill:'--mint'},{edge:'left',cross:{top:'50%'},fill:'--sky'},{edge:'left',cross:{top:'76%'},fill:'--lav'},
-  {edge:'right',cross:{top:'22%'},fill:'--peach'},{edge:'right',cross:{top:'50%'},fill:'--pink'},{edge:'right',cross:{top:'76%'},fill:'--sky'} // right now matches left, 1:1
+  {edge:'bottom',cross:{left:'12%'},fill:'--mint'},{edge:'bottom',cross:{left:'31%'},fill:'--lav'},
+  {edge:'bottom',cross:{left:'50%'},fill:'--mint'},{edge:'bottom',cross:{left:'69%'},fill:'--lav'},{edge:'bottom',cross:{left:'88%'},fill:'--mint'},
+  {edge:'left',cross:{top:'24%'},fill:'--lav'},{edge:'left',cross:{top:'52%'},fill:'--mint'},{edge:'left',cross:{top:'80%'},fill:'--lav'},
+  {edge:'right',cross:{top:'24%'},fill:'--mint'},{edge:'right',cross:{top:'52%'},fill:'--lav'},{edge:'right',cross:{top:'80%'},fill:'--mint'} // mirrors left, opposite phase = balanced
 ];
 const chillers=[]; // full-view slimes with cursor physics
 (function(){try{
@@ -2165,8 +2148,9 @@ const chillers=[]; // full-view slimes with cursor physics
   // phones get a full crowd too — they were down to two
   // phone: only BOTTOM peekers — side peekers hide behind the edge button columns on a narrow screen. spread them
   // across the full width so the crowd is visible and even (not clumped/stacked). skip 12% to leave room for the rgirl.
-  const MOBSPOTS=[{edge:'bottom',cross:{left:'8%'},fill:'--mint'},{edge:'bottom',cross:{left:'30%'},fill:'--peach'},
-    {edge:'bottom',cross:{left:'52%'},fill:'--pink'},{edge:'bottom',cross:{left:'72%'},fill:'--yellow'},{edge:'bottom',cross:{left:'92%'},fill:'--lav'}];
+  const MOBSPOTS=[{edge:'bottom',cross:{left:'7%'},fill:'--mint'},{edge:'bottom',cross:{left:'21%'},fill:'--lav'},
+    {edge:'bottom',cross:{left:'35%'},fill:'--mint'},{edge:'bottom',cross:{left:'50%'},fill:'--lav'},
+    {edge:'bottom',cross:{left:'65%'},fill:'--mint'},{edge:'bottom',cross:{left:'79%'},fill:'--lav'},{edge:'bottom',cross:{left:'93%'},fill:'--mint'}]; // 7 across the bottom so phones aren't bare
   (MOB?MOBSPOTS:SPOTS).forEach((s,i)=>{const g=GEO[s.edge];const el=document.createElement('div');el.className="slime peeker peek-"+s.edge;el.style.position="fixed";
     Object.assign(el.style,g.anchor,s.cross);let _r=g.rest,_h=g.hide;if(s.edge==='bottom'){const a=' rotate('+(Math.random()*24-12).toFixed(0)+'deg)';_r+=a;_h+=a;} // upright, each at its own lil angle
     el.dataset.rest=_r;el.dataset.hidden=_h;el.dataset.fill=s.fill;el.dataset.state="out";el.dataset.face="happy";
@@ -2182,7 +2166,7 @@ const chillers=[]; // full-view slimes with cursor physics
   // FILL THE NEGATIVE SPACE: a friendly crowd in the side margins, placed BETWEEN the side buttons and
   // the tank so they never cover a button. Scales to the screen — wide desktop = a bunch, phone = skip
   // the margins (no room) and let the tank-edge peekers do the job. Recomputes on resize.
-  const FILLCOLS=['--peach','--mint','--sky','--pink','--lav','--yellow'];
+  const FILLCOLS=['--mint','--lav']; // alternate green/violet down the margins
   function addFill(x,y,size,fill){const el=document.createElement('div');el.className='slime mfill';
     el.style.cssText='position:fixed;left:'+(x|0)+'px;top:'+(y|0)+'px;width:'+(size|0)+'px;height:'+((size*0.94)|0)+'px;z-index:6';
     el.innerHTML='<div class="bob" style="animation-delay:'+(Math.random()*2).toFixed(2)+'s">'+slimeSVG(cssVar(fill),'happy')+'</div>';
@@ -2235,7 +2219,7 @@ const chillers=[]; // full-view slimes with cursor physics
         el.style.filter=`hue-rotate(${Math.floor(p*45)%360}deg) saturate(1.7)`;
         requestAnimationFrame(pulse);})();});
     layer.appendChild(el);sleepers.push({el,fx,size});}
-  if(!MOB){sleeper(0.16,'--yellow',58);sleeper(0.74,'--lav',64);} // no room in the left margin on phones
+  if(!MOB){sleeper(0.16,'--mint',58);sleeper(0.74,'--lav',64);} // one of each family; no room in the left margin on phones
   function placeSleepers(){const r=cv.getBoundingClientRect();const ys=[0.24,0.7]; // upright, tucked in the empty margin left of the play area
     sleepers.forEach((s,i)=>{s.el.style.left=Math.max(4,r.left-s.size-10)+'px';s.el.style.top=(r.top+r.height*ys[i])+'px';});}
   addEventListener('resize',placeSleepers);requestAnimationFrame(placeSleepers);
@@ -2251,8 +2235,14 @@ const chillers=[]; // full-view slimes with cursor physics
   el.title='psst — tap me to double-time!';
   const VB_W=150, VB_H=480, HEAD_Y=44, cx=VB_W/2, N=14;
   el.innerHTML='<svg viewBox="0 0 '+VB_W+' '+VB_H+'" width="100%" height="100%" preserveAspectRatio="xMidYMax meet">'+
+    '<defs><filter id="crayonW" x="-25%" y="-25%" width="150%" height="150%">'+                                // roughens the tube edge into a hand-drawn crayon look (face stays crisp, outside the filter)
+    '<feTurbulence type="fractalNoise" baseFrequency="0.05 0.07" numOctaves="2" seed="7" result="n"/>'+
+    '<feDisplacementMap in="SourceGraphic" in2="n" scale="10" xChannelSelector="R" yChannelSelector="G"/>'+
+    '</filter></defs>'+
+    '<g filter="url(#crayonW)">'+
     '<path id="wBody" fill="none" stroke-linecap="round" stroke-width="48"/>'+                                  // fat matte body tube
     '<path id="wRings" fill="none" stroke-width="2.6" stroke-linecap="round" opacity=".4"/>'+
+    '</g>'+
     '<g id="wFace"></g></svg>';
   layer.appendChild(el);
   const body=el.querySelector('#wBody'),rings=el.querySelector('#wRings'),face=el.querySelector('#wFace');
@@ -2335,19 +2325,21 @@ const MONARCH=s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="dis
     '<span class="bfly" style="animation-duration:9s;animation-delay:-5s"><i>'+MONARCH(11)+'</i></span>'+
     '</div>'+
     '<div class="bob" style="position:absolute;inset:0">'+
-    '<svg viewBox="0 0 80 72" width="100%" height="100%">'+
-    '<defs><linearGradient id="rgrad" x1="0" y1="0" x2="1" y2="1">'+
-    '<stop offset="0" stop-color="#ffb3ba"/><stop offset=".25" stop-color="#ffdfba"/><stop offset=".45" stop-color="#ffffba"/><stop offset=".65" stop-color="#baffc9"/><stop offset=".82" stop-color="#bae1ff"/><stop offset="1" stop-color="#e3baff"/></linearGradient></defs>'+
-    '<path d="M40 8 C18 8 11 28 11 44 C11 62 27 66 40 66 C53 66 69 62 69 44 C69 28 62 8 40 8 Z" fill="url(#rgrad)"/>'+
-    '<path d="M55 12 C49 5 43 10 51 15 C43 14 45 22 52 17 C59 22 63 15 55 15 C63 10 59 6 55 12 Z" fill="#6db3ff"/><circle cx="54.5" cy="13.5" r="1.8" fill="#3f7fd6"/>'+ // just the bow — no hair
-    '<ellipse cx="21" cy="41" rx="4.5" ry="2.8" fill="#ff8fbe" opacity=".6"/><ellipse cx="59" cy="41" rx="4.5" ry="2.8" fill="#ff8fbe" opacity=".6"/>'+
-    '<g id="gFace">'+happy+'</g></svg></div>';
+    // her rainbow crayon body (the hand-drawn one) — happy face + cheeks are baked into the art
+    '<img src="minis/bo.png" alt="" draggable="false" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;pointer-events:none">'+
+    // a soft pastel bow perched on top — pink to fit the crayon pastels, not the old flat blue
+    '<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0;overflow:visible">'+
+    '<g transform="translate(40,8)">'+
+    '<path d="M0 1 C-10 -7 -16 -3 -13 2 C-16 7 -9 9 0 3 Z" fill="#ffc4de" stroke="#ef9bc2" stroke-width="1.4" stroke-linejoin="round"/>'+
+    '<path d="M0 1 C10 -7 16 -3 13 2 C16 7 9 9 0 3 Z" fill="#ffc4de" stroke="#ef9bc2" stroke-width="1.4" stroke-linejoin="round"/>'+
+    '<circle cx="0" cy="2" r="3" fill="#ffd9e8" stroke="#ef9bc2" stroke-width="1.2"/>'+
+    '</g></svg></div>';
   layer.appendChild(el);
   const faceG=()=>el.querySelector('#gFace'),bub=el.querySelector('#gumbub');
   let tmr=null;
   el.addEventListener('click',()=>{
-    el.classList.add('show');el.style.transform='translateY(0)';faceG().innerHTML=wow;bub.classList.add('show');
-    clearTimeout(tmr);tmr=setTimeout(()=>{el.classList.remove('show');el.style.transform='translateY(37px)';bub.classList.remove('show');faceG().innerHTML=happy;},4500);
+    el.classList.add('show');el.style.transform='translateY(0)';bub.classList.add('show'); // pop up, show the bubble; her face is in the art
+    clearTimeout(tmr);tmr=setTimeout(()=>{el.classList.remove('show');el.style.transform='translateY(37px)';bub.classList.remove('show');},4500);
   });
 })();
 
