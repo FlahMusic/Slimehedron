@@ -30,6 +30,14 @@
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;font-family:'Quicksand',system-ui,sans-serif;color:var(--ink)}
 body{background:linear-gradient(135deg,var(--bg1) 0%,var(--bg4) 26%,var(--bg2) 52%,var(--bg5) 74%,var(--bg3) 100%);background-attachment:fixed;display:flex;flex-direction:column;overflow:hidden}
+/* PLAY MODE: hand-drawn crayon meadow behind everything. A soft white veil (::before) fades it back so the
+   note-balls + geometry stay crisp and readable — the image is wallpaper, never competes with the play. */
+body.mode-play{background:
+  linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),
+  url('slime%20imgs/bg.png') center/cover no-repeat fixed,
+  linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
+/* (crayon edge-filter removed — it just smeared the edges, didn't read as crayon. real crayon UI will come from
+   PNG assets via border-image; see below when those are added.) */
 header{display:flex;align-items:center;gap:14px;padding:14px 22px;position:relative;z-index:70}
 header h1{font-size:20px;font-weight:700;margin:0;letter-spacing:.5px}
 header h1 .dot{color:var(--accent)}
@@ -331,7 +339,7 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 #toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#fff;border-radius:14px;padding:10px 18px;font-size:13px;font-weight:700;color:var(--ink);box-shadow:var(--shadow);z-index:150;opacity:0;transition:.3s;pointer-events:none}
 #toast.show{opacity:1}
 #countNum{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:130px;font-weight:700;color:var(--accent);z-index:140;pointer-events:none;text-shadow:0 4px 30px rgba(255,255,255,.95)}
-#splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:linear-gradient(135deg,#e3d4ffee,#c4f0e2ee 50%,#ffd3e7ee);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);cursor:pointer;transition:opacity .5s;text-align:center}
+#splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:linear-gradient(rgba(255,255,255,.18),rgba(255,255,255,.02) 55%,rgba(255,255,255,.12)),url(bg.jpg) center/cover no-repeat #c4f0e2;cursor:pointer;transition:opacity .5s;text-align:center} /* the crayon-sky splash art; soft white scrim keeps the title + doors readable, cover scales it to any screen */
 #splash.gone{opacity:0;pointer-events:none}
 #dragBar{display:none;width:46px;height:5px;border-radius:3px;background:rgba(150,135,190,.45);margin:2px auto 10px;cursor:grab;touch-action:none}
 #menuBtn{display:none}
@@ -465,7 +473,11 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <svg width="34" height="26" viewBox="0 0 32 24" style="flex:none"><use href="#icDelay"/></svg><span class="sub">delay</span><input type="range" id="dlyTop" min="0" max="100" value="0" style="width:58px;flex:none" title="delay — echoes in time with the tempo">
   </span>
 </div>
-<svg width="0" height="0" style="position:absolute"><defs><filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="7"/><feColorMatrix mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 26 -12"/></filter><radialGradient id="slimeSheen" cx="0.4" cy="0.28" r="0.85"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#3a3358" stop-opacity=".2"/></radialGradient><radialGradient id="dropBallG" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="var(--mint)"/><stop offset=".7" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--lav)"/></radialGradient>
+<svg width="0" height="0" style="position:absolute"><defs><filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="7"/><feColorMatrix mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 26 -12"/></filter>
+<!-- CRAYON edge filter: turbulence noise displaces element edges so clean rectangles/borders look hand-drawn & wobbly.
+     Applied ONLY to UI chrome (buttons/cards), never the note canvas — the game stays crisp. Two seeds so not every edge matches. -->
+<filter id="crayon" x="-8%" y="-8%" width="116%" height="116%"><feTurbulence type="fractalNoise" baseFrequency="0.028" numOctaves="3" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="4.2" xChannelSelector="R" yChannelSelector="G"/></filter>
+<filter id="crayon2" x="-8%" y="-8%" width="116%" height="116%"><feTurbulence type="fractalNoise" baseFrequency="0.021" numOctaves="3" seed="19" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3.4" xChannelSelector="R" yChannelSelector="G"/></filter><radialGradient id="slimeSheen" cx="0.4" cy="0.28" r="0.85"><stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#3a3358" stop-opacity=".2"/></radialGradient><radialGradient id="dropBallG" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="var(--mint)"/><stop offset=".7" stop-color="var(--sky)"/><stop offset="1" stop-color="var(--lav)"/></radialGradient>
 <radialGradient id="drumG" cx="0.35" cy="0.3" r="0.9"><stop offset="0" stop-color="var(--yellow)"/><stop offset=".45" stop-color="var(--peach)"/><stop offset="1" stop-color="#f285ae"/></radialGradient>
 <radialGradient id="bassG" cx="0.35" cy="0.3" r="0.9"><stop offset="0" stop-color="#c9f2e4"/><stop offset=".55" stop-color="var(--mint)"/><stop offset="1" stop-color="#68c9a8"/></radialGradient>
 <radialGradient id="lavG" cx="0.35" cy="0.3" r="0.9"><stop offset="0" stop-color="#e2d4ff"/><stop offset=".55" stop-color="var(--lav)"/><stop offset="1" stop-color="#9a76e0"/></radialGradient>
@@ -699,7 +711,7 @@ const S={
 let BURST_MS=6000; // how long the corners stay broken open before reforming
 
 // ---------- audio ----------
-let AC=null,master=null,delayNode=null,dlyFb=null,dlyWet=null,masterFilt=null,slimeEQ=null,slimeComp=null,activeVoices=0,recTap=null,masterHP=null,bandBus=null,melBus=null,bandMix=null;
+let AC=null,master=null,delayNode=null,dlyFb=null,dlyWet=null,masterFilt=null,slimeEQ=null,slimeComp=null,activeVoices=0,recTap=null,masterHP=null,bandBus=null,melBus=null,bandMix=null,lim=null;
 let noiseBuf=null,tapeDry=null,tapeWet=null,tapeDrive=null,tapeShaper=null,tapeTone=null,tapeDly=null,wowDepth=null,flutDepth=null,hissG=null; // tape color stage
 function initAudio(){
   if(AC)return;
@@ -708,7 +720,7 @@ function initAudio(){
   bandBus=AC.createGain();bandBus.gain.value=1;bandMix=AC.createGain();bandMix.gain.value=1;
   bandBus.connect(bandMix);bandMix.connect(master); // duck stage -> mix stage
   melBus=AC.createGain();melBus.gain.value=1;melBus.connect(master);
-  const lim=AC.createDynamicsCompressor();
+  lim=AC.createDynamicsCompressor(); // module-level so the PCM recorder (startPCM) can tap it on iOS
   lim.threshold.value=-6;lim.ratio.value=14;lim.attack.value=.003;lim.release.value=.25;
   delayNode=AC.createDelay(2.0);delayNode.delayTime.value=60/S.bpm*0.75;
   dlyFb=AC.createGain();dlyFb.gain.value=0.2;
@@ -1469,7 +1481,8 @@ function softBlobs(col){ // glossy goo: upscale metaballs + sweeping shine + wet
   loctx.fillStyle=col;
   for(const p of particles){if(!p.pooled)continue;
     loctx.beginPath();loctx.arc(p.x/4,p.y/4,Math.max(1.4,p.r*0.46),0,7);loctx.fill();}
-  if(LITE){ctx.drawImage(loC,0,0,W,H);return;}
+  if(LITE){ctx.save();ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+    ctx.drawImage(loC,-4,-4,W+8,H+8);ctx.globalAlpha=0.6;ctx.drawImage(loC,0,0,W,H);ctx.restore();return;} // fatten + double-stamp so the light render fuses into smooth liquid, not separate bubbles (iOS/perf mode)
   shctx.clearRect(0,0,W,H);
   shctx.drawImage(loC,0,0,W,H);shctx.drawImage(loC,0,0,W,H); // double-stamp: solid heart, soft skin
   shctx.globalCompositeOperation='source-atop'; // shine only lands on the goo
@@ -2443,7 +2456,7 @@ let pcmNode=null,pcmSink=null,pcmOn=false,pcmBufs=null,pcmLen=0;
 function startPCM(){pcmBufs=[[],[]];pcmLen=0;
   if(!pcmNode){ // ScriptProcessor: deprecated on paper, bulletproof in practice — fine for a record tap
     pcmNode=AC.createScriptProcessor(4096,2,2);
-    pcmSink=AC.createGain();pcmSink.gain.value=0;pcmNode.connect(pcmSink);pcmSink.connect(AC.destination); // silent sink keeps it pumping on iOS
+    pcmSink=AC.createGain();pcmSink.gain.value=0.0001;pcmNode.connect(pcmSink);pcmSink.connect(AC.destination); // near-silent (not exactly 0 — iOS prunes truly-silent branches & stops the tap)
     pcmNode.onaudioprocess=e=>{if(!pcmOn)return;const b=e.inputBuffer;
       pcmBufs[0].push(new Float32Array(b.getChannelData(0)));
       pcmBufs[1].push(new Float32Array(b.numberOfChannels>1?b.getChannelData(1):b.getChannelData(0)));
@@ -2595,8 +2608,7 @@ window.slimeStar=function(){ // any little win → a star; the FIRST star of a n
 (function(){
   const sp=document.createElement('div');sp.id='splash';
   let last='play';try{last=localStorage.getItem('slimehedron-mode')||'play';}catch(e){}
-  sp.innerHTML='<div class="bob" style="width:150px;height:140px;position:relative">'+slimeSVG(cssVar('--mint'),'happy')+
-    '<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0"><g fill="none" stroke="#5a4f78" stroke-width="1.4" stroke-linecap="round" opacity=".8"><circle cx="29" cy="25" r="7.5" fill="rgba(255,255,255,.1)"/><circle cx="51" cy="25" r="7.5" fill="rgba(255,255,255,.1)"/><path d="M37.5 24 q2.5 -2 5 0"/><path d="M21.5 23.5 l-5 -1.5"/><path d="M58.5 23.5 l5 -1.5"/></g></svg></div>'+
+  sp.innerHTML='<div class="bob" style="width:min(180px,46vw);height:min(180px,46vw);position:relative"><img src="slimelogo.png" alt="slimehedron" style="width:100%;height:100%;object-fit:contain;display:block"></div>'+
     '<div style="font-size:34px;font-weight:700">slimehedron<span style="color:var(--accent)">.</span></div>'+
     '<div id="modeCards">'+
     '<div class="modeCard mc-learn'+(last==='learn'?' last':'')+'" data-m="learn"><b>learn</b><span>the building blocks of music</span></div>'+
