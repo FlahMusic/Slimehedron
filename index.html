@@ -29,13 +29,13 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;font-family:'Quicksand',system-ui,sans-serif;color:var(--ink)}
-body{background:linear-gradient(135deg,var(--bg1) 0%,var(--bg4) 26%,var(--bg2) 52%,var(--bg5) 74%,var(--bg3) 100%);background-attachment:fixed;display:flex;flex-direction:column;overflow:hidden}
-/* PLAY MODE: hand-drawn crayon meadow behind everything. A soft white veil (::before) fades it back so the
-   note-balls + geometry stay crisp and readable — the image is wallpaper, never competes with the play. */
-body.mode-play{background:
-  linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),
-  url('slime%20imgs/bg.png') center/cover no-repeat fixed,
-  linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
+/* THE CRAYON SKY, EVERYWHERE: same hand-drawn backdrop behind every mode (learn/play/studio) + the splash.
+   A soft white veil fades it back so note-balls, cards and text stay crisp — the art is wallpaper, never competes. */
+body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background-attachment:fixed;display:flex;flex-direction:column;overflow:hidden}
+body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background-attachment:fixed} /* play area gets a touch more veil so the geometry reads */
+@media(max-width:820px){ /* phones get the portrait art so it fills tall screens without cropping the scene */
+  body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background-attachment:fixed}
+  body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background-attachment:fixed}}
 /* (crayon edge-filter removed — it just smeared the edges, didn't read as crayon. real crayon UI will come from
    PNG assets via border-image; see below when those are added.) */
 header{display:flex;align-items:center;gap:14px;padding:14px 22px;position:relative;z-index:70}
@@ -339,7 +339,8 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 #toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#fff;border-radius:14px;padding:10px 18px;font-size:13px;font-weight:700;color:var(--ink);box-shadow:var(--shadow);z-index:150;opacity:0;transition:.3s;pointer-events:none}
 #toast.show{opacity:1}
 #countNum{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:130px;font-weight:700;color:var(--accent);z-index:140;pointer-events:none;text-shadow:0 4px 30px rgba(255,255,255,.95)}
-#splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:linear-gradient(rgba(255,255,255,.18),rgba(255,255,255,.02) 55%,rgba(255,255,255,.12)),url(bg.jpg) center/cover no-repeat #c4f0e2;cursor:pointer;transition:opacity .5s;text-align:center} /* the crayon-sky splash art; soft white scrim keeps the title + doors readable, cover scales it to any screen */
+#splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);cursor:pointer;transition:opacity .5s;text-align:center} /* splash uses the landscape art; matched aspect ratio so cover fills edge-to-edge with no crop */
+@media(max-width:820px){#splash{background:url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}} /* phones: portrait art */
 #splash.gone{opacity:0;pointer-events:none}
 #dragBar{display:none;width:46px;height:5px;border-radius:3px;background:rgba(150,135,190,.45);margin:2px auto 10px;cursor:grab;touch-action:none}
 #menuBtn{display:none}
@@ -2129,7 +2130,7 @@ function slimeSVG(fill,face){
 }
 // the auto-play switch's knob = the glasses-slime logo, reused from the splash art (face swappable for toggle reactions)
 const SS_GLASSES='<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0"><g fill="none" stroke="#5a4f78" stroke-width="2.2" stroke-linecap="round" opacity=".85"><circle cx="29" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><circle cx="51" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><path d="M37.5 24 q2.5 -2 5 0"/><path d="M21.5 23.5 l-5 -1.5"/><path d="M58.5 23.5 l5 -1.5"/></g></svg>'; // wireframe specs, not welding goggles — face stays visible at knob size
-function setKnobFace(face){document.querySelector('#slimeBig .sic').innerHTML='<div style="position:relative;width:100%;height:100%">'+slimeSVG(cssVar('--mint'),face)+SS_GLASSES+'</div>';}
+function setKnobFace(face){const s=document.querySelector('#slimeBig .sic');if(s)s.innerHTML='<img src="slimelogo.png" alt="" style="width:100%;height:100%;object-fit:contain;display:block">';} /* slime-mode knob = the crayon slime logo (same guy as the splash); face arg kept for callers but the art is one happy face */
 setKnobFace('happy');
 const SH=84,SW=90,PEEK=34,OUT=14;
 const GEO={
@@ -2615,9 +2616,8 @@ window.slimeStar=function(){ // any little win → a star; the FIRST star of a n
     '<div class="modeCard mc-play'+(last==='play'?' last':'')+'" data-m="play"><b>play</b><span>have fun!</span></div>'+
     '<div class="modeCard mc-studio'+(last==='studio'?' last':'')+'" data-m="studio"><b>studio</b><span>make anything</span></div>'+
     '</div>'+
-    '<div class="streakBadge"></div>'+
     '<div class="spCredit">© 2026 FlahMusic · free &amp; open · <a href="https://github.com/FlahMusic/Slimehedron" target="_blank" rel="noopener">source</a> · <a id="spSupport" href="https://ko-fi.com/flahmusic" target="_blank" rel="noopener">☕ support</a></div>'; // credit + tip jar
-  document.body.appendChild(sp);renderStreak();
+  document.body.appendChild(sp);
   function boot(m){sp.classList.add('gone');setTimeout(()=>sp.remove(),600);
     enableMotion();initAudio();if(AC.state==="suspended")AC.resume();
     applyMode(m);
