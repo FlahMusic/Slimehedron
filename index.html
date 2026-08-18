@@ -157,6 +157,9 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 .psBtn.on{transform:scale(1.06);box-shadow:0 8px 22px rgba(130,100,200,.45), inset 0 2px 6px rgba(255,255,255,.7);border-color:#fff}
 .psBtn svg{width:42px;height:42px;position:relative;z-index:1}
 .psBtn .psNum{position:absolute;right:8px;bottom:5px;font-weight:900;font-size:19px;z-index:1;text-shadow:0 1px 2px rgba(255,255,255,.7)}
+.psItem{display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none} /* button + its name label, so kids know what each does */
+.psLbl{font-size:12px;font-weight:800;color:#5a4f78;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 2px rgba(255,255,255,.9);letter-spacing:.2px;white-space:nowrap;pointer-events:none}
+@media (max-width:820px){.psLbl{font-size:9px}}
 @media (max-width:820px){.psBtn{width:44px;height:44px;border-radius:15px;gap:8px}.psBtn svg{width:25px;height:25px}.psCol{gap:8px}.psCol.left{left:4px}.psCol.right{right:4px}}
 @media (max-width:820px){.psBtn .psNum{font-size:14px}}
 #kbMapOld{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--card-brd);
@@ -274,7 +277,8 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
    but still clearly highlights the active key, with a big readable key letter in the middle. never over the play field. */
 #cofWheel{position:fixed;left:96px;top:62px;bottom:auto;transform:none;width:132px;height:132px;pointer-events:none;z-index:30;opacity:.92;filter:drop-shadow(0 3px 10px rgba(120,110,160,.16))}
 .mode-studio #cofWheel{pointer-events:auto} /* studio: you can click a key */
-body.kb-open #cofWheel{display:none} /* keybed open = hide it, no crowding */
+/* keybed open used to hide the circle of fifths — but the wheel is top-left and the keybed is at the
+   bottom, so they never crowd. keep it visible so you can watch the key/chords actuate while playing. */
 @media (max-width:820px){#cofWheel{width:92px;height:92px;left:6px;top:40px}} /* phone: nestled right under the back button, top-left */
 #cofSvg{width:100%;height:100%;overflow:visible}
 #cofSvg .cofRing{fill:rgba(255,255,255,.28);stroke:rgba(255,255,255,.6);stroke-width:1} /* translucent — blends with the bg */
@@ -433,7 +437,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <input type="range" id="playBpm" min="40" max="200" value="80" aria-label="tempo" style="position:absolute;opacity:0;pointer-events:none;width:1px;height:1px">
     </div>
     <button class="btn primary big" id="playBtn" title="play / pause" aria-label="play or pause">▶</button>
-    <button class="btn big" id="drumBtn" title="drums" aria-label="drums" data-l="drums"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icDrum"/></svg></button>
+    <button class="btn big" id="drumBtn" title="drums" aria-label="drums" data-l="drums"><svg width="30" height="30" viewBox="0 0 24 24"><use href="#icKit"/></svg></button>
     <button class="btn big" id="bandBtn" title="backing band" aria-label="backing band" data-l="band"><svg width="45" height="34" viewBox="0 0 32 24"><use href="#icBass"/></svg></button>
     <button class="btn big" id="dropBtn" title="drop a ball" aria-label="drop a ball" data-l="ball"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icBall"/></svg></button>
     <button class="btn big" id="newShapeBtn" title="new shape!" aria-label="new shape">🎲</button>
@@ -485,6 +489,14 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 <!-- icon system: one language — gradient body, white 1.4 stroke, ink-soft accent strokes (overridable via --icAcc for .on buttons) -->
 <symbol id="icBall" viewBox="0 0 24 24"><g stroke="var(--icAcc,var(--ink-soft))" stroke-width="1.6" stroke-linecap="round" opacity=".55" fill="none"><path d="M9 2 L8 6"/><path d="M12 1 L12 6"/><path d="M15 2 L16 6"/></g><circle cx="12" cy="16" r="7" fill="url(#dropBallG)" stroke="#fff" stroke-width="1.4"/><text x="12" y="19.5" font-size="9" text-anchor="middle" fill="var(--icInk,var(--ink))">♪</text></symbol>
 <symbol id="icDrum" viewBox="0 0 24 24"><g stroke="var(--icAcc,var(--ink-soft))" stroke-width="1.6" stroke-linecap="round" opacity=".8" fill="none"><path d="M5.5 2.5 L10 7.5"/><path d="M18.5 2.5 L14 7.5"/></g><g fill="var(--icAcc,var(--ink-soft))" opacity=".8"><circle cx="5.3" cy="2.3" r="1.3"/><circle cx="18.7" cy="2.3" r="1.3"/></g><path d="M5 11.5 L5 16.6 Q5 20.4 12 20.4 Q19 20.4 19 16.6 L19 11.5" fill="url(#drumG)" stroke="#fff" stroke-width="1.4"/><ellipse cx="12" cy="11.5" rx="7" ry="3.1" fill="#fffdf6" stroke="#fff" stroke-width="1.4"/><path d="M7.2 14.6 L9.4 17.6 M16.8 14.6 L14.6 17.6" stroke="#fff" stroke-width="1.2" opacity=".8" fill="none" stroke-linecap="round"/></symbol>
+<symbol id="icKit" viewBox="0 0 24 24"><!-- full drum kit: crash cymbal + snare + kick, reads clearer than a lone drum -->
+  <path d="M18 5.4 L18 13" stroke="var(--icAcc,var(--ink-soft))" stroke-width="1.3" stroke-linecap="round"/>
+  <ellipse cx="18" cy="5.1" rx="4.6" ry="1.5" fill="#ffe9a8" stroke="#fff" stroke-width="1.1"/>
+  <ellipse cx="6.4" cy="9.3" rx="4.2" ry="1.7" fill="#fffdf6" stroke="#fff" stroke-width="1.2"/>
+  <path d="M2.2 9.3 v2.4 q0 1.9 4.2 1.9 q4.2 0 4.2 -1.9 V9.3" fill="url(#drumG)" stroke="#fff" stroke-width="1.2"/>
+  <circle cx="12.6" cy="17.4" r="5.4" fill="url(#drumG)" stroke="#fff" stroke-width="1.4"/>
+  <circle cx="12.6" cy="17.4" r="2" fill="#fffdf6" stroke="#fff" stroke-width="1"/>
+  <path d="M8.6 21.3 L7.1 23 M16.6 21.3 L18.1 23" stroke="var(--icAcc,var(--ink-soft))" stroke-width="1.2" stroke-linecap="round"/></symbol>
 <symbol id="icBass" viewBox="0 0 32 24"><!-- the band: bassist + keyboardist slimes at full mascot scale, blush and all -->
 <g stroke="var(--icAcc,var(--ink-soft))" stroke-width="1.4" stroke-linecap="round" opacity=".85" fill="none"><path d="M16.3 6.5 V1.8 q1.9 .5 1.7 2.4"/><path d="M31 5.5 V2.2"/></g>
 <g fill="var(--icAcc,var(--ink-soft))" opacity=".85"><circle cx="15.1" cy="6.8" r="1.35"/><circle cx="29.9" cy="5.8" r="1.1"/></g>
@@ -1852,8 +1864,8 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
             ['triangle','#ece0ff','#c4a9f5','#6b4fa8','M2 18 L7 6 L12 18 L17 6 L21 11'],
             ['sawtooth','#ffe9d6','#ffd3a8','#c9743f','M2 18 L8 6 L8 18 L14 6 L14 18 L20 6 L20 18'],
             ['square','#ffe2ef','#ffb6d6','#c0567f','M2 18 L2 6 L8 6 L8 18 L14 18 L14 6 L20 6 L20 18']];
-  const wl=$("psWaves");if(wl)wl.innerHTML=WV.map(([w,c1,c2,st,d])=>
-    `<button class="psBtn${w==='triangle'?' on':''}" data-w="${w}" title="${w}" style="background:linear-gradient(160deg,${c1},${c2})"><svg viewBox="0 0 24 24" fill="none" stroke="${st}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg></button>`).join('');
+  const wl=$("psWaves");if(wl)wl.innerHTML=WV.map(([w,c1,c2,st,d],i)=>
+    `<div class="psItem"><button class="psBtn${w==='triangle'?' on':''}" data-w="${w}" title="Sound ${i+1}" style="background:linear-gradient(160deg,${c1},${c2})"><svg viewBox="0 0 24 24" fill="none" stroke="${st}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg></button><span class="psLbl">Sound ${i+1}</span></div>`).join('');
   wl&&wl.addEventListener('pointerdown',e=>{const b=e.target.closest('.psBtn');if(!b)return;
     wl.querySelectorAll('.psBtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');
     const wb=$("waveSeg").querySelector(`button[data-w="${b.dataset.w}"]`);if(wb)wb.click();
@@ -1861,7 +1873,7 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
   const DK=[['chip','#ffe9d6','#ffd3a8','#e0863f','1'],['conga','#ece0ff','#c4a9f5','#6b4fa8','2'],
             ['bossa','#fff2c9','#ffe08a','#cf9a1e','3'],['rock','#daf7ee','#9fe6cf','#2f8f70','4']];
   const dl=$("psDrums");if(dl)dl.innerHTML=DK.map(([k,c1,c2,nc,n])=>
-    `<button class="psBtn" data-kit="${k}" title="beat ${n}" style="background:linear-gradient(160deg,${c1},${c2})"><svg width="40" height="40" viewBox="0 0 24 24"><use href="#icDrum"/></svg><span class="psNum" style="color:${nc}">${n}</span></button>`).join('');
+    `<div class="psItem"><button class="psBtn" data-kit="${k}" title="Drum ${n}" style="background:linear-gradient(160deg,${c1},${c2})"><svg width="40" height="40" viewBox="0 0 24 24"><use href="#icKit"/></svg></button><span class="psLbl">Drum ${n}</span></div>`).join('');
   dl&&dl.addEventListener('pointerdown',e=>{const b=e.target.closest('.psBtn');if(!b)return;
     initAudio();if(AC&&AC.state==='suspended')AC.resume();
     const wasOn=b.classList.contains('on');
@@ -2103,8 +2115,10 @@ window.pixSlime=function(fill,face,opt){ // opt: {cap:1} teacher's cap · {girl:
 // MINI SLIMES: hand-drawn crayon art (the ones you made). two color families + rainbow, each with 3
 // expressions so click/spook reactions still animate by swapping frames. colors map by palette hex so
 // none of the placement code below had to change — only which family a slime belongs to.
-const MINI={green:{happy:'grn',blink:'grn3',wow:'grn2'},violet:{happy:'violet',blink:'violet3',wow:'violet2'},rainbow:{happy:'bo',blink:'bo',wow:'bo'}};
-const HEX2CHAR={'#9fe6cf':'green','#a6c8ff':'green','#ffe39c':'green','#c4a9f5':'violet','#ffb6d6':'violet','#ffc0a8':'violet'};
+const MINI={green:{happy:'grn',blink:'grn3',wow:'grn2'},violet:{happy:'violet',blink:'violet3',wow:'violet2'},
+  blue:{happy:'blue1',blink:'blue3',wow:'blue2'},pear:{happy:'pear1',blink:'pear3',wow:'pear2'},
+  pink:{happy:'pink1',blink:'pink1',wow:'pink2'},rainbow:{happy:'bo',blink:'bo',wow:'bo'}};
+const HEX2CHAR={'#9fe6cf':'green','#c4a9f5':'violet','#a6c8ff':'blue','#ffe39c':'pear','#ffb6d6':'pink','#ffc0a8':'pink'}; // 5 families spread across the palette vars
 function slimeSVG(fill,face){
   const ch=MINI[fill]?fill:(HEX2CHAR[(fill||'').toLowerCase()]||'green');
   const fr=(face==='wow'||face==='surprise'||face==='bigeye')?'wow':(face==='blink'?'blink':'happy');
@@ -2123,11 +2137,12 @@ const GEO={
 };
 // evenly balanced: bottom slimes spread across the FULL width, and equal left/right so no side looks empty.
 // green & violet alternate around the room so no zone reads all-one-color (green#mint / violet#lav map to the two families)
+// five families spread so no two neighbours match and every colour appears ~twice (green#mint blue#sky violet#lav pink#pink pear#yellow)
 const SPOTS=[
-  {edge:'bottom',cross:{left:'12%'},fill:'--mint'},{edge:'bottom',cross:{left:'31%'},fill:'--lav'},
-  {edge:'bottom',cross:{left:'50%'},fill:'--mint'},{edge:'bottom',cross:{left:'69%'},fill:'--lav'},{edge:'bottom',cross:{left:'88%'},fill:'--mint'},
-  {edge:'left',cross:{top:'24%'},fill:'--lav'},{edge:'left',cross:{top:'52%'},fill:'--mint'},{edge:'left',cross:{top:'80%'},fill:'--lav'},
-  {edge:'right',cross:{top:'24%'},fill:'--mint'},{edge:'right',cross:{top:'52%'},fill:'--lav'},{edge:'right',cross:{top:'80%'},fill:'--mint'} // mirrors left, opposite phase = balanced
+  {edge:'bottom',cross:{left:'12%'},fill:'--mint'},{edge:'bottom',cross:{left:'31%'},fill:'--pink'},
+  {edge:'bottom',cross:{left:'50%'},fill:'--sky'},{edge:'bottom',cross:{left:'69%'},fill:'--yellow'},{edge:'bottom',cross:{left:'88%'},fill:'--lav'},
+  {edge:'left',cross:{top:'24%'},fill:'--sky'},{edge:'left',cross:{top:'52%'},fill:'--yellow'},{edge:'left',cross:{top:'80%'},fill:'--pink'},
+  {edge:'right',cross:{top:'24%'},fill:'--lav'},{edge:'right',cross:{top:'52%'},fill:'--mint'},{edge:'right',cross:{top:'80%'},fill:'--sky'}
 ];
 const chillers=[]; // full-view slimes with cursor physics
 (function(){try{
@@ -2148,9 +2163,9 @@ const chillers=[]; // full-view slimes with cursor physics
   // phones get a full crowd too — they were down to two
   // phone: only BOTTOM peekers — side peekers hide behind the edge button columns on a narrow screen. spread them
   // across the full width so the crowd is visible and even (not clumped/stacked). skip 12% to leave room for the rgirl.
-  const MOBSPOTS=[{edge:'bottom',cross:{left:'7%'},fill:'--mint'},{edge:'bottom',cross:{left:'21%'},fill:'--lav'},
-    {edge:'bottom',cross:{left:'35%'},fill:'--mint'},{edge:'bottom',cross:{left:'50%'},fill:'--lav'},
-    {edge:'bottom',cross:{left:'65%'},fill:'--mint'},{edge:'bottom',cross:{left:'79%'},fill:'--lav'},{edge:'bottom',cross:{left:'93%'},fill:'--mint'}]; // 7 across the bottom so phones aren't bare
+  const MOBSPOTS=[{edge:'bottom',cross:{left:'7%'},fill:'--mint'},{edge:'bottom',cross:{left:'21%'},fill:'--sky'},
+    {edge:'bottom',cross:{left:'35%'},fill:'--lav'},{edge:'bottom',cross:{left:'50%'},fill:'--pink'},
+    {edge:'bottom',cross:{left:'65%'},fill:'--yellow'},{edge:'bottom',cross:{left:'79%'},fill:'--mint'},{edge:'bottom',cross:{left:'93%'},fill:'--sky'}]; // 7 across the bottom, all 5 colours, so phones aren't bare
   (MOB?MOBSPOTS:SPOTS).forEach((s,i)=>{const g=GEO[s.edge];const el=document.createElement('div');el.className="slime peeker peek-"+s.edge;el.style.position="fixed";
     Object.assign(el.style,g.anchor,s.cross);let _r=g.rest,_h=g.hide;if(s.edge==='bottom'){const a=' rotate('+(Math.random()*24-12).toFixed(0)+'deg)';_r+=a;_h+=a;} // upright, each at its own lil angle
     el.dataset.rest=_r;el.dataset.hidden=_h;el.dataset.fill=s.fill;el.dataset.state="out";el.dataset.face="happy";
@@ -2166,7 +2181,7 @@ const chillers=[]; // full-view slimes with cursor physics
   // FILL THE NEGATIVE SPACE: a friendly crowd in the side margins, placed BETWEEN the side buttons and
   // the tank so they never cover a button. Scales to the screen — wide desktop = a bunch, phone = skip
   // the margins (no room) and let the tank-edge peekers do the job. Recomputes on resize.
-  const FILLCOLS=['--mint','--lav']; // alternate green/violet down the margins
+  const FILLCOLS=['--mint','--sky','--lav','--pink','--yellow']; // cycle all 5 colours down the margins
   function addFill(x,y,size,fill){const el=document.createElement('div');el.className='slime mfill';
     el.style.cssText='position:fixed;left:'+(x|0)+'px;top:'+(y|0)+'px;width:'+(size|0)+'px;height:'+((size*0.94)|0)+'px;z-index:6';
     el.innerHTML='<div class="bob" style="animation-delay:'+(Math.random()*2).toFixed(2)+'s">'+slimeSVG(cssVar(fill),'happy')+'</div>';
@@ -2192,7 +2207,7 @@ const chillers=[]; // full-view slimes with cursor physics
         const sz=size*(0.85+Math.random()*0.25);
         addFill(cx-sz/2,cy-sz/2,sz,FILLCOLS[_ci++%FILLCOLS.length]);}}
     band(btn+8,r.left-6);                                   // left margin, between buttons and tank
-    band(r.right+6,W-btn-8,{top:H-380,bottom:H,left:W-320}); // right margin — carve out the worm's bottom-right zone
+    band(r.right+6,W-btn-8,{top:H*0.42,bottom:H+60,left:r.right}); // right margin — the worm owns the lower-right, so fillers stay in the upper half only (no more worm/slime overlap)
   }
   requestAnimationFrame(fillMargins);let _fmT;addEventListener('resize',()=>{clearTimeout(_fmT);_fmT=setTimeout(fillMargins,220);});
   chillers.length=0; // margin slimes just bob — no cursor physics (lighter with a big crowd)
@@ -2219,7 +2234,7 @@ const chillers=[]; // full-view slimes with cursor physics
         el.style.filter=`hue-rotate(${Math.floor(p*45)%360}deg) saturate(1.7)`;
         requestAnimationFrame(pulse);})();});
     layer.appendChild(el);sleepers.push({el,fx,size});}
-  if(!MOB){sleeper(0.16,'--mint',58);sleeper(0.74,'--lav',64);} // one of each family; no room in the left margin on phones
+  if(!MOB){sleeper(0.16,'--yellow',58);sleeper(0.74,'--pink',64);} // pear + pink nappers; no room in the left margin on phones
   function placeSleepers(){const r=cv.getBoundingClientRect();const ys=[0.24,0.7]; // upright, tucked in the empty margin left of the play area
     sleepers.forEach((s,i)=>{s.el.style.left=Math.max(4,r.left-s.size-10)+'px';s.el.style.top=(r.top+r.height*ys[i])+'px';});}
   addEventListener('resize',placeSleepers);requestAnimationFrame(placeSleepers);
@@ -2229,76 +2244,42 @@ const chillers=[]; // full-view slimes with cursor physics
 // ---------- wiggle worm: thick 3D groundling — hides in the dirt, pops up to dance every cycle ----------
 (function(){
   const layer=document.getElementById('slimes');
-  const el=document.createElement('div');el.className='slime';
-  const _wmob=matchMedia('(max-width:820px)').matches; // sit well LEFT of the drum button column (which owns the right edge) so he never pokes over a button
-  el.style.cssText='position:fixed;bottom:0;right:'+(_wmob?96:250)+'px;width:'+(_wmob?76:120)+'px;height:'+(_wmob?260:360)+'px;z-index:6;pointer-events:auto;will-change:transform';
+  const el=document.createElement('div');el.className='slime';el.id='wormEl'; // id so the margin-slime placer can avoid him
+  const CN=24,CCOLS=6,CROWS=4,CW=170,CH=159; // caterpillar sprite sheet: 24 frames of your movie, 6x4 grid, cell 170x159
+  el.style.cssText='position:fixed;bottom:0;z-index:6;pointer-events:auto;will-change:transform;background-image:url(caterpillar.png);background-repeat:no-repeat;background-size:'+(CCOLS*100)+'% '+(CROWS*100)+'%';
   el.title='psst — tap me to double-time!';
-  const VB_W=150, VB_H=480, HEAD_Y=44, cx=VB_W/2, N=14;
-  el.innerHTML='<svg viewBox="0 0 '+VB_W+' '+VB_H+'" width="100%" height="100%" preserveAspectRatio="xMidYMax meet">'+
-    '<defs><filter id="crayonW" x="-25%" y="-25%" width="150%" height="150%">'+                                // roughens the tube edge into a hand-drawn crayon look (face stays crisp, outside the filter)
-    '<feTurbulence type="fractalNoise" baseFrequency="0.05 0.07" numOctaves="2" seed="7" result="n"/>'+
-    '<feDisplacementMap in="SourceGraphic" in2="n" scale="10" xChannelSelector="R" yChannelSelector="G"/>'+
-    '</filter></defs>'+
-    '<g filter="url(#crayonW)">'+
-    '<path id="wBody" fill="none" stroke-linecap="round" stroke-width="48"/>'+                                  // fat matte body tube
-    '<path id="wRings" fill="none" stroke-width="2.6" stroke-linecap="round" opacity=".4"/>'+
-    '</g>'+
-    '<g id="wFace"></g></svg>';
   layer.appendChild(el);
-  const body=el.querySelector('#wBody'),rings=el.querySelector('#wRings'),face=el.querySelector('#wFace');
   const asideEl=document.querySelector('aside');
-  let dblUntil=0,curFace='',wBeat=0,lastT=performance.now(),rise=0;
+  let dblUntil=0,wBeat=0,lastT=performance.now(),rise=0,lastFi=-1;
   window._wormReset=()=>{wBeat=0;lastT=performance.now();};
   el.addEventListener('click',()=>{dblUntil=performance.now()+8*(60000/S.bpm);}); // tap = 2 bars of double-time
-  function setFace(dbl){const k=dbl?'d':'n';if(k===curFace)return;curFace=k;
-    face.innerHTML=dbl?'<path d="M-13 -5 l6 -6 l6 6 M2 -5 l6 -6 l6 6" fill="none" stroke="#3d3756" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M-9 4 q9 15 18 0 Z" fill="#3d3756"/><path d="M-7 5.5 q7 5 14 0" fill="#fff" opacity=".9"/>'
-      :'<circle cx="-8" cy="-4" r="3.4" fill="#3d3756"/><circle cx="8" cy="-4" r="3.4" fill="#3d3756"/><path d="M-6 5 q6 6 12 0" fill="none" stroke="#3d3756" stroke-width="3.2" stroke-linecap="round"/>';}
-  setFace(false);
   function beats(){if((drumOn||bandOn)&&AC)return (drumStep-(drumTime-AC.currentTime)/drumStepDur())/drumSPB();return wBeat;}
   function tick(){
     const now=performance.now(),dt=Math.min(50,now-lastT);lastT=now;
     if(S.playing&&!drumOn)wBeat+=dt*S.bpm/60000;
     const mob=matchMedia('(max-width:820px)').matches, rc=cv.getBoundingClientRect();
-    let wPx,hPx,leftPx;
-    // right boundary = the drum-button column if it's showing (play mode), else the sidebar, else the screen edge.
-    // the worm sits in the empty gap between the tank and that boundary, and NEVER under the drum buttons.
-    // #psDrums is position:fixed, so offsetParent is always null — check its real rendered box instead.
+    // sit in the empty gap between the tank and the right boundary (drum column in play mode, else sidebar/edge), never under a button
     const drumsEl=document.getElementById('psDrums');
     let dr=null; if(drumsEl){const b=drumsEl.getBoundingClientRect(); if(b.width>0&&b.height>0&&getComputedStyle(drumsEl).display!=='none')dr=b;}
     const asideR=asideEl.getBoundingClientRect();
     const rightBound=dr?dr.left:(asideR.width?asideR.left:innerWidth);
-    if(mob){wPx=64;hPx=Math.round(innerHeight*0.40);leftPx=4;}
-    else{const gap=rightBound-rc.right;
-      wPx=Math.min(104,Math.max(64,gap-24));hPx=Math.round(innerHeight*0.52);
-      leftPx=Math.round(rc.right+Math.max(8,(gap-wPx)/2));                 // centered in the gap, left of the drums
-      if(leftPx+wPx>rightBound-10)leftPx=rightBound-wPx-10;}               // hard stop: never cross into the drum column
+    let wPx,leftPx;
+    if(mob){wPx=94;leftPx=Math.max(4,innerWidth-wPx-6);}                     // tucked into the bottom-right corner on phones
+    else{const gap=rightBound-rc.right; wPx=Math.max(100,Math.min(160,gap-16));
+      leftPx=Math.round(rc.right+Math.max(8,(gap-wPx)/2));
+      if(leftPx+wPx>rightBound-8)leftPx=rightBound-wPx-8;}
+    const hPx=Math.round(wPx*CH/CW);                                         // keep the sprite's aspect so he never squishes
     el.style.width=wPx+'px';el.style.height=hPx+'px';el.style.left=leftPx+'px';el.style.right='auto';
-    // ---- ground cycle: rest ~4 bars (only the head pokes), then rise & wiggle ~8 bars, loop ----
+    // ground cycle: rest ~4 bars (only his head pokes up), rise & dance ~8 bars, loop
     const bt=beats(), bar=Math.floor(bt/4), cyc=((bar%12)+12)%12, up=cyc>=4;
-    rise+=((up?1:0)-rise)*0.045;                                   // smooth emerge / sink
-    // resting: sink only ~55% so the head + a bit of neck stay visible and can wiggle (was 74% = basically hidden)
-    el.style.transform='translateY('+((1-rise)*hPx*0.55).toFixed(1)+'px)';
-    const autoDbl=up&&(((cyc-4)&3)===3);                          // every 4th wiggle bar = 1 bar of double-time
-    const dbl=(now<dblUntil)||autoDbl;setFace(dbl);
-    const u=bt*(dbl?2:1), wig=0.42+0.58*rise;                     // resting head still wiggles noticeably, full wiggle up top
-    let sw=Math.sin(u*Math.PI);if(dbl)sw=Math.sign(sw)*Math.pow(Math.abs(sw),0.6);
-    const amp=(dbl?48:34)*wig, hue=((150+Math.floor(bt)*26)%360+360)%360, span=VB_H-HEAD_Y-20;
-    const pts=[];
-    for(let i=0;i<N;i++){const f=i/(N-1);
-      const wave=Math.sin(u*Math.PI-f*3.6)*(8+16*f)*(0.28+0.72*f)*wig;
-      const hip=Math.sin(u*Math.PI*0.5)*7*(1-f)*(dbl?1.7:1)*wig;
-      pts.push([cx+sw*Math.pow(f,1.3)*amp*0.6+wave+hip,(VB_H-20)-f*span]);}
-    let d='M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1)+' ';   // smooth quadratic spine
-    for(let i=1;i<N-1;i++){const mx=(pts[i][0]+pts[i+1][0])/2,my=(pts[i][1]+pts[i+1][1])/2;
-      d+='Q'+pts[i][0].toFixed(1)+' '+pts[i][1].toFixed(1)+' '+mx.toFixed(1)+' '+my.toFixed(1)+' ';}
-    d+='L'+pts[N-1][0].toFixed(1)+' '+pts[N-1][1].toFixed(1);
-    body.setAttribute('d',d);body.setAttribute('stroke','hsl('+hue+',50%,77%)'); // soft pastel matte, like the slimes
-    let rd='';for(let i=1;i<N-1;i++){const dx=pts[i+1][0]-pts[i-1][0],dy=pts[i+1][1]-pts[i-1][1],L=Math.hypot(dx,dy)||1;
-      const nx=-dy/L,ny=dx/L,hh=21-(i/(N-1))*4.5;
-      rd+='M'+(pts[i][0]-nx*hh).toFixed(1)+' '+(pts[i][1]-ny*hh).toFixed(1)+'L'+(pts[i][0]+nx*hh).toFixed(1)+' '+(pts[i][1]+ny*hh).toFixed(1)+' ';}
-    rings.setAttribute('d',rd);rings.setAttribute('stroke','hsl('+hue+',38%,60%)'); // gentle matte segments
-    const hx=pts[N-1][0], hy=pts[N-1][1]-4+(dbl?Math.sin(u*Math.PI*2)*4:0);
-    face.setAttribute('transform','translate('+hx.toFixed(1)+' '+hy.toFixed(1)+') scale(1.3)');
+    rise+=((up?1:0)-rise)*0.05;
+    el.style.transform='translateY('+((1-rise)*hPx*0.5).toFixed(1)+'px)';    // sink ~half so the smiley head keeps peeking while resting
+    const autoDbl=up&&(((cyc-4)&3)===3);                                     // every 4th bar up = a bar of double-time
+    const dbl=(now<dblUntil)||autoDbl;
+    const fpb=dbl?11:5.5;                                                    // frames per beat: the 24-frame movie loops over ~2 beats (1 beat in double-time) → the wiggle is tempo-synced
+    const fi=((Math.floor(bt*fpb)%CN)+CN)%CN;
+    if(fi!==lastFi){lastFi=fi;const col=fi%CCOLS,row=(fi/CCOLS)|0;           // only touch the DOM when the frame actually changes → cheap & smooth
+      el.style.backgroundPosition=(col/(CCOLS-1)*100).toFixed(2)+'% '+(row/(CROWS-1)*100).toFixed(2)+'%';}
     requestAnimationFrame(tick);
   }
   tick();
