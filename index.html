@@ -31,11 +31,11 @@
 html,body{margin:0;height:100%;font-family:'Quicksand',system-ui,sans-serif;color:var(--ink)}
 /* THE CRAYON SKY, EVERYWHERE: same hand-drawn backdrop behind every mode (learn/play/studio) + the splash.
    A soft white veil fades it back so note-balls, cards and text stay crisp — the art is wallpaper, never competes. */
-body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background-attachment:fixed;display:flex;flex-direction:column;overflow:hidden}
-body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background-attachment:fixed} /* play area gets a touch more veil so the geometry reads */
+body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);display:flex;flex-direction:column;overflow:hidden}
+body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)} /* play area gets a touch more veil so the geometry reads */
 @media(max-width:820px){ /* phones get the portrait art so it fills tall screens without cropping the scene */
-  body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background-attachment:fixed}
-  body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background-attachment:fixed}}
+  body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
+  body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}}
 /* (crayon edge-filter removed — it just smeared the edges, didn't read as crayon. real crayon UI will come from
    PNG assets via border-image; see below when those are added.) */
 header{display:flex;align-items:center;gap:14px;padding:14px 22px;position:relative;z-index:70}
@@ -719,7 +719,8 @@ const S={
   atk:0.001,dec:0.15,sus:0.18,rel:0.28,
   filt:"lowpass",cut:0.78,res:0,fenv:0.30,
   vol:0.55,wM:0.34,wD:0.33,wK:0.33,wMg:1,bpMix:0.5,dly:0,warm:0.3,filtOn:true,fxOn:true,chMel:1,chDrum:2,chBass:3,chPad:4,midi:false,midiOut:null,
-  rainRate:0.5,rainAmt:0.35,slimeMode:false,randomShape:true
+  rainRate:0.5,rainAmt:0.35,slimeMode:false,randomShape:true,
+  scaleLock:true // note-snap ON by default — defined here so it's NEVER undefined (undefined read as "off" = the snap silently not working)
 };
 let BURST_MS=6000; // how long the corners stay broken open before reforming
 
@@ -845,7 +846,7 @@ function initDrums(){if(drumBus)return;drumBus=AC.createGain();drumBus.gain.valu
 function rep(base,bars){const out=[];for(let b=0;b<bars;b++)for(const st of base)out.push(st+16*b);return out;}
 const KITS={ // 64 sixteenth-steps = 4 bars
   chip:{K:rep([0,8],4),s:rep([4,12],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[],r:[]}, // gameboy 4/4: kick / hat / snare / hat
-  conga:{c:rep([0,7],4),C:rep([3,12,14],3).concat(rep([3,6,12,14],1).map(x=>x+48)),r:rep([4,10],4),h:[],K:[]},
+  conga:{K:rep([0,8],4),r:rep([4,12],4),c:rep([2,7,11],4),C:rep([3,6,14],4),h:[]}, // now a HEAD-BOPPER: kick on 1&3, rim backbeat on 2&4, congas syncopated on top (was all-conga, no kick = no beat)
   bossa:{r:rep([0,6,12],2).concat(rep([4,8],2).map(x=>x+32)),h:rep([0,2,4,6,8,10,12,14],4),K:rep([0,8],4),c:[],C:[]},
   rock:{K:rep([0,8,10],4),s:rep([4,12],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[],r:[]},
   beep:{K:rep([0,4,8,12],4),r:rep([2,6,10,14],4),h:[],c:[],C:rep([15],4)}
@@ -857,7 +858,7 @@ const PATTERNS={ // real signature skeletons, role-based: lo=kick, mid=snare, hi
   '14':{lo:[0,4],mid:[8],hi:[0,2,4,6,8,10,12]},              // 7/8 rachenitsa (2+2+3): kick rides the short groups, snare owns the long one
   '18':{lo:[0,4,8],mid:[12],hi:[0,2,4,6,8,10,12,14,16]}      // 9/8 karşılama (2+2+2+3): the Blue Rondo lean
 };
-const KITVOICE={chip:{lo:'K',mid:'s',hi:'h'},conga:{lo:'c',mid:'C',hi:'r'},bossa:{lo:'K',mid:'r',hi:'h'},rock:{lo:'K',mid:'s',hi:'h'},beep:{lo:'K',mid:'r',hi:'C'}};
+const KITVOICE={chip:{lo:'K',mid:'s',hi:'h'},conga:{lo:'K',mid:'C',hi:'r'},bossa:{lo:'K',mid:'r',hi:'h'},rock:{lo:'K',mid:'s',hi:'h'},beep:{lo:'K',mid:'r',hi:'C'}};
 const KITTONE={ // same engine, different shells — so chip vs rock actually SOUND different, not just different step patterns
   chip:{kf:210,ke:75,kd:0.14,kv:0.72,sf:2700,sd:0.05,sb:240,hf:9500,hd:0.02},   // gameboy: tight blippy kick, zippy snare, tssy hats
   rock:{kf:115,ke:36,kd:0.5,kv:1.05,sf:1300,sd:0.16,sb:165,hf:6200,hd:0.05},    // big room: boomy long kick, fat low snare, darker open hats
@@ -2245,8 +2246,8 @@ const chillers=[]; // full-view slimes with cursor physics
 (function(){
   const layer=document.getElementById('slimes');
   const el=document.createElement('div');el.className='slime';el.id='wormEl'; // id so the margin-slime placer can avoid him
-  const CN=24,CCOLS=6,CROWS=4,CW=170,CH=159; // caterpillar sprite sheet: 24 frames of your movie, 6x4 grid, cell 170x159
-  el.style.cssText='position:fixed;bottom:0;z-index:6;pointer-events:auto;will-change:transform;background-image:url(caterpillar.png);background-repeat:no-repeat;background-size:'+(CCOLS*100)+'% '+(CROWS*100)+'%';
+  const CN=32,CCOLS=8,CROWS=4,CW=169,CH=170; // caterpillar sprite: 32 frames from your clip, 8x4 grid, cell 169x170 (webp w/ alpha, cleanly cut)
+  el.style.cssText='position:fixed;bottom:0;z-index:6;pointer-events:auto;will-change:transform;transform-origin:50% 100%;background-image:url(caterpillar2.webp);background-repeat:no-repeat;background-size:'+(CCOLS*100)+'% '+(CROWS*100)+'%';
   el.title='psst — tap me to double-time!';
   layer.appendChild(el);
   const asideEl=document.querySelector('aside');
@@ -2270,16 +2271,21 @@ const chillers=[]; // full-view slimes with cursor physics
       if(leftPx+wPx>rightBound-8)leftPx=rightBound-wPx-8;}
     const hPx=Math.round(wPx*CH/CW);                                         // keep the sprite's aspect so he never squishes
     el.style.width=wPx+'px';el.style.height=hPx+'px';el.style.left=leftPx+'px';el.style.right='auto';
-    // ground cycle: rest ~4 bars (only his head pokes up), rise & dance ~8 bars, loop
+    // ground cycle: rest ~4 bars (head pokes up), rise & dance ~8 bars, loop
     const bt=beats(), bar=Math.floor(bt/4), cyc=((bar%12)+12)%12, up=cyc>=4;
     rise+=((up?1:0)-rise)*0.05;
-    el.style.transform='translateY('+((1-rise)*hPx*0.5).toFixed(1)+'px)';    // sink ~half so the smiley head keeps peeking while resting
-    const autoDbl=up&&(((cyc-4)&3)===3);                                     // every 4th bar up = a bar of double-time
-    const dbl=(now<dblUntil)||autoDbl;
-    const fpb=dbl?11:5.5;                                                    // frames per beat: the 24-frame movie loops over ~2 beats (1 beat in double-time) → the wiggle is tempo-synced
-    const fi=((Math.floor(bt*fpb)%CN)+CN)%CN;
-    if(fi!==lastFi){lastFi=fi;const col=fi%CCOLS,row=(fi/CCOLS)|0;           // only touch the DOM when the frame actually changes → cheap & smooth
+    // FRAME ADVANCE — TIME-BASED, not beat-quantized. This is the whole trick: the wiggle plays at a steady
+    // ~22–30fps so it's smooth at EVERY tempo (the old version stepped frames per-beat, which starved the
+    // frame rate at slow BPMs = the choppiness). BPM only nudges the playback speed a little.
+    const dbl=(now<dblUntil)||(up&&(((cyc-4)&3)===3));                       // tap OR every 4th up-bar = double-time
+    const fps=(22+8*Math.max(0,Math.min(1,(S.bpm-70)/90)))*(dbl?1.7:1);      // 22..30fps, faster when double-timing
+    const fi=Math.floor(now/1000*fps)%CN;
+    if(fi!==lastFi){lastFi=fi;const col=fi%CCOLS,row=(fi/CCOLS)|0;           // touch the DOM only when the frame changes
       el.style.backgroundPosition=(col/(CCOLS-1)*100).toFixed(2)+'% '+(row/(CROWS-1)*100).toFixed(2)+'%';}
+    // beat BOB — the tasteful tempo reaction: a soft pop right on each beat (bigger while up), smooth ease-out.
+    const beatFrac=bt-Math.floor(bt), pulse=Math.pow(1-beatFrac,2.2);
+    const bob=1+(0.02+0.05*rise)*pulse, hop=-pulse*3*rise;
+    el.style.transform='translateY('+((1-rise)*hPx*0.5+hop).toFixed(1)+'px) scale('+bob.toFixed(3)+')'; // sink+peek while resting, rise+bob while up
     requestAnimationFrame(tick);
   }
   tick();
