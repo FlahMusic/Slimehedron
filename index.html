@@ -156,6 +156,7 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 .psBtn:active{transform:scale(.92)}
 .psBtn.on{transform:scale(1.06);box-shadow:0 8px 22px rgba(130,100,200,.45), inset 0 2px 6px rgba(255,255,255,.7);border-color:#fff}
 .psBtn svg{width:42px;height:42px;position:relative;z-index:1}
+.psBtn.bandBtn img{width:60px;height:60px;object-fit:contain;position:relative;z-index:1;display:block;filter:drop-shadow(0 1px 1px rgba(120,100,160,.18))} /* the crayon band icon; small enough that the wonky keyboard keys don't read */
 .psBtn .psNum{position:absolute;right:8px;bottom:5px;font-weight:900;font-size:19px;z-index:1;text-shadow:0 1px 2px rgba(255,255,255,.7)}
 .psItem{display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none} /* button + its name label, so kids know what each does */
 .psLbl{font-size:12px;font-weight:800;color:#5a4f78;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 2px rgba(255,255,255,.9);letter-spacing:.2px;white-space:nowrap;pointer-events:none}
@@ -172,7 +173,7 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 #grooveFolders .gBtn{padding:5px 11px;border-radius:9px;border:1.5px solid rgba(160,150,200,.4);background:#fff;cursor:pointer;font-size:12px;font-weight:600;color:#5a4f78;transition:.12s}
 #grooveFolders .gBtn:hover{border-color:var(--accent)}
 #grooveFolders .gBtn.on{background:linear-gradient(135deg,var(--mint),var(--sky));color:#2f2a44;border-color:#fff;font-weight:800}
-@media (max-width:820px){.psBtn{width:44px;height:44px;border-radius:15px;gap:8px}.psBtn svg{width:25px;height:25px}.psCol{gap:8px}.psCol.left{left:4px}.psCol.right{right:4px}}
+@media (max-width:820px){.psBtn{width:44px;height:44px;border-radius:15px;gap:8px}.psBtn svg{width:25px;height:25px}.psBtn.bandBtn img{width:38px;height:38px}.psCol{gap:8px}.psCol.left{left:4px}.psCol.right{right:4px}}
 @media (max-width:820px){.psBtn .psNum{font-size:14px}}
 #kbMapOld{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--card-brd);
   border-radius:14px;padding:9px 12px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:5px;align-items:center}
@@ -311,8 +312,8 @@ aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;pa
 .mode-play .peek-left,.mode-play .peek-right{display:none} /* play: the candy buttons own the side edges — side peekers would collide, so they step out */
 /* daily streak badge on the splash doors */
 .streakBadge{margin-top:16px;font-size:14px;font-weight:600;color:#5a4f78;background:rgba(255,255,255,.6);border:1.5px solid rgba(255,255,255,.85);border-radius:999px;padding:7px 18px;box-shadow:var(--shadow);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.spCredit{position:fixed;bottom:12px;left:0;right:0;text-align:center;font-size:11.5px;font-weight:600;color:rgba(90,79,120,.6)} /* quiet credit + tip jar on the splash */
-.spCredit a{color:rgba(90,79,120,.8);text-decoration:none;font-weight:700} .spCredit a:hover{text-decoration:underline}
+.spCredit{position:fixed;bottom:12px;left:0;right:0;text-align:center;font-size:11.5px;font-weight:700;color:#463d66;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 3px rgba(255,255,255,.85)} /* legible on the bright crayon sky: darker ink + soft white halo that pierces without shouting */
+.spCredit a{color:#332c52;text-decoration:none;font-weight:800} .spCredit a:hover{text-decoration:underline}
 .streakBadge b{color:#e0863f;font-size:17px}
 aside::-webkit-scrollbar{width:8px}
 aside::-webkit-scrollbar-thumb{background:rgba(180,170,210,.5);border-radius:8px}
@@ -1908,10 +1909,11 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
     const vt=$("voiceTop");if(vt)vt.value=b.dataset.w;});
   // four buttons spread around the colour wheel so none clash with each other OR with the pale-yellow cymbal in the
   // kit icon: peach (warm), lavender (violet), sky (blue — was yellow, which hid the cymbal), mint (green).
-  const DK=[['chip','#ffe9d6','#ffd3a8','#e0863f','1'],['conga','#ece0ff','#c4a9f5','#6b4fa8','2'],
-            ['bossa','#daf0ff','#a6c8ff','#3f6bb0','3'],['rock','#daf7ee','#9fe6cf','#2f8f70','4']];
+  // COOL pastel backgrounds so the warm/green crayon band icon stays clearly visible (warm bgs like peach/mint would blend into it)
+  const DK=[['chip','#e6f2ff','#c4e0ff','#3a6ea8','1'],['conga','#efe6ff','#d4c2f5','#6b4fa8','2'],
+            ['bossa','#e7e8ff','#c6caf5','#4a4a9e','3'],['rock','#eef1f6','#d3dbe8','#5a6478','4']];
   const dl=$("psDrums");if(dl)dl.innerHTML=DK.map(([k,c1,c2,nc,n])=>
-    `<div class="psItem"><button class="psBtn" data-kit="${k}" title="Drum ${n}" style="background:linear-gradient(160deg,${c1},${c2})"><svg width="40" height="40" viewBox="0 0 24 24"><use href="#icKit"/></svg></button><span class="psLbl">Drum ${n}</span></div>`).join('');
+    `<div class="psItem"><button class="psBtn bandBtn" data-kit="${k}" title="Drum ${n}" style="background:linear-gradient(160deg,${c1},${c2})"><img src="band.png" alt="" draggable="false"></button><span class="psLbl">Drum ${n}</span></div>`).join('');
   dl&&dl.addEventListener('pointerdown',e=>{const b=e.target.closest('.psBtn');if(!b)return;
     initAudio();if(AC&&AC.state==='suspended')AC.resume();
     const wasOn=b.classList.contains('on');
@@ -2289,23 +2291,20 @@ const chillers=[]; // full-view slimes with cursor physics
   // PROCEDURAL crayon worm — the original math (redrawn live every frame = perfectly smooth + fully adaptive),
   // re-skinned to the slimes: bold dark crayon OUTLINE + vibrant PASTEL body + subtle waxy GRAIN + segment rings.
   el.innerHTML='<svg viewBox="0 0 '+VB_W+' '+VB_H+'" width="100%" height="100%" preserveAspectRatio="xMidYMax meet">'+
-    '<defs><filter id="wcrayon" x="-20%" y="-20%" width="140%" height="140%">'+                   // real crayon skin: rough wobbly edges + a faint waxy grain (like the hand-drawn slimes)
-    '<feTurbulence type="fractalNoise" baseFrequency="0.035 0.05" numOctaves="2" seed="7" result="n"/>'+
-    '<feDisplacementMap in="SourceGraphic" in2="n" scale="4.5" xChannelSelector="R" yChannelSelector="G" result="d"/>'+
-    '<feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="3" result="g"/>'+
-    '<feComponentTransfer in="g" result="g2"><feFuncA type="linear" slope="0.13"/></feComponentTransfer>'+
-    '<feComposite in="g2" in2="d" operator="in" result="gm"/>'+
-    '<feMerge><feMergeNode in="d"/><feMergeNode in="gm"/></feMerge>'+
+    '<defs><filter id="wcrayon" x="-5%" y="-5%" width="110%" height="110%">'+                     // GRAIN ONLY — no displacement, so the smooth tube silhouette from the original is preserved (no jagged edges)
+    '<feTurbulence type="fractalNoise" baseFrequency="0.35" numOctaves="3" seed="4" result="speck"/>'+
+    '<feColorMatrix in="speck" type="matrix" values="0 0 0 0 0.14  0 0 0 0 0.12  0 0 0 0 0.22  0 0 0 0.62 0" result="specka"/>'+  // waxy plum-dark speckle = the crayon texture, painted INSIDE the shape only (tuned live so it actually reads)
+    '<feComposite in="specka" in2="SourceGraphic" operator="in" result="grain"/>'+
+    '<feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="grain"/></feMerge>'+
     '</filter></defs>'+
-    '<g id="wSkin">'+                                                                            // the crayon filter is applied to this group on desktop only (kept flat on phones for speed)
-    '<path id="wOut" fill="none" stroke="#2f2a44" stroke-linecap="round" stroke-width="52"/>'+   // bold black-crayon outline, borrowed from the slimes
-    '<path id="wBody" fill="none" stroke-linecap="round" stroke-width="47"/>'+                    // vibrant pastel body (hue-cycles on the beat)
-    '<path id="wRings" fill="none" stroke="#2f2a44" stroke-width="2.6" stroke-linecap="round" opacity=".24"/>'+   // crayon segment lines
+    '<g id="wSkin">'+                                                                            // grain filter applied on desktop only (phones stay flat + smooth)
+    '<path id="wBody" fill="none" stroke-linecap="round" stroke-width="50"/>'+                    // smooth vibrant pastel body — no dark outline, like the original
+    '<path id="wRings" fill="none" stroke-width="2.4" stroke-linecap="round" opacity=".3"/>'+     // subtle same-hue segment lines (colour set in JS)
     '</g>'+
     '<g id="wFace"></g></svg>';
   layer.appendChild(el);
   if(!matchMedia('(max-width:820px)').matches)el.querySelector('#wSkin').setAttribute('filter','url(#wcrayon)'); // crayon texture on desktop; phones stay flat + smooth
-  const wOut=el.querySelector('#wOut'),body=el.querySelector('#wBody'),rings=el.querySelector('#wRings'),face=el.querySelector('#wFace');
+  const body=el.querySelector('#wBody'),rings=el.querySelector('#wRings'),face=el.querySelector('#wFace');
   const asideEl=document.querySelector('aside');
   let dblUntil=0,curFace='',wBeat=0,lastT=performance.now(),rise=0,hueNow=150;
   window._wormReset=()=>{wBeat=0;lastT=performance.now();};
@@ -2315,20 +2314,25 @@ const chillers=[]; // full-view slimes with cursor physics
       :'<circle cx="-8" cy="-4" r="3.6" fill="#2f2a44"/><circle cx="8" cy="-4" r="3.6" fill="#2f2a44"/><path d="M-6 5 q6 6 12 0" fill="none" stroke="#2f2a44" stroke-width="3.4" stroke-linecap="round"/>';}
   setFace(false);
   function beats(){if((drumOn||bandOn)&&AC)return (drumStep-(drumTime-AC.currentTime)/drumStepDur())/drumSPB();return wBeat;}
-  function tick(){
-    const now=performance.now(),dt=Math.min(50,now-lastT);lastT=now;
-    if(S.playing&&!drumOn)wBeat+=dt*S.bpm/60000;
+  let hPx=180,_lf=0; // cached layout — recomputed only every ~20 frames / on resize, NOT every frame (was 3x getBoundingClientRect + getComputedStyle @60fps = layout thrash)
+  function relayout(){
     const mob=matchMedia('(max-width:820px)').matches, rc=cv.getBoundingClientRect();
     const drumsEl=document.getElementById('psDrums');
     let dr=null; if(drumsEl){const b=drumsEl.getBoundingClientRect(); if(b.width>0&&b.height>0&&getComputedStyle(drumsEl).display!=='none')dr=b;}
     const asideR=asideEl.getBoundingClientRect();
     const rightBound=dr?dr.left:(asideR.width?asideR.left:innerWidth);
-    let wPx,hPx,leftPx;
+    let wPx,leftPx;
     if(mob){wPx=80;hPx=Math.round(innerHeight*0.42);leftPx=Math.max(4,innerWidth-wPx-6);}
     else{const gap=rightBound-rc.right; wPx=Math.min(120,Math.max(84,gap-16));hPx=Math.round(innerHeight*0.52);
       leftPx=Math.round(rc.right+Math.max(8,(gap-wPx)/2));
       if(leftPx+wPx>rightBound-8)leftPx=rightBound-wPx-8;}
     el.style.width=wPx+'px';el.style.height=hPx+'px';el.style.left=leftPx+'px';el.style.right='auto';
+  }
+  addEventListener('resize',relayout); relayout();
+  function tick(){
+    const now=performance.now(),dt=Math.min(50,now-lastT);lastT=now;
+    if(S.playing&&!drumOn)wBeat+=dt*S.bpm/60000;
+    if((++_lf%20)===0)relayout(); // catch mode/layout changes a few times a second — cheap vs every frame
     // ground cycle: rest ~4 bars (only the head pokes), then rise & wiggle ~8 bars, loop
     const bt=beats(), bar=Math.floor(bt/4), cyc=((bar%12)+12)%12, up=cyc>=4;
     rise+=((up?1:0)-rise)*0.045;                                   // smooth emerge / sink
@@ -2349,8 +2353,9 @@ const chillers=[]; // full-view slimes with cursor physics
     for(let i=1;i<N-1;i++){const mx=(pts[i][0]+pts[i+1][0])/2,my=(pts[i][1]+pts[i+1][1])/2;
       d+='Q'+pts[i][0].toFixed(1)+' '+pts[i][1].toFixed(1)+' '+mx.toFixed(1)+' '+my.toFixed(1)+' ';}
     d+='L'+pts[N-1][0].toFixed(1)+' '+pts[N-1][1].toFixed(1);
-    wOut.setAttribute('d',d);body.setAttribute('d',d);
+    body.setAttribute('d',d);
     body.setAttribute('stroke','hsl('+hueNow.toFixed(0)+',68%,72%)'); // vibrant pastel, same family as the slimes
+    rings.setAttribute('stroke','hsl('+hueNow.toFixed(0)+',42%,52%)'); // segment rings = a darker shade of the SAME hue (soft, not a harsh black line)
     let rd='';for(let i=1;i<N-1;i++){const dx=pts[i+1][0]-pts[i-1][0],dy=pts[i+1][1]-pts[i-1][1],L=Math.hypot(dx,dy)||1;
       const nx=-dy/L,ny=dx/L,hh=20-(i/(N-1))*4.5;
       rd+='M'+(pts[i][0]-nx*hh).toFixed(1)+' '+(pts[i][1]-ny*hh).toFixed(1)+'L'+(pts[i][0]+nx*hh).toFixed(1)+' '+(pts[i][1]+ny*hh).toFixed(1)+' ';}

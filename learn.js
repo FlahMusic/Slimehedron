@@ -43,7 +43,7 @@ window.LEARN=(function(){
       const d=document.createElement('div');d.className='pxSlM';
       d.style.left=(k.offsetLeft+(k.classList.contains('pxB')?-5:1))+'px';
       d.style.animationDelay=(i*0.13)+'s';
-      d.innerHTML=pixSlime(['#9fe6cf','#c4a9f5','#ffb6d6','#ffd3a8'][i%4],'happy');
+      d.innerHTML=slimeSVG(['#9fe6cf','#c4a9f5','#ffb6d6','#ffd3a8'][i%4],'happy');
       wrap.appendChild(d);});}
   let onKey=null;
   function setLC(c){try{localStorage.setItem('slimehedron-lastcourse',c);}catch(e){}}
@@ -76,7 +76,7 @@ window.LEARN=(function(){
   function rhythmCourse(bpm){stopJam();rhGood=0;rhBpm=bpm||90;rhBeat=-1;setLC('rhythm');
     ov.innerHTML=`<div class="lCard"><h3>rhythm</h3>
       <p class="lSub">tap WITH the tick.</p>
-      <div id="rhPad">${pixSlime('#9fe6cf','happy')}</div>\n      <div id="rhMeter"></div>
+      <div id="rhPad">${slimeSVG('#9fe6cf','happy')}</div>\n      <div id="rhMeter"></div>
       <div class="lStickers" id="rhDots"></div>
       <div class="lFeed" id="lFeed"></div>
       <div class="lRow"><button class="btn" data-a="home">\u2039 back</button></div></div>`;
@@ -283,7 +283,7 @@ window.LEARN=(function(){
   function ivEnd(){stopJam();winJingle();
     ov.innerHTML=`<div class="lCard"><h3>session complete</h3>
       <div class="confetti">${Array.from({length:13},(_,i)=>`<i style="--i:${i}"></i>`).join('')}</div>
-      <div style="width:96px;height:96px;margin:10px auto">${pixSlime('#ffd3a8','wow',{cap:1})}</div>
+      <div style="width:96px;height:96px;margin:10px auto">${slimeSVG('#ffd3a8','wow')}</div>
       <div class="lFeed">7 distances heard. good ears.</div>
       <div class="lRow"><button class="btn primary" data-a="crs" data-c="intervals">again \u25b8</button><button class="btn" data-a="home">\u2039 back</button></div></div>`;}
   function ivCourse(cont){stopJam();setLC('intervals');
@@ -689,7 +689,7 @@ window.LEARN=(function(){
   function sessEnd(){stopJam();const D=DIFFS[diff];winJingle();
     ov.innerHTML=`<div class="lCard"><h3>session complete</h3>
       <div class="confetti">${Array.from({length:13},(_,i)=>`<i style="--i:${i}"></i>`).join('')}</div>
-      <div style="width:96px;height:96px;margin:10px auto">${pixSlime('#9fe6cf','wow',{cap:1})}</div>
+      <div style="width:96px;height:96px;margin:10px auto">${slimeSVG('#9fe6cf','wow')}</div>
       <div class="lFeed">${D.len} sounds matched. good ears.</div>
       ${stickers()}
       <div class="lRow">
@@ -778,7 +778,7 @@ window.LEARN=(function(){
     <h3>learn</h3>
     ${lc?`<div class="lRow" style="margin-bottom:10px"><button class="btn primary" data-a="crs" data-c="${lc}">continue \u00b7 ${lc} \u25b8</button></div>`:''}
     <div class="lBtns">${PANES.map(p=>`<div class="crsPane" data-a="crs" data-c="${p[0]}" style="background:${p[1]}">
-      ${p[2]}<span style="flex:1"><b>${p[0]}</b>${crsProg(p[0])}</span><span class="crsSl" style="width:${p[3]}px;height:${p[3]}px">${pixSlime(p[5],'happy',{cap:1,girl:p[4]})}</span></div>`).join('')}
+      ${p[2]}<span style="flex:1"><b>${p[0]}</b>${crsProg(p[0])}</span><span class="crsSl" style="width:${p[3]}px;height:${p[3]}px">${slimeSVG(p[5],'happy')}</span></div>`).join('')}
     </div>
     <div class="lRow" style="margin-top:10px"><button class="btn" data-a="grown" style="font-size:12px;opacity:.85">📊 for grown-ups</button></div></div>`;}
   ov.addEventListener('pointerdown',e=>{
