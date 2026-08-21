@@ -160,6 +160,18 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 .psItem{display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none} /* button + its name label, so kids know what each does */
 .psLbl{font-size:12px;font-weight:800;color:#5a4f78;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 2px rgba(255,255,255,.9);letter-spacing:.2px;white-space:nowrap;pointer-events:none}
 @media (max-width:820px){.psLbl{font-size:9px}}
+/* groove selector (studio): tidy folders of feels */
+#grooveCard .gcur{font-size:12px;font-weight:700;color:var(--accent);float:right}
+#grooveFolders .gFolder{margin:4px 0}
+#grooveFolders .gHead{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:6px 10px;border-radius:10px;background:rgba(180,170,220,.14);font-weight:700;font-size:13px;color:#5a4f78}
+#grooveFolders .gHead:hover{background:rgba(180,170,220,.24)}
+#grooveFolders .gArrow{transition:transform .2s;font-size:11px;opacity:.7}
+#grooveFolders .gFolder.open .gArrow{transform:rotate(90deg)}
+#grooveFolders .gList{display:none;flex-wrap:wrap;gap:5px;padding:6px 2px 2px}
+#grooveFolders .gFolder.open .gList{display:flex}
+#grooveFolders .gBtn{padding:5px 11px;border-radius:9px;border:1.5px solid rgba(160,150,200,.4);background:#fff;cursor:pointer;font-size:12px;font-weight:600;color:#5a4f78;transition:.12s}
+#grooveFolders .gBtn:hover{border-color:var(--accent)}
+#grooveFolders .gBtn.on{background:linear-gradient(135deg,var(--mint),var(--sky));color:#2f2a44;border-color:#fff;font-weight:800}
 @media (max-width:820px){.psBtn{width:44px;height:44px;border-radius:15px;gap:8px}.psBtn svg{width:25px;height:25px}.psCol{gap:8px}.psCol.left{left:4px}.psCol.right{right:4px}}
 @media (max-width:820px){.psBtn .psNum{font-size:14px}}
 #kbMapOld{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--card-brd);
@@ -577,6 +589,11 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <div class="row"><label title="how long the burst shape stays open">rebuild after (sec)</label><input type="range" id="burstSec" min="2" max="20" value="6"><span class="val" id="burstSecV">6</span></div>
     </div>
 
+    <div class="card" id="grooveCard">
+      <h2>🥁 groove <span class="gcur" id="grooveCur">Human</span></h2>
+      <div id="grooveFolders"></div>
+    </div>
+
     <div class="card">
       <h2>🎼 scale</h2>
       <div class="row"><label>root</label><select id="root"></select></div>
@@ -866,7 +883,19 @@ const KITTONE={ // same engine, different shells — so chip vs rock actually SO
   conga:{kf:150,ke:45,kd:0.3,kv:0.85,sf:1800,sd:0.09,sb:190,hf:7500,hd:0.03},
   beep:{kf:185,ke:62,kd:0.18,kv:0.78,sf:2300,sd:0.06,sb:215,hf:9000,hd:0.024}
 };
-function dHit(v,t,a){a=a||1;
+// ===== GROOVE ENGINE: micro-timing + velocity "feels" baked from the MIDI groove pack =====
+// each groove = 16 slots of {off: timing shift as fraction of a 16th, vel: velocity accent}. downbeat off always 0.
+const GROOVE_DEF={n:'Human',off:[0.0,0.083,0.0,0.083,0.0,0.083,0.0,0.083,0.0,0.083,0.0,0.083,0.0,0.083,0.0,0.083],vel:[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]}; // subtle default → play/studio feel human not robotic
+const GROOVES={
+  Straight:[{n:'Straight',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},{n:'Soft',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.78,0.58,0.81,1.43,0.56,0.54,2.11,0.57,1.94,1.15,0.83,0.51,1.24,0.6,0.87,0.47]},{n:'Punchy',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.11,0.56,1.03,1.11,1.74,0.97,0.58,1.05,1.12,0.55,0.87,1.07,1.63,0.94,0.54,1.12]},{n:'Backbeat',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.03,0.58,0.53,1.45,1.58,0.54,1.14,0.99,0.99,0.54,1.22,1.0,1.57,1.22,0.57,1.05]}],
+  Swing:[{n:'Swing 1',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},{n:'Swing 2',off:[0.0,0.125,0.0,0.125,0.0,0.125,0.0,0.125,0.0,0.125,0.0,0.125,0.0,0.125,0.0,0.125],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},{n:'Swing 3',off:[0.0,0.208,0.0,0.208,0.0,0.208,0.0,0.208,0.0,0.208,0.0,0.208,0.0,0.208,0.0,0.208],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},{n:'Swing 4',off:[0.0,0.333,0.0,0.292,0.0,0.292,0.0,0.292,0.0,0.292,0.0,0.292,0.0,0.292,0.0,0.292],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}],
+  Triplet:[{n:'Shuffle',off:[0.0,0.333,0.0,0.333,0.0,0.333,0.0,0.333,0.0,0.333,0.0,0.333,0.0,0.333,0.0,0.333],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},{n:'Shuffle Hard',off:[0.0,0.375,0.0,0.375,0.0,0.375,0.0,0.375,0.0,0.375,0.0,0.375,0.0,0.375,0.0,0.375],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},{n:'Triplet',off:[0.0,-0.375,0.0,-0.375,0.0,-0.375,0.0,-0.375,0.0,-0.375,0.0,-0.375,0.0,-0.375,0.0,-0.375],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},{n:'8th Triplet',off:[0.0,0.292,0.0,-0.375,0.0,0.292,0.0,-0.375,0.0,0.292,0.0,-0.375,0.0,0.292,0.0,-0.375],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}],
+  Accented:[{n:'Accent 1',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.17,0.55,0.71,0.69,1.34,0.63,2.59,0.78,1.68,0.48,0.55,0.73,1.61,0.61,1.13,0.73]},{n:'Accent 2',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.41,1.2,0.55,0.81,1.29,0.64,1.43,0.67,1.46,1.21,0.56,0.71,1.37,0.63,1.4,0.66]},{n:'Accent 3',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[0.91,0.49,0.75,1.02,1.78,0.49,0.97,1.5,1.02,0.45,0.88,1.0,1.79,0.51,0.97,1.48]},{n:'Groovy',off:[0.0,0.208,0.0,0.208,0.0,0.167,0.0,0.208,0.0,0.167,0.0,0.167,0.0,0.208,0.0,0.167],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}]
+};
+const GROOVE_ALL={Human:GROOVE_DEF}; for(const _f in GROOVES)for(const _g of GROOVES[_f])GROOVE_ALL[_g.n]=_g;
+let curGroove='Human'; // active feel; 'Straight' = mechanical (lets the swing slider take over)
+function activeGroove(){return curGroove==='Straight'?null:(GROOVE_ALL[curGroove]||GROOVE_DEF);}
+function dHit(v,t,a){a=Math.min(1.9,a||1); // clamp so accent grooves can't clip the mix
   // per-instrument human feel: nudge velocity + micro-timing (hats ghost, kick locks). t stays ≥ now so it never schedules in the past.
   if(typeof humanVoice==='function'){const h=humanVoice(v);a*=h.v;t=Math.max(AC.currentTime,t+h.t);}
   sendMidiAt(DRUMN[v]||38,Math.min(127,(90*a)|0),S.chDrum,t,0.15);
@@ -1108,6 +1137,7 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
   const _look=document.hidden?1.2:0.12;
   while(drumTime<AC.currentTime+_look){
     const st=drumStep%loop, inBar=st%bar, barI=(st/bar)|0, hum=0.92+Math.random()*0.16; // ±8% human wobble on every hit
+    const gr=(drumSig==='16')?activeGroove():null; // the active FEEL (micro-timing + velocity), only on the 16th grid
     if(inBar===0)bandBar(drumTime,barI);
     if(bandOn){const set=(drumSig==='16')?(KITBASS[drumKit]||BASSGROOVES):null,bp=set?set[_bassGroove%set.length]:BASSPAT[drumSig],tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));if(tok)bassNote(tok,drumTime,hum);}
     if(!drumOn){drumTime+=drumStepDur();drumStep++;continue;} // band without drums: same grid, silent kit
@@ -1119,10 +1149,15 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
       if(inBar===6)dHit(vm.lo,drumTime,0.95*hum);                       // kick on 3
       if(inBar===3||inBar===9)dHit(vm.mid,drumTime,1.1*hum);            // snare cracks 2 and 4
       if(barI===3&&inBar===11)dHit(vm.mid,drumTime,0.55*hum);           // one soft pickup into the top of the phrase
-    }else if(drumSig==='16'){ // 4/4: the authored 4-bar grooves
-      const kit=KITS[drumKit],pst=inBar+16*barI;
-      for(const v in kit)if(kit[v].includes(pst))dHit(v,drumTime,(inBar===0?1.25:1)*hum);
-      if(barI===3&&inBar>=13)dHit(KITVOICE[drumKit].mid,drumTime,(0.45+(inBar-13)*0.15)*hum); // soft garnish fill into bar 1
+    }else if(drumSig==='16'){ // 4/4: authored grooves, played through the active FEEL (micro-timing + velocity)
+      const kit=KITS[drumKit],pst=inBar+16*barI,
+        gt=drumTime+(gr?gr.off[inBar]*drumStepDur():0),           // nudge the HIT off the straight grid = the swing/feel
+        gv=(gr?gr.vel[inBar]:1);                                  // velocity accent from the feel
+      for(const v in kit)if(kit[v].includes(pst))dHit(v,gt,(inBar===0?1.25:1)*hum*gv);
+      if(barI===3&&inBar>=12){ // BAR-4 FILL: a quick snare build-up + kick pickup that lands hard on the 1
+        const mid=KITVOICE[drumKit].mid,lo=KITVOICE[drumKit].lo;
+        dHit(mid,gt,(0.5+(inBar-12)*0.16)*hum*gv);               // snare roll across the last beat (12..15), rising
+        if(inBar===15)dHit(lo,gt,0.85*hum);}                      // kick on the last 16th → launches into bar 1
     }else{ // 3/4, 6/8, 5/4, 7/8, 9/8: true signature skeletons voiced by the chosen kit
       const pat=PATTERNS[drumSig],vm=KITVOICE[drumKit];
       if(pat.lo.includes(inBar))dHit(vm.lo,drumTime,(inBar===0?1.3:1.05)*hum);
@@ -1130,7 +1165,7 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
       if(pat.hi.includes(inBar))dHit(vm.hi,drumTime,(sig.acc.includes(inBar)?1.1:0.8)*hum);
       if(barI===3&&inBar>bar-4)dHit(vm.mid,drumTime,(0.5+(inBar-(bar-3))*0.15)*hum); // little walk-up fill ending each 4-bar phrase
     }
-    const sw16=(drumFeel!=='t'&&drumSig==='16'&&!S.triplet&&S.swing>0.01)?(drumStep%2===0?1+S.swing*0.5:1-S.swing*0.5):1; // adjustable 16th swing, same clock as the melody
+    const sw16=(!gr&&drumFeel!=='t'&&drumSig==='16'&&!S.triplet&&S.swing>0.01)?(drumStep%2===0?1+S.swing*0.5:1-S.swing*0.5):1; // uniform swing ONLY when no groove is active (a groove supplies its own micro-timing → no double-swing)
     const swf=(drumFeel==='t'&&drumSig!=='12c'&&!drumTriplet())?(drumStep%2===0?4/3:2/3):sw16; // no shuffle on top of ternary grids
     drumTime+=drumStepDur()*swf;drumStep++;}
 }
@@ -1871,8 +1906,10 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
     wl.querySelectorAll('.psBtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');
     const wb=$("waveSeg").querySelector(`button[data-w="${b.dataset.w}"]`);if(wb)wb.click();
     const vt=$("voiceTop");if(vt)vt.value=b.dataset.w;});
+  // four buttons spread around the colour wheel so none clash with each other OR with the pale-yellow cymbal in the
+  // kit icon: peach (warm), lavender (violet), sky (blue — was yellow, which hid the cymbal), mint (green).
   const DK=[['chip','#ffe9d6','#ffd3a8','#e0863f','1'],['conga','#ece0ff','#c4a9f5','#6b4fa8','2'],
-            ['bossa','#fff2c9','#ffe08a','#cf9a1e','3'],['rock','#daf7ee','#9fe6cf','#2f8f70','4']];
+            ['bossa','#daf0ff','#a6c8ff','#3f6bb0','3'],['rock','#daf7ee','#9fe6cf','#2f8f70','4']];
   const dl=$("psDrums");if(dl)dl.innerHTML=DK.map(([k,c1,c2,nc,n])=>
     `<div class="psItem"><button class="psBtn" data-kit="${k}" title="Drum ${n}" style="background:linear-gradient(160deg,${c1},${c2})"><svg width="40" height="40" viewBox="0 0 24 24"><use href="#icKit"/></svg></button><span class="psLbl">Drum ${n}</span></div>`).join('');
   dl&&dl.addEventListener('pointerdown',e=>{const b=e.target.closest('.psBtn');if(!b)return;
@@ -2252,15 +2289,23 @@ const chillers=[]; // full-view slimes with cursor physics
   // PROCEDURAL crayon worm — the original math (redrawn live every frame = perfectly smooth + fully adaptive),
   // re-skinned to the slimes: bold dark crayon OUTLINE + vibrant PASTEL body + subtle waxy GRAIN + segment rings.
   el.innerHTML='<svg viewBox="0 0 '+VB_W+' '+VB_H+'" width="100%" height="100%" preserveAspectRatio="xMidYMax meet">'+
-    '<defs><pattern id="wgrain" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(18)">'+
-    '<circle cx="1" cy="1.4" r="0.7" fill="#fff" opacity=".38"/><circle cx="3.4" cy="3" r="0.6" fill="#000" opacity=".13"/><circle cx="2.2" cy="4.2" r="0.4" fill="#fff" opacity=".26"/></pattern></defs>'+
-    '<path id="wOut" fill="none" stroke="#2f2a44" stroke-linecap="round" stroke-width="56"/>'+   // bold black-crayon outline, borrowed from the slimes
-    '<path id="wBody" fill="none" stroke-linecap="round" stroke-width="46"/>'+                    // vibrant pastel body (hue-cycles on the beat)
-    '<path id="wGrain" fill="none" stroke="url(#wgrain)" stroke-linecap="round" stroke-width="44" opacity=".5"/>'+ // subtle waxy crayon grain
-    '<path id="wRings" fill="none" stroke="#2f2a44" stroke-width="2.6" stroke-linecap="round" opacity=".26"/>'+    // crayon segment lines
+    '<defs><filter id="wcrayon" x="-20%" y="-20%" width="140%" height="140%">'+                   // real crayon skin: rough wobbly edges + a faint waxy grain (like the hand-drawn slimes)
+    '<feTurbulence type="fractalNoise" baseFrequency="0.035 0.05" numOctaves="2" seed="7" result="n"/>'+
+    '<feDisplacementMap in="SourceGraphic" in2="n" scale="4.5" xChannelSelector="R" yChannelSelector="G" result="d"/>'+
+    '<feTurbulence type="fractalNoise" baseFrequency="0.7" numOctaves="2" seed="3" result="g"/>'+
+    '<feComponentTransfer in="g" result="g2"><feFuncA type="linear" slope="0.13"/></feComponentTransfer>'+
+    '<feComposite in="g2" in2="d" operator="in" result="gm"/>'+
+    '<feMerge><feMergeNode in="d"/><feMergeNode in="gm"/></feMerge>'+
+    '</filter></defs>'+
+    '<g id="wSkin">'+                                                                            // the crayon filter is applied to this group on desktop only (kept flat on phones for speed)
+    '<path id="wOut" fill="none" stroke="#2f2a44" stroke-linecap="round" stroke-width="52"/>'+   // bold black-crayon outline, borrowed from the slimes
+    '<path id="wBody" fill="none" stroke-linecap="round" stroke-width="47"/>'+                    // vibrant pastel body (hue-cycles on the beat)
+    '<path id="wRings" fill="none" stroke="#2f2a44" stroke-width="2.6" stroke-linecap="round" opacity=".24"/>'+   // crayon segment lines
+    '</g>'+
     '<g id="wFace"></g></svg>';
   layer.appendChild(el);
-  const wOut=el.querySelector('#wOut'),body=el.querySelector('#wBody'),grain=el.querySelector('#wGrain'),rings=el.querySelector('#wRings'),face=el.querySelector('#wFace');
+  if(!matchMedia('(max-width:820px)').matches)el.querySelector('#wSkin').setAttribute('filter','url(#wcrayon)'); // crayon texture on desktop; phones stay flat + smooth
+  const wOut=el.querySelector('#wOut'),body=el.querySelector('#wBody'),rings=el.querySelector('#wRings'),face=el.querySelector('#wFace');
   const asideEl=document.querySelector('aside');
   let dblUntil=0,curFace='',wBeat=0,lastT=performance.now(),rise=0,hueNow=150;
   window._wormReset=()=>{wBeat=0;lastT=performance.now();};
@@ -2287,7 +2332,7 @@ const chillers=[]; // full-view slimes with cursor physics
     // ground cycle: rest ~4 bars (only the head pokes), then rise & wiggle ~8 bars, loop
     const bt=beats(), bar=Math.floor(bt/4), cyc=((bar%12)+12)%12, up=cyc>=4;
     rise+=((up?1:0)-rise)*0.045;                                   // smooth emerge / sink
-    el.style.transform='translateY('+((1-rise)*hPx*0.72).toFixed(1)+'px)'; // sink into the dirt, head still poking
+    el.style.transform='translateY('+((1-rise)*hPx*0.55).toFixed(1)+'px)'; // sink LESS so his whole head + mouth peek out while resting (was 0.72 = only eyes)
     const autoDbl=up&&(((cyc-4)&3)===3);                          // every 4th wiggle bar = 1 bar of double-time
     const dbl=(now<dblUntil)||autoDbl;setFace(dbl);
     const u=bt*(dbl?2:1), wig=0.22+0.78*rise;                     // calm underground, full wiggle up top
@@ -2304,8 +2349,8 @@ const chillers=[]; // full-view slimes with cursor physics
     for(let i=1;i<N-1;i++){const mx=(pts[i][0]+pts[i+1][0])/2,my=(pts[i][1]+pts[i+1][1])/2;
       d+='Q'+pts[i][0].toFixed(1)+' '+pts[i][1].toFixed(1)+' '+mx.toFixed(1)+' '+my.toFixed(1)+' ';}
     d+='L'+pts[N-1][0].toFixed(1)+' '+pts[N-1][1].toFixed(1);
-    wOut.setAttribute('d',d);body.setAttribute('d',d);grain.setAttribute('d',d);
-    body.setAttribute('stroke','hsl('+hueNow.toFixed(0)+',64%,74%)'); // vibrant pastel, same family as the slimes
+    wOut.setAttribute('d',d);body.setAttribute('d',d);
+    body.setAttribute('stroke','hsl('+hueNow.toFixed(0)+',68%,72%)'); // vibrant pastel, same family as the slimes
     let rd='';for(let i=1;i<N-1;i++){const dx=pts[i+1][0]-pts[i-1][0],dy=pts[i+1][1]-pts[i-1][1],L=Math.hypot(dx,dy)||1;
       const nx=-dy/L,ny=dx/L,hh=20-(i/(N-1))*4.5;
       rd+='M'+(pts[i][0]-nx*hh).toFixed(1)+' '+(pts[i][1]-ny*hh).toFixed(1)+'L'+(pts[i][0]+nx*hh).toFixed(1)+' '+(pts[i][1]+ny*hh).toFixed(1)+' ';}
@@ -2579,6 +2624,22 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
   for(const id in o.t||{}){const e=$(id);if(e&&e.classList.contains('on')!==o.t[id])e.click();}
   for(const id in o.seg||{}){const e=$(id),b=e&&e.children[o.seg[id]];if(b)b.click();}
 })();
+
+// ---------- groove selector: foldered feels, applied to the drums (studio panel; Human is the default) ----------
+(function(){try{
+  const host=document.getElementById('grooveFolders'),curEl=document.getElementById('grooveCur'); if(!host)return;
+  function setG(name){curGroove=name;if(curEl)curEl.textContent=name;
+    host.querySelectorAll('.gBtn').forEach(b=>b.classList.toggle('on',b.dataset.g===name));
+    try{localStorage.setItem('slimehedron-groove',name);}catch(e){}}
+  let html='<button class="gBtn on" data-g="Human" style="width:100%;margin-bottom:6px">✨ Human — natural default feel</button>';
+  for(const folder in GROOVES){
+    html+='<div class="gFolder"><div class="gHead"><span>'+folder+'</span><span class="gArrow">▸</span></div><div class="gList">'+
+      GROOVES[folder].map(g=>'<button class="gBtn" data-g="'+g.n+'">'+g.n+'</button>').join('')+'</div></div>';}
+  host.innerHTML=html;
+  host.querySelectorAll('.gHead').forEach(h=>h.addEventListener('click',()=>h.parentElement.classList.toggle('open')));
+  host.querySelectorAll('.gBtn').forEach(b=>b.addEventListener('click',()=>setG(b.dataset.g)));
+  try{const g=localStorage.getItem('slimehedron-groove');if(g&&(GROOVE_ALL[g]||g==='Straight'))setG(g);}catch(e){}
+}catch(err){console.warn('groove UI skipped:',err);}})();
 
 if(window._freshStart){ // first-ever visit: roll the dice — C major is a fine key and a boring default
   const roots=[48,50,52,53,55,57,59,62,64,65,67],scales=['major','mixolydian','dorian','minor','pentaMaj','lydian'];
