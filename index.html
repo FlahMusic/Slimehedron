@@ -66,8 +66,10 @@ header .spacer{flex:1}
    under-10s engage through immediate cause-and-effect and instant feedback, not parameter menus
    (see JOURNAL entry 13). so play is: drop balls · slime auto-play · new shape · clear.
    every knob, select, and slider is studio furniture now. same engine, zero homework. */
-.mode-play #triMixBar{display:none} /* the whole control bar: mixer, kit, key, voice, tempo, FX — gone */
-.mode-play #drumBtn,.mode-play #bandBtn,.mode-play #recBtn,.mode-play #resetBtn,.mode-play header .adv{display:none}
+.mode-play #triMixBar{display:flex;justify-content:center} /* play: keep JUST the triangle mixer so kids can balance melody/drums/band */
+.mode-play #triMixBar>*:not(#triMix){display:none} /* hide the studio controls (kit/key/tempo/FX) — keep only the triangle */
+.mode-play #drumBtn,.mode-play #bandBtn,.mode-play #resetBtn,.mode-play header .adv{display:none} /* recBtn stays visible now so kids can record their jam */
+.mode-play #cofWheel{display:none} /* circle of fifths hidden in the kid mode — too theory-heavy (still shows in studio/learn) */
 .mode-play #dropBtn{transform:scale(1.22);margin:0 6px} /* the main toy gets the big button */
 #newShapeBtn{display:none} /* kids-only control: studio picks shapes deliberately */
 .mode-play #newShapeBtn{display:inline-flex}
@@ -472,7 +474,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </svg></div>
   <span id="drumCtl" style="display:flex;align-items:center;gap:8px;opacity:.35;pointer-events:none">
     <svg width="16" height="16" viewBox="0 0 24 24" style="flex:none"><use href="#icDrum"/></svg><!-- this cluster = the drums -->
-    <select id="drumKit" style="flex:none;width:auto" title="drum kit / style"><option value="pop" selected>pop</option><option value="rock">rock</option><option value="disco">disco</option><option value="bossa">bossa nova</option><option value="samba">samba</option><option value="march">march</option><option value="conga">conga</option><option value="chip">chiptune</option><option value="beep">electro</option></select>
+    <select id="drumKit" style="flex:none;width:auto" title="drum kit / style"><option value="pop" selected>pop</option><option value="rock">rock</option><option value="disco">disco</option><option value="bossa">bossa nova</option><option value="samba">samba</option><option value="march">march</option><option value="industrial">industrial</option><option value="conga">conga</option><option value="chip">chiptune</option><option value="beep">electro</option></select>
     <select id="divSel" style="flex:none;width:auto" title="note division (T = triplet)"><option value="1/2">1/2</option><option value="1/4">1/4</option><option value="1/8" selected>1/8</option><option value="1/8T">1/8T</option><option value="1/16">1/16</option><option value="1/16T">1/16T</option><option value="1/32">1/32</option></select>
     <select id="drumSig" style="flex:none;width:auto" title="time signature"><option value="16" selected>4/4</option><option value="12">3/4</option><option value="12c">6/8</option><option value="20" title="counts 1-2-3 1-2">5/4</option><option value="14" title="counts 1-2 1-2 1-2-3">7/8</option><option value="18" title="counts 1-2 1-2 1-2 1-2-3">9/8</option></select>
   </span>
@@ -872,7 +874,8 @@ const KITS={ // 64 sixteenth-steps = 4 bars
   pop:{K:rep([0,8,14],4),s:rep([4,12],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[],r:[]},        // 8-beat pop: the universal groove (kick 1·3 + &-of-4 pickup, snare 2·4, straight 8th hats)
   disco:{K:rep([0,4,8,12],4),s:rep([4,12],4),h:rep([2,6,10,14],4),c:[],C:[],r:[]},              // four-on-the-floor: kick every beat, open hats on every off-beat
   march:{K:rep([0,8],4),s:rep([4,6,12,14,15],4),h:rep([0,4,8,12],4),c:[],C:[],r:[]},            // marching band: kick 1·3, snare cadence w/ a roll into the 1
-  samba:{K:rep([0,8],4),c:rep([2,6,10,14],4),C:rep([3,7,11,15],4),r:rep([0,3,6,10,12],4),h:rep([0,2,4,6,8,10,12,14],4)} // festive latin: syncopated congas + clave
+  samba:{K:rep([0,8],4),c:rep([2,6,10,14],4),C:rep([3,7,11,15],4),r:rep([0,3,6,10,12],4),h:rep([0,2,4,6,8,10,12,14],4)}, // festive latin: syncopated congas + clave
+  industrial:{K:rep([0,4,8,12],4),s:rep([4,12],4),r:rep([2,6,10,14],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[]} // relentless machine: 4-on-floor kick, clap backbeat, off-beat metal clang
 };
 const PATTERNS={ // real signature skeletons, role-based: lo=kick, mid=snare, hi=pulse
   '12':{lo:[0],mid:[4,8],hi:[0,2,4,6,8,10]},                 // 3/4 waltz: BOOM chick chick
@@ -882,7 +885,7 @@ const PATTERNS={ // real signature skeletons, role-based: lo=kick, mid=snare, hi
   '18':{lo:[0,4,8],mid:[12],hi:[0,2,4,6,8,10,12,14,16]}      // 9/8 karşılama (2+2+2+3): the Blue Rondo lean
 };
 const KITVOICE={chip:{lo:'K',mid:'s',hi:'h'},conga:{lo:'K',mid:'C',hi:'r'},bossa:{lo:'K',mid:'r',hi:'h'},rock:{lo:'K',mid:'s',hi:'h'},beep:{lo:'K',mid:'r',hi:'C'},
-  pop:{lo:'K',mid:'s',hi:'h'},disco:{lo:'K',mid:'s',hi:'h'},march:{lo:'K',mid:'s',hi:'h'},samba:{lo:'K',mid:'C',hi:'r'}};
+  pop:{lo:'K',mid:'s',hi:'h'},disco:{lo:'K',mid:'s',hi:'h'},march:{lo:'K',mid:'s',hi:'h'},samba:{lo:'K',mid:'C',hi:'r'},industrial:{lo:'K',mid:'s',hi:'r'}};
 const KITTONE={ // same engine, different shells — so chip vs rock actually SOUND different, not just different step patterns
   chip:{kf:210,ke:75,kd:0.14,kv:0.72,sf:2700,sd:0.05,sb:240,hf:9500,hd:0.02},   // gameboy: tight blippy kick, zippy snare, tssy hats
   rock:{kf:115,ke:36,kd:0.5,kv:1.05,sf:1300,sd:0.16,sb:165,hf:6200,hd:0.05},    // big room: boomy long kick, fat low snare, darker open hats
@@ -892,7 +895,8 @@ const KITTONE={ // same engine, different shells — so chip vs rock actually SO
   pop:{kf:130,ke:42,kd:0.32,kv:1.0,sf:1800,sd:0.10,sb:180,hf:7800,hd:0.03},    // clean modern pop kit
   disco:{kf:120,ke:40,kd:0.28,kv:1.05,sf:2000,sd:0.08,sb:190,hf:8800,hd:0.06}, // punchy 4-on-floor kick, sizzly open hats
   march:{kf:140,ke:55,kd:0.2,kv:0.95,sf:2600,sd:0.06,sb:210,hf:7000,hd:0.02},  // snappy snare-forward
-  samba:{kf:160,ke:50,kd:0.22,kv:0.85,sf:2200,sd:0.07,sb:200,hf:9200,hd:0.03}  // bright latin percussion
+  samba:{kf:160,ke:50,kd:0.22,kv:0.85,sf:2200,sd:0.07,sb:200,hf:9200,hd:0.03},  // bright latin percussion
+  industrial:{kf:95,ke:36,kd:0.42,kv:1.12,sf:3000,sd:0.05,sb:220,hf:11000,hd:0.02} // deep hard machine kick, metallic clap + clang
 };
 // ===== GROOVE ENGINE: micro-timing + velocity "feels" baked from the MIDI groove pack =====
 // each groove = 16 slots of {off: timing shift as fraction of a 16th, vel: velocity accent}. downbeat off always 0.
@@ -1069,7 +1073,8 @@ const KITBASS={
   pop:   [{0:'R',8:'O',12:'F'},{0:'R',4:'R',8:'F',12:'O'}],                            // bouncy pop
   disco: [{0:'R',2:'O',4:'R',6:'O',8:'R',10:'O',12:'R',14:'O'},{0:'R',3:'O',6:'R',10:'O',12:'R',14:'F'}], // the classic disco octave bounce
   march: [{0:'R',8:'F'},{0:'R',4:'F',8:'R',12:'F'}],                                   // oom-pah root/fifth
-  samba: [{0:'R',6:'F',8:'O',14:'R'},{0:'R',4:'O',8:'R',10:'F',14:'O'}]                // syncopated samba bass
+  samba: [{0:'R',6:'F',8:'O',14:'R'},{0:'R',4:'O',8:'R',10:'F',14:'O'}],               // syncopated samba bass
+  industrial: [{0:'R'},{0:'R'}]                                                        // placeholder — industrial uses a special DRONE routine (long held notes + a 4th-bar fill), see the scheduler
 };
 let _bassGroove=0,_bassBars=0,_lastBassCents=null;
 let _slimeBars=0,_keyPinned=false; // _keyPinned: user picked a key/scale by hand → slime stops rotating until slime is toggled off/on
@@ -1112,7 +1117,7 @@ function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for
     po.connect(plp);plp.connect(pg);pg.connect(bandBus);po.start(t);po.stop(t+barDur+0.05);
     sendMidiAt(Math.round(S.root+c/100),50,S.chPad,t,barDur*0.9);}
 }
-function bassNote(tok,t,hum){ // chip bass pluck: square through a warm LP + triangle sub — cuts on laptops, breathes between hits
+function bassNote(tok,t,hum,dur){ // bass pluck by default; pass `dur` (seconds) for a long sustained DRONE note (industrial)
   const n=scaleObj().c.length;let deg=curRootDeg,addOct=0;
   if(tok==='F')deg=(curRootDeg+4)%n;                       // the fifth
   else if(tok==='T')deg=(curRootDeg+2)%n;                  // the third — colour, still in scale
@@ -1127,10 +1132,13 @@ function bassNote(tok,t,hum){ // chip bass pluck: square through a warm LP + tri
     const o=AC.createOscillator(),g=AC.createGain(),lp=AC.createBiquadFilter(),sub=AC.createOscillator(),sg=AC.createGain();
     o.type='square';o.frequency.value=f;lp.type='lowpass';lp.frequency.value=1500;lp.Q.value=0.6; // more mids = the groove cuts through laptop speakers
     sub.type='triangle';sub.frequency.value=f/2;sg.gain.value=0.32;
-    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.008);g.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+    const D=dur||0.32;
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.012);
+    if(dur){g.gain.setValueAtTime(v,t+dur*0.75);g.gain.linearRampToValueAtTime(0.0015,t+dur);} // DRONE: hold, then slow fade
+    else g.gain.exponentialRampToValueAtTime(0.001,t+0.3);                                        // pluck
     o.connect(lp);sub.connect(sg);sg.connect(lp);lp.connect(g);g.connect(bandBus);
-    o.start(t);o.stop(t+0.32);sub.start(t);sub.stop(t+0.32);}
-  sendMidiAt(Math.round(S.root+c/100)-12,96,S.chBass,t,0.25);
+    o.start(t);o.stop(t+D+0.05);sub.start(t);sub.stop(t+D+0.05);}
+  sendMidiAt(Math.round(S.root+c/100)-12,96,S.chBass,t,dur||0.25);
 }
 // per-instrument humanization (research: real drummers vary hats a LOT for ghosting, keep kicks tight; and nudge
 // timing a hair off the grid — fast grids stay tight, slow grids breathe). returns {v:velMult, t:secondsOffset}.
@@ -1154,7 +1162,15 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
     const st=drumStep%loop, inBar=st%bar, barI=(st/bar)|0, hum=0.92+Math.random()*0.16; // ±8% human wobble on every hit
     const gr=(drumSig==='16')?activeGroove():null; // the active FEEL (micro-timing + velocity), only on the 16th grid
     if(inBar===0)bandBar(drumTime,barI);
-    if(bandOn){const set=(drumSig==='16')?(KITBASS[drumKit]||BASSGROOVES):null,bp=set?set[_bassGroove%set.length]:BASSPAT[drumSig],tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));if(tok)bassNote(tok,drumTime,hum);}
+    if(bandOn){
+      if(drumKit==='industrial'&&drumSig==='16'){ // DRONE bass: 1-bar note, then a 1.5-bar note, then a sassy fill on the 4th bar
+        const barDur=drumBar()*drumStepDur();
+        if(inBar===0){ if(barI===0)bassNote('R',drumTime,hum,barDur*1.0); else if(barI===1)bassNote('R',drumTime,hum,barDur*1.5); }
+        if(barI===3){ const fill={0:'R',6:'O',8:'F',11:'O',12:'R',14:'A'}; if(fill[inBar])bassNote(fill[inBar],drumTime,hum); } // the sass
+      } else {
+        const set=(drumSig==='16')?(KITBASS[drumKit]||BASSGROOVES):null,bp=set?set[_bassGroove%set.length]:BASSPAT[drumSig],tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));if(tok)bassNote(tok,drumTime,hum);
+      }
+    }
     if(!drumOn){drumTime+=drumStepDur();drumStep++;continue;} // band without drums: same grid, silent kit
     if(drumTriplet()){ // the REAL shuffle: "ting — ting-a" — the hat SKIPS the middle triplet (that gap is the whole feel)
       const vm=KITVOICE[drumKit],sub=inBar%3;
@@ -1925,7 +1941,8 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
   // kit icon: peach (warm), lavender (violet), sky (blue — was yellow, which hid the cymbal), mint (green).
   // COOL pastel backgrounds so the warm/green crayon band icon stays clearly visible (warm bgs like peach/mint would blend into it)
   const DK=[['pop','#e6f2ff','#c4e0ff','#3a6ea8','1'],['rock','#efe6ff','#d4c2f5','#6b4fa8','2'],
-            ['disco','#e7e8ff','#c6caf5','#4a4a9e','3'],['bossa','#eef1f6','#d3dbe8','#5a6478','4']];
+            ['disco','#e7e8ff','#c6caf5','#4a4a9e','3'],['bossa','#eef1f6','#d3dbe8','#5a6478','4'],
+            ['industrial','#e4e7ee','#c2c8d6','#4a5568','5']];
   const dl=$("psDrums");if(dl)dl.innerHTML=DK.map(([k,c1,c2,nc,n])=>
     `<div class="psItem"><button class="psBtn bandBtn" data-kit="${k}" title="Drum ${n}" style="background:linear-gradient(160deg,${c1},${c2})"><img src="band.png" alt="" draggable="false"></button><span class="psLbl">Drum ${n}</span></div>`).join('');
   dl&&dl.addEventListener('pointerdown',e=>{const b=e.target.closest('.psBtn');if(!b)return;
