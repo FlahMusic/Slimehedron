@@ -67,7 +67,7 @@ header .spacer{flex:1}
    (see JOURNAL entry 13). so play is: drop balls · slime auto-play · new shape · clear.
    every knob, select, and slider is studio furniture now. same engine, zero homework. */
 .mode-play #triMixBar{display:flex;justify-content:center} /* play: keep JUST the triangle mixer so kids can balance melody/drums/band */
-.mode-play #triMixBar>*:not(#triMix){display:none} /* hide the studio controls (kit/key/tempo/FX) — keep only the triangle */
+.mode-play #triMixBar>*:not(#triMix){display:none!important} /* hide the studio controls (kit/key/tempo/FX) — keep only the triangle. !important beats their inline display:flex */
 .mode-play #drumBtn,.mode-play #bandBtn,.mode-play #resetBtn,.mode-play header .adv{display:none} /* recBtn stays visible now so kids can record their jam */
 .mode-play #cofWheel{display:none} /* circle of fifths hidden in the kid mode — too theory-heavy (still shows in studio/learn) */
 .mode-play #dropBtn{transform:scale(1.22);margin:0 6px} /* the main toy gets the big button */
