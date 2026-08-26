@@ -167,6 +167,7 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 @media (max-width:820px){.psLbl{font-size:9px}}
 /* groove selector (studio): tidy folders of feels */
 #grooveCard .gcur{font-size:12px;font-weight:700;color:var(--accent);float:right}
+.chLbl{font-size:10px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px}
 .grooveToggle{display:flex;align-items:center;gap:8px;font-size:13px;color:#5a4f78;font-weight:600;padding:7px 10px;margin-bottom:8px;background:linear-gradient(135deg,rgba(159,230,207,.28),rgba(166,200,255,.28));border-radius:11px;cursor:pointer}
 .grooveToggle input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
 .grooveToggle b{font-weight:800}
@@ -502,7 +503,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </span>
   </span>
   <span id="fxWrap" style="display:flex;align-items:center;gap:6px"><!-- FX school: hands-on tape + delay, no menus required -->
-    <span style="font-size:15px" id="tapeIco" title="tape saturation">📼</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:58px;flex:none" title="tape saturation — warm, worn cassette color">
+    <span class="sub" id="tapeIco" title="tape saturation">tape</span><input type="range" id="warmSl" min="0" max="100" value="30" style="width:58px;flex:none" title="tape saturation — warm, worn cassette color">
     <svg width="34" height="26" viewBox="0 0 32 24" style="flex:none"><use href="#icDelay"/></svg><span class="sub">delay</span><input type="range" id="dlyTop" min="0" max="100" value="0" style="width:58px;flex:none" title="delay — echoes in time with the tempo">
   </span>
 </div>
@@ -580,11 +581,11 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <aside>
     <div id="dragBar"></div>
     <div class="card" id="recCard" style="display:none">
-      <h2>🎙️ my recordings</h2>
+      <h2>my recordings</h2>
       <div id="recList"></div>
     </div>
     <div class="card">
-      <h2>⏱️ timing</h2>
+      <h2>timing</h2>
       <div class="row"><label>tempo</label><input type="range" id="bpm" min="40" max="220" value="80"><span class="val" id="bpmV">80</span></div>
       <div class="row"><label title="how many notes fit in each beat">subdivision</label>
         <div class="seg" id="divSeg">
@@ -606,13 +607,13 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </div>
 
     <div class="card" id="grooveCard">
-      <h2>🥁 groove</h2>
+      <h2>groove</h2>
       <label class="grooveToggle" title="ON = a loose, head-bobbin' human feel (like it was finger-drummed on an MPC). OFF = a tight, robotic sequencer."><input type="checkbox" id="grooveT" checked> <b>Groove</b> — human feel</label>
       <div id="grooveFolders"></div>
     </div>
 
     <div class="card">
-      <h2>🎼 scale</h2>
+      <h2>scale</h2>
       <div class="row"><label>root</label><select id="root"></select></div>
       <div class="row"><label>scale</label><select id="scale"></select></div>
       <div class="row"><label>octave span</label><input type="range" id="octs" min="1" max="4" value="2"><span class="val" id="octsV">2</span></div>
@@ -620,7 +621,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </div>
 
     <div class="card">
-      <h2>🔷 geometry</h2>
+      <h2>geometry</h2>
       <div class="row"><label>shape</label>
         <select id="shape">
           <option value="3">triangle</option><option value="4">square</option>
@@ -636,7 +637,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </div>
 
     <div class="card">
-      <h2>💥 velocity</h2>
+      <h2>velocity</h2>
       <div class="row"><label>randomize</label><div class="toggle on" id="velRandT"></div></div>
       <div class="row" id="velFixedRow" style="display:none"><label>value</label><input type="range" id="velFix" min="1" max="127" value="100"><span class="val" id="velFixV">100</span></div>
       <div class="row" id="velRangeRow"><label>min</label><input type="range" id="velMin" min="1" max="127" value="12"><span class="val" id="velMinV">12</span></div>
@@ -644,7 +645,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </div>
 
     <div class="card">
-      <h2>🎹 sound</h2>
+      <h2>sound</h2>
       <div class="row"><label>internal synth</label><div class="toggle on" id="synthT"></div></div>
       <div class="row"><label>waveform</label>
         <div class="seg" id="waveSeg">
@@ -659,7 +660,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </div>
 
     <div class="card">
-      <h2>✏️ envelope (ADSR)</h2>
+      <h2>envelope (ADSR)</h2>
       <div class="adsr">
         <div class="knob" title="attack: how fast the note starts"><input type="range" id="atk" min="0" max="100" value="0"><span class="k">A<svg width="13" height="9" viewBox="0 0 14 9"><path d="M1 8 L13 1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="kv" id="atkV">0</span></div>
         <div class="knob" title="decay: how fast it settles down"><input type="range" id="dec" min="0" max="100" value="10"><span class="k">D<svg width="13" height="9" viewBox="0 0 14 9"><path d="M1 1 L13 8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="kv" id="decV">10</span></div>
@@ -669,7 +670,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </div>
 
     <div class="card">
-      <h2>🎛️ filter <span class="pwr on" id="filtPwr" title="filter on/off">!</span></h2>
+      <h2>filter <span class="pwr on" id="filtPwr" title="filter on/off">!</span></h2>
       <div class="row"><label>type</label>
         <div class="seg" id="filtSeg">
           <button data-f="lowpass" class="active" title="low pass: keeps the low sounds, softens the highs">LP<svg width="18" height="10" viewBox="0 0 20 10"><path d="M1 3 H10 C14 3 15 9 18 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
@@ -683,7 +684,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </div>
 
     <div class="card">
-      <h2>🔊 output <span class="pwr on" id="fxPwr" title="delay fx on/off">!</span></h2>
+      <h2>output <span class="pwr on" id="fxPwr" title="delay fx on/off">!</span></h2>
       <div class="row"><label>volume</label><input type="range" id="vol" min="0" max="100" value="55"><span class="val" id="volV">55</span></div>
       <div class="row"><label title="echoes that repeat in time with the tempo">delay</label><input type="range" id="dly" min="0" max="100" value="0"><span class="val" id="dlyV">0</span></div>
       <hr>
@@ -699,16 +700,16 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <div id="ccList" class="ccList"></div>
       <div class="row" style="align-items:flex-start"><label>MIDI ch</label>
         <div class="chGrid">
-          <div class="chCol"><span>🎵</span><select id="chMel" class="chSel"></select></div>
-          <div class="chCol"><span>🥁</span><select id="chDrum" class="chSel"></select></div>
-          <div class="chCol"><span>🎸</span><select id="chBass" class="chSel"></select></div>
-          <div class="chCol"><span>🎹</span><select id="chPad" class="chSel"></select></div>
+          <div class="chCol"><span class="chLbl">Melody</span><select id="chMel" class="chSel"></select></div>
+          <div class="chCol"><span class="chLbl">Drums</span><select id="chDrum" class="chSel"></select></div>
+          <div class="chCol"><span class="chLbl">Bass</span><select id="chBass" class="chSel"></select></div>
+          <div class="chCol"><span class="chLbl">Chords</span><select id="chPad" class="chSel"></select></div>
         </div>
       </div>
     </div>
   </aside>
 </main>
-<button id="menuBtn" title="open the controls">🎛️</button>
+<button id="menuBtn" title="open the controls" aria-label="controls"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
 
 <script>
 "use strict";
@@ -1229,7 +1230,11 @@ function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for
   if(++_bassBars%16===0)_bassGroove=(_bassGroove+1)%BASSGROOVES.length; // rotate the bass feel every 16 bars for motion
   const man=(S.mode!=='play'&&manualActive())?manualRoot():null; // studio: a human playing OWNS the harmony. play: no chord chasing, kids just jam.
   if(man==null&&S.slimeMode&&!_keyPinned&&++_slimeBars>=64){_slimeBars=0;keyJourney();} // auto-mode: move around the circle of fifths every 64 bars (16 was too soon to settle in)
-  if(S.slimeMode&&fillState==='fill'&&(++_wallBars%16===0))breakWall(); // every 16 bars, open a wall → thins the texture + simplifies the palette
+  if(S.slimeMode&&fillState==='fill'){_wallBars++;
+    if(_wallBars%16===0)breakWall();       // every 16 bars: a wall opens (thins texture, simplifies palette)
+    if(_wallBars%32===0)repairWall();      // every 32 bars: an old gap magically fades back into a wall
+    if(_wallBars%128===0)explodeReform();  // every 128 bars: the whole shape bursts + reforms into a NEW shape
+  }
   const sc=scaleObj().c,n=sc.length,harm=scaleObj().harm||'triad';let rd;
   // DRONE scales (maqam bayati, slendro, pelog, iwato): the tonic mostly HOLDS. moving chords drag microtones toward
   // 12-TET & sound off to untrained ears — the pros keep a pedal + fifths and let melody roam. so we mostly stay home.
@@ -1443,13 +1448,21 @@ function rebuild(){edges=buildEdges(S.shape);_brokenOrder=[];}
 // AUTO-MODE WALL BREAK-OFF: every so often a random wall opens up (its note goes quiet, balls pour through the gap).
 // this thins a busy texture organically + shrinks the melodic palette so the line stays simple & singable. walls
 // reform after a while so the shape breathes. the current chord's ROOT wall is protected so harmony stays grounded.
-let _brokenOrder=[]; // edges broken, oldest first (so we can reform the oldest)
-function breakWall(){const live=edges.filter(e=>!e.broken);if(live.length<=3)return; // never dissolve the shape
+let _brokenOrder=[]; // edges broken, oldest first (so we repair the oldest first)
+function breakWall(){const live=edges.filter(e=>!e.broken);if(live.length<=3)return; // never dissolve the shape entirely
   const rootDeg=((curRootDeg%scaleObj().c.length)+scaleObj().c.length)%scaleObj().c.length;
-  const cand=live.filter(e=>degOf(e.cents)!==rootDeg); // don't break the tonic wall
+  const cand=live.filter(e=>degOf(e.cents)!==rootDeg); // don't break the tonic wall — harmony stays grounded
   const e=(cand.length?cand:live)[(Math.random()*(cand.length?cand.length:live.length))|0];
-  e.broken=true;_brokenOrder.push(e);
-  if(_brokenOrder.length>2){const old=_brokenOrder.shift();if(old)old.broken=false;} // keep at most ~2 gaps open
+  e.broken=true;e.reform=0;_brokenOrder.push(e); // reform=0 ⇒ fully open (repairWall grows it back to 1)
+}
+function repairWall(){ // magically fade the OLDEST gap back into a wall (ethereal, not a hard pop-in)
+  const e=_brokenOrder.shift(); if(!e||!e.broken)return;
+  e.reform=0.001; // >0 marks it "reforming": the draw loop grows its opacity in, then it becomes solid again
+}
+function explodeReform(){ // every 128 bars: burst the WHOLE shape (any remaining walls too) → reforms into a new one
+  if(fillState!=='fill')return; edges.forEach(e=>{e.broken=false;e.reform=0;});_brokenOrder=[];
+  if(S.randomShape&&$("newShapeBtn"))$("newShapeBtn").click(); // pick a fresh shape for the next cage
+  startBreak(performance.now()); // the celebratory shatter animation
 }
 
 // ---------- balls ----------
@@ -1640,7 +1653,7 @@ function step(){
         // OUT of reflects it. The old code only bounced when inPoly()==true, so a ball whose center crossed the wall
         // plane read "outside" and skipped the bounce entirely -> tunneled straight through. This can't happen now.
         let hitWall=false;
-        for(const e of edges){if(e.broken)continue; // a broken-off wall is an OPEN GAP — balls pour through it and its note goes silent
+        for(const e of edges){if(e.broken&&(e.reform||0)<0.55)continue; // open gap (or barely-reformed) = balls pour through, note silent; once it's >55% faded-in it starts catching balls again
           const dist=(b.x-e.ax)*e.nx+(b.y-e.ay)*e.ny;
           if(dist<BR){ // only when the ball is on/behind this wall's inward face…
             // …and actually within this finite segment's span (not off past a corner, so corners stay open to escape)
@@ -1734,7 +1747,14 @@ function strokeSeg(e,i,N,extra){
 }
 function drawShape(){ctx.lineCap="round";
   if(fillState!=="fill"){const segs=curSegs||computeSegs();const N=segs.length;segs.forEach((e,i)=>strokeSeg(e,i,N,formGlow+burstFlash*0.3));ctx.shadowBlur=0;return;}
-  const N=edges.length;edges.forEach((e,i)=>{if(e.broken)return;strokeSeg(e,i,N,formGlow);});ctx.shadowBlur=0;} // a broken-off wall isn't drawn — you see the open gap notes pour through
+  const N=edges.length;edges.forEach((e,i)=>{
+    if(e.broken){
+      if(!e.reform)return;                                   // fully open gap — not drawn, balls pour through
+      e.reform=Math.min(1,e.reform+0.007);                  // ETHEREAL repair: grow the wall's presence back over ~2.5s
+      if(e.reform>=1){e.broken=false;e.reform=0;strokeSeg(e,i,N,formGlow);return;} // solid again
+      ctx.save();ctx.globalAlpha=e.reform;strokeSeg(e,i,N,formGlow*e.reform);ctx.restore();return; // fade it in
+    }
+    strokeSeg(e,i,N,formGlow);});ctx.shadowBlur=0;}
 function drawDebris(){ctx.lineCap="round";ctx.lineWidth=7;
   for(const d of debris){if(d.life<=0)continue;const ca=Math.cos(d.ang),sa=Math.sin(d.ang);
     const ax=d.mx+(d.hx*ca-d.hy*sa),ay=d.my+(d.hx*sa+d.hy*ca),bx=d.mx-(d.hx*ca-d.hy*sa),by=d.my-(d.hx*sa+d.hy*ca);
@@ -2934,7 +2954,7 @@ async function renderTakes(){
         else{const a=document.createElement('a');a.href=url;a.download=f.name;a.click();}};
       row.appendChild(sh);
       const parts=tk.midi?Object.keys(tk.midi):[];
-      if(parts.length){const mb=document.createElement('button');mb.textContent='🎹';mb.title='MIDI tracks';
+      if(parts.length){const mb=document.createElement('button');mb.textContent='MIDI';mb.title='MIDI tracks';
         mb.onclick=async()=>{const files=parts.map(p=>new File([tk.midi[p]],takeBase(tk)+'-'+p+'.mid',{type:'audio/midi'}));
           if(navigator.canShare&&navigator.canShare({files})){try{await navigator.share({files,title:'slime jam MIDI'});return;}catch(e){}}
           parts.forEach((p,i)=>setTimeout(()=>{const a=document.createElement('a');a.href=URL.createObjectURL(tk.midi[p]);a.download=takeBase(tk)+'-'+p+'.mid';a.click();},i*400)); // staggered so the browser allows all of them
@@ -2983,10 +3003,10 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
 // COLLAPSIBLE side-menu sections: click a card's title to fold it down to just the title line = far less scrolling.
 // common cards start open (timing, groove, scale, sound); the deeper/advanced ones start collapsed to save space.
 (function(){try{
-  const ADV_COLLAPSED=['✏️','🎛️','🔊','🔷','💥']; // envelope, filter, output, geometry, velocity = advanced → start folded
+  const ADV_COLLAPSED=['envelope','filter','output','geometry','velocity']; // advanced cards → start folded (common ones stay open)
   document.querySelectorAll('aside .card').forEach(card=>{
     const h=card.querySelector('h2');if(!h)return;
-    if(ADV_COLLAPSED.some(e=>h.textContent.includes(e)))card.classList.add('collapsed');
+    if(ADV_COLLAPSED.some(e=>h.textContent.toLowerCase().includes(e)))card.classList.add('collapsed');
     h.addEventListener('click',e=>{if(e.target.closest('.pwr'))return;card.classList.toggle('collapsed');}); // don't toggle when clicking the on/off power dot
   });
 }catch(e){console.warn('collapse UI skipped:',e);}})();
