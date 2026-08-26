@@ -38,13 +38,15 @@ body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,
   body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}}
 /* (crayon edge-filter removed — it just smeared the edges, didn't read as crayon. real crayon UI will come from
    PNG assets via border-image; see below when those are added.) */
-header{display:flex;align-items:center;gap:14px;padding:14px 22px;position:relative;z-index:70}
+header{display:flex;align-items:center;gap:14px;padding:14px 22px;position:relative;z-index:70;pointer-events:none} /* the BAR is click-through (its empty full-width space used to eat clicks on the buttons/slimes beneath it); only its actual controls catch clicks */
+header>*{pointer-events:auto}
 header h1{font-size:20px;font-weight:700;margin:0;letter-spacing:.5px}
 header h1 .dot{color:var(--accent)}
 header .sub{font-size:12px;color:var(--ink-soft);font-weight:500}
 header .spacer{flex:1}
 .btngroup{display:flex;align-items:center;gap:14px;flex-wrap:nowrap} /* transport + instruments: one family, never split across lines */
-#autoRow{display:flex;justify-content:center;padding:0 0 6px;position:relative;z-index:70} /* auto-play slime gets his own centered perch under the buttons */
+#autoRow{display:flex;justify-content:center;padding:0 0 6px;position:relative;z-index:70;pointer-events:none} /* auto-play slime gets his own centered perch under the buttons; bar is click-through so its empty width doesn't block the buttons/slimes below */
+#autoRow>*{pointer-events:auto}
 /* ---- modes: one engine, three doors — classes only change what's visible ---- */
 #modeCards{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:center;padding:0 18px;max-width:760px}
 .modeCard{border:2px solid rgba(255,255,255,.9);border-radius:20px;padding:20px 18px;width:190px;cursor:pointer;box-shadow:var(--shadow);transition:.15s;text-align:center}
@@ -148,7 +150,7 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 /* ===== PLAY MODE: big soft side buttons — waves on the left, drum kits on the right ===== */
 #playSide{display:none}
 .mode-play #playSide{display:block}
-.psCol{position:fixed;top:50%;transform:translateY(-50%);z-index:40;display:flex;flex-direction:column;gap:14px;pointer-events:none} /* only the buttons catch clicks, not the column gaps */
+.psCol{position:fixed;top:50%;transform:translateY(-50%);z-index:76;display:flex;flex-direction:column;gap:14px;pointer-events:none} /* z above the top bars (70) so Sound/Rhythm buttons are never buried; only the buttons catch clicks, not the column gaps */
 .psCol.left{left:18px}.psCol.right{right:18px}
 .psBtn{width:74px;height:74px;border-radius:24px;border:2px solid rgba(255,255,255,.9);cursor:pointer;pointer-events:auto;
   display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
@@ -165,6 +167,9 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 @media (max-width:820px){.psLbl{font-size:9px}}
 /* groove selector (studio): tidy folders of feels */
 #grooveCard .gcur{font-size:12px;font-weight:700;color:var(--accent);float:right}
+.grooveToggle{display:flex;align-items:center;gap:8px;font-size:13px;color:#5a4f78;font-weight:600;padding:7px 10px;margin-bottom:8px;background:linear-gradient(135deg,rgba(159,230,207,.28),rgba(166,200,255,.28));border-radius:11px;cursor:pointer}
+.grooveToggle input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+.grooveToggle b{font-weight:800}
 #grooveFolders .gFolder{margin:4px 0}
 #grooveFolders .gHead{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:6px 10px;border-radius:10px;background:rgba(180,170,220,.14);font-weight:700;font-size:13px;color:#5a4f78}
 #grooveFolders .gHead:hover{background:rgba(180,170,220,.24)}
@@ -320,7 +325,11 @@ aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;pa
 aside::-webkit-scrollbar{width:8px}
 aside::-webkit-scrollbar-thumb{background:rgba(180,170,210,.5);border-radius:8px}
 .card{position:relative;background:var(--card);border:1px solid var(--card-brd);border-radius:20px;padding:14px 16px;box-shadow:var(--shadow);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);overflow:visible}
-.card h2{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink-soft);margin:0 0 12px}
+.card h2{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink-soft);margin:0 0 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}
+.card h2::after{content:"▾";font-size:11px;opacity:.6;transition:transform .2s} /* collapse chevron */
+.card.collapsed h2{margin:0} /* collapsed = just the title line, everything else hidden = way less scrolling */
+.card.collapsed h2::after{transform:rotate(-90deg)}
+.card.collapsed>*:not(h2){display:none!important}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:9px 0}
 .row label{font-size:13px;font-weight:600}
 .row .val{font-size:12px;color:var(--ink-soft);font-weight:600;min-width:46px;text-align:right}
@@ -346,7 +355,8 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 .btn.big.on:hover{filter:brightness(1.05)}
 @keyframes beckon{0%,100%{box-shadow:var(--shadow)}50%{box-shadow:0 0 22px rgba(159,230,207,.95)}}
 .adv{font-size:12px;color:var(--ink-soft);font-weight:700;display:flex;gap:6px;align-items:center;cursor:pointer;user-select:none}
-#triMixBar{display:flex;align-items:center;gap:16px;padding:2px 22px 6px;position:relative;z-index:70;flex-wrap:wrap}
+#triMixBar{display:flex;align-items:center;gap:16px;padding:2px 22px 6px;position:relative;z-index:70;flex-wrap:wrap;pointer-events:none} /* full-width bar was invisibly covering the right button column + top slimes; make it click-through, controls stay clickable */
+#triMixBar>*{pointer-events:auto}
 .triHint{font-size:12.5px;color:var(--ink-soft);font-weight:600}
 #recDot{display:block;width:23px;height:23px;border-radius:50%;background:#ff5f7a;border:1.5px solid rgba(255,255,255,.9);transition:.2s} /* white ring = same stroke language as the SVG icons */
 #recBtn.rec #recDot{border-radius:5px;animation:recPulse 1s infinite}
@@ -465,12 +475,15 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 </header>
 <div id="autoRow"><button class="slimeswitch" id="slimeBig" title="auto-play"><span class="ss-knob"><span class="sic">✨</span></span></button></div>
 <div id="triMixBar">
-  <div id="triMix" title="drag to mix: melody / drums / band">
-    <svg viewBox="-14 -18 128 124" width="108" height="104" style="display:block;overflow:visible">
+  <div id="triMix" title="drag to mix: melody (top) · drums (left) · band (right)">
+    <svg viewBox="-30 -34 160 150" width="196" height="184" style="display:block;overflow:visible">
       <defs><linearGradient id="tmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c6ff"/><stop offset=".5" stop-color="#bdeee0"/><stop offset="1" stop-color="#ffd3e7"/></linearGradient></defs>
       <path d="M50 8 Q55 8 58 13 L88 63 Q92 70 85 74 Q78 78 50 78 Q22 78 15 74 Q8 70 12 63 L42 13 Q45 8 50 8 Z" fill="url(#tmg)" stroke="rgba(255,255,255,.95)" stroke-width="2.5"/>
-      <use href="#icNote" x="41" y="-18" width="18" height="18"/><use href="#icDrum" x="-3" y="82" width="18" height="18"/><use href="#icBass" x="83" y="84" width="22" height="16.5"/>
-      <circle id="triKnob" cx="50" cy="53" r="8" fill="#9fe6cf" stroke="#fff" stroke-width="2.5" style="filter:drop-shadow(0 2px 3px rgba(120,110,160,.4))"/>
+      <!-- MELODY = a clear black sixteenth note on top (was an unreadable pale ball) -->
+      <g transform="translate(42,-30)" fill="#2c2749" stroke="none"><path d="M9 1 L9 15" stroke="#2c2749" stroke-width="2.4" stroke-linecap="round" fill="none"/><path d="M9 1 q7 1.5 7 6 q-4 -2 -7 -1 Z"/><path d="M9 5 q6 1.5 6 5.5 q-3.5 -2 -6 -1 Z"/><ellipse cx="6" cy="16" rx="4.2" ry="3.2" transform="rotate(-18 6 16)"/></g>
+      <use href="#icDrum" x="-30" y="78" width="32" height="32"/><!-- drum kit bottom-left -->
+      <use href="#icBass" x="86" y="80" width="36" height="27"/><!-- bass/band bottom-right -->
+      <circle id="triKnob" cx="50" cy="53" r="9" fill="#9fe6cf" stroke="#fff" stroke-width="3" style="filter:drop-shadow(0 2px 4px rgba(120,110,160,.45))"/>
     </svg></div>
   <span id="drumCtl" style="display:flex;align-items:center;gap:8px;opacity:.35;pointer-events:none">
     <svg width="16" height="16" viewBox="0 0 24 24" style="flex:none"><use href="#icDrum"/></svg><!-- this cluster = the drums -->
@@ -482,7 +495,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <label class="adv" title="every note snaps into your key and scale"><input type="checkbox" id="scaleLockT" checked> scale</label></span>
   <span style="display:flex;align-items:center;gap:8px">
     <svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><use href="#icNote"/></svg>
-    <select id="voiceTop" style="flex:none;width:auto" title="oscillator waveform"><option value="sine">∿ sine · smooth</option><option value="triangle" selected>△ triangle · mellow</option><option value="sawtooth">⊿ saw · bright</option><option value="square">⊓ square · buzzy</option></select>
+    <select id="voiceTop" style="flex:none;width:auto" title="oscillator waveform"><option value="sine">∿ sine · smooth</option><option value="triangle" selected>△ triangle · mellow</option><option value="warm">◠ warm · round</option><option value="sawtooth">⊿ saw · bright</option><option value="square">⊓ square · buzzy</option></select>
     <span style="display:flex;flex-direction:column;gap:3px"><!-- tempo with swing tucked right under it, where groove lives -->
       <span style="display:flex;align-items:center;gap:6px"><span class="sub">tempo</span><input type="number" id="bpmNum" class="numin" min="40" max="220" step="0.01" value="80" title="type an exact BPM (up to 2 decimals)"><span class="sub" style="font-size:10px">BPM</span><input type="range" id="bpmTop" min="40" max="220" value="80" style="width:64px;flex:none" title="tempo (BPM)"></span>
       <span id="swingWrap" style="display:flex;align-items:center;gap:6px"><svg width="28" height="28" viewBox="0 0 24 24" style="flex:none"><use href="#icSwing"/></svg><input type="range" id="swingSl" min="0" max="100" value="15" style="width:58px;flex:none" title="swing — offbeats land late"></span>
@@ -593,7 +606,8 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </div>
 
     <div class="card" id="grooveCard">
-      <h2>🥁 groove <span class="gcur" id="grooveCur">Human</span></h2>
+      <h2>🥁 groove</h2>
+      <label class="grooveToggle" title="ON = a loose, head-bobbin' human feel (like it was finger-drummed on an MPC). OFF = a tight, robotic sequencer."><input type="checkbox" id="grooveT" checked> <b>Groove</b> — human feel</label>
       <div id="grooveFolders"></div>
     </div>
 
@@ -622,11 +636,6 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </div>
 
     <div class="card">
-      <h2>🌊 motion</h2>
-      <div class="row"><label>gravity</label><input type="range" id="grav" min="0" max="100" value="0"><span class="val" id="gravV">0</span></div>
-    </div>
-
-    <div class="card">
       <h2>💥 velocity</h2>
       <div class="row"><label>randomize</label><div class="toggle on" id="velRandT"></div></div>
       <div class="row" id="velFixedRow" style="display:none"><label>value</label><input type="range" id="velFix" min="1" max="127" value="100"><span class="val" id="velFixV">100</span></div>
@@ -641,6 +650,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
         <div class="seg" id="waveSeg">
           <button data-w="sine" title="smooth &amp; pure">∿ sine</button>
           <button data-w="triangle" class="active" title="soft &amp; mellow">△ tri</button>
+          <button data-w="warm" title="round &amp; organ-like">◠ warm</button>
           <button data-w="sawtooth" title="bright &amp; buzzy">⊿ saw</button>
           <button data-w="square" title="hollow &amp; buzzy">⊓ sqr</button>
         </div>
@@ -679,6 +689,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <hr>
       <div class="row"><label>send MIDI out</label><div class="toggle" id="midiT"></div></div>
       <div class="row"><label>port</label><select id="midiPort"><option>— enable above —</option></select></div>
+      <div class="row"><label title="MPE = MIDI Polyphonic Expression. Turn ON to send the true microtonal pitch to synths like Surge XT, Pianoteq, Vital. It uses channels 2–16 for pitch, so it takes over the per-instrument channels below while it's on. Leave OFF for normal 12-tone gear.">MPE microtonal out</label><div class="toggle" id="mpeT"></div></div>
       <hr>
       <div class="row"><label title="play slimehedron from a MIDI keyboard or sequencer">MIDI in</label><div class="toggle" id="midiInT"></div></div>
       <div class="row"><label>device</label><select id="midiIn"><option value="-1">— enable above —</option></select></div>
@@ -718,15 +729,16 @@ const SCALES={
   wholeTone:{n:"Whole Tone",c:[0,200,400,600,800,1000]},
   hirajoshi:{n:"Hirajoshi (Japan)",c:[0,200,300,700,800]},
   inSen:{n:"In Sen (Japan)",c:[0,100,500,700,1000]},
-  iwato:{n:"Iwato (Japan)",c:[0,100,500,600,1000]},
+  iwato:{n:"Iwato (Japan)",c:[0,100,500,600,1000],harm:'drone'}, // semitone+tritone flavor: drone/fifths keep it from clashing
   hijaz:{n:"Hijaz (Arabic)",c:[0,100,400,500,700,800,1000]},
   bhairav:{n:"Bhairav (India)",c:[0,100,400,500,700,800,1100]},
-  maqamRast:{n:"Maqam Rast ¼-tone",c:[0,200,350,500,700,900,1050]},
-  maqamBayati:{n:"Maqam Bayati ¼-tone",c:[0,150,300,500,700,800,1000]},
-  slendro:{n:"Slendro (5-EDO ~Java)",c:[0,240,480,720,960]},
-  pelog:{n:"Pelog (Java approx)",c:[0,120,270,540,670,785,1050]},
-  neutral7:{n:"Neutral 7 (¼-tones)",c:[0,150,300,450,600,750,900]},
+  maqamRast:{n:"Maqam Rast ¼-tone",c:[0,200,350,500,700,900,1050],harm:'neutral'},
+  maqamBayati:{n:"Maqam Bayati ¼-tone",c:[0,150,300,500,700,800,1000],harm:'drone'},
+  slendro:{n:"Slendro (5-EDO ~Java)",c:[0,240,480,720,960],harm:'drone'},
+  pelog:{n:"Pelog (Java approx)",c:[0,120,270,540,670,785,1050],harm:'drone'},
+  neutral7:{n:"Neutral 7 (¼-tones)",c:[0,150,300,450,600,750,900],harm:'neutral'},
   edo19:{n:"19-EDO (subset)",c:[0,253,442,505,758,947,1137]}
+  // no harm tag ⇒ 'triad' (all 12-TET scales, whole-tone, 19-EDO): normal stacked-third chords, as before
 };
 const NOTE_NAMES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 
@@ -739,7 +751,7 @@ const S={
   atk:0.001,dec:0.15,sus:0.18,rel:0.28,
   filt:"lowpass",cut:0.78,res:0,fenv:0.30,
   vol:0.55,wM:0.34,wD:0.33,wK:0.33,wMg:1,bpMix:0.5,dly:0,warm:0.3,filtOn:true,fxOn:true,chMel:1,chDrum:2,chBass:3,chPad:4,midi:false,midiOut:null,
-  rainRate:0.5,rainAmt:0.35,slimeMode:false,randomShape:true,
+  rainRate:0.5,rainAmt:0.35,slimeMode:false,randomShape:true,mpe:false,groove:true,
   scaleLock:true // note-snap ON by default — defined here so it's NEVER undefined (undefined read as "off" = the snap silently not working)
 };
 let BURST_MS=6000; // how long the corners stay broken open before reforming
@@ -802,6 +814,16 @@ function setSlimeProcessing(on){if(!AC)return;const t=AC.currentTime;
 function freqFromCents(cents){const midi=S.root+cents/100;return 440*Math.pow(2,(midi-69)/12);}
 function cutHz(x){return 60*Math.pow(14000/60,x);}
 function cutHzFill(x){return 260*Math.pow(14000/260,Math.max(0,Math.min(1,x)));}
+// "warm" = a soft additive organ tone: fundamental + gentle octave/fifth/upper harmonics. rounder + fuller than a
+// sine, way sweeter than a saw/square — the pleasant middle voice. built once, then reused. any other value = native type.
+let _warmWave=null;
+function setOscWave(o,w){
+  if(w!=='warm'){o.type=w;return;}
+  if(!_warmWave){const H=[0,1,0.55,0.32,0,0.14,0,0.07]; // harmonic amplitudes (index 0 = DC, unused)
+    const real=new Float32Array(H.length),imag=new Float32Array(H);
+    _warmWave=AC.createPeriodicWave(real,imag,{disableNormalization:false});}
+  o.setPeriodicWave(_warmWave);
+}
 function playSynth(freq,vel,imp){
   // raindrop model: every hit is TWO sounds — a noise "tick" (the impact), then a tonal "ring"
   // (the trapped-bubble resonance) a few ms later. impact geometry (imp 0..1) sets the character:
@@ -831,7 +853,7 @@ function playSynth(freq,vel,imp){
     nz.start(t,Math.random()*0.4,0.05);
   }
   // --- ring layer ---
-  const o=AC.createOscillator();o.type=S.wave;o.detune.value=Math.random()*8-4; // ±4 cents
+  const o=AC.createOscillator();setOscWave(o,S.wave);o.detune.value=Math.random()*8-4; // ±4 cents
   o.frequency.setValueAtTime(freq*1.02,tr);o.frequency.exponentialRampToValueAtTime(freq,tr+0.04); // bubble settles onto pitch
   const mix=AC.createGain();mix.gain.value=1;o.connect(mix);
   let sub=null;
@@ -852,17 +874,53 @@ async function enableMidi(){
     const outs=[...access.outputs.values()];
     if(!outs.length){sel.innerHTML="<option>no MIDI outputs found</option>";S.midiOut=null;return;}
     outs.forEach((o,i)=>{const op=document.createElement('option');op.value=i;op.textContent=o.name;sel.appendChild(op);});
-    S.midiOut=outs[0];sel.onchange=()=>{S.midiOut=outs[sel.value];};
+    S.midiOut=outs[0];sel.onchange=()=>{S.midiOut=outs[sel.value];if(S.mpe)mpeSetup();}; // re-arm MPE on the newly-picked synth
+    if(S.mpe)mpeSetup(); // if MPE was already on when MIDI got enabled, configure the first port now
   }catch(e){document.getElementById('midiPort').innerHTML="<option>MIDI not available here</option>";S.midi=false;document.getElementById('midiT').classList.remove('on');}
 }
-function sendMidi(cents,vel){const note=Math.round(S.root+cents/100);midiCap('melody',note,vel,null,0.18); // the scribe hears everything, MIDI-out or not
-  if(!S.midi||!S.midiOut||note<0||note>127)return;
+// ================= MPE: send the TRUE microtonal pitch to external synths =================
+// Normal MIDI only sends whole semitones, so quarter-tones round off to garbage. MPE (MIDI Polyphonic
+// Expression) fixes this: each note gets its OWN channel + a pitch-bend for the leftover cents. This is the
+// standard microtonal synths (Surge XT, Pianoteq, Vital…) understand. Channel 1 = manager, 2–16 = per-note voices.
+const MPE_LO=2, MPE_HI=16, MPE_RANGE=48; // member channels 2–16; ±48 semitones = the MPE default bend range
+let _mpeNext=MPE_LO;                      // round-robin voice channel picker
+function mpeSetup(){ // arm the synth: tell it channel 1 is the MPE manager for 15 member channels + set the bend range
+  if(!S.midiOut)return;
+  try{
+    S.midiOut.send([0xB0,0x64,0x06,0x65,0x00,0x06,0x0F]); // RPN 6 (MCM): 15 member channels on the lower zone
+    for(let ch=MPE_LO;ch<=MPE_HI;ch++){                    // set pitch-bend range = 48 semitones on every voice channel
+      S.midiOut.send([0xB0|(ch-1),0x65,0x00,0x64,0x00,0x06,MPE_RANGE,0x26,0x00]);}
+  }catch(e){}
+}
+// send ONE microtonal note out over MPE: whole semitone on its own channel + a pitch-bend for the cents remainder.
+function mpeSend(midiFloat,vel,acT,durSec){
+  if(!S.midiOut)return;
+  const note=Math.round(midiFloat); if(note<0||note>127)return;
+  const semisOff=midiFloat-note;                          // fractional part, in semitones (e.g. +0.5 = a quarter-tone up)
+  const bend=Math.max(0,Math.min(16383,8192+Math.round(semisOff/MPE_RANGE*8192))); // 14-bit bend, centered at 8192
+  const ch=_mpeNext; _mpeNext=_mpeNext>=MPE_HI?MPE_LO:_mpeNext+1; // next voice (round-robin so chords tune independently)
+  const t0=performance.now()+Math.max(0,acT-AC.currentTime)*1000;
+  try{
+    S.midiOut.send([0xE0|(ch-1),bend&0x7F,(bend>>7)&0x7F],t0); // pitch-bend FIRST, so the note starts already in tune
+    S.midiOut.send([0x90|(ch-1),note,vel],t0);
+    S.midiOut.send([0x80|(ch-1),note,0],t0+durSec*1000);
+  }catch(e){}
+}
+function sendMidi(cents,vel){const mf=S.root+cents/100;midiCap('melody',Math.round(mf),vel,null,0.18); // the scribe hears everything, MIDI-out or not
+  if(!S.midi||!S.midiOut)return;
+  if(S.mpe){mpeSend(mf,vel,AC.currentTime,0.18);return;} // microtonal path: true pitch via MPE
+  const note=Math.round(mf);if(note<0||note>127)return;
   S.midiOut.send([0x90|(S.chMel-1),note,vel]);setTimeout(()=>{try{S.midiOut.send([0x80|(S.chMel-1),note,0]);}catch(e){}},180);}
 
 // ---------- drums: casio-style synthesized kit, 4-bar loops ----------
 let drumOn=false,drumStep=0,drumTime=0,drumBus=null,drumKit='pop',drumFeel='1',drumSig='16',NB=null;
 const SIGS={'16':{n:16,acc:[0]},'12':{n:12,acc:[0]},'12c':{n:12,acc:[0,6]},'20':{n:20,acc:[0]},'14':{n:14,acc:[0,4,8]},'18':{n:18,acc:[0,4,8,12]}}; // accents mark the group starts so your ear learns the counting
-function initDrums(){if(drumBus)return;drumBus=AC.createGain();drumBus.gain.value=0.88;drumBus.connect(slimeEQ);applyMix();} // drum level lives in the triangle mixer now
+let drumComp=null,drumEQ=null;
+function initDrums(){if(drumBus)return;drumBus=AC.createGain();drumBus.gain.value=0.9;
+  // BUS GLUE: light compression + a gentle EQ tilt so the kit sits together like a mixed drum bus (not raw beeps).
+  drumComp=AC.createDynamicsCompressor();drumComp.threshold.value=-16;drumComp.ratio.value=3.2;drumComp.knee.value=8;drumComp.attack.value=0.004;drumComp.release.value=0.12; // punchy glue
+  drumEQ=AC.createBiquadFilter();drumEQ.type='peaking';drumEQ.frequency.value=180;drumEQ.gain.value=2.2;drumEQ.Q.value=0.7; // a touch of low-mid body so kick+snare feel foundational
+  drumBus.connect(drumComp);drumComp.connect(drumEQ);drumEQ.connect(slimeEQ);applyMix();} // drum level lives in the triangle mixer now
 function rep(base,bars){const out=[];for(let b=0;b<bars;b++)for(const st of base)out.push(st+16*b);return out;}
 const KITS={ // 64 sixteenth-steps = 4 bars
   chip:{K:rep([0,8],4),s:rep([4,12],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[],r:[]}, // gameboy 4/4: kick / hat / snare / hat
@@ -884,19 +942,25 @@ const PATTERNS={ // real signature skeletons, role-based: lo=kick, mid=snare, hi
   '14':{lo:[0,4],mid:[8],hi:[0,2,4,6,8,10,12]},              // 7/8 rachenitsa (2+2+3): kick rides the short groups, snare owns the long one
   '18':{lo:[0,4,8],mid:[12],hi:[0,2,4,6,8,10,12,14,16]}      // 9/8 karşılama (2+2+2+3): the Blue Rondo lean
 };
-const KITVOICE={chip:{lo:'K',mid:'s',hi:'h'},conga:{lo:'K',mid:'C',hi:'r'},bossa:{lo:'K',mid:'r',hi:'h'},rock:{lo:'K',mid:'s',hi:'h'},beep:{lo:'K',mid:'r',hi:'C'},
-  pop:{lo:'K',mid:'s',hi:'h'},disco:{lo:'K',mid:'s',hi:'h'},march:{lo:'K',mid:'s',hi:'h'},samba:{lo:'K',mid:'C',hi:'r'},industrial:{lo:'K',mid:'s',hi:'r'}};
-const KITTONE={ // same engine, different shells — so chip vs rock actually SOUND different, not just different step patterns
-  chip:{kf:210,ke:75,kd:0.14,kv:0.72,sf:2700,sd:0.05,sb:240,hf:9500,hd:0.02},   // gameboy: tight blippy kick, zippy snare, tssy hats
-  rock:{kf:115,ke:36,kd:0.5,kv:1.05,sf:1300,sd:0.16,sb:165,hf:6200,hd:0.05},    // big room: boomy long kick, fat low snare, darker open hats
-  bossa:{kf:165,ke:52,kd:0.24,kv:0.8,sf:2000,sd:0.08,sb:200,hf:8200,hd:0.028},  // studio: tidy and mid-sized
-  conga:{kf:150,ke:45,kd:0.3,kv:0.85,sf:1800,sd:0.09,sb:190,hf:7500,hd:0.03},
-  beep:{kf:185,ke:62,kd:0.18,kv:0.78,sf:2300,sd:0.06,sb:215,hf:9000,hd:0.024},
-  pop:{kf:130,ke:42,kd:0.32,kv:1.0,sf:1800,sd:0.10,sb:180,hf:7800,hd:0.03},    // clean modern pop kit
-  disco:{kf:120,ke:40,kd:0.28,kv:1.05,sf:2000,sd:0.08,sb:190,hf:8800,hd:0.06}, // punchy 4-on-floor kick, sizzly open hats
-  march:{kf:140,ke:55,kd:0.2,kv:0.95,sf:2600,sd:0.06,sb:210,hf:7000,hd:0.02},  // snappy snare-forward
-  samba:{kf:160,ke:50,kd:0.22,kv:0.85,sf:2200,sd:0.07,sb:200,hf:9200,hd:0.03},  // bright latin percussion
-  industrial:{kf:95,ke:36,kd:0.42,kv:1.12,sf:3000,sd:0.05,sb:220,hf:11000,hd:0.02} // deep hard machine kick, metallic clap + clang
+// each kit's low/mid/hi voice. mid=snare-ish, hi=hat-ish. we lead with the NOISE voices (s snare, h hat) so beats sound
+// like drums, not bleeps; 'C' (tom) and 'r' (rim click) are now proper drum sounds too, used where they add character.
+const KITVOICE={chip:{lo:'K',mid:'s',hi:'h'},conga:{lo:'K',mid:'C',hi:'h'},bossa:{lo:'K',mid:'s',hi:'h'},rock:{lo:'K',mid:'s',hi:'h'},beep:{lo:'K',mid:'r',hi:'h'},
+  pop:{lo:'K',mid:'s',hi:'h'},disco:{lo:'K',mid:'s',hi:'h'},march:{lo:'K',mid:'s',hi:'h'},samba:{lo:'K',mid:'C',hi:'h'},industrial:{lo:'K',mid:'s',hi:'h'}};
+// each kit = a 909-style engine tuned to a distinct CHARACTER. st=style branches the kick/snare/hat recipe so the
+// five play kits truly sound different (punchy / boomy / acoustic / brushy / sub), never one samey chiptune beep.
+// kf=kick start Hz, ke=kick end Hz, kd=kick decay, kv=kick vol, kc=click amount · sf=snare noise Hz, sd=snare decay,
+// sb=snare tone Hz, sn=snare noise-vs-tone mix · hf=hat Hz, hd=hat decay, hm=hat metal amount.
+const KITTONE={
+  pop:{st:'909',kf:150,ke:48,kd:0.34,kv:1.0,kc:0.9,sf:1900,sd:0.12,sb:185,sn:0.7,hf:8000,hd:0.03,hm:0.5},      // clean modern punch
+  rock:{st:'acoustic',kf:120,ke:44,kd:0.5,kv:1.05,kc:0.7,sf:1500,sd:0.19,sb:170,sn:0.85,hf:6500,hd:0.05,hm:0.35}, // big room, long noisy snare
+  disco:{st:'909',kf:125,ke:42,kd:0.3,kv:1.08,kc:1.0,sf:2100,sd:0.09,sb:195,sn:0.6,hf:9200,hd:0.07,hm:0.7},     // punchy 4-on-floor, sizzly open hats
+  bossa:{st:'brush',kf:170,ke:56,kd:0.24,kv:0.82,kc:0.4,sf:2400,sd:0.09,sb:205,sn:0.9,hf:8600,hd:0.03,hm:0.4}, // soft brushy, rounded kick
+  industrial:{st:'808',kf:90,ke:34,kd:0.6,kv:1.15,kc:1.2,sf:3000,sd:0.06,sb:220,sn:0.55,hf:11000,hd:0.025,hm:0.9}, // deep 808 sub + clangy metal
+  chip:{st:'chip',kf:210,ke:75,kd:0.14,kv:0.72,kc:0.5,sf:2700,sd:0.05,sb:240,sn:0.5,hf:9500,hd:0.02,hm:0.2},   // the ONE that's meant to be blippy (studio only)
+  conga:{st:'909',kf:150,ke:45,kd:0.3,kv:0.85,kc:0.5,sf:1800,sd:0.09,sb:190,sn:0.7,hf:7500,hd:0.03,hm:0.4},
+  beep:{st:'chip',kf:185,ke:62,kd:0.18,kv:0.78,kc:0.4,sf:2300,sd:0.06,sb:215,sn:0.5,hf:9000,hd:0.024,hm:0.3},
+  march:{st:'acoustic',kf:140,ke:55,kd:0.2,kv:0.95,kc:0.8,sf:2600,sd:0.07,sb:210,sn:0.85,hf:7000,hd:0.02,hm:0.3},
+  samba:{st:'909',kf:160,ke:50,kd:0.22,kv:0.85,kc:0.6,sf:2200,sd:0.07,sb:200,sn:0.7,hf:9200,hd:0.03,hm:0.5}
 };
 // ===== GROOVE ENGINE: micro-timing + velocity "feels" baked from the MIDI groove pack =====
 // each groove = 16 slots of {off: timing shift as fraction of a 16th, vel: velocity accent}. downbeat off always 0.
@@ -908,40 +972,69 @@ const GROOVES={
   Accented:[{n:'Accent 1',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.17,0.55,0.71,0.69,1.34,0.63,2.59,0.78,1.68,0.48,0.55,0.73,1.61,0.61,1.13,0.73]},{n:'Accent 2',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.41,1.2,0.55,0.81,1.29,0.64,1.43,0.67,1.46,1.21,0.56,0.71,1.37,0.63,1.4,0.66]},{n:'Accent 3',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[0.91,0.49,0.75,1.02,1.78,0.49,0.97,1.5,1.02,0.45,0.88,1.0,1.79,0.51,0.97,1.48]},{n:'Groovy',off:[0.0,0.208,0.0,0.208,0.0,0.167,0.0,0.208,0.0,0.167,0.0,0.167,0.0,0.208,0.0,0.167],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}]
 };
 const GROOVE_ALL={Human:GROOVE_DEF}; for(const _f in GROOVES)for(const _g of GROOVES[_f])GROOVE_ALL[_g.n]=_g;
-let curGroove='Human'; // active feel; 'Straight' = mechanical (lets the swing slider take over)
-function activeGroove(){return curGroove==='Straight'?null:(GROOVE_ALL[curGroove]||GROOVE_DEF);}
+let curGroove='Human'; // the selected feel VARIATION (Human = the subtle default)
+// S.groove is the master "human feel" switch: OFF ⇒ dead-straight robotic sequencer; ON ⇒ the selected loose feel.
+function activeGroove(){if(!S.groove)return null;return curGroove==='Straight'?null:(GROOVE_ALL[curGroove]||GROOVE_DEF);}
 function dHit(v,t,a,solid){a=Math.min(1.9,a||1); // clamp so accent grooves can't clip the mix. solid=true => LOCKED (no human wobble): used for the anchor hits (kick on 1 & 3) so the groove stays tight.
   // per-instrument human feel: nudge velocity + micro-timing (hats ghost, kick locks). t stays ≥ now so it never schedules in the past.
   if(!solid && typeof humanVoice==='function'){const h=humanVoice(v);a*=h.v;t=Math.max(AC.currentTime,t+h.t);}
   else t=Math.max(AC.currentTime,t);
   sendMidiAt(DRUMN[v]||38,Math.min(127,(90*a)|0),S.chDrum,t,0.15);
-  if(v==='K'){const o=AC.createOscillator(),g=AC.createGain(),T=KITTONE[drumKit]||KITTONE.chip;o.type='sine'; // kick: pitch dive + body, sized per kit
-    o.frequency.setValueAtTime(T.kf,t);o.frequency.exponentialRampToValueAtTime(T.ke,t+Math.min(0.12,T.kd*0.35));
+  if(v==='K'){const o=AC.createOscillator(),g=AC.createGain(),T=KITTONE[drumKit]||KITTONE.pop;o.type='sine'; // 909-style: sine body + pitch dive
+    const dive=(T.st==='808')?T.kd*0.6:Math.min(0.12,T.kd*0.35); // 808 = slow deep dive (long sub); others = fast snappy dive
+    o.frequency.setValueAtTime(T.kf,t);o.frequency.exponentialRampToValueAtTime(T.ke,t+dive);
     g.gain.setValueAtTime(0.85*a*T.kv,t);g.gain.exponentialRampToValueAtTime(0.001,t+T.kd);
     o.connect(g);g.connect(drumBus);o.start(t);o.stop(t+T.kd+0.02);
+    if(T.kc>0.05){ // CLICK/ATTACK transient = the punch that makes a kick read as a kick, not a sine bloop (909 trick)
+      if(!NB){NB=AC.createBuffer(1,AC.sampleRate*0.25,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+      const cs=AC.createBufferSource(),cf=AC.createBiquadFilter(),cg=AC.createGain();cs.buffer=NB;
+      cf.type='lowpass';cf.frequency.value=(T.st==='acoustic')?3200:5500;
+      cg.gain.setValueAtTime(0.5*a*T.kc,t);cg.gain.exponentialRampToValueAtTime(0.001,t+0.012); // ultra-short = a beater click
+      cs.connect(cf);cf.connect(cg);cg.connect(drumBus);cs.start(t);cs.stop(t+0.03);}
     if(bandBus&&bandOn){bandBus.gain.cancelScheduledValues(t);bandBus.gain.setValueAtTime(0.32,t);bandBus.gain.linearRampToValueAtTime(1,t+0.3);}}
-  else if(v==='C'||v==='c'){const o=AC.createOscillator(),g=AC.createGain();o.type='sine';
-    const f0=v==='C'?330:230;
-    o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f0*0.72,t+0.08);
-    g.gain.setValueAtTime(0.5*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.16);
-    o.connect(g);g.connect(drumBus);o.start(t);o.stop(t+0.25);}
+  else if(v==='C'||v==='c'){ // tom/conga: a PITCHED DRUM (skin slap + pitch drop), not a pure sine beep
+    const o=AC.createOscillator(),g=AC.createGain(),f0=v==='C'?300:210;
+    o.type='triangle'; // triangle (not sine) = more harmonics = reads as a drum skin, not a test tone
+    o.frequency.setValueAtTime(f0*1.18,t);o.frequency.exponentialRampToValueAtTime(f0*0.68,t+0.10); // fast pitch drop = the "dow"
+    g.gain.setValueAtTime(0.55*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.17);
+    o.connect(g);g.connect(drumBus);o.start(t);o.stop(t+0.22);
+    if(!NB){NB=AC.createBuffer(1,AC.sampleRate*0.25,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+    const ns=AC.createBufferSource(),nb=AC.createBiquadFilter(),ng=AC.createGain();ns.buffer=NB; // a noise ATTACK = the hand/stick hitting the skin
+    nb.type='bandpass';nb.frequency.value=f0*3;nb.Q.value=1;ng.gain.setValueAtTime(0.16*a,t);ng.gain.exponentialRampToValueAtTime(0.001,t+0.03);
+    ns.connect(nb);nb.connect(ng);ng.connect(drumBus);ns.start(t);ns.stop(t+0.05);}
   else if(v==='s'){if(!NB){NB=AC.createBuffer(1,AC.sampleRate*0.25,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
-    const src=AC.createBufferSource(),bp=AC.createBiquadFilter(),g=AC.createGain(),o=AC.createOscillator(),og=AC.createGain(),T=KITTONE[drumKit]||KITTONE.chip;
-    src.buffer=NB;bp.type='bandpass';bp.frequency.value=T.sf;bp.Q.value=0.8;
-    g.gain.setValueAtTime(0.35*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+T.sd);
-    o.type='triangle';o.frequency.setValueAtTime(T.sb,t);o.frequency.exponentialRampToValueAtTime(T.sb*0.63,t+T.sd*0.7);
-    og.gain.setValueAtTime(0.22*a,t);og.gain.exponentialRampToValueAtTime(0.001,t+T.sd*0.8);
+    const src=AC.createBufferSource(),bp=AC.createBiquadFilter(),g=AC.createGain(),o=AC.createOscillator(),og=AC.createGain(),T=KITTONE[drumKit]||KITTONE.pop;
+    // snare = a NOISE crack (the "snares") + a tuned BODY tone (the drum shell), blended by T.sn. brushy kits are noise-heavy + soft.
+    const brush=(T.st==='brush');
+    src.buffer=NB;bp.type=brush?'highpass':'bandpass';bp.frequency.value=T.sf;bp.Q.value=brush?0.7:1.1;
+    g.gain.setValueAtTime(0.4*a*T.sn,t);g.gain.exponentialRampToValueAtTime(0.001,t+T.sd);
+    o.type='triangle';o.frequency.setValueAtTime(T.sb,t);o.frequency.exponentialRampToValueAtTime(T.sb*0.6,t+T.sd*0.7);
+    og.gain.setValueAtTime(0.26*a*(1-T.sn*0.6),t);og.gain.exponentialRampToValueAtTime(0.001,t+T.sd*0.8); // less body when it's a noisy/brushy snare
     src.connect(bp);bp.connect(g);g.connect(drumBus);o.connect(og);og.connect(drumBus);
     src.start(t);src.stop(t+T.sd+0.03);o.start(t);o.stop(t+T.sd*0.8+0.02);}
-  else if(v==='r'){const o=AC.createOscillator(),g=AC.createGain(),bp=AC.createBiquadFilter();
-    o.type='square';o.frequency.value=1700;bp.type='bandpass';bp.frequency.value=1700;bp.Q.value=6;
-    g.gain.setValueAtTime(0.2*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.035);
-    o.connect(bp);bp.connect(g);g.connect(drumBus);o.start(t);o.stop(t+0.05);}
-  else if(v==='h'){if(!NB){NB=AC.createBuffer(1,AC.sampleRate*0.25,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
-    const src=AC.createBufferSource(),hp=AC.createBiquadFilter(),g=AC.createGain(),T=KITTONE[drumKit]||KITTONE.chip;src.buffer=NB;
-    hp.type='highpass';hp.frequency.value=T.hf;
-    g.gain.setValueAtTime(0.16*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+T.hd);
-    src.connect(hp);hp.connect(g);g.connect(drumBus);src.start(t);src.stop(t+T.hd+0.02);}
+  else if(v==='r'){ // rimshot/click: a short WOODY tick — noise burst + a tiny pitched knock, NOT a ringing square bleep
+    if(!NB){NB=AC.createBuffer(1,AC.sampleRate*0.25,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+    const ns=AC.createBufferSource(),bp=AC.createBiquadFilter(),g=AC.createGain();ns.buffer=NB;
+    bp.type='bandpass';bp.frequency.value=2100;bp.Q.value=2.4;
+    g.gain.setValueAtTime(0.3*a,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.028); // very short = a click, not a tone
+    ns.connect(bp);bp.connect(g);g.connect(drumBus);ns.start(t);ns.stop(t+0.05);
+    const o=AC.createOscillator(),og=AC.createGain();o.type='triangle'; // a tiny "tok" of body under the click
+    o.frequency.setValueAtTime(420,t);o.frequency.exponentialRampToValueAtTime(210,t+0.02);
+    og.gain.setValueAtTime(0.16*a,t);og.gain.exponentialRampToValueAtTime(0.001,t+0.03);
+    o.connect(og);og.connect(drumBus);o.start(t);o.stop(t+0.05);}
+  else if(v==='h'){const T=KITTONE[drumKit]||KITTONE.pop;
+    // real 808/909-style hat: 6 detuned SQUARE oscillators through band+highpass = the metallic shimmer, blended
+    // with a noise "tss" (T.hm sets how metallic vs airy). far richer than plain filtered noise = no more chiptune tick.
+    const out=AC.createGain();out.gain.setValueAtTime(0.16*a,t);out.gain.exponentialRampToValueAtTime(0.001,t+T.hd);out.connect(drumBus);
+    if(T.hm>0.05){const bp=AC.createBiquadFilter(),hp=AC.createBiquadFilter(),mg=AC.createGain();
+      bp.type='bandpass';bp.frequency.value=T.hf*0.85;bp.Q.value=0.9;hp.type='highpass';hp.frequency.value=T.hf;
+      mg.gain.value=T.hm*0.5;
+      const ratios=[1,1.34,1.61,1.87,2.03,2.45]; // the classic inharmonic metal ratios (not a musical chord = clangy metal)
+      for(const r of ratios){const o=AC.createOscillator();o.type='square';o.frequency.value=T.hf*0.5*r;o.connect(bp);o.start(t);o.stop(t+T.hd+0.02);}
+      bp.connect(hp);hp.connect(mg);mg.connect(out);}
+    if(!NB){NB=AC.createBuffer(1,AC.sampleRate*0.25,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+    const src=AC.createBufferSource(),nhp=AC.createBiquadFilter(),ng=AC.createGain();src.buffer=NB; // airy noise layer
+    nhp.type='highpass';nhp.frequency.value=T.hf;ng.gain.value=1-T.hm*0.4;src.connect(nhp);nhp.connect(ng);ng.connect(out);src.start(t);src.stop(t+T.hd+0.02);}
 }
 function drumTriplet(){return drumSig==='16'&&S.triplet;} // 4/4 + triplets = the 12/8 half-time shuffle grid
 function drumSPB(){return drumTriplet()?3:4;}             // steps per beat: triplet-8ths vs 16ths
@@ -1032,9 +1125,12 @@ function liquidColor(){
   const D=(m,al)=>`rgba(${(liqRGB[0]*(1-m))|0},${(liqRGB[1]*(1-m))|0},${(liqRGB[2]*(1-m))|0},${al})`;                                     // toward dark = depth
   return {crest:P(0.55,0.88),mid:P(0.22,0.94),deep:D(0.24,0.97),lip:P(0.78,0.8),blob:P(0.3,0.85)};}
 const DRUMN={K:36,s:38,h:42,r:37,C:63,c:62};
-function sendMidiAt(note,vel,ch,acT,durSec){
+function sendMidiAt(midiFloat,vel,ch,acT,durSec){ // midiFloat may be fractional (microtonal); rounded for capture + non-MPE out
+  const note=Math.round(midiFloat);
   midiCap(ch===S.chDrum?'drums':ch===S.chBass?'bass':ch===S.chPad?'chords':'melody',note,vel,acT,durSec); // sort each hit into its own track
-  if(!S.midi||!S.midiOut||note<0||note>127)return;
+  if(!S.midi||!S.midiOut)return;
+  if(S.mpe){mpeSend(midiFloat,vel,acT,durSec);return;} // microtonal path: true pitch via MPE (drums stay 12-TET below)
+  if(note<0||note>127)return;
   const ts=performance.now()+Math.max(0,acT-AC.currentTime)*1000;
   try{S.midiOut.send([0x90|(ch-1),note,vel],ts);S.midiOut.send([0x80|(ch-1),note,0],ts+durSec*1000);}catch(e){}}
 let curRootDeg=0;
@@ -1077,8 +1173,8 @@ const KITBASS={
   samba: [{0:'R',6:'F',8:'O',14:'R'},{0:'R',4:'O',8:'R',10:'F',14:'O'}],               // syncopated samba bass
   industrial: [{0:'R'},{0:'R'}]                                                        // placeholder — industrial uses a special DRONE routine (long held notes + a 4th-bar fill), see the scheduler
 };
-let _bassGroove=0,_bassBars=0,_lastBassCents=null;
-let _slimeBars=0,_keyPinned=false; // _keyPinned: user picked a key/scale by hand → slime stops rotating until slime is toggled off/on
+let _bassGroove=0,_bassBars=0,_lastBassCents=null,_lastBassFreq=null;
+let _slimeBars=0,_wallBars=0,_keyPinned=false; // _keyPinned: user picked a key/scale by hand → slime stops rotating until slime is toggled off/on
 function keyJourney(){ // ear-friendly walk: every 16 bars the root moves exactly ONE step on the circle of fifths
   // (up OR down a fifth) — always a neighbour, never a random/atonal jump.
   const step=Math.random()<0.5?7:-7; // +a fifth (A→E) or −a fifth (A→D)
@@ -1105,7 +1201,7 @@ function pluck(cents,t,vel,short){ // one short bouncy note (the comp/arp instru
   g.gain.exponentialRampToValueAtTime(0.0008,t+dec);                       // quick decay = bounce, never a wash
   o.connect(lp);o2.connect(lp);lp.connect(g);g.connect(bandBus);
   o.start(t);o2.start(t);o.stop(t+dec+0.05);o2.stop(t+dec+0.05);
-  sendMidiAt(Math.round(S.root+cents/100),Math.round(70*vel),S.chLead||S.chPad,t,dec*0.9);
+  sendMidiAt(S.root+cents/100,Math.round(70*vel),S.chLead||S.chPad,t,dec*0.9); // fractional = true microtonal pitch (MPE keeps it)
 }
 // syncopated comp rhythms (16th positions). rotate through them for bar-to-bar variety — classic soul/funk off-beat push.
 const COMP_RHY=[[3,6,10,11,14],[2,6,10,13],[3,7,10,14,15],[2,3,8,11,14]];
@@ -1133,14 +1229,25 @@ function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for
   if(++_bassBars%16===0)_bassGroove=(_bassGroove+1)%BASSGROOVES.length; // rotate the bass feel every 16 bars for motion
   const man=(S.mode!=='play'&&manualActive())?manualRoot():null; // studio: a human playing OWNS the harmony. play: no chord chasing, kids just jam.
   if(man==null&&S.slimeMode&&!_keyPinned&&++_slimeBars>=64){_slimeBars=0;keyJourney();} // auto-mode: move around the circle of fifths every 64 bars (16 was too soon to settle in)
-  const n=scaleObj().c.length;let rd;
+  if(S.slimeMode&&fillState==='fill'&&(++_wallBars%16===0))breakWall(); // every 16 bars, open a wall → thins the texture + simplifies the palette
+  const sc=scaleObj().c,n=sc.length,harm=scaleObj().harm||'triad';let rd;
+  // DRONE scales (maqam bayati, slendro, pelog, iwato): the tonic mostly HOLDS. moving chords drag microtones toward
+  // 12-TET & sound off to untrained ears — the pros keep a pedal + fifths and let melody roam. so we mostly stay home.
   if(man!=null){rd=man%n;nextRootDeg=man%n;} // hold YOUR chord — no roulette, no lag
+  else if(harm==='drone'){rd=(Math.random()<0.8?0:degNear(sc,700))%n;nextRootDeg=rd;} // 80% tonic, else drift to the 5th degree
   else{rd=(nextRootDeg!=null?nextRootDeg:pickChord(barI))%n;nextRootDeg=pickChord(barI+1)%n;} // auto only when hands are off
   _prevRootDeg=curRootDeg;curRootDeg=rd;updateChordPill();
-  const rawDegs=[rd,(rd+2)%n,(rd+4)%n],barDur=drumBar()*drumStepDur();
-  // DILLA/soul CHORD COLOUR: on 7-note scales, add a 7th or 9th on rotating bars so the chords evolve & breathe
-  // instead of being the same triad every bar (kept off pentatonic/chromatic where it'd muddy). the harmony now moves like a real comp.
-  if(n===7){const sd=((barI+(curRootDeg||0))%3+3)%3; if(sd===0)rawDegs.push((rd+6)%n); else if(sd===1)rawDegs.push((rd+1)%n);}
+  const barDur=drumBar()*drumStepDur();
+  // BUILD THE CHORD by harmony mode — the microtonal GUARDRAIL (research: don't force Western triads on these scales):
+  let rawDegs;
+  if(harm==='drone'){          // fifths + pedal only. the safest, warmest sound; the arp does the melodic work.
+    rawDegs=[rd,(rd+degNear(sc,700))%n]; // root + the scale degree nearest a pure 5th (3:2) above it
+  }else if(harm==='neutral'){  // maqam/neutral: root + the scale's own (neutral) 3rd + 5th — its native colour, no forced maj/min 3rd
+    rawDegs=[rd,(rd+degNear(sc,350,150))%n,(rd+degNear(sc,700))%n];
+  }else{                       // triad: normal stacked-third chord (all 12-TET scales, whole-tone, 19-EDO) — unchanged
+    rawDegs=[rd,(rd+2)%n,(rd+4)%n];
+    if(n===7){const sd=((barI+(curRootDeg||0))%3+3)%3; if(sd===0)rawDegs.push((rd+6)%n); else if(sd===1)rawDegs.push((rd+1)%n);} // soul 7th/9th colour
+  }
   // voice leading: each pad voice moves to its NEAREST octave of the new chord tone — chords glide instead of leaping
   if(!window._padV)window._padV=null;
   const degs=rawDegs.map((d,i)=>{const base=centsForDegree(d);
@@ -1158,14 +1265,17 @@ function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for
     pg.gain.setValueAtTime(0,t);pg.gain.linearRampToValueAtTime(pv,t+0.75); // slow gentle bloom (soft attack)
     pg.gain.setValueAtTime(pv,t+barDur*0.65);pg.gain.linearRampToValueAtTime(0.0001,t+barDur);
     po.connect(plp);plp.connect(pg);pg.connect(bandBus);po.start(t);po.stop(t+barDur+0.05);
-    sendMidiAt(Math.round(S.root+c/100),50,S.chPad,t,barDur*0.9);}
+    sendMidiAt(S.root+c/100,50,S.chPad,t,barDur*0.9);}
 }
 function bassNote(tok,t,hum,dur){ // bass pluck by default; pass `dur` (seconds) for a long sustained DRONE note (industrial)
-  const n=scaleObj().c.length;let deg=curRootDeg,addOct=0;
-  if(tok==='F')deg=(curRootDeg+4)%n;                       // the fifth
-  else if(tok==='T')deg=(curRootDeg+2)%n;                  // the third — colour, still in scale
+  const sc=scaleObj().c,n=sc.length,harm=scaleObj().harm||'triad';let deg=curRootDeg,addOct=0;
+  // MICROTONAL GUARDRAIL: in drone/neutral scales the bass stays on the STABLE notes (root + a real 5th). the melodic
+  // 'third' and lead-in tokens get remapped to root/fifth so the low end never fights the microtones.
+  const fifth=(harm==='triad')?4:degNear(sc,700); // a real 3:2-ish fifth degree (may not be scale-step +4 in odd scales)
+  if(tok==='F')deg=(curRootDeg+fifth)%n;                   // the fifth
+  else if(tok==='T')deg=(harm==='triad')?(curRootDeg+2)%n:curRootDeg; // third only where triads are safe, else stay on root
   else if(tok==='O')addOct=1;                              // deliberate octave jump (root-fifth-octave feel)
-  else if(tok==='A')deg=(((nextRootDeg==null?curRootDeg:nextRootDeg)+n-1)%n); // stepwise lead-in to the NEXT chord
+  else if(tok==='A')deg=(harm==='drone')?curRootDeg:(((nextRootDeg==null?curRootDeg:nextRootDeg)+n-1)%n); // no chromatic lead-ins in drone mode
   let c=centsForDegree(deg)+addOct*1200;
   // VOICE-LEADING: keep the bass low and moving by the SMALLEST step from the last note — no more
   // erratic octave drops when the chord changes. (the octave token 'O' is allowed to leap on purpose.)
@@ -1173,15 +1283,22 @@ function bassNote(tok,t,hum,dur){ // bass pluck by default; pass `dur` (seconds)
   _lastBassCents=c;
   if(S.synth){const f=freqFromCents(c)/2,v=0.42*(hum||1)*Math.min(1,(1-S.bpMix)*2);
     const o=AC.createOscillator(),g=AC.createGain(),lp=AC.createBiquadFilter(),sub=AC.createOscillator(),sg=AC.createGain();
-    o.type='square';o.frequency.value=f;lp.type='lowpass';lp.frequency.value=1500;lp.Q.value=0.6; // more mids = the groove cuts through laptop speakers
-    sub.type='triangle';sub.frequency.value=f/2;sg.gain.value=0.32;
-    const D=dur||0.32;
-    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(v,t+0.012);
-    if(dur){g.gain.setValueAtTime(v,t+dur*0.75);g.gain.linearRampToValueAtTime(0.0015,t+dur);} // DRONE: hold, then slow fade
-    else g.gain.exponentialRampToValueAtTime(0.001,t+0.3);                                        // pluck
+    // a real bass player HOLDS notes and connects them. `dur` = how long this note should ring (seconds). the note
+    // sustains at full level for almost its whole length, then a short release TAIL overlaps the next note = legato,
+    // never a jerky cutoff or a gap of silence. pitch GLIDES from the last note = a smooth walk, not jumps.
+    const D=Math.max(0.18,dur||0.5),rel=Math.min(0.14,D*0.45),hold=D-rel*0.6; // release overlaps into the next note
+    o.type='sawtooth';lp.type='lowpass';lp.frequency.value=1150;lp.Q.value=0.8; // saw+lowpass = a rounder, warmer fingered bass (was a buzzy square)
+    sub.type='sine';sg.gain.value=0.5; // a clean sine SUB underneath for weight
+    if(_lastBassFreq&&Math.abs(_lastBassFreq-f)<f*0.6){ // glide only for nearby notes (a walk); big leaps just jump
+      o.frequency.setValueAtTime(_lastBassFreq,t);o.frequency.exponentialRampToValueAtTime(f,t+0.05);
+      sub.frequency.setValueAtTime(_lastBassFreq/2,t);sub.frequency.exponentialRampToValueAtTime(f/2,t+0.05);
+    }else{o.frequency.setValueAtTime(f,t);sub.frequency.setValueAtTime(f/2,t);}
+    _lastBassFreq=f;
+    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+0.015); // quick soft attack (fingered, not clicky)
+    g.gain.setValueAtTime(v,t+hold);g.gain.exponentialRampToValueAtTime(0.0008,t+D); // hold full, then a smooth release tail
     o.connect(lp);sub.connect(sg);sg.connect(lp);lp.connect(g);g.connect(bandBus);
-    o.start(t);o.stop(t+D+0.05);sub.start(t);sub.stop(t+D+0.05);}
-  sendMidiAt(Math.round(S.root+c/100)-12,96,S.chBass,t,dur||0.25);
+    o.start(t);o.stop(t+D+0.06);sub.start(t);sub.stop(t+D+0.06);}
+  sendMidiAt(S.root+c/100-12,96,S.chBass,t,Math.max(0.2,(dur||0.5)*0.95));
 }
 // per-instrument humanization (research: real drummers vary hats a LOT for ghosting, keep kicks tight; and nudge
 // timing a hair off the grid — fast grids stay tight, slow grids breathe). returns {v:velMult, t:secondsOffset}.
@@ -1217,13 +1334,16 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
     const gr=(_sSig==='16')?activeGroove():null; // the active FEEL (micro-timing + velocity), only on the 16th grid
     if(inBar===0)bandBar(drumTime,barI);
     if(bandOn){
-      if(drumKit==='industrial'&&_sSig==='16'){ // DRONE bass: 1-bar note, then a 1.5-bar note, then a sassy fill on the 4th bar
+      if(drumKit==='industrial'&&_sSig==='16'){ // CONTINUOUS DRONE bass: one held note per bar, each ringing a FULL bar so the low end never drops out
         const barDur=bar*_sDur();
-        if(inBar===0){ if(barI===0)bassNote('R',drumTime,hum,barDur*1.0); else if(barI===1)bassNote('R',drumTime,hum,barDur*1.5); }
-        if(barI===3){ const fill={0:'R',6:'O',8:'F',11:'O',12:'R',14:'A'}; if(fill[inBar])bassNote(fill[inBar],drumTime,hum); } // the sass
+        if(inBar===0){const tok=(barI===3)?'F':'R'; bassNote(tok,drumTime,hum,barDur*1.06);} // 1.06 = slight overlap into the next bar = seamless drone (bar 4 lifts to the 5th)
       } else {
         const set=(_sSig==='16')?(KITBASS[drumKit]||BASSGROOVES):null,bp=set?set[(_bassGroove+barI)%set.length]:BASSPAT[_sSig],tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));
-        if(tok){const anchor=(inBar===0||inBar===8); bassNote(tok, drumTime+(anchor?0:0.012), anchor?1:hum);} // bass LOCKS on 1 & 3 (tight + solid); drags + varies everywhere else = Dilla pocket
+        if(tok){const anchor=(inBar===0||inBar===8);
+          // hold this note until the NEXT bass note in the pattern (wrapping into the next bar) → sustained, connected groove, no gaps
+          let g=1;while(g<bar){const bp2=set?set[(_bassGroove+barI+(((inBar+g)>=bar)?1:0))%set.length]:BASSPAT[_sSig];const at=(inBar+g)%bar;if(bp2&&bp2[at]!=null)break;if(!bp2&&(at%4===0))break;g++;}
+          const len=g*_sDur(); // seconds until the next bass hit → this note rings that long, with a legato tail
+          bassNote(tok, drumTime+(anchor?0:0.012), anchor?1:hum, len);}
       }
     }
     if(!drumOn){drumTime+=_sDur();drumStep++;continue;} // band without drums: same grid, silent kit
@@ -1278,6 +1398,12 @@ let rot=0,formGlow=0;
 function scaleObj(){return SCALES[S.scale];}
 function totalDegrees(){return scaleObj().c.length*S.octs;}
 function centsForDegree(d){const len=scaleObj().c.length;const oct=Math.floor(d/len);return oct*1200+scaleObj().c[d%len];}
+// find the scale-degree OFFSET (0..len-1) whose interval above the tonic is closest to `target` cents.
+// used by the microtonal harmony guardrails to grab a real "fifth" (~700) or "neutral third" (~350) that
+// actually exists IN the scale, instead of blindly stacking scale-steps that may not be consonant. `tol`=max miss.
+function degNear(sc,target,tol){const len=sc.length;let best=0,bd=1e9;
+  for(let i=0;i<len;i++){const d=Math.abs(sc[i]-target);if(d<bd){bd=d;best=i;}}
+  return (tol!=null&&bd>tol)?0:best;} // if nothing lands near enough (e.g. no 3rd in a gapped scale), fall back to the root
 // ---- shape geometry: every wall is a note, so a shape's corner-count = how many notes ring the tank ----
 // shapeVerts returns the corner points. numbers "3".."12" = regular polygons; names = special shapes.
 // want to invent one? add a case here returning [x,y] points around (0,0) at radius ~R and it just works.
@@ -1313,7 +1439,18 @@ function buildEdges(shapeVal){
   edges._verts=verts;edges._area=Math.abs(ar)/2;return edges; // stash corners + area so goo budget & ball-inside test work for every shape
 }
 let edges=buildEdges(S.shape);
-function rebuild(){edges=buildEdges(S.shape);}
+function rebuild(){edges=buildEdges(S.shape);_brokenOrder=[];}
+// AUTO-MODE WALL BREAK-OFF: every so often a random wall opens up (its note goes quiet, balls pour through the gap).
+// this thins a busy texture organically + shrinks the melodic palette so the line stays simple & singable. walls
+// reform after a while so the shape breathes. the current chord's ROOT wall is protected so harmony stays grounded.
+let _brokenOrder=[]; // edges broken, oldest first (so we can reform the oldest)
+function breakWall(){const live=edges.filter(e=>!e.broken);if(live.length<=3)return; // never dissolve the shape
+  const rootDeg=((curRootDeg%scaleObj().c.length)+scaleObj().c.length)%scaleObj().c.length;
+  const cand=live.filter(e=>degOf(e.cents)!==rootDeg); // don't break the tonic wall
+  const e=(cand.length?cand:live)[(Math.random()*(cand.length?cand.length:live.length))|0];
+  e.broken=true;_brokenOrder.push(e);
+  if(_brokenOrder.length>2){const old=_brokenOrder.shift();if(old)old.broken=false;} // keep at most ~2 gaps open
+}
 
 // ---------- balls ----------
 const balls=[];const BR=9;let hueIdx=0; // 12 chromatic hues like 12 notes, cycling so no two in a row match
@@ -1487,7 +1624,7 @@ function fillPhysics(now){
 
 // ---------- ball stepping ----------
 function step(){
-  const g=S.grav, ts=ballSpeed(), gy=g*0.55; // gravity 0..1: gentle, spread smoothly across the whole slider
+  const g=settleAmt()*0.4, ts=ballSpeed(), gy=g*0.55; // AUTO gravity: weightless when the tank's empty, gently settling as it fills up = a natural fluid feel (no manual slider — it was useless)
   for(let bi=balls.length-1;bi>=0;bi--){
     const b=balls[bi];
     b.r=BR;
@@ -1503,7 +1640,8 @@ function step(){
         // OUT of reflects it. The old code only bounced when inPoly()==true, so a ball whose center crossed the wall
         // plane read "outside" and skipped the bounce entirely -> tunneled straight through. This can't happen now.
         let hitWall=false;
-        for(const e of edges){const dist=(b.x-e.ax)*e.nx+(b.y-e.ay)*e.ny;
+        for(const e of edges){if(e.broken)continue; // a broken-off wall is an OPEN GAP — balls pour through it and its note goes silent
+          const dist=(b.x-e.ax)*e.nx+(b.y-e.ay)*e.ny;
           if(dist<BR){ // only when the ball is on/behind this wall's inward face…
             // …and actually within this finite segment's span (not off past a corner, so corners stay open to escape)
             const ex=e.bx-e.ax,ey=e.by-e.ay,L2=ex*ex+ey*ey||1,t=((b.x-e.ax)*ex+(b.y-e.ay)*ey)/L2;
@@ -1548,7 +1686,7 @@ function step(){
 }
 
 // ---------- transport / rain ----------
-let lastTick=0,nextRain=0,rainTickN=0,tickCount=0;
+let lastTick=0,nextRain=0,rainTickN=0,tickCount=0,_melNext=0,_melStepN=0;
 function tickInterval(){let beat=60/S.bpm;let d=S.div*4*beat;
   if(S.triplet)d*=2/3; // TRUE triplets: three even notes per beat — "1 & a 2 & a", not a lopsided shuffle
   if(S.dotted)d*=1.5;
@@ -1571,8 +1709,18 @@ function transport(now){
         else{playSynth(freqFromCents(p.cents),p.vel,p.imp);sendMidi(p.cents,p.vel);}}
       pendingNotes.length=0;}
   }
-  if((S.rain||S.slimeMode)&&balls.length===0&&!manualHold)spawnRain(); // watchdog — unless a human has the stage
-  if(S.rain&&now>=nextRain&&!manualHold){spawnRain();let iv=rainIntervalMs();if(S.rainAmt>0)iv*=(1+(Math.random()-0.5)*2*S.rainAmt);nextRain=now+iv;}
+  // SLIME (auto) MODE = the vocalist sings a singable line on the eighth-note grid. NOT chaotic random rain.
+  if(S.slimeMode&&!manualHold){
+    const beat=60000/Math.max(40,S.bpm);
+    if(!_melNext||now-_melNext>beat*2)_melNext=now; // (re)start / recover from a hidden tab without a burst
+    while(now>=_melNext){
+      const strong=(_melStepN%4===0); // a stronger, chord-tone note ~every half-note; passing tones between
+      // phrasing: strong beats almost always sing; weak eighths often rest (space = what makes a line breathe & feel human)
+      if(strong?Math.random()<0.9:Math.random()<0.55)autoMelodyNote(strong);
+      _melStepN++;_melNext+=beat/2; // eighth notes
+    }
+  }else if(S.rain&&balls.length===0&&!manualHold)spawnRain(); // non-slime rain toy: unchanged
+  if(S.rain&&!S.slimeMode&&now>=nextRain&&!manualHold){spawnRain();let iv=rainIntervalMs();if(S.rainAmt>0)iv*=(1+(Math.random()-0.5)*2*S.rainAmt);nextRain=now+iv;}
 }
 
 // ---------- draw ----------
@@ -1586,7 +1734,7 @@ function strokeSeg(e,i,N,extra){
 }
 function drawShape(){ctx.lineCap="round";
   if(fillState!=="fill"){const segs=curSegs||computeSegs();const N=segs.length;segs.forEach((e,i)=>strokeSeg(e,i,N,formGlow+burstFlash*0.3));ctx.shadowBlur=0;return;}
-  const N=edges.length;edges.forEach((e,i)=>strokeSeg(e,i,N,formGlow));ctx.shadowBlur=0;}
+  const N=edges.length;edges.forEach((e,i)=>{if(e.broken)return;strokeSeg(e,i,N,formGlow);});ctx.shadowBlur=0;} // a broken-off wall isn't drawn — you see the open gap notes pour through
 function drawDebris(){ctx.lineCap="round";ctx.lineWidth=7;
   for(const d of debris){if(d.life<=0)continue;const ca=Math.cos(d.ang),sa=Math.sin(d.ang);
     const ax=d.mx+(d.hx*ca-d.hy*sa),ay=d.my+(d.hx*sa+d.hy*ca),bx=d.mx-(d.hx*ca-d.hy*sa),by=d.my-(d.hx*sa+d.hy*ca);
@@ -1814,7 +1962,7 @@ function setBpm(v,fromEl,quiet){v=Math.max(40,Math.min(220,+v||80));S.bpm=Math.r
 })();
 $("octs").addEventListener('input',e=>{S.octs=parseInt(e.target.value);$("octsV").textContent=e.target.value;rebuild();updateScaleNote();});
 bindRange("chaos","chaos",v=>v/100);
-bindRange("grav","grav",v=>v/100);bindRange("spin","spin");
+bindRange("spin","spin"); // gravity is now automatic (scales with fill) — no slider
 bindRange("velFix","velFix");bindRange("velMin","velMin");bindRange("velMax","velMax");
 bindRange("sub","sub",v=>v/100);
 bindRange("atk","atk",v=>v/100*1.5);bindRange("dec","dec",v=>v/100*1.5);bindRange("sus","sus",v=>v/100);bindRange("rel","rel",v=>v/100*2);
@@ -1839,6 +1987,7 @@ bindToggle("rainT","rain",on=>{$("rainCfg").style.display=on?"block":"none";if(o
 bindToggle("randShapeT","randomShape");
 bindToggle("velRandT","velRand",on=>{$("velFixedRow").style.display=on?"none":"flex";$("velRangeRow").style.display=on?"flex":"none";$("velRangeRow2").style.display=on?"flex":"none";});
 bindToggle("midiT","midi",on=>{if(on)enableMidi();});
+bindToggle("mpeT","mpe",on=>{if(on&&S.midiOut)mpeSetup();}); // MPE microtonal out: sends TRUE pitch via per-note pitch-bend
 
 $("shape").addEventListener('change',e=>{const v=e.target.value;S.shape=/^\d+$/.test(v)?parseInt(v):v;rebuild();particles=[];debris=[];frags=null;fillState="fill";measuredFill=0;});
 $("newShapeBtn").addEventListener('click',()=>{ // kids' dice: always a DIFFERENT shape, instantly
@@ -1996,6 +2145,7 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
 (function(){
   const WV=[['sine','#daf7ee','#9fe6cf','#3a7d68','M2 12 Q6.5 3 11 12 T20 12'],
             ['triangle','#ece0ff','#c4a9f5','#6b4fa8','M2 18 L7 6 L12 18 L17 6 L21 11'],
+            ['warm','#e0e7ff','#c3cffa','#4a5aa8','M2 13 Q6 5 11 13 Q16 21 20 13'],   // ◠ warm/round — soft organ tone
             ['sawtooth','#ffe9d6','#ffd3a8','#c9743f','M2 18 L8 6 L8 18 L14 6 L14 18 L20 6 L20 18'],
             ['square','#ffe2ef','#ffb6d6','#c0567f','M2 18 L2 6 L8 6 L8 18 L14 18 L14 6 L20 6 L20 18']];
   const wl=$("psWaves");if(wl)wl.innerHTML=WV.map(([w,c1,c2,st,d],i)=>
@@ -2011,7 +2161,7 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
             ['disco','#e7e8ff','#c6caf5','#4a4a9e','3'],['bossa','#eef1f6','#d3dbe8','#5a6478','4'],
             ['industrial','#e4e7ee','#c2c8d6','#4a5568','5']];
   const dl=$("psDrums");if(dl)dl.innerHTML=DK.map(([k,c1,c2,nc,n])=>
-    `<div class="psItem"><button class="psBtn bandBtn" data-kit="${k}" title="Drum ${n}" style="background:linear-gradient(160deg,${c1},${c2})"><img src="band.png" alt="" draggable="false"></button><span class="psLbl">Drum ${n}</span></div>`).join('');
+    `<div class="psItem"><button class="psBtn bandBtn" data-kit="${k}" title="Rhythm ${n}" style="background:linear-gradient(160deg,${c1},${c2})"><img src="band.png" alt="" draggable="false"></button><span class="psLbl">Rhythm ${n}</span></div>`).join('');
   dl&&dl.addEventListener('pointerdown',e=>{const b=e.target.closest('.psBtn');if(!b)return;
     initAudio();if(AC&&AC.state==='suspended')AC.resume();
     const wasOn=b.classList.contains('on');
@@ -2098,6 +2248,62 @@ function shootBall(cents){ // fire a ball from the center straight at the wall t
   const ang=rot-Math.PI/2+((deg+0.5)/td)*2*Math.PI,sp=R/7,dx=Math.cos(ang),dy=Math.sin(ang);
   if(balls.length>=MAXBALLS)balls.shift();
   balls.push({x:CX,y:CY,vx:dx*sp,vy:dy*sp,hue:((hueIdx++)%12)/12,trail:[],mute:1});} // mute: the wall hit won't re-trigger — you already heard the press
+// ============ THE VOCALIST: intelligent auto-melody (used by BOTH play & studio) ============
+// Built from how great composers actually write singable tunes (Bach/Mozart/pop songwriting):
+//  • MOSTLY stepwise (2nds), some 3rd skips, rare leaps that resolve by stepping back the opposite way
+//  • strong beats land on CHORD TONES (consonance the ear wants); weak beats connect with passing tones
+//  • ARCH CONTOUR per 4-bar phrase: rise to ONE peak note, then fall — one climax, not constant jumping
+//  • ANTECEDENT/CONSEQUENT: phrase 1 asks (ends up in the air), phrase 2 answers (falls home to the tonic)
+//  • MOTIF MEMORY: it remembers a little shape and echoes it, so the line feels intentional & hummable
+//  • narrow singing range, no wild ±octave jumps.  ← this is the singable engine the user asked for.
+let _melDeg=null,_melLastLeap=0,_melStep16=0,_melContour=1,_melMotif=[];
+function nextMelodyDeg(strong){
+  const n=scaleObj().c.length, root=(curRootDeg||0);
+  if(_melDeg==null)_melDeg=n+root; // start in the middle octave, on the tonic
+  const CENTER=n+root, LO=CENTER-Math.round(n*0.8), HI=CENTER+Math.round(n*0.9); // a comfy ~1.5-octave singing range
+  const chord=[root,(root+2)%n,(root+4)%n];
+  // where are we in the 4-bar phrase? (16 eighth-steps per 2 bars ⇒ 32 per 4-bar phrase). drives contour + cadence.
+  const pos=_melStep16%32, phrase=(_melStep16/32|0)%2; // phrase 0 = question, phrase 1 = answer
+  _melStep16++;
+  // ARCH: rise through the first ~⅗ of the phrase to a peak, then fall — the classic memorable shape
+  _melContour=(pos< 20)?+1:-1;
+  // CADENCE: over the last ~2 bars, walk the line to a stable landing tone — the answer phrase resolves HOME to the
+  // tonic (rest), the question phrase settles on the 5th (unfinished, "asks" for the answer). classic antecedent/consequent.
+  if(pos>=24){const target=(phrase===1)?CENTER:(CENTER+ (chord[2]-root)); // answer→tonic · question→the 5th
+    const d=target-_melDeg; _melDeg+= Math.abs(d)>=2?2*Math.sign(d):Math.sign(d); _melLastLeap=0;
+    if(Math.abs(_melDeg-target)<=1)_melDeg=target; return clampDeg(_melDeg,LO,HI);}
+  // resolve a recent leap by stepping back the opposite way (tension→release)
+  if(_melLastLeap){const dir=_melLastLeap>0?-1:1;_melLastLeap=0;return clampDeg(_melDeg+=dir,LO,HI);}
+  // MOTIF: in the answer phrase, sometimes echo the shape we sang in the question (transposed) = a hook the ear recognises
+  if(phrase===1&&_melMotif.length&&Math.random()<0.5){const mv=_melMotif[pos% _melMotif.length];_melDeg=clampDeg(_melDeg+mv,LO,HI);return _melDeg;}
+  let step;const r=Math.random();
+  if(strong){ // strong beat → nearest CHORD TONE, biased in the arch's current direction
+    let best=_melDeg,bd=1e9;for(let o=-1;o<=1;o++)for(const ct of chord){const cand=(Math.round(CENTER/n)*n)+ct+o*n;const d=Math.abs(cand-_melDeg);if(d<=4&&d<bd){bd=d;best=cand;}}
+    _melDeg=best;
+  }else{ // weak beat → a passing STEP (mostly), a 3rd skip sometimes, a rare leap — all leaning WITH the arch
+    const up=_melContour>0?1:-1;
+    if(r<0.66)step=up*(Math.random()<0.72?1:-1);        // 66% step, usually in the arch direction
+    else if(r<0.9)step=up*(Math.random()<0.7?2:-2);     // 24% 3rd skip
+    else{step=up*3;_melLastLeap=step;}                   // 10% leap → resolves next note
+    _melDeg+=step;
+  }
+  _melDeg=clampDeg(_melDeg,LO,HI);
+  if(phrase===0){_melMotif.push(_melDeg-CENTER);if(_melMotif.length>8)_melMotif.shift();} // remember the question's shape
+  return _melDeg;
+}
+function clampDeg(d,lo,hi){return d<lo?lo+1:(d>hi?hi-1:d);}
+// fire a REAL ball (it bounces & sounds off walls, like always) but AIM it at a melodically-appropriate note-wall,
+// so the auto line comes out singable instead of chaotic. randomness + happy accidents stay — we just nudge the aim.
+function autoMelodyNote(strong){
+  if(!S.slimeMode||manualHold)return;
+  const deg=nextMelodyDeg(strong),cents=centsForDegree(deg);
+  const td=totalDegrees(),sc=scaleObj().c,len=sc.length;
+  const oct=Math.max(0,Math.min(Math.floor(cents/1200),Math.ceil(td/len)-1));
+  const dd=Math.min(td-1,oct*len+degOf(cents)); // which note-wall this pitch belongs to
+  const ang=rot-Math.PI/2+((dd+0.5)/td)*2*Math.PI,sp=R/7; // aim the shot at THAT wall (deliberate, not random splatter)
+  if(balls.length>=MAXBALLS)balls.shift();
+  balls.push({x:CX,y:CY,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,hue:((hueIdx++)%12)/12,trail:[],mute:1}); // mute=1: the aimed shot itself is silent; it sings on its FIRST wall hit, then bounces & plays like any ball
+}
 function playNote(midi,vel){ // one door for every performance: computer keyboard, MIDI, anything later
   initAudio();if(AC&&AC.state==='suspended')AC.resume();
   const m=snapToScale(Math.round(midi));if(m<12||m>120)return;
@@ -2291,12 +2497,14 @@ function slimeSVG(fill,face){
 const SS_GLASSES='<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0"><g fill="none" stroke="#5a4f78" stroke-width="2.2" stroke-linecap="round" opacity=".85"><circle cx="29" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><circle cx="51" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><path d="M37.5 24 q2.5 -2 5 0"/><path d="M21.5 23.5 l-5 -1.5"/><path d="M58.5 23.5 l5 -1.5"/></g></svg>'; // wireframe specs, not welding goggles — face stays visible at knob size
 function setKnobFace(face){const s=document.querySelector('#slimeBig .sic');if(s)s.innerHTML='<img src="slimelogo.png" alt="" style="width:100%;height:100%;object-fit:contain;display:block">';} /* slime-mode knob = the crayon slime logo (same guy as the splash); face arg kept for callers but the art is one happy face */
 setKnobFace('happy');
-const SH=84,SW=90,PEEK=34,OUT=14;
+// PEEK = how many px of the slime pokes into view at rest. bottom slimes peek HIGH so their whole face + body show
+// (they used to reveal only their scalp); sides peek less so they don't jut across the stage.
+const SH=84,SW=90,PEEK_B=68,PEEK_S=46,OUT=14;
 const GEO={
-  bottom:{anchor:{bottom:'0'},rest:`translateY(${SH-PEEK}px)`,hide:`translateY(${SH+OUT}px)`},
-  top:{anchor:{top:'0'},rest:`translateY(${-(SH-PEEK)}px) rotate(180deg)`,hide:`translateY(${-(SH+OUT)}px) rotate(180deg)`},
-  left:{anchor:{left:'0'},rest:`translateX(${-(SW-PEEK)}px) rotate(90deg)`,hide:`translateX(${-(SW+OUT)}px) rotate(90deg)`},
-  right:{anchor:{right:'0'},rest:`translateX(${SW-PEEK}px) rotate(-90deg)`,hide:`translateX(${SW+OUT}px) rotate(-90deg)`}
+  bottom:{anchor:{bottom:'0'},rest:`translateY(${SH-PEEK_B}px)`,hide:`translateY(${SH+OUT}px)`},
+  top:{anchor:{top:'0'},rest:`translateY(${-(SH-PEEK_B)}px) rotate(180deg)`,hide:`translateY(${-(SH+OUT)}px) rotate(180deg)`},
+  left:{anchor:{left:'0'},rest:`translateX(${-(SW-PEEK_S)}px) rotate(90deg)`,hide:`translateX(${-(SW+OUT)}px) rotate(90deg)`},
+  right:{anchor:{right:'0'},rest:`translateX(${SW-PEEK_S}px) rotate(-90deg)`,hide:`translateX(${SW+OUT}px) rotate(-90deg)`}
 };
 // evenly balanced: bottom slimes spread across the FULL width, and equal left/right so no side looks empty.
 // green & violet alternate around the room so no zone reads all-one-color (green#mint / violet#lav map to the two families)
@@ -2414,7 +2622,7 @@ const chillers=[]; // full-view slimes with cursor physics
   // PROCEDURAL crayon worm — the original math (redrawn live every frame = perfectly smooth + fully adaptive),
   // re-skinned to the slimes: bold dark crayon OUTLINE + vibrant PASTEL body + subtle waxy GRAIN + segment rings.
   el.innerHTML='<svg viewBox="0 0 '+VB_W+' '+VB_H+'" width="100%" height="100%" preserveAspectRatio="xMidYMax meet">'+
-    '<defs><filter id="wcrayon" x="-5%" y="-5%" width="110%" height="110%">'+                     // GRAIN ONLY — no displacement, so the smooth tube silhouette from the original is preserved (no jagged edges)
+    '<defs><filter id="wcrayon" x="-60%" y="-15%" width="220%" height="130%">'+                   // GRAIN ONLY — no displacement. region is WIDE because the body has a fat 50px stroke on a tall-thin path; a tight region clipped the sides ("invisible walls")
     '<feTurbulence type="fractalNoise" baseFrequency="0.35" numOctaves="3" seed="4" result="speck"/>'+
     '<feColorMatrix in="speck" type="matrix" values="0 0 0 0 0.14  0 0 0 0 0.12  0 0 0 0 0.22  0 0 0 0.62 0" result="specka"/>'+  // waxy plum-dark speckle = the crayon texture, painted INSIDE the shape only (tuned live so it actually reads)
     '<feComposite in="specka" in2="SourceGraphic" operator="in" result="grain"/>'+
@@ -2496,7 +2704,7 @@ const MONARCH=s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="dis
 (function(){
   const layer=document.getElementById('slimes');
   const el=document.createElement('div');el.className='slime rgirl';
-  el.style.cssText='position:fixed;left:22%;bottom:0;width:52px;height:49px;z-index:51;transform:translateY(37px);transition:transform .5s cubic-bezier(.34,1.56,.64,1)'; // smaller, only her head peeks until you find her
+  el.style.cssText='position:fixed;left:22%;bottom:0;width:52px;height:49px;z-index:51;transform:translateY(10px);transition:transform .5s cubic-bezier(.34,1.56,.64,1)'; // raised so most of her shows (was buried — only her scalp poked out)
   const happy='<path d="M22 35 l5.5 -6 l5.5 6" fill="none" stroke="#5a4f78" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M47 35 l5.5 -6 l5.5 6" fill="none" stroke="#5a4f78" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M33 42 q7 6 14 0" fill="none" stroke="#5a4f78" stroke-width="2.6" stroke-linecap="round"/>';
   const wow='<circle cx="28" cy="33" r="5.5" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="28" cy="34" r="2.4" fill="#5a4f78"/><circle cx="52" cy="33" r="5.5" fill="#fff" stroke="#5a4f78" stroke-width="2.4"/><circle cx="52" cy="34" r="2.4" fill="#5a4f78"/><ellipse cx="40" cy="44" rx="3.5" ry="4.5" fill="#5a4f78"/>';
   el.innerHTML='<div class="gbubble" id="gumbub">Gumby is love</div>'+
@@ -2593,7 +2801,8 @@ $("slimeBig").addEventListener('click',()=>{
   el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop'); // restart squish even on rapid toggles
   setKnobFace('surprise');clearTimeout(el._faceT);el._faceT=setTimeout(()=>{el.classList.remove('pop');setKnobFace('happy');},600);
   initAudio();if(AC&&AC.state==="suspended")AC.resume();setSlimeProcessing(S.slimeMode);
-  if(S.slimeMode){if(!S.playing)setPlaying(true);setSliderValue('spin',14);_slimeBars=0;_keyPinned=false; // toggling slime ON un-pins: the auto key-rotation resumes from here
+  if(S.slimeMode){if(!S.playing)setPlaying(true);setSliderValue('spin',14);_slimeBars=0;_keyPinned=false;_melDeg=null;_melNext=0;_melStepN=0;_melStep16=0;_melMotif=[];_melLastLeap=0; // reset the vocalist so it starts fresh on the tonic
+
     _modSnap={};for(const m of MODS){const inp=$(m.id);if(inp)_modSnap[m.id]=inp.value;}_slimeOnAt=performance.now(); // remember the patch before the wobble borrows it
     S.quantize=true;$("quantT").classList.add('on');setDivUI(0.0625); // lock everything to 1/16 grid while slimin'
     if(!S.rain){$("rainT").classList.add('on');S.rain=true;$("rainCfg").style.display="block";nextRain=performance.now();}
@@ -2755,11 +2964,13 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
 
 // ---------- groove selector: foldered feels, applied to the drums (studio panel; Human is the default) ----------
 (function(){try{
-  const host=document.getElementById('grooveFolders'),curEl=document.getElementById('grooveCur'); if(!host)return;
-  function setG(name){curGroove=name;if(curEl)curEl.textContent=name;
+  const host=document.getElementById('grooveFolders'); if(!host)return;
+  function setG(name){curGroove=name; // no name label anymore — the highlighted button IS the indicator
     host.querySelectorAll('.gBtn').forEach(b=>b.classList.toggle('on',b.dataset.g===name));
     try{localStorage.setItem('slimehedron-groove',name);}catch(e){}}
-  let html='<button class="gBtn on" data-g="Human" style="width:100%;margin-bottom:6px">✨ Human — natural default feel</button>';
+  const gt=document.getElementById('grooveT'); // the master Groove (human-feel) switch
+  if(gt){gt.addEventListener('change',()=>{S.groove=gt.checked;host.style.opacity=gt.checked?'1':'.45';host.style.pointerEvents=gt.checked?'auto':'none';});}
+  let html='';
   for(const folder in GROOVES){
     html+='<div class="gFolder"><div class="gHead"><span>'+folder+'</span><span class="gArrow">▸</span></div><div class="gList">'+
       GROOVES[folder].map(g=>'<button class="gBtn" data-g="'+g.n+'">'+g.n+'</button>').join('')+'</div></div>';}
@@ -2768,6 +2979,17 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
   host.querySelectorAll('.gBtn').forEach(b=>b.addEventListener('click',()=>setG(b.dataset.g)));
   try{const g=localStorage.getItem('slimehedron-groove');if(g&&(GROOVE_ALL[g]||g==='Straight'))setG(g);}catch(e){}
 }catch(err){console.warn('groove UI skipped:',err);}})();
+
+// COLLAPSIBLE side-menu sections: click a card's title to fold it down to just the title line = far less scrolling.
+// common cards start open (timing, groove, scale, sound); the deeper/advanced ones start collapsed to save space.
+(function(){try{
+  const ADV_COLLAPSED=['✏️','🎛️','🔊','🔷','💥']; // envelope, filter, output, geometry, velocity = advanced → start folded
+  document.querySelectorAll('aside .card').forEach(card=>{
+    const h=card.querySelector('h2');if(!h)return;
+    if(ADV_COLLAPSED.some(e=>h.textContent.includes(e)))card.classList.add('collapsed');
+    h.addEventListener('click',e=>{if(e.target.closest('.pwr'))return;card.classList.toggle('collapsed');}); // don't toggle when clicking the on/off power dot
+  });
+}catch(e){console.warn('collapse UI skipped:',e);}})();
 
 if(window._freshStart){ // first-ever visit: roll the dice — C major is a fine key and a boring default
   const roots=[48,50,52,53,55,57,59,62,64,65,67],scales=['major','mixolydian','dorian','minor','pentaMaj','lydian'];
