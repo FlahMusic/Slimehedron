@@ -910,9 +910,10 @@ const GROOVES={
 const GROOVE_ALL={Human:GROOVE_DEF}; for(const _f in GROOVES)for(const _g of GROOVES[_f])GROOVE_ALL[_g.n]=_g;
 let curGroove='Human'; // active feel; 'Straight' = mechanical (lets the swing slider take over)
 function activeGroove(){return curGroove==='Straight'?null:(GROOVE_ALL[curGroove]||GROOVE_DEF);}
-function dHit(v,t,a){a=Math.min(1.9,a||1); // clamp so accent grooves can't clip the mix
+function dHit(v,t,a,solid){a=Math.min(1.9,a||1); // clamp so accent grooves can't clip the mix. solid=true => LOCKED (no human wobble): used for the anchor hits (kick on 1 & 3) so the groove stays tight.
   // per-instrument human feel: nudge velocity + micro-timing (hats ghost, kick locks). t stays ≥ now so it never schedules in the past.
-  if(typeof humanVoice==='function'){const h=humanVoice(v);a*=h.v;t=Math.max(AC.currentTime,t+h.t);}
+  if(!solid && typeof humanVoice==='function'){const h=humanVoice(v);a*=h.v;t=Math.max(AC.currentTime,t+h.t);}
+  else t=Math.max(AC.currentTime,t);
   sendMidiAt(DRUMN[v]||38,Math.min(127,(90*a)|0),S.chDrum,t,0.15);
   if(v==='K'){const o=AC.createOscillator(),g=AC.createGain(),T=KITTONE[drumKit]||KITTONE.chip;o.type='sine'; // kick: pitch dive + body, sized per kit
     o.frequency.setValueAtTime(T.kf,t);o.frequency.exponentialRampToValueAtTime(T.ke,t+Math.min(0.12,T.kd*0.35));
@@ -1084,21 +1085,62 @@ function keyJourney(){ // ear-friendly walk: every 16 bars the root moves exactl
   let nr=S.root+step;while(nr<52)nr+=12;while(nr>64)nr-=12; // keep the root in a comfy octave
   // play mode: sometimes ALSO flip between minor & major pentatonic to keep it fresh (they share the same 5-note
   // "no wrong notes" family, so it stays kid-safe — just a brighter/darker mood). ~40% of moves flip the tonality.
-  if(S.mode==='play'&&Math.random()<0.4){const flip=isMinorScale()?'pentaMaj':'pentaMin';
+  if(S.mode==='play'&&Math.random()<0.3){const flip=isMinorScale()?'major':'minor'; // play stays in FULL diatonic scales (chord diversity); ~30% of key moves flip major<->minor for mood range, both kid-safe under scale-lock
     _keyProgrammatic=true;$("scale").value=flip;$("scale").dispatchEvent(new Event('change'));_keyProgrammatic=false;}
   _keyProgrammatic=true;$("root").value=nr;$("root").dispatchEvent(new Event('change'));_keyProgrammatic=false; // auto-move: don't trip the pin
   updateWheel(); // the wheel is the star: glow the new key (Am/C…) + trace the fifth-step arc
   if(S.mode!=='play')toast('→ '+NOTE_NAMES[((nr%12)+12)%12]+' '+SCALES[S.scale].n.toLowerCase());} // play: silent, the wheel says it all
+// ---- THE COMP / ARP PLAYER: this is what makes it a BAND instead of a pad + bass. ----
+// a plucky rhodes-ish voice that (a) COMPS syncopated chord stabs, rotating the rhythm every bar so no two feel
+// the same, and (b) every 4th bar breaks into a bouncy ARP lick that walks up the chord and steps into the next one.
+function pluck(cents,t,vel,short){ // one short bouncy note (the comp/arp instrument). short=extra-plucky (arp)
+  if(!S.synth)return;
+  const o=AC.createOscillator(),o2=AC.createOscillator(),g=AC.createGain(),lp=AC.createBiquadFilter();
+  o.type='triangle';o2.type='square';o2.detune.value=6;                    // triangle body + a whisper of square = a little bite
+  o.frequency.value=o2.frequency.value=freqFromCents(cents);
+  lp.type='lowpass';lp.frequency.setValueAtTime(3600,t);lp.frequency.exponentialRampToValueAtTime(900,t+(short?0.14:0.28)); // filter closes fast = pluck
+  lp.Q.value=1.1;
+  const pk=0.05*vel*Math.min(1,S.bpMix*2),dec=short?0.13:0.26;            // sits under pad+lead; bpMix rides its level
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(pk,t+0.006);   // snappy attack
+  g.gain.exponentialRampToValueAtTime(0.0008,t+dec);                       // quick decay = bounce, never a wash
+  o.connect(lp);o2.connect(lp);lp.connect(g);g.connect(bandBus);
+  o.start(t);o2.start(t);o.stop(t+dec+0.05);o2.stop(t+dec+0.05);
+  sendMidiAt(Math.round(S.root+cents/100),Math.round(70*vel),S.chLead||S.chPad,t,dec*0.9);
+}
+// syncopated comp rhythms (16th positions). rotate through them for bar-to-bar variety — classic soul/funk off-beat push.
+const COMP_RHY=[[3,6,10,11,14],[2,6,10,13],[3,7,10,14,15],[2,3,8,11,14]];
+function bandComp(t,barI,degs,stepDur,steps){ // schedule this bar's comp OR arp across its 16th grid
+  if(steps!==16)return;                        // fancy comp only on the 4/4 grid; odd meters keep the pad bed
+  const gr=(typeof activeGroove==='function')?activeGroove():null; // borrow the same swing/micro-timing as the drums
+  const phrase=barI%4;
+  const swing=(k)=>t+k*stepDur+(gr?gr.off[k]*stepDur:(k%2?0.012:0)); // groove offset, or a touch of straight swing on off-16ths
+  if(phrase===3){ // ---- BAR 4: the ARP LICK — a bouncy melodic run up the chord that leads into the next bar ----
+    const tones=degs.slice().sort((a,b)=>a-b);                     // low→high chord tones (already voice-led)
+    const run=[tones[0],tones[1%tones.length],tones[2%tones.length],tones[tones.length-1]+1200, // up the chord, then over the top
+               tones[2%tones.length],tones[1%tones.length]];       // and skip back down = a little lick
+    const pos=[0,2,4,6,9,12];                                      // bouncy, uneven spacing (not robotic straight 8ths)
+    run.forEach((c,i)=>{const k=pos[i];if(k<15)pluck(c,swing(k),0.55+Math.random()*0.25,true);});
+    // land a stab of the NEXT chord's root on the last 16th = the "and here we go" pickup
+    const nx=centsForDegree((nextRootDeg==null?curRootDeg:nextRootDeg));pluck(nx,swing(15),0.7,true);
+  }else{ // ---- BARS 1-3: rhythmic chord COMP — syncopated stabs, a different rhythm each bar ----
+    const rhy=COMP_RHY[(barI+ (curRootDeg||0))%COMP_RHY.length];   // rotate rhythm by bar+chord so it keeps evolving
+    for(const k of rhy){const vel=0.45+Math.random()*0.3;         // human velocity on every stab
+      for(const c of degs)pluck(c,swing(k),vel,false);}           // full voice-led chord on each stab
+  }
+}
 function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for the pluck pattern
   if(!bandOn)return;
   if(++_bassBars%16===0)_bassGroove=(_bassGroove+1)%BASSGROOVES.length; // rotate the bass feel every 16 bars for motion
   const man=(S.mode!=='play'&&manualActive())?manualRoot():null; // studio: a human playing OWNS the harmony. play: no chord chasing, kids just jam.
-  if(man==null&&S.slimeMode&&!_keyPinned&&++_slimeBars>=16){_slimeBars=0;keyJourney();} // rotate keys every 16 bars — UNLESS the user pinned a key by hand
+  if(man==null&&S.slimeMode&&!_keyPinned&&++_slimeBars>=64){_slimeBars=0;keyJourney();} // auto-mode: move around the circle of fifths every 64 bars (16 was too soon to settle in)
   const n=scaleObj().c.length;let rd;
   if(man!=null){rd=man%n;nextRootDeg=man%n;} // hold YOUR chord — no roulette, no lag
   else{rd=(nextRootDeg!=null?nextRootDeg:pickChord(barI))%n;nextRootDeg=pickChord(barI+1)%n;} // auto only when hands are off
   _prevRootDeg=curRootDeg;curRootDeg=rd;updateChordPill();
   const rawDegs=[rd,(rd+2)%n,(rd+4)%n],barDur=drumBar()*drumStepDur();
+  // DILLA/soul CHORD COLOUR: on 7-note scales, add a 7th or 9th on rotating bars so the chords evolve & breathe
+  // instead of being the same triad every bar (kept off pentatonic/chromatic where it'd muddy). the harmony now moves like a real comp.
+  if(n===7){const sd=((barI+(curRootDeg||0))%3+3)%3; if(sd===0)rawDegs.push((rd+6)%n); else if(sd===1)rawDegs.push((rd+1)%n);}
   // voice leading: each pad voice moves to its NEAREST octave of the new chord tone — chords glide instead of leaping
   if(!window._padV)window._padV=null;
   const degs=rawDegs.map((d,i)=>{const base=centsForDegree(d);
@@ -1108,7 +1150,8 @@ function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for
       const dd=Math.abs(c2-prev);if(dd<bd){bd=dd;best=c2;}}
     return best;});
   window._padV=degs;
-  const pv=0.03*Math.min(1,S.bpMix*2); // soft pad bed with some body — present but under the melody
+  bandComp(t,barI,degs,drumStepDur(),drumBar()); // ← the BAND: syncopated comp + a bouncy arp lick every 4th bar
+  const pv=0.024*Math.min(1,S.bpMix*2); // soft pad bed, a touch quieter now so the plucky comp sits on top
   if(S.synth)for(const d of degs){const c=d,po=AC.createOscillator(),pg=AC.createGain(),plp=AC.createBiquadFilter(); // d is already voice-led cents
     po.type='triangle';po.frequency.value=freqFromCents(c);          // mellow pad, not buzzy squares
     plp.type='lowpass';plp.frequency.value=2300;plp.Q.value=0.9;      // open the mids with a gentle presence bump so the chords have warmth + body
@@ -1144,35 +1187,47 @@ function bassNote(tok,t,hum,dur){ // bass pluck by default; pass `dur` (seconds)
 // timing a hair off the grid — fast grids stay tight, slow grids breathe). returns {v:velMult, t:secondsOffset}.
 // classifies by drum voice: hi=hats (loose), lo=kick (tight), mid=snare (medium). keeps musical intent, just adds life.
 function humanVoice(v){
-  const loose = (v==='h'||v==='C'||v==='c'); // hats/cymbals ghost the most
-  const tight = (v==='K');                    // kick stays solid
-  const velVar = loose?0.22 : tight?0.05 : 0.13;                 // ±velocity spread by instrument
-  const timeVar = (loose?0.006 : tight?0.0015 : 0.004);          // seconds: hats drift, kick locks (scaled to tempo below)
-  const tempoScale = Math.min(1.4, 110/Math.max(60,S.bpm));      // slow tempo → a touch more human drift; fast → tighter
-  return { v: 1+(Math.random()*2-1)*velVar, t:(Math.random()*2-1)*timeVar*tempoScale };
+  // DILLA FEEL (per "Dilla Time"): conflicting per-voice time-feels, controlled microrhythms — NOT random slop.
+  // kick DRAGS behind the grid, snare/clap RUSHES ahead, hats play freehand (loosest), congas lean back a hair.
+  // that tension between straight & swung is the whole "limping" human bounce; each voice also gets a small wobble.
+  const isKick=(v==='K'), isSnare=(v==='s'||v==='r'), isHat=(v==='h'), isPerc=(v==='c'||v==='C');
+  const velVar = isHat?0.24 : isKick?0.05 : isPerc?0.20 : 0.13;      // hats ghost/dynamic most; kick steadiest
+  const bias   = isKick?0.016 : isSnare?-0.011 : isPerc?0.005 : 0;   // sec: kick late, snare early, congas slightly late, hats centred
+  const wob    = isHat?0.010 : isKick?0.0025 : isPerc?0.008 : 0.004; // freehand wobble; hats loosest, kick tightest
+  const ts = Math.min(1.5, 100/Math.max(60,S.bpm));                  // slower tempo → a touch more human drift
+  return { v: 1+(Math.random()*2-1)*velVar, t:(bias+(Math.random()*2-1)*wob)*ts };
 }
+// METER SNAPSHOT: the scheduler PLAYS from these, not the live controls. it only copies a new time-sig / triplet
+// in at the top of a bar, so the current measure always finishes cleanly (no mid-bar jump). tempo (S.bpm) still
+// follows live every step, so it locks to a changing external MIDI clock while meter changes stay smooth.
+let _sSig='16',_sTrip=false,_sFeel='1';
+function _sBar(){return (_sSig==='16'&&_sTrip)?12:SIGS[_sSig].n;}                                   // steps per bar for the played meter
+function _sDur(){let d=60/S.bpm/((_sSig==='16'&&_sTrip)?3:4); if(_sFeel==='2')d*=0.5; else if(_sFeel==='h')d*=2; return d;} // seconds per step
 function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums, bass, pads & midi
   if((!drumOn&&!bandOn)||!AC)return;
-  const sig=SIGS[drumSig],bar=drumBar(),loop=bar*4;
   // schedule-ahead window: 120ms normally, but WIDER when the tab is hidden — browsers throttle background timers
   // (the worker heartbeat can drop to ~1s), so we pre-schedule enough audio to bridge those irregular wake-ups.
   // the Web Audio clock (AC.currentTime) stays sample-accurate regardless, so wider lookahead = no gaps, no drift.
   const _look=document.hidden?1.2:0.12;
   while(drumTime<AC.currentTime+_look){
-    const st=drumStep%loop, inBar=st%bar, barI=(st/bar)|0, hum=0.92+Math.random()*0.16; // ±8% human wobble on every hit
-    const gr=(drumSig==='16')?activeGroove():null; // the active FEEL (micro-timing + velocity), only on the 16th grid
+    // adopt a new time-sig / triplet ONLY at a bar boundary → the current measure always finishes clean (MIDI-sync safe)
+    if((drumStep%_sBar())===0 && (_sSig!==drumSig||_sTrip!==S.triplet||_sFeel!==drumFeel)){_sSig=drumSig;_sTrip=S.triplet;_sFeel=drumFeel;drumStep=0;}
+    const sig=SIGS[_sSig],bar=_sBar(),loop=bar*4,trip=(_sSig==='16'&&_sTrip); // everything below plays from the SNAPSHOT meter
+    const st=drumStep%loop, inBar=st%bar, barI=(st/bar)|0, hum=0.92+Math.random()*0.16; // ±8% human wobble
+    const gr=(_sSig==='16')?activeGroove():null; // the active FEEL (micro-timing + velocity), only on the 16th grid
     if(inBar===0)bandBar(drumTime,barI);
     if(bandOn){
-      if(drumKit==='industrial'&&drumSig==='16'){ // DRONE bass: 1-bar note, then a 1.5-bar note, then a sassy fill on the 4th bar
-        const barDur=drumBar()*drumStepDur();
+      if(drumKit==='industrial'&&_sSig==='16'){ // DRONE bass: 1-bar note, then a 1.5-bar note, then a sassy fill on the 4th bar
+        const barDur=bar*_sDur();
         if(inBar===0){ if(barI===0)bassNote('R',drumTime,hum,barDur*1.0); else if(barI===1)bassNote('R',drumTime,hum,barDur*1.5); }
         if(barI===3){ const fill={0:'R',6:'O',8:'F',11:'O',12:'R',14:'A'}; if(fill[inBar])bassNote(fill[inBar],drumTime,hum); } // the sass
       } else {
-        const set=(drumSig==='16')?(KITBASS[drumKit]||BASSGROOVES):null,bp=set?set[_bassGroove%set.length]:BASSPAT[drumSig],tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));if(tok)bassNote(tok,drumTime,hum);
+        const set=(_sSig==='16')?(KITBASS[drumKit]||BASSGROOVES):null,bp=set?set[(_bassGroove+barI)%set.length]:BASSPAT[_sSig],tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));
+        if(tok){const anchor=(inBar===0||inBar===8); bassNote(tok, drumTime+(anchor?0:0.012), anchor?1:hum);} // bass LOCKS on 1 & 3 (tight + solid); drags + varies everywhere else = Dilla pocket
       }
     }
-    if(!drumOn){drumTime+=drumStepDur();drumStep++;continue;} // band without drums: same grid, silent kit
-    if(drumTriplet()){ // the REAL shuffle: "ting — ting-a" — the hat SKIPS the middle triplet (that gap is the whole feel)
+    if(!drumOn){drumTime+=_sDur();drumStep++;continue;} // band without drums: same grid, silent kit
+    if(trip){ // the REAL shuffle: "ting — ting-a" — the hat SKIPS the middle triplet (that gap is the whole feel)
       const vm=KITVOICE[drumKit],sub=inBar%3;
       if(sub===0)dHit(vm.hi,drumTime,(inBar===0?1.15:0.92)*hum);        // hat on the beat
       else if(sub===2)dHit(vm.hi,drumTime,0.6*hum);                     // hat on the 'a', tucked under
@@ -1180,25 +1235,34 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
       if(inBar===6)dHit(vm.lo,drumTime,0.95*hum);                       // kick on 3
       if(inBar===3||inBar===9)dHit(vm.mid,drumTime,1.1*hum);            // snare cracks 2 and 4
       if(barI===3&&inBar===11)dHit(vm.mid,drumTime,0.55*hum);           // one soft pickup into the top of the phrase
-    }else if(drumSig==='16'){ // 4/4: authored grooves, played through the active FEEL (micro-timing + velocity)
+    }else if(_sSig==='16'){ // 4/4: authored grooves, played through the active FEEL (micro-timing + velocity)
+      // AUTO-MODE living swing: in slime (auto) mode the Dilla swing slowly breathes ±15% over ~2 min, so it never feels static
+      const swMod=S.slimeMode?(1+0.15*Math.sin(AC.currentTime*0.05)):1;
       const kit=KITS[drumKit],pst=inBar+16*barI,
-        gt=drumTime+(gr?gr.off[inBar]*drumStepDur():0),           // nudge the HIT off the straight grid = the swing/feel
+        gt=drumTime+(gr?gr.off[inBar]*swMod*_sDur():0),     // nudge the HIT off the grid by the (breathing) feel
         gv=(gr?gr.vel[inBar]:1);                                  // velocity accent from the feel
-      for(const v in kit)if(kit[v].includes(pst))dHit(v,gt,(inBar===0?1.25:1)*hum*gv);
+      for(const v in kit)if(kit[v].includes(pst)){
+        const anchor=(v===KITVOICE[drumKit].lo)&&(inBar===0||inBar===8); // kick on beats 1 & 3 = the LOCK; everything else stays human
+        dHit(v,gt, anchor?(inBar===0?1.25:1.12)*gv : (inBar===0?1.25:1)*hum*gv, anchor);
+      }
+      // DILLA life: soft ghost hats on off-16ths, shifting which bars they hit so the loop breathes & never repeats identically
+      if(KITVOICE[drumKit].hi==='h'&&inBar%2===1&&!kit.h.includes(pst)&&((barI+(inBar>>2))&1)===0)dHit('h',gt,0.2*hum);
+      // and a soft ghost snare pickup into the 2nd half of the phrase (only odd bars) = a human "and" that isn't every loop
+      if((inBar===7||inBar===15)&&(barI&1)&&KITVOICE[drumKit].mid&&!(kit[KITVOICE[drumKit].mid]||[]).includes(pst))dHit(KITVOICE[drumKit].mid,gt,0.24*hum);
       if(barI===3&&inBar>=12){ // BAR-4 FILL: a quick snare build-up + kick pickup that lands hard on the 1
         const mid=KITVOICE[drumKit].mid,lo=KITVOICE[drumKit].lo;
         dHit(mid,gt,(0.5+(inBar-12)*0.16)*hum*gv);               // snare roll across the last beat (12..15), rising
         if(inBar===15)dHit(lo,gt,0.85*hum);}                      // kick on the last 16th → launches into bar 1
     }else{ // 3/4, 6/8, 5/4, 7/8, 9/8: true signature skeletons voiced by the chosen kit
-      const pat=PATTERNS[drumSig],vm=KITVOICE[drumKit];
+      const pat=PATTERNS[_sSig],vm=KITVOICE[drumKit];
       if(pat.lo.includes(inBar))dHit(vm.lo,drumTime,(inBar===0?1.3:1.05)*hum);
       if(pat.mid.includes(inBar))dHit(vm.mid,drumTime,1*hum);
       if(pat.hi.includes(inBar))dHit(vm.hi,drumTime,(sig.acc.includes(inBar)?1.1:0.8)*hum);
       if(barI===3&&inBar>bar-4)dHit(vm.mid,drumTime,(0.5+(inBar-(bar-3))*0.15)*hum); // little walk-up fill ending each 4-bar phrase
     }
-    const sw16=(!gr&&drumFeel!=='t'&&drumSig==='16'&&!S.triplet&&S.swing>0.01)?(drumStep%2===0?1+S.swing*0.5:1-S.swing*0.5):1; // uniform swing ONLY when no groove is active (a groove supplies its own micro-timing → no double-swing)
-    const swf=(drumFeel==='t'&&drumSig!=='12c'&&!drumTriplet())?(drumStep%2===0?4/3:2/3):sw16; // no shuffle on top of ternary grids
-    drumTime+=drumStepDur()*swf;drumStep++;}
+    const sw16=(!gr&&_sFeel!=='t'&&_sSig==='16'&&!_sTrip&&S.swing>0.01)?(drumStep%2===0?1+S.swing*0.5:1-S.swing*0.5):1; // uniform swing ONLY when no groove is active (a groove supplies its own micro-timing → no double-swing)
+    const swf=(_sFeel==='t'&&_sSig!=='12c'&&!trip)?(drumStep%2===0?4/3:2/3):sw16; // no shuffle on top of ternary grids
+    drumTime+=_sDur()*swf;drumStep++;}
 }
 
 // ---------- aurora palette ----------
@@ -1719,8 +1783,11 @@ const $=id=>document.getElementById(id);
 function bindRange(id,key,fn){const el=$(id),v=$(id+"V");el.addEventListener('input',()=>{const raw=parseFloat(el.value);S[key]=fn?fn(raw):raw;if(v)v.textContent=Math.round(raw);});}
 // ONE tempo brain: slider drag, typed BPM box, turtle/rabbit, and MIDI clock all flow through here,
 // so S.bpm, the tempo-synced DELAY, and every control stay in lockstep — smoothly, no crunch.
-function setBpm(v,fromEl){v=Math.max(40,Math.min(220,+v||80));S.bpm=Math.round(v*100)/100; // keep 2 decimals of fine-tune
+// quiet=true: lock the AUDIO tempo tightly (S.bpm + delay) but skip the DOM repaint — used by the MIDI clock,
+// which fires ~24x/beat; repainting the fader that fast buzzes the thumb, so the clock repaints on its own throttle.
+function setBpm(v,fromEl,quiet){v=Math.max(40,Math.min(220,+v||80));S.bpm=Math.round(v*100)/100; // keep 2 decimals of fine-tune
   if(delayNode&&AC)delayNode.delayTime.setTargetAtTime(60/S.bpm*0.75,AC.currentTime,0.15); // dotted-8th echo tracks tempo, glides over 150ms
+  if(quiet)return;
   const rv=Math.round(S.bpm);
   ['bpm','bpmTop','playBpm'].forEach(id=>{const e=$(id);if(e&&e!==fromEl&&+e.value!==rv)e.value=rv;}); // sliders are whole-number (coarse)
   const nb=$("bpmNum");if(nb&&nb!==fromEl&&document.activeElement!==nb)nb.value=S.bpm.toFixed(2); // the box shows decimals (don't fight typing)
@@ -1895,7 +1962,7 @@ try{ccMap=JSON.parse(localStorage.getItem('slimehedron-cc')||'{}');}catch(e){}
   const HAS_MIDI=!!navigator.requestMIDIAccess; // Safari (incl. all iOS browsers) has no Web MIDI — computer/touch keys still work
   if(HAS_MIDI){
     $("midiInT").addEventListener('click',()=>{const on=$("midiInT").classList.toggle('on');midiPrefSave({on});if(on)enableMidiIn();});
-    $("midiClkT").addEventListener('click',()=>{S.midiClock=$("midiClkT").classList.toggle('on');midiPrefSave({clk:S.midiClock});clkTimes=[];_clkBpm=0;});
+    $("midiClkT").addEventListener('click',()=>{S.midiClock=$("midiClkT").classList.toggle('on');midiPrefSave({clk:S.midiClock});_dll=null;}); // re-arm DLL each time clock sync is toggled
     if(midiPref.clk){S.midiClock=true;$("midiClkT").classList.add('on');}
     // MIDI in ON by default (unless you turned it off last time) — a music app should just hear your keyboard.
     if(midiPref.on!==false)$("midiInT").classList.add('on');
@@ -2042,22 +2109,47 @@ function playNote(midi,vel){ // one door for every performance: computer keyboar
   noteManual(cents); // your played notes steer the chord/bass/pads directly — instant, no guessing
   if(!S.playing)setPlaying(true);}
 // ---- MIDI INPUT: hot-plug detection, channel filter, and MIDI-clock tempo sync ----
-let midiIns=[],clkTimes=[],clkOn=false,_clkBpm=0,_clkLast=0;
+let midiIns=[],clkOn=false,_clkLast=0,_dll=null;
+// ---- MIDI-clock DLL (delay-locked loop): Fons Adriaensen's filter, the same one JACK & pro audio clocks use.
+// it locks to an external clock's tempo, rides out ±ms jitter + dropped ticks, and tracks tempo changes
+// smoothly — no averaging-window lag, no glitchy jumps. bw=loop bandwidth (0.02 = smooth + stable, tuned by sim).
+function dllMake(bw){const w=2*Math.PI*bw;return{b:Math.SQRT2*w,c:w*w,init:0,last:0,t1:0,per:0,strike:0,pend:0};}
+function dllTick(d,now){ // feed one 0xF8 arrival time (ms); returns filtered ms-per-tick, or null while warming up
+  if(!d.init){d.init=1;d.last=now;return null;}          // 1st tick: note the time
+  const raw=now-d.last; d.last=now;                        // real interval since the previous tick
+  if(d.per===0){d.per=raw;d.t1=now+raw;return d.per;}      // 2nd tick: seed period + phase
+  if(raw>d.per*0.55&&raw<d.per*1.8){                       // SANE step -> normal DLL filtering (rides jitter + ramps smoothly)
+    d.strike=0; const e=now-d.t1;                          // phase error vs our predicted tick time
+    d.t1=d.t1+d.b*e+d.per;                                 // advance predicted next-tick time (filtered)
+    d.per=d.per+d.c*e;                                     // nudge the running period estimate
+    return d.per;}
+  // OUT OF RANGE = dropped/doubled tick (glitch) OR a big tempo jump. don't trust ONE reading — need 3 in a row to reset.
+  if(raw>d.per*0.25&&raw<d.per*4){
+    if(d.strike&&Math.abs(raw-d.pend)<d.pend*0.2){d.strike++;d.pend=raw;
+      if(d.strike>=3){d.per=raw;d.t1=now+raw;d.strike=0;return d.per;}} // 3 consistent outliers = real change -> RESET (fast re-lock)
+    else{d.strike=1;d.pend=raw;}
+  } else d.strike=0;
+  return d.per;} // glitch/unconfirmed -> coast on the last good period (no hiccup)
 window.slimeMidiIn=d=>midiMsg(d); // bridge: a native app wrapper (Capacitor CoreMIDI) feeds MIDI bytes straight in here — no-op cost in the browser
 function midiMsg(d){
   const st=d[0],cmd=st&0xF0,ch=(st&0x0F)+1;
-  if(st===0xF8){ // 24 clocks per quarter note — average the last 24 for a stable BPM
+  if(st===0xF8){ // MIDI clock: 24 ticks per quarter note. feed each one to the DLL, which hands back a smooth tempo.
     if(!S.midiClock)return;
-    clkTimes.push(performance.now());if(clkTimes.length>25)clkTimes.shift();
-    if(clkTimes.length===25){ // 24 intervals = one quarter note
-      const quarterMs=clkTimes[24]-clkTimes[0],raw=60000/quarterMs;
-      if(raw>=40&&raw<=220){ _clkBpm=_clkBpm?_clkBpm*0.7+raw*0.3:raw; // EMA smooths arpeggiator jitter
-        const rb=Math.round(_clkBpm);
-        // only nudge the fader when it truly drifts, and no faster than ~3x/sec — no more spazzing thumb
-        if(Math.abs(rb-Math.round(S.bpm))>=2&&performance.now()-_clkLast>300){_clkLast=performance.now();
-          setBpm(rb);}}} // MIDI clock owns tempo the same way — flows through the one brain, delay tracks it too
+    if(!_dll)_dll=dllMake(0.02);
+    const per=dllTick(_dll,performance.now()); // filtered ms-per-tick (null while warming up)
+    if(per){
+      const bpm=60000/(per*24); // 24 ticks/beat → BPM
+      if(bpm>=40&&bpm<=220){
+        setBpm(bpm,null,true); // lock the ENGINE tempo every tick (tight sub-BPM sync), no fader repaint
+        const now=performance.now();
+        if(now-_clkLast>200){_clkLast=now; // repaint the fader calmly (~5x/sec) so the thumb stays smooth
+          const rv=Math.round(S.bpm);['bpm','bpmTop','playBpm'].forEach(id=>{const e=$(id);if(e&&+e.value!==rv)e.value=rv;});
+          const nb=$("bpmNum");if(nb&&document.activeElement!==nb)nb.value=S.bpm.toFixed(2);
+          const bv=$("bpmV");if(bv)bv.textContent=(S.bpm%1?S.bpm.toFixed(2):String(rv));
+          if(window._tempoDialRender)window._tempoDialRender();}}
+    }
     return;}
-  if(st===0xFA||st===0xFB){clkTimes=[];_clkBpm=0;return;} // arps blast start/continue on every phrase — DON'T yank the transport, just resync tempo
+  if(st===0xFA||st===0xFB){_dll=null;return;} // start/continue: re-arm the DLL so it locks fresh, DON'T yank the transport
   if(st===0xFC){return;} // sequencer stop no longer freezes the whole vibe; only the top pause stops it — drums/band keep flowing
   if(S.midiInCh!==0&&ch!==S.midiInCh)return; // 0 = omni
   if(cmd===0x90&&d[2]>0)playNote(d[1],d[2]);
@@ -2719,16 +2811,17 @@ window.slimeStar=function(){ // any little win → a star; the FIRST star of a n
     '<div class="modeCard mc-play'+(last==='play'?' last':'')+'" data-m="play"><b>play</b><span>have fun!</span></div>'+
     '<div class="modeCard mc-studio'+(last==='studio'?' last':'')+'" data-m="studio"><b>studio</b><span>make anything</span></div>'+
     '</div>'+
-    '<div class="spCredit">© 2026 FlahMusic · free &amp; open · <a href="https://github.com/FlahMusic/Slimehedron" target="_blank" rel="noopener">source</a> · <a id="spSupport" href="https://ko-fi.com/flahmusic" target="_blank" rel="noopener">☕ support</a></div>'; // credit + tip jar
+    '<div class="spCredit">© 2026 FlahMusic · free for noncommercial use · <a href="https://github.com/FlahMusic/Slimehedron" target="_blank" rel="noopener">source</a> · <a href="https://github.com/FlahMusic/Slimehedron/blob/main/LICENSE" target="_blank" rel="noopener">license</a> · <a id="spSupport" href="https://ko-fi.com/flahmusic" target="_blank" rel="noopener">☕ support</a></div>'; // credit + license link + tip jar
   document.body.appendChild(sp);
   function boot(m){sp.classList.add('gone');setTimeout(()=>sp.remove(),600);
     enableMotion();initAudio();if(AC.state==="suspended")AC.resume();
     applyMode(m);
     _keyProgrammatic=true; // boot-time key setup is automatic, must NOT pin (so slime can rotate from the start)
     if(m==='play'){ // play: full band from the first second, slime jams by itself
-      // base key = A minor pentatonic: the "no wrong notes" scale, warm & kid/parent-friendly, familiar shape as it modulates
-      const sc=$("scale");if(sc){sc.value='pentaMin';sc.dispatchEvent(new Event('change'));}
-      const rt=$("root");if(rt){rt.value='57';rt.dispatchEvent(new Event('change'));} // A3
+      // base key = G MAJOR: the single most popular key in recorded music (Spotify: ~10.7%), bright & happy, and a
+      // full 7-note scale = way more chord diversity than pentatonic. scale-lock keeps every note in-key so it's still no-wrong-notes.
+      const sc=$("scale");if(sc){sc.value='major';sc.dispatchEvent(new Event('change'));}
+      const rt=$("root");if(rt){rt.value='55';rt.dispatchEvent(new Event('change'));} // G3
       _keyProgrammatic=false;_keyPinned=false;
       if(!S.slimeMode)$("slimeBig").click();
       if(!drumOn)$("drumBtn").click();
