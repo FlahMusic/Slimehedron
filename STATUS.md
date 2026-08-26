@@ -1,6 +1,23 @@
 # Slimehedron — Status Board 🎛️
 _Glance here. Newest on top. ✅ done · 🔧 pending · 🎨 art needed_
 
+## ✅ Shipped (v39) — studio layout fixed (TESTED LIVE) + first Learn lesson
+- **The tank is the hero again.** Root cause: the mixer row was eating 233px of flow height, squeezing the canvas to 198px. Floated the mixer + auto-toggle (absolute) → **canvas jumped from 198px to 489px** (2.5×). Verified live with measurements in both play & studio.
+- **Fixed the clashes I'd created:** circle-of-fifths tightened to the top-left corner, chord pill docked to the tank's top-right (was floating over the middle), mixer bottom-left in studio / bottom-center in play (verified it no longer overlaps the candy columns).
+- **Studio middle control-row killed** — every select/slider was redundant; moved drum-kit + time-signature + a type-able BPM into the Timing card. **Groove card merged into Timing.** Removed auto-rain / randomness / rebuild from Timing (they're physics → moved to Geometry).
+- **Removed the junk header buttons** (drop-ball, dice, drum/band mutes) in every mode. **Removed the permanent "tap here…" tutorial text.**
+- **Note-flow fixed (the big regression):** balls no longer blast at walls. They spawn gently and FLOAT toward a singable wall (soft speed + spread), ~1 note per beat with space to breathe — the ethereal drift is back, no jerky blasting.
+- **Distinct oscillator icons** (sine ≠ warm now — warm is additive bars), real name subtitle under each Sound (sine/warm/saw…) and Rhythm (pop/rock/disco…). Turtle/rabbit tempo → clean "slow/fast" labels. Worm shrunk (was ~half the screen). Studio defaults to auto-slime ON, G major. Collapse chevron clearer (▸ folded).
+- **FIRST LEARN LESSON built + tested end-to-end: "Fast & Slow" (tempo).** Experience the two speeds → name it (tempo = beat speed = energy; slow=calm, fast=excited) → 3-round listening mini-game → you-drive-the-tempo slider → recap. Accurate, playful, gentle no-rush encouragements, free-roam. Full flow simulated with zero errors.
+
+## ✅ Shipped (v38) — de-emoji, wall physics, NO dark patterns
+- **KILLED the streak / daily-goal / come-back-tomorrow loop.** Removed the streak counter, the 🔥 fire badge, the daily goal, the "this is what pulls a kid back" logic — all of it. `slimeStar` is now a harmless no-op. Learn wins just make a warm little sound; the reward is the music, not a leash. Added gentle, easygoing "no rush · sleep on it · be kind to yourself" notes after lessons (friendly nudges, never rules).
+- **All cheap emoji purged from settings** — every studio card title is clean text now (timing, groove, scale, geometry, sound, filter, output…), MIDI channels labeled Melody/Drums/Bass/Chords, menu is a clean hamburger. Studio reads professional. Symbols only where there's no text (the mixer).
+- **Wall break-off retimed + made magical:** a wall opens every 16 bars, an old gap **fades back in ethereally** every 32 bars, and every 128 bars the whole shape explodes → reforms into a new one. Tonic protected.
+
+## 🗺️ Learn-mode plan (approved direction) — see CURRICULUM.md
+5 islands, free-roam, no gates, no streaks: Pulse → Pitch → Color/Feeling → Harmony → Create. Each lesson ends in PLAY, uses sound demos + comparisons to prior lessons, mini-games with spaced repetition. Next build: Pulse expansion + the Color/Feeling (emotion) island — which finally uses the modal Midjourney art as emotional worlds.
+
 ## ✅ Shipped (v37) — melody engine + studio declutter (part 1)
 - **Singable melody engine (both play & studio).** Reverted the fake visual-only balls — balls are REAL again (bounce + sound). Auto-shots are now AIMED at melodically-sensible note-walls, and the line follows composer rules: mostly stepwise, arch contour (one peak per phrase), antecedent/consequent phrasing (question lands on the 5th, answer resolves home to the tonic), motif echoes, resolving leaps, narrow range. Sim-verified: 55% steps, max jump a 3rd, phrases cadence correctly. No more random octave sperg-outs.
 - **Wall break-off.** In auto mode a random wall opens every 16 bars (balls pour through the gap, that note goes quiet) → thins busy textures + simplifies the palette. Tonic wall protected; walls reform so it breathes.

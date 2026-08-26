@@ -47,6 +47,14 @@ window.LEARN=(function(){
       wrap.appendChild(d);});}
   let onKey=null;
   function setLC(c){try{localStorage.setItem('slimehedron-lastcourse',c);}catch(e){}}
+  // gentle, easygoing encouragements — shown after a lesson. friendly nudges, never rules. no pressure, no rush.
+  const KIND=['nice work. there’s no rush — come back whenever you like.',
+    'you’ve got this. try sleeping on it and playing again tomorrow.',
+    'take your time. music is a slow, happy garden — not a race.',
+    'be kind to yourself. every musician started exactly here.',
+    'go play with it in your own way for a bit — that’s where it sticks.',
+    'well done. whenever it feels comfy, the next one’s waiting.'];
+  function kindWord(){return KIND[(Math.random()*KIND.length)|0];}
 
 
   // ============ wordless lesson icons ============
@@ -93,6 +101,76 @@ window.LEARN=(function(){
         if(rhBpm<120){const b=document.createElement('button');b.className='btn primary';b.textContent='faster \u25b8';b.dataset.a='rhfast';row.prepend(b);}
         else{const b=document.createElement('button');b.className='btn primary';b.textContent='next: the piano \u25b8';b.dataset.a='crs';b.dataset.c='piano';row.prepend(b);}}}
     else lf().textContent='listen\u2026 tap WITH the tick.';}
+
+  // ============ course: PULSE \u2014 lesson "fast & slow" (tempo = the beat's speed = the music's energy) ============
+  // Taught the way it actually works: EXPERIENCE it (hear a slow beat vs a fast beat), then NAME it (tempo),
+  // then a listening MINI-GAME with repetition, then YOU control it. All facts are accurate & age-appropriate:
+  //  \u2022 tempo = how fast the steady beat goes, measured in beats-per-minute (BPM).
+  //  \u2022 slow (~60 BPM, a resting heartbeat) feels calm & sleepy; fast (~150 BPM) feels excited & full of energy.
+  //  \u2022 the beat stays perfectly EVEN at any speed \u2014 that's the link back to the steady-beat lesson.
+  let fsIv=null,fsBpm=90,fsQ=0,fsRight=0,fsCur='';
+  function fsBeatSound(acc){if(!AC)return;const t=AC.currentTime,o=AC.createOscillator(),g=AC.createGain();
+    o.type='sine';o.frequency.setValueAtTime(acc?1800:1350,t);o.frequency.exponentialRampToValueAtTime(acc?1350:1050,t+0.03);
+    g.gain.setValueAtTime(acc?0.5:0.32,t);g.gain.exponentialRampToValueAtTime(0.001,t+0.07);
+    o.connect(g);g.connect(typeof melBus!=='undefined'&&melBus?melBus:AC.destination);o.start(t);o.stop(t+0.09);}
+  function fsStop(){if(fsIv){clearInterval(fsIv);fsIv=null;}const p=$id('fsPad');if(p)p.classList.remove('pulse');}
+  function fsPlay(bpm,secs){ // loop a steady beat at bpm; auto-stop after secs (if given). the PAD bounces on each beat.
+    if(AC&&AC.state==='suspended')AC.resume();fsStop();fsBpm=bpm;let n=0;
+    const tick=()=>{fsBeatSound(n%4===0);const p=$id('fsPad');if(p){p.classList.remove('pulse');void p.offsetWidth;p.classList.add('pulse');}n++;};
+    tick();fsIv=setInterval(tick,60000/bpm);
+    if(secs)setTimeout(fsStop,secs*1000);}
+  function fsCard(inner){ov.innerHTML=`<div class="lCard"><h3>fast &amp; slow</h3>${inner}</div>`;}
+  const FSPAD='<div id="fsPad" style="width:92px;height:88px;margin:8px auto">'+slimeSVG('#9fe6cf','happy')+'</div>';
+  function fastSlow(step){stopJam();onKey=null;fsStop();setLC('pulse');step=step|0;
+    if(step===0){ // EXPERIENCE first \u2014 hear the two speeds before any words
+      fsCard(`<p class="lSub">Every song has a heartbeat \u2014 a steady beat. But how <b>fast</b> that beat goes changes how it feels. Listen:</p>
+        ${FSPAD}
+        <div class="lFeed" id="lFeed">tap a button to hear it.</div>
+        <div class="lRow"><button class="btn" data-a="fsplay" data-b="60">\u25b8 slow beat</button><button class="btn" data-a="fsplay" data-b="150">\u25b8 fast beat</button></div>
+        <div class="lRow"><button class="btn primary" data-a="fs" data-s="1">I heard both \u25b8</button><button class="btn" data-a="home">\u2039 back</button></div>`);
+    }else if(step===1){ // NAME it, tie feeling to speed (accurate: slow=calm, fast=energetic)
+      fsCard(`<p class="lSub">That speed is called <b>tempo</b>.</p>
+        <div class="lFeed" style="line-height:1.5">A <b>slow</b> tempo feels calm, gentle, sleepy \u2014 like a lullaby.<br>A <b>fast</b> tempo feels excited and full of energy \u2014 like running or dancing.<br><span style="opacity:.75">The beat stays perfectly even either way \u2014 only its speed changes.</span></div>
+        <div class="lRow"><button class="btn" data-a="fsplay" data-b="60">\u25b8 hear calm</button><button class="btn" data-a="fsplay" data-b="150">\u25b8 hear excited</button></div>
+        <div class="lRow"><button class="btn primary" data-a="fs" data-s="2">got it \u2014 quiz me \u25b8</button></div>`);
+    }else if(step===2){ // quiz intro
+      fsQ=0;fsRight=0;
+      fsCard(`<p class="lSub">Your turn. I'll play a beat \u2014 you tell me: <b>fast</b> or <b>slow</b>? (three rounds)</p>
+        ${FSPAD}
+        <div class="lRow"><button class="btn primary" data-a="fsq">\u25b8 play the first beat</button></div>`);
+    }else if(step===3){ // finished all rounds
+      fsStop();
+      fsCard(`<div style="width:92px;height:88px;margin:8px auto">${slimeSVG('#9fe6cf','wow')}</div>
+        <div class="lFeed">You got <b>${fsRight} of 3</b>. You can feel the difference now \u2014 that's tempo.</div>
+        <p class="lSub">${kindWord()}</p>
+        <div class="lRow"><button class="btn primary" data-a="fs" data-s="4">last part \u2014 you try \u25b8</button><button class="btn" data-a="fs" data-s="2">\u21bb quiz again</button></div>`);
+    }else if(step===4){ // YOU control it \u2014 hands-on, hear the mood change live
+      fsCard(`<p class="lSub">Now <b>you</b> steer the tempo. Slide it and feel the mood change \u2014 slow &amp; sleepy on the left, fast &amp; excited on the right.</p>
+        ${FSPAD}
+        <div class="lRow" style="align-items:center;gap:10px"><span class="sub">slow</span><input type="range" id="fsSl" min="45" max="170" value="95" style="flex:1"><span class="sub">fast</span></div>
+        <div class="lFeed" id="lFeed">drag me!</div>
+        <div class="lRow"><button class="btn primary" data-a="fs" data-s="5">I feel it \u25b8</button></div>`);
+      const sl=$id('fsSl');if(sl){fsPlay(+sl.value);
+        sl.addEventListener('input',()=>{fsPlay(+sl.value);const v=+sl.value;
+          lf().textContent=v<75?'calm and sleepy\u2026':v<115?'a comfy walking pace':v<145?'getting excited!':'full of energy \u2014 go go go!';});}
+    }else{ // done
+      fsStop();prog.pulse=Math.max(prog.pulse|0,1);saveP();
+      fsCard(`<div style="width:92px;height:88px;margin:8px auto">${slimeSVG('#9fe6cf','happy')}</div>
+        <div class="lFeed">You learned <b>tempo</b> \u2014 the speed of the beat, and how it carries a feeling. Everything else in music sits on top of this heartbeat.</div>
+        <p class="lSub">${kindWord()}</p>
+        <div class="lRow"><button class="btn primary" data-a="crs" data-c="rhythm">next: keep a steady beat \u25b8</button><button class="btn" data-a="home">\u2039 learn menu</button></div>`);
+    }}
+  function fsAsk(){ // play one quiz beat (randomly fast or slow) + show the two answer buttons
+    fsCur=Math.random()<0.5?'slow':'fast';fsPlay(fsCur==='slow'?62:150,4);
+    const row=ov.querySelector('.lRow');if(row)row.innerHTML=
+      `<button class="btn" data-a="fsguess" data-g="slow">slow</button><button class="btn" data-a="fsguess" data-g="fast">fast</button>`;
+    if(lf())lf().textContent='listening\u2026 fast or slow?';}
+  function fsGuess(g){fsStop();const ok=(g===fsCur);if(ok)fsRight++;fsQ++;
+    if(lf())lf().textContent=ok?`yes \u2014 that one was ${fsCur}.`:`that one was actually ${fsCur}. no worries \u2014 listen again next time.`;
+    const row=ov.querySelector('.lRow');
+    if(row)row.innerHTML=(fsQ>=3)
+      ? `<button class="btn primary" data-a="fs" data-s="3">see how you did \u25b8</button>`
+      : `<button class="btn primary" data-a="fsq">\u25b8 next beat (${fsQ+1} of 3)</button>`;}
   // ============ course 1: the piano ============
   const HINT={0:'left of the 2 black keys',2:'between the 2 black keys',4:'right of the 2 black keys',
     5:'left of the 3 black keys',7:'in the 3 — left side',9:'in the 3 — right side',
@@ -169,7 +247,7 @@ window.LEARN=(function(){
       if(s===seq[step]){keyFX(s,'ok');step++;
         if(step>=seq.length){onKey=null;const stars=mistakes===0?3:mistakes<=2?2:1;
           prog.pg=prog.pg||{};const key=li+'-'+ri;prog.pg[key]=Math.max(prog.pg[key]||0,stars);saveP();
-          winJingle(); // a win → a streak star too
+          winJingle(); // a happy little sound for doing it — the reward is the music itself, nothing to keep up
           lf().innerHTML='<span style="font-size:26px;letter-spacing:2px">'+'⭐'.repeat(stars)+'☆'.repeat(3-stars)+'</span><br>'+(mistakes===0?'perfect — you nailed it!':mistakes<=2?'great job!':'you did it!');
           const row=ov.querySelector('.lRow'),nxt=document.createElement('button');nxt.className='btn primary';
           if(ri<tot-1){nxt.textContent='next ▸';nxt.dataset.a='plsn';nxt.dataset.l=li;nxt.dataset.r=ri+1;}
@@ -181,7 +259,6 @@ window.LEARN=(function(){
   }
   // ---- for grown-ups: a parent-facing summary of what the child has actually learned ----
   function grownups(){stopJam();onKey=null;
-    let streak=0;try{streak=(JSON.parse(localStorage.getItem('slimehedron-streak')||'{}').streak)||0;}catch(e){}
     const pianoStars=Object.values(prog.pg||{}).reduce((a,b)=>a+b,0),modesGot=M7.filter(m=>(prog.g[m.k]|0)>=3).length;
     const rows=[
       ['rhythm','keeping a steady beat',((prog.r|0)>=8?'✓ mastered':(prog.r|0)+'/8 on-beat taps')],
@@ -191,8 +268,7 @@ window.LEARN=(function(){
       ['modes','the seven musical moods',modesGot+'/7 matched by ear']
     ];
     ov.innerHTML=`<div class="lCard"><h3>for grown-ups</h3>
-      <p class="lSub">what your child has been learning — real music theory, no accounts, no ads.</p>
-      <div class="lRow" style="justify-content:center;margin:2px 0 8px"><b style="font-size:19px;color:#e0863f">🔥 ${streak}-day streak</b></div>
+      <p class="lSub">what your child has been exploring — real music theory. No accounts, no ads, no streaks, free forever.</p>
       <div class="lBtns" style="gap:8px">${rows.map(r=>`<div class="crsPane" style="background:rgba(255,255,255,.55);cursor:default"><span style="flex:1"><b>${r[0]}</b><div style="font-size:12px;opacity:.72">${r[1]}</div></span><span style="font-size:12px;font-weight:800;color:#5a4f78;text-align:right;max-width:130px">${r[2]}</span></div>`).join('')}</div>
       <div class="lRow"><button class="btn" data-a="home">‹ back</button></div></div>`;}
   function pianoView(){const t=WK[pIdx];
@@ -684,13 +760,14 @@ window.LEARN=(function(){
       <button class="btn big" data-a="startsess" data-d="hard" style="background:linear-gradient(150deg,#ffd9e5,#ffedf4)">hard \u00b7 \u25cf\u25cf\u25cf \u00b7 10 rounds</button>
     </div>
     <div class="lRow"><button class="btn" data-a="crs" data-c="modes">\u2039 back</button></div></div>`;}
-  function winJingle(){if(window.slimeStar)window.slimeStar(); // every learn win earns a star toward the daily streak
+  function winJingle(){ // just a warm little "nice!" arpeggio — no streak, no counter, the good feeling is the point
     [0,400,700,1200,1600,1200].forEach((c,i)=>setTimeout(()=>lessonNote(261.63*Math.pow(2,c/1200),104,0.8),i*95));}
   function sessEnd(){stopJam();const D=DIFFS[diff];winJingle();
     ov.innerHTML=`<div class="lCard"><h3>session complete</h3>
       <div class="confetti">${Array.from({length:13},(_,i)=>`<i style="--i:${i}"></i>`).join('')}</div>
       <div style="width:96px;height:96px;margin:10px auto">${slimeSVG('#9fe6cf','wow')}</div>
       <div class="lFeed">${D.len} sounds matched. good ears.</div>
+      <p class="lSub" style="margin-top:4px">${kindWord()}</p>
       ${stickers()}
       <div class="lRow">
         <button class="btn primary" data-a="startsess" data-d="${diff}">again \u25b8</button>
@@ -763,13 +840,14 @@ window.LEARN=(function(){
   // ============ course menu ============
   const icoBeat=`<svg class="crsIco" viewBox="0 0 44 34"><circle cx="22" cy="17" r="5" fill="#ffd3a8" stroke="#5a4f78" stroke-width="1.6"/><circle cx="22" cy="17" r="10" fill="none" stroke="#b388f0" stroke-width="2" opacity=".7"/><circle cx="22" cy="17" r="15" fill="none" stroke="#b388f0" stroke-width="2" opacity=".35"/></svg>`;
   const PANES=[
+    ['pulse','linear-gradient(150deg,#d9f7ec,#eefdf7)',icoBeat,34,0,'#9fe6cf'],
     ['rhythm','linear-gradient(150deg,#d2f5e8,#e8fbf4)',icoBeat,34,0,'#9fe6cf'],
     ['piano','linear-gradient(150deg,#e7dbff,#f3edff)',icoKeys([]),44,1,'#c4a9f5'],
     ['intervals','linear-gradient(150deg,#ffe9d9,#fff4ea)',icoKeys([0,4],1),52,0,'#ffd3a8'],
     ['chords','linear-gradient(150deg,#cfe2ff,#e9f2ff)',icoKeys([0,2,4]),60,1,'#a6c8ff'],
     ['modes','linear-gradient(150deg,#ffe0ee,#fff0f7)',icoModes,68,0,'#ffb6d6']
   ];
-  function crsProg(c){const T={rhythm:[prog.r|0,8],piano:[Object.keys(prog.pl||{}).length,8],intervals:[Math.min(prog.iv|0,10),10],chords:[prog.ch|0,12],modes:[M7.filter(m=>(prog.g[m.k]|0)>=3).length,7]}[c];
+  function crsProg(c){const T={pulse:[prog.pulse|0,1],rhythm:[prog.r|0,8],piano:[Object.keys(prog.pl||{}).length,8],intervals:[Math.min(prog.iv|0,10),10],chords:[prog.ch|0,12],modes:[M7.filter(m=>(prog.g[m.k]|0)>=3).length,7]}[c];
     const f=Math.round(5*Math.min(1,T[0]/T[1]));
     return `<span class="crsDots">${'\u25cf'.repeat(f)}${'\u25cb'.repeat(5-f)}</span>`;}
   const ov=document.createElement('div');ov.id='learnOverlay';ov.hidden=true;document.body.appendChild(ov);
@@ -795,8 +873,12 @@ window.LEARN=(function(){
     const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
     if(a==='home')home();
     else if(a==='crs'){const c=b.dataset.c;
-      if(c==='rhythm')rhythmCourse();else if(c==='piano')pianoMenu();else if(c==='chords')chordCourse(+(b.dataset.i||0));
+      if(c==='pulse')fastSlow(0);else if(c==='rhythm')rhythmCourse();else if(c==='piano')pianoMenu();else if(c==='chords')chordCourse(+(b.dataset.i||0));
       else if(c==='intervals')ivCourse(!!b.dataset.i);else mHome();}
+    else if(a==='fs')fastSlow(+(b.dataset.s||0));
+    else if(a==='fsplay')fsPlay(+b.dataset.b,3);
+    else if(a==='fsq')fsAsk();
+    else if(a==='fsguess')fsGuess(b.dataset.g);
     else if(a==='pmenu')pianoMenu();
     else if(a==='pkeys'){pIdx=0;pFound={};pianoView();}
     else if(a==='plsn')scaleLesson(+b.dataset.l,+(b.dataset.r||0));
