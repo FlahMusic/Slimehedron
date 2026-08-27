@@ -1,6 +1,13 @@
 # Slimehedron — Status Board 🎛️
 _Glance here. Newest on top. ✅ done · 🔧 pending · 🎨 art needed_
 
+## ✅ Shipped (v40) — mixer/particle bug fixes (TESTED LIVE)
+- **Mixer "jumping around" fixed** — root cause was a DUPLICATE `#triMixBar{position:relative…}` CSS rule later in the file overriding the absolute one, so every shape/relayout re-flowed it (top-center vs bottom-center). Consolidated to one rule. Verified live: mixer stayed rock-still (x:29) across 5 shape changes.
+- **Ball/particle spazzing fixed.** The auto-gravity I added was WAY too strong (0.4, compounding every frame) — it slammed balls into the floor and spat piles of glitchy particles. Cut it to a whisper (0.09) + clamped terminal speed so nothing accelerates into a slam. Also halved the splash burst (10→5 droplets) and lowered the particle cap (2800→1600) so corners never overcrowd/spaz.
+- **Auto notes free-drift now** (not aimed blasts): they spawn gently and float toward a singable wall with a WIDE spread — the geometry still decides a lot, happy accidents intact, ethereal motion back.
+- **Mixer bass icon** → clean little bass-guitar glyph (was the busy slime band).
+- Confirmed no duplicate oscillator symbols (sine ∿ ≠ warm ◠, additive-bars icon on the play button); studio kit selector (all rhythms) lives in the Timing card.
+
 ## ✅ Shipped (v39) — studio layout fixed (TESTED LIVE) + first Learn lesson
 - **The tank is the hero again.** Root cause: the mixer row was eating 233px of flow height, squeezing the canvas to 198px. Floated the mixer + auto-toggle (absolute) → **canvas jumped from 198px to 489px** (2.5×). Verified live with measurements in both play & studio.
 - **Fixed the clashes I'd created:** circle-of-fifths tightened to the top-left corner, chord pill docked to the tank's top-right (was floating over the middle), mixer bottom-left in studio / bottom-center in play (verified it no longer overlaps the candy columns).

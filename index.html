@@ -369,7 +369,9 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 .btn.big.on:hover{filter:brightness(1.05)}
 @keyframes beckon{0%,100%{box-shadow:var(--shadow)}50%{box-shadow:0 0 22px rgba(159,230,207,.95)}}
 .adv{font-size:12px;color:var(--ink-soft);font-weight:700;display:flex;gap:6px;align-items:center;cursor:pointer;user-select:none}
-#triMixBar{display:flex;align-items:center;gap:16px;padding:2px 22px 6px;position:relative;z-index:70;flex-wrap:wrap;pointer-events:none} /* full-width bar was invisibly covering the right button column + top slimes; make it click-through, controls stay clickable */
+/* NOTE: #triMixBar positioning lives in ONE place (the .mode-studio/.mode-play rules ~line 300). don't re-declare
+   position/float here — a second declaration was overriding it and made the mixer jump around. only style its innards. */
+#triMixBar{display:flex;align-items:center;gap:16px;pointer-events:none}
 #triMixBar>*{pointer-events:auto}
 .triHint{font-size:12.5px;color:var(--ink-soft);font-weight:600}
 #recDot{display:block;width:23px;height:23px;border-radius:50%;background:#ff5f7a;border:1.5px solid rgba(255,255,255,.9);transition:.2s} /* white ring = same stroke language as the SVG icons */
@@ -496,7 +498,13 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <!-- MELODY = a clear black sixteenth note on top (was an unreadable pale ball) -->
       <g transform="translate(42,-30)" fill="#2c2749" stroke="none"><path d="M9 1 L9 15" stroke="#2c2749" stroke-width="2.4" stroke-linecap="round" fill="none"/><path d="M9 1 q7 1.5 7 6 q-4 -2 -7 -1 Z"/><path d="M9 5 q6 1.5 6 5.5 q-3.5 -2 -6 -1 Z"/><ellipse cx="6" cy="16" rx="4.2" ry="3.2" transform="rotate(-18 6 16)"/></g>
       <use href="#icDrum" x="-30" y="78" width="32" height="32"/><!-- drum kit bottom-left -->
-      <use href="#icBass" x="86" y="80" width="36" height="27"/><!-- bass/band bottom-right -->
+      <!-- BAND = a simple bass guitar (bottom-right). clean glyph, not the busy slime band. -->
+      <g transform="translate(84,80)" fill="none" stroke="#2c2749" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 3 L7 14"/><!-- neck -->
+        <circle cx="19" cy="2.5" r="1.6" fill="#2c2749" stroke="none"/><circle cx="21" cy="4.5" r="1.6" fill="#2c2749" stroke="none"/><!-- tuning pegs -->
+        <path d="M7 14 q-5 3 -3 8 q2 4 7 3 q5 -1 4 -6 q-1 -4 -5 -5 Z" fill="#c4a9f5" stroke="#2c2749"/><!-- body -->
+        <circle cx="8" cy="20" r="1.6" fill="#2c2749" stroke="none"/><!-- pickup dot -->
+      </g>
       <circle id="triKnob" cx="50" cy="53" r="9" fill="#9fe6cf" stroke="#fff" stroke-width="3" style="filter:drop-shadow(0 2px 4px rgba(120,110,160,.45))"/>
     </svg></div>
   <span id="drumCtl" style="display:flex;align-items:center;gap:8px;opacity:.35;pointer-events:none">
@@ -1494,7 +1502,7 @@ function jitter(b){if(S.chaos<=0)return;const sp=Math.hypot(b.vx,b.vy);const a=M
 const PR=8, GRAV=0.17;
 let gX=0,gY=GRAV,liquidH=0; // tiltable gravity + how high the liquid sits (drives the filter morph)
 function shapeArea(){return (edges&&edges._area)?edges._area:(R*R*2.6);} // real polygon area (works for heart/star/etc, never NaN)
-function partCap(){return Math.floor(Math.min(2800,shapeArea()/85)*(LITE?0.55:1));} // particle budget (perf only); thinned on weak devices
+function partCap(){return Math.floor(Math.min(1600,shapeArea()/120)*(LITE?0.55:1));} // particle budget (perf + calm): fewer droplets = no overcrowded granular spazzing in the corners
 let measuredFill=0;
 function ballSpeed(){return (S.bpm/80)*3.4;} // steady, tempo-driven ball speed
 let particles=[];  // {x,y,vx,vy,hue,r}
@@ -1514,7 +1522,7 @@ function addRipple(x,y,s){if(ripples.length>=24)ripples.shift();ripples.push({x,
 function splash(x,y,inx,iny,hue){
   if(fillState!=="fill"||particles.length>=partCap())return; // no new fill while it's broken open
   if(hue==null)hue=Math.random();feedLiquidHue(hue);
-  for(let i=0;i<10;i++){const sp=1.4+Math.random()*2.6, tx=-iny, ty=inx, tang=(Math.random()-0.5)*3.6;
+  for(let i=0;i<5;i++){const sp=1.4+Math.random()*2.6, tx=-iny, ty=inx, tang=(Math.random()-0.5)*3.6; // 5 droplets/hit (was 10) — plenty of splash, far less pile-up
     const px=x+(Math.random()-0.5)*8, py=y+(Math.random()-0.5)*8;
     particles.push({x:px,y:py,sx:px,sy:py,vx:inx*sp+tx*tang,vy:iny*sp+ty*tang,hue:(hue+(Math.random()-0.5)*0.05+1)%1,r:2,age:0,pooled:false});} // droplets wear the note's color
 }
@@ -1649,11 +1657,13 @@ function fillPhysics(now){
 
 // ---------- ball stepping ----------
 function step(){
-  const g=settleAmt()*0.4, ts=ballSpeed(), gy=g*0.55; // AUTO gravity: weightless when the tank's empty, gently settling as it fills up = a natural fluid feel (no manual slider — it was useless)
+  // AUTO gravity: a WHISPER — just enough drift so a full tank feels a touch heavier, never a fall. (0.4 was way too
+  // strong: it compounded every frame, slammed balls into the floor, and spat piles of glitchy particles.)
+  const g=settleAmt()*0.09, ts=ballSpeed(), gy=g*0.55;
   for(let bi=balls.length-1;bi>=0;bi--){
     const b=balls[bi];
     b.r=BR;
-    b.vy+=gy;
+    b.vy+=gy; if(b.vy>ts*1.6)b.vy=ts*1.6; // clamp: gravity can't accelerate a ball past a gentle terminal speed → no slamming/spazzing
     // SUBSTEP the move so a fast ball (esp. high-octave shots at sp=R/7) can never leap past a wall in one frame.
     // move at most ~half a radius per micro-step, re-checking geometry each time = zero tunneling, ever.
     const dist0=Math.hypot(b.vx,b.vy),sub=Math.max(1,Math.min(8,Math.ceil(dist0/(BR*0.5)))),isub=1/sub;
@@ -2343,8 +2353,8 @@ function autoMelodyNote(strong){
   const td=totalDegrees(),sc=scaleObj().c,len=sc.length;
   const oct=Math.max(0,Math.min(Math.floor(cents/1200),Math.ceil(td/len)-1));
   const dd=Math.min(td-1,oct*len+degOf(cents));                 // the note-wall we're leaning toward
-  const ang=rot-Math.PI/2+((dd+0.5)/td)*2*Math.PI+(Math.random()-0.5)*0.9; // aim at that wall ± a little spread (happy accidents)
-  const sp=ballSpeed()*(0.55+Math.random()*0.35);               // GENTLE drift speed (like rain), not R/7 = no jerky blast
+  const ang=rot-Math.PI/2+((dd+0.5)/td)*2*Math.PI+(Math.random()-0.5)*1.4; // LEAN toward the singable wall, but a wide spread = free drift + happy accidents (the geometry still decides a lot)
+  const sp=ballSpeed()*(0.45+Math.random()*0.3);                // gentle float speed (like rain) — never a blast
   // spawn a touch off-center in the aim direction so it eases outward, floating, instead of teleport-shooting from the middle
   const r0=R*0.14*Math.random(), sx=CX+Math.cos(ang)*r0, sy=CY+Math.sin(ang)*r0;
   if(balls.length>=MAXBALLS)balls.shift();
