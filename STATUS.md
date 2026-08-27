@@ -1,6 +1,10 @@
 # Slimehedron — Status Board 🎛️
 _Glance here. Newest on top. ✅ done · 🔧 pending · 🎨 art needed_
 
+## ✅ Shipped (v41) — mobile fixes + 2nd Learn lesson
+- **Mobile layout:** mixer floats bottom-CENTER on phones (clear of the bottom-left slimes AND the bottom-right menu button) and shrinks so it never crowds the tank; the tank stays the hero. Bottom peeker slimes repositioned to avoid the center mixer + menu-button zones (fewer, tidier). Side-margin slimes already skip tight phone margins. NOTE: verified the CSS logic + parse, but the Chrome extension kept freezing on the animation-heavy page at phone width, so a real-device eyeball is still worth doing.
+- **2nd Learn lesson: "High & Low" (pitch)** — builds straight on Pulse. Experience low vs high → name it (pitch; high=bright/bird, low=deep/drum) and explicitly ties back ("tempo was how FAST, pitch is how HIGH — two different things") → 3-round listening game → slide-from-low-to-high yourself (musically-even exponential climb) → recap into the piano lesson. Accurate, gentle no-rush tone, free-roam. Full flow simulated with zero errors. Added to the learn map as course #2 (Pulse → Pitch → …).
+
 ## ✅ Shipped (v40) — mixer/particle bug fixes (TESTED LIVE)
 - **Mixer "jumping around" fixed** — root cause was a DUPLICATE `#triMixBar{position:relative…}` CSS rule later in the file overriding the absolute one, so every shape/relayout re-flowed it (top-center vs bottom-center). Consolidated to one rule. Verified live: mixer stayed rock-still (x:29) across 5 shape changes.
 - **Ball/particle spazzing fixed.** The auto-gravity I added was WAY too strong (0.4, compounding every frame) — it slammed balls into the floor and spat piles of glitchy particles. Cut it to a whisper (0.09) + clamped terminal speed so nothing accelerates into a slam. Also halved the splash burst (10→5 droplets) and lowered the particle cap (2800→1600) so corners never overcrowd/spaz.

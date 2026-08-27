@@ -171,6 +171,62 @@ window.LEARN=(function(){
     if(row)row.innerHTML=(fsQ>=3)
       ? `<button class="btn primary" data-a="fs" data-s="3">see how you did \u25b8</button>`
       : `<button class="btn primary" data-a="fsq">\u25b8 next beat (${fsQ+1} of 3)</button>`;}
+
+  // ============ course: PITCH \u2014 lesson "high & low" (builds on Pulse: now the beat gets a VOICE) ============
+  // Accurate & kid-first: PITCH = how high or low a sound is. A fast wiggle of the air = a HIGH sound (like a bird
+  // or a whistle); a slow wiggle = a LOW sound (like a big drum or a rumble). We EXPERIENCE it, NAME it, play a
+  // listening MINI-GAME (with repetition), then let the child slide from low to high themselves. Ties back to tempo:
+  // "tempo was how FAST the beat goes \u2014 pitch is how HIGH the sound sings. Two different things."
+  let hlQ=0,hlRight=0,hlCur='';
+  const HL_LO=196.00, HL_HI=659.25;   // G3 (low, warm) and E5 (high, bright) \u2014 a clear, comfy octave-and-a-bit apart
+  function hlHear(freq,face){lessonNote(freq,104,1.1);const p=$id('hlPad');if(p){p.classList.remove('pulse');void p.offsetWidth;p.classList.add('pulse');}}
+  function hlCard(inner){ov.innerHTML=`<div class="lCard"><h3>high &amp; low</h3>${inner}</div>`;}
+  const HLPAD='<div id="hlPad" style="width:92px;height:88px;margin:8px auto">'+slimeSVG('#a6c8ff','happy')+'</div>';
+  function highLow(step){stopJam();onKey=null;setLC('pitch');step=step|0;
+    if(step===0){ // EXPERIENCE
+      hlCard(`<p class="lSub">A beat can be quiet taps\u2026 but sounds can also be <b>high</b> or <b>low</b>. Listen to the difference:</p>
+        ${HLPAD}
+        <div class="lFeed" id="lFeed">tap a button to hear it.</div>
+        <div class="lRow"><button class="btn" data-a="hlplay" data-f="low">\u25b8 low sound</button><button class="btn" data-a="hlplay" data-f="high">\u25b8 high sound</button></div>
+        <div class="lRow"><button class="btn primary" data-a="hl" data-s="1">I hear it \u25b8</button><button class="btn" data-a="home">\u2039 back</button></div>`);
+    }else if(step===1){ // NAME + tie back to tempo
+      hlCard(`<p class="lSub">How high or low a sound is, is called its <b>pitch</b>.</p>
+        <div class="lFeed" style="line-height:1.5">A <b>high</b> pitch is light and bright \u2014 like a little bird or a whistle.<br>A <b>low</b> pitch is deep and heavy \u2014 like a big drum or a rumble.<br><span style="opacity:.75">Tempo was how <i>fast</i> the beat goes. Pitch is how <i>high</i> a sound sings \u2014 two different things!</span></div>
+        <div class="lRow"><button class="btn" data-a="hlplay" data-f="low">\u25b8 low</button><button class="btn" data-a="hlplay" data-f="high">\u25b8 high</button></div>
+        <div class="lRow"><button class="btn primary" data-a="hl" data-s="2">quiz me \u25b8</button></div>`);
+    }else if(step===2){ hlQ=0;hlRight=0;
+      hlCard(`<p class="lSub">I'll sing a note \u2014 you tell me: <b>high</b> or <b>low</b>? (three rounds)</p>${HLPAD}
+        <div class="lRow"><button class="btn primary" data-a="hlq">\u25b8 play the first note</button></div>`);
+    }else if(step===3){
+      hlCard(`<div style="width:92px;height:88px;margin:8px auto">${slimeSVG('#a6c8ff','wow')}</div>
+        <div class="lFeed">You got <b>${hlRight} of 3</b>. Your ears know high from low now.</div>
+        <p class="lSub">${kindWord()}</p>
+        <div class="lRow"><button class="btn primary" data-a="hl" data-s="4">you try \u25b8</button><button class="btn" data-a="hl" data-s="2">\u21bb quiz again</button></div>`);
+    }else if(step===4){ // YOU slide from low to high
+      hlCard(`<p class="lSub">Now <b>you</b> control the pitch. Slide from left (low &amp; deep) to right (high &amp; bright) and hear it climb.</p>
+        ${HLPAD}
+        <div class="lRow" style="align-items:center;gap:10px"><span class="sub">low</span><input type="range" id="hlSl" min="0" max="100" value="50" style="flex:1"><span class="sub">high</span></div>
+        <div class="lFeed" id="lFeed">drag me \u2014 hear it go up!</div>
+        <div class="lRow"><button class="btn primary" data-a="hl" data-s="5">I feel it \u25b8</button></div>`);
+      const sl=$id('hlSl');if(sl){const f=v=>HL_LO*Math.pow(HL_HI/HL_LO,v/100); // exponential = musically even climb
+        let _t=0;sl.addEventListener('input',()=>{const v=+sl.value;const now=performance.now();if(now-_t>70){_t=now;hlHear(f(v));}
+          lf().textContent=v<28?'deep and low\u2026':v<58?'climbing up\u2026':v<82?'nice and high!':'way up high \u2014 like a bird!';});}
+    }else{ prog.pitch=Math.max(prog.pitch|0,1);saveP();
+      hlCard(`<div style="width:92px;height:88px;margin:8px auto">${slimeSVG('#a6c8ff','happy')}</div>
+        <div class="lFeed">You learned <b>pitch</b> \u2014 high vs low. Next you'll find these pitches on the piano, where every key is a different one.</div>
+        <p class="lSub">${kindWord()}</p>
+        <div class="lRow"><button class="btn primary" data-a="crs" data-c="piano">next: the piano \u25b8</button><button class="btn" data-a="home">\u2039 learn menu</button></div>`);
+    }}
+  function hlAsk(){hlCur=Math.random()<0.5?'low':'high';hlHear(hlCur==='low'?HL_LO:HL_HI);
+    const row=ov.querySelector('.lRow');if(row)row.innerHTML=
+      `<button class="btn" data-a="hlguess" data-g="low">low</button><button class="btn" data-a="hlguess" data-g="high">high</button>`;
+    if(lf())lf().textContent='listening\u2026 high or low?';}
+  function hlGuess(g){const ok=(g===hlCur);if(ok)hlRight++;hlQ++;
+    if(lf())lf().textContent=ok?`yes \u2014 that one was ${hlCur}.`:`that one was actually ${hlCur}. no worries \u2014 try the next.`;
+    const row=ov.querySelector('.lRow');
+    if(row)row.innerHTML=(hlQ>=3)
+      ? `<button class="btn primary" data-a="hl" data-s="3">see how you did \u25b8</button>`
+      : `<button class="btn primary" data-a="hlq">\u25b8 next note (${hlQ+1} of 3)</button>`;}
   // ============ course 1: the piano ============
   const HINT={0:'left of the 2 black keys',2:'between the 2 black keys',4:'right of the 2 black keys',
     5:'left of the 3 black keys',7:'in the 3 — left side',9:'in the 3 — right side',
@@ -841,13 +897,14 @@ window.LEARN=(function(){
   const icoBeat=`<svg class="crsIco" viewBox="0 0 44 34"><circle cx="22" cy="17" r="5" fill="#ffd3a8" stroke="#5a4f78" stroke-width="1.6"/><circle cx="22" cy="17" r="10" fill="none" stroke="#b388f0" stroke-width="2" opacity=".7"/><circle cx="22" cy="17" r="15" fill="none" stroke="#b388f0" stroke-width="2" opacity=".35"/></svg>`;
   const PANES=[
     ['pulse','linear-gradient(150deg,#d9f7ec,#eefdf7)',icoBeat,34,0,'#9fe6cf'],
+    ['pitch','linear-gradient(150deg,#dbe9ff,#eef4ff)',icoKeys([0,4],1),40,0,'#a6c8ff'],
     ['rhythm','linear-gradient(150deg,#d2f5e8,#e8fbf4)',icoBeat,34,0,'#9fe6cf'],
     ['piano','linear-gradient(150deg,#e7dbff,#f3edff)',icoKeys([]),44,1,'#c4a9f5'],
     ['intervals','linear-gradient(150deg,#ffe9d9,#fff4ea)',icoKeys([0,4],1),52,0,'#ffd3a8'],
     ['chords','linear-gradient(150deg,#cfe2ff,#e9f2ff)',icoKeys([0,2,4]),60,1,'#a6c8ff'],
     ['modes','linear-gradient(150deg,#ffe0ee,#fff0f7)',icoModes,68,0,'#ffb6d6']
   ];
-  function crsProg(c){const T={pulse:[prog.pulse|0,1],rhythm:[prog.r|0,8],piano:[Object.keys(prog.pl||{}).length,8],intervals:[Math.min(prog.iv|0,10),10],chords:[prog.ch|0,12],modes:[M7.filter(m=>(prog.g[m.k]|0)>=3).length,7]}[c];
+  function crsProg(c){const T={pulse:[prog.pulse|0,1],pitch:[prog.pitch|0,1],rhythm:[prog.r|0,8],piano:[Object.keys(prog.pl||{}).length,8],intervals:[Math.min(prog.iv|0,10),10],chords:[prog.ch|0,12],modes:[M7.filter(m=>(prog.g[m.k]|0)>=3).length,7]}[c];
     const f=Math.round(5*Math.min(1,T[0]/T[1]));
     return `<span class="crsDots">${'\u25cf'.repeat(f)}${'\u25cb'.repeat(5-f)}</span>`;}
   const ov=document.createElement('div');ov.id='learnOverlay';ov.hidden=true;document.body.appendChild(ov);
@@ -873,12 +930,16 @@ window.LEARN=(function(){
     const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
     if(a==='home')home();
     else if(a==='crs'){const c=b.dataset.c;
-      if(c==='pulse')fastSlow(0);else if(c==='rhythm')rhythmCourse();else if(c==='piano')pianoMenu();else if(c==='chords')chordCourse(+(b.dataset.i||0));
+      if(c==='pulse')fastSlow(0);else if(c==='pitch')highLow(0);else if(c==='rhythm')rhythmCourse();else if(c==='piano')pianoMenu();else if(c==='chords')chordCourse(+(b.dataset.i||0));
       else if(c==='intervals')ivCourse(!!b.dataset.i);else mHome();}
     else if(a==='fs')fastSlow(+(b.dataset.s||0));
     else if(a==='fsplay')fsPlay(+b.dataset.b,3);
     else if(a==='fsq')fsAsk();
     else if(a==='fsguess')fsGuess(b.dataset.g);
+    else if(a==='hl')highLow(+(b.dataset.s||0));
+    else if(a==='hlplay')hlHear(b.dataset.f==='low'?HL_LO:HL_HI);
+    else if(a==='hlq')hlAsk();
+    else if(a==='hlguess')hlGuess(b.dataset.g);
     else if(a==='pmenu')pianoMenu();
     else if(a==='pkeys'){pIdx=0;pFound={};pianoView();}
     else if(a==='plsn')scaleLesson(+b.dataset.l,+(b.dataset.r||0));
