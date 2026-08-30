@@ -1,6 +1,21 @@
 # Slimehedron — Status Board 🎛️
 _Glance here. Newest on top. ✅ done · 🔧 pending · 🎨 art needed_
 
+## ✅ Shipped (v43) — note flow calmed + graceful exit (compared to July baseline)
+- **Diagnosed against the old baseline:** the original slime mode had NO per-note ball spawning — it gently rained ~1 ball every few bars and let it bounce. My newer engine spawned a ball PER note = too many balls = the chaos + cap-hitting + despawn flashing. Fixed by making it sparse again.
+- **Notes are sparse & singable now:** one gentle note roughly every beat-or-two (with rests), and it only floats a new note when the air is fairly clear (<7 balls). Far calmer, still musical (~1.8 notes/bar vs the old wall-of-notes).
+- **No more vanish-flash.** Removed `balls.shift()` everywhere. When the tank gets crowded, a WALL BREAKS OPEN and the oldest balls drift OUT through the gap and leave on their own (off-screen cleanup) — exactly like you described. Walls reform later so it breathes.
+- **Slime shapes the motion more:** stronger, deeper goo drag with a wider per-ball spread, so balls visibly slow and smear as they wade through the fill = organic velocity changes over time.
+- **Mobile slimes distributed:** added a scatter of buddies up in the open sky above the tank on phones, so they're not all lined up at the bottom like play mode.
+
+## ✅ Shipped (v42) — three more Learn lessons (all tested)
+The learn map is now a real beginner path (free-roam, no gates, no streaks). Each lesson: experience → name → 3-round mini-game → you-try, with sound demos and a callback to the previous lesson. All simulated end-to-end, zero errors.
+- **Loud & Soft (dynamics)** — soft vs loud on the same note; names it "dynamics"; explicitly ties the three tools together (tempo=how fast, pitch=how high, dynamics=how loud). Slider to set your own loudness.
+- **Steps & Skips (melody moves)** — hear a stepwise run vs a skippy line; names step (next-door, singable) vs skip (leap, bold); "most catchy tunes mostly step." You-try on the real piano — it tells you STEP or SKIP as you press.
+- **Happy & Sad chords (major vs minor)** — the emotional hinge, taken slow + gentle. Hear happy(major)/sad(minor), then hear the MIDDLE note slide down a half-step to flip the feeling. Flip-it-yourself toggle. Extra reassurance ("big idea, no rush, sleep on it").
+- Course map order now: Pulse → Pitch → Dynamics → Melody → Feeling → (existing) Rhythm/Piano/Intervals/Chords/Modes.
+- Held off on the **Modes / Color-of-emotion** island per your call — waiting on the scene pics.
+
 ## ✅ Shipped (v41) — mobile fixes + 2nd Learn lesson
 - **Mobile layout:** mixer floats bottom-CENTER on phones (clear of the bottom-left slimes AND the bottom-right menu button) and shrinks so it never crowds the tank; the tank stays the hero. Bottom peeker slimes repositioned to avoid the center mixer + menu-button zones (fewer, tidier). Side-margin slimes already skip tight phone margins. NOTE: verified the CSS logic + parse, but the Chrome extension kept freezing on the animation-heavy page at phone width, so a real-device eyeball is still worth doing.
 - **2nd Learn lesson: "High & Low" (pitch)** — builds straight on Pulse. Experience low vs high → name it (pitch; high=bright/bird, low=deep/drum) and explicitly ties back ("tempo was how FAST, pitch is how HIGH — two different things") → 3-round listening game → slide-from-low-to-high yourself (musically-even exponential climb) → recap into the piano lesson. Accurate, gentle no-rush tone, free-roam. Full flow simulated with zero errors. Added to the learn map as course #2 (Pulse → Pitch → …).
