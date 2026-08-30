@@ -1,6 +1,10 @@
 # Slimehedron — Status Board 🎛️
 _Glance here. Newest on top. ✅ done · 🔧 pending · 🎨 art needed_
 
+## ✅ Shipped (v44) — Random oscillator + smaller side icons
+- **5th oscillator is now "Random" (a dice)**, not the made-up "warm." It fires a fresh random one of sine/triangle/sawtooth/square on EVERY note = a surprising, ever-changing voice. Sounds are 1-4 = the four real waves, 5 = Random. Updated everywhere (play buttons, side waveSeg, studio dropdown); the fake warm additive wave is fully removed.
+- **Side Sound/Rhythm buttons shrunk** (74px→48px desktop, band icon 60→40) with the **label text bumped up as the anchor** — icons are secondary now, so the middle tank gets the priority space. Mobile shrinks further (38px).
+
 ## ✅ Shipped (v43) — note flow calmed + graceful exit (compared to July baseline)
 - **Diagnosed against the old baseline:** the original slime mode had NO per-note ball spawning — it gently rained ~1 ball every few bars and let it bounce. My newer engine spawned a ball PER note = too many balls = the chaos + cap-hitting + despawn flashing. Fixed by making it sparse again.
 - **Notes are sparse & singable now:** one gentle note roughly every beat-or-two (with rests), and it only floats a new note when the air is fairly clear (<7 balls). Far calmer, still musical (~1.8 notes/bar vs the old wall-of-notes).
