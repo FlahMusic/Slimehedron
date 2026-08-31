@@ -309,6 +309,30 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
   .mode-studio #triMixBar,.mode-play #triMixBar{bottom:6px;left:50%;transform:translateX(-50%)}
   #triMix svg{width:118px!important;height:auto!important}
 }
+/* ===== HARD SAFETY FALLBACK — guarantees a usable layout on ANY small device (no overlaps, ever) =====
+   As the screen narrows, the mixer and side buttons step down in size and the tank keeps priority. These caps mean
+   even on a tiny/odd phone the controls can't collide with each other or cover the tank. Desktop is untouched. */
+@media (max-width:600px){
+  #triMix svg{width:104px!important}
+  .psBtn{width:42px!important;height:42px!important}
+  .psBtn svg{width:24px!important;height:24px!important}
+  .psBtn.bandBtn img{width:34px!important;height:34px!important}
+  .psCol{gap:7px!important}
+  .mode-play main{padding:0 50px 8px!important} /* keep the tank clear of the side columns */
+}
+@media (max-width:400px){
+  #triMix svg{width:88px!important}         /* mixer stays small so it can't crowd the tank */
+  .psBtn{width:36px!important;height:36px!important}
+  .psBtn svg{width:20px!important;height:20px!important}
+  .psBtn.bandBtn img{width:29px!important;height:29px!important}
+  .psLbl{font-size:9px!important}.psSub{font-size:7px!important}
+  .mode-play main{padding:0 44px 8px!important}
+  #menuBtn{width:46px!important;height:46px!important;right:8px!important;bottom:8px!important} /* smaller FAB, tucked in the corner */
+}
+@media (max-height:520px){ /* very SHORT screens (landscape phones): shrink the floating mixer so it can't cover the tank */
+  #triMix svg{width:84px!important}
+  #autoRow{top:44px!important}
+}
 canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(circle at 50% 38%,rgba(255,250,255,.32),rgba(210,196,255,.20));max-width:100%;max-height:100%;cursor:crosshair;touch-action:none} /* every finger is its own ball */
 .hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-soft);font-weight:500;background:var(--card);padding:5px 12px;border-radius:10px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 #chordPill{position:absolute;top:8px;right:10px;left:auto;transform:none;background:var(--card);border:1px solid var(--card-brd);border-radius:12px;padding:5px 11px 6px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:var(--shadow);text-align:center;pointer-events:none;min-width:80px} /* docked TOP-RIGHT corner of the tank, out of the way — not floating over the middle */
@@ -501,15 +525,18 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <svg viewBox="-30 -34 160 150" width="196" height="184" style="display:block;overflow:visible">
       <defs><linearGradient id="tmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c6ff"/><stop offset=".5" stop-color="#bdeee0"/><stop offset="1" stop-color="#ffd3e7"/></linearGradient></defs>
       <path d="M50 8 Q55 8 58 13 L88 63 Q92 70 85 74 Q78 78 50 78 Q22 78 15 74 Q8 70 12 63 L42 13 Q45 8 50 8 Z" fill="url(#tmg)" stroke="rgba(255,255,255,.95)" stroke-width="2.5"/>
-      <!-- MELODY = a clear black sixteenth note on top (was an unreadable pale ball) -->
-      <g transform="translate(42,-30)" fill="#2c2749" stroke="none"><path d="M9 1 L9 15" stroke="#2c2749" stroke-width="2.4" stroke-linecap="round" fill="none"/><path d="M9 1 q7 1.5 7 6 q-4 -2 -7 -1 Z"/><path d="M9 5 q6 1.5 6 5.5 q-3.5 -2 -6 -1 Z"/><ellipse cx="6" cy="16" rx="4.2" ry="3.2" transform="rotate(-18 6 16)"/></g>
+      <!-- MELODY (top point) = a clean mini PIANO KEYBOARD -->
+      <g transform="translate(40,-28)">
+        <rect x="0" y="0" width="20" height="13" rx="1.6" fill="#fffdf6" stroke="#2c2749" stroke-width="1.4"/>
+        <path d="M5 0 V13 M10 0 V13 M15 0 V13" stroke="#2c2749" stroke-width="0.8"/>
+        <rect x="3.2" y="0" width="2.6" height="7.5" fill="#2c2749"/><rect x="8.2" y="0" width="2.6" height="7.5" fill="#2c2749"/><rect x="13.4" y="0" width="2.6" height="7.5" fill="#2c2749"/>
+      </g>
       <use href="#icDrum" x="-30" y="78" width="32" height="32"/><!-- drum kit bottom-left -->
-      <!-- BAND = a simple bass guitar (bottom-right). clean glyph, not the busy slime band. -->
-      <g transform="translate(84,80)" fill="none" stroke="#2c2749" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M18 3 L7 14"/><!-- neck -->
-        <circle cx="19" cy="2.5" r="1.6" fill="#2c2749" stroke="none"/><circle cx="21" cy="4.5" r="1.6" fill="#2c2749" stroke="none"/><!-- tuning pegs -->
-        <path d="M7 14 q-5 3 -3 8 q2 4 7 3 q5 -1 4 -6 q-1 -4 -5 -5 Z" fill="#c4a9f5" stroke="#2c2749"/><!-- body -->
-        <circle cx="8" cy="20" r="1.6" fill="#2c2749" stroke="none"/><!-- pickup dot -->
+      <!-- BAND / bass (bottom-right) = a clean simple bass silhouette (the old one read as a mess) -->
+      <g transform="translate(86,80)">
+        <path d="M15 2 L5 13" stroke="#2c2749" stroke-width="2" stroke-linecap="round"/><!-- neck -->
+        <ellipse cx="6" cy="17" rx="6.2" ry="7" fill="#c4a9f5" stroke="#2c2749" stroke-width="1.6"/><!-- body -->
+        <circle cx="6" cy="17" r="1.7" fill="#2c2749"/><!-- sound hole -->
       </g>
       <circle id="triKnob" cx="50" cy="53" r="9" fill="#9fe6cf" stroke="#fff" stroke-width="3" style="filter:drop-shadow(0 2px 4px rgba(120,110,160,.45))"/>
     </svg></div>
