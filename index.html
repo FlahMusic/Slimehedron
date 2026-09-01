@@ -395,7 +395,8 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 #chordBtn:hover{background:#fff}
 #chordBtn.on{background:#c9b3f0;color:#fff;border-color:#b79fe8}
 @media (max-width:820px){#chordBtn{top:222px;left:74px;transform:translateX(-50%);font-size:11px;padding:5px 12px}} /* phone: centered under the smaller wheel (~left:74 center), stacked below the readout */
-#chordPanel{position:fixed;left:clamp(80px,10vw,116px);top:56px;width:min(290px,80vw);z-index:40;background:rgba(250,247,255,.86);border:1.5px solid var(--card-brd);border-radius:16px;padding:11px 12px 12px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(120,110,160,.28)} /* opens over the wheel (now at left:116) */
+/* lime→lilac candy panel — playful, matches the meadow palette instead of a plain white box */
+#chordPanel{position:fixed;left:clamp(80px,10vw,116px);top:56px;width:min(290px,80vw);z-index:40;background:linear-gradient(150deg,rgba(213,245,214,.92),rgba(233,226,255,.92) 60%,rgba(244,230,255,.92));border:1.5px solid rgba(200,225,190,.85);border-radius:16px;padding:11px 12px 12px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(120,150,110,.24)}
 @media (max-width:820px){#chordPanel{left:70px;top:42px;width:min(290px,82vw)}}
 #chordPanel .cpHead{display:flex;align-items:center;gap:8px;margin-bottom:9px}
 #chordPanel .cpTitle{flex:1;font:800 13px system-ui,sans-serif;color:#5a4f78;letter-spacing:.3px}
@@ -409,8 +410,8 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 .cpChip .cpX{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:#f4a2b6;color:#fff;border:none;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(150,90,110,.4)}
 .cpChip .cpX:hover{background:#ec7f99}
 .cpChip.active{border-color:#b79fe8;box-shadow:0 0 0 2px rgba(183,159,232,.4)}
-#cpAdd{width:30px;height:34px;border:1.5px dashed #bfb3dd;background:rgba(255,255,255,.5);border-radius:10px;color:#8a7fb0;font-size:19px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
-#cpAdd:hover{background:#fff;border-color:#a992e0}
+#cpAdd{width:30px;height:34px;border:1.5px dashed #9cc88f;background:rgba(255,255,255,.55);border-radius:10px;color:#6ea35e;font-size:19px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.12s}
+#cpAdd:hover{background:#eafbe6;border-color:#7bbf6a;color:#4f8a41}
 .cpFoot{display:flex;align-items:center;gap:10px;margin-top:10px}
 .cpFollow{flex:1;font:700 11.5px system-ui,sans-serif;color:#6a5f92;display:flex;align-items:center;gap:6px;cursor:pointer}
 .cpFollow input{width:15px;height:15px;accent-color:#b388f0}
@@ -538,7 +539,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 .ss-knob .sic>div{width:100%;height:100%}
 .slimeswitch.on .sic{animation:bob 2.9s ease-in-out infinite} /* knob-slime breathes while auto-play is on */
 .slimeswitch.pop .ss-knob{animation:squish .46s ease} /* toggle squish, same as the edge slimes */
-#slimes{position:fixed;inset:0;pointer-events:none;z-index:50}
+#slimes{position:fixed;inset:0;pointer-events:none;z-index:12} /* SLIMES ARE BACKGROUND: below ALL UI (wheel/pill/chord/mixer/buttons live at 30+). a slime can never cover or block a control, whatever its position or the zoom. */
 .slime{width:90px;height:84px;pointer-events:auto;cursor:pointer;filter:drop-shadow(0 5px 6px rgba(150,120,190,.22))}
 .slime.peeker{transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
 .slime:hover{filter:drop-shadow(0 7px 8px rgba(150,120,190,.32)) brightness(1.05)}
@@ -2918,9 +2919,10 @@ const chillers=[]; // full-view slimes with cursor physics
     const btn=matchMedia('(max-width:820px)').matches?58:104; // reserve the candy-button column so slimes never sit on it
     const y0=Math.max(110,r.top-150),y1=Math.min(H-82,r.bottom+130); // fill the whole tall side margin, above & below the tank
     // ONE evenly-spaced column per margin — a few friendly buddies, not a cluttered crowd. (user: scatter, don't clutter)
-    function band(x0,x1,avoid){const w=x1-x0;if(w<64)return; // too tight (phones) → skip; peekers cover those
+    function band(x0,x1,avoid,cap){const w=x1-x0;if(w<64)return; // too tight (phones) → skip; peekers cover those
       const size=Math.max(44,Math.min(72,w*0.5));
-      const n=Math.max(2,Math.min(4,Math.floor((y1-y0)/(size+90)))); // FEWER, well-spaced (was up to 7×2)
+      let n=Math.max(2,Math.min(4,Math.floor((y1-y0)/(size+90)))); // FEWER, well-spaced (was up to 7×2)
+      if(cap!=null)n=Math.min(n,cap); // let a caller thin a crowded side
       for(let i=0;i<n;i++){
         const cx=x0+w*0.5+(Math.random()-0.5)*Math.max(0,w-size-10);
         const cy=y0+(i+0.5)/n*(y1-y0)+(Math.random()-0.5)*18;
@@ -2931,7 +2933,8 @@ const chillers=[]; // full-view slimes with cursor physics
     // left margin, between buttons and tank — but the STUDIO mixer triangle lives in the bottom-left, so
     // pass its box as an avoid-zone: no fill-slime may land on the mixer.
     const mixEl=document.getElementById('triMix'),mb=(mixEl&&(S.mode==='studio'||S.mode==='play'))?mixEl.getBoundingClientRect():null; // avoid the mixer in BOTH modes now (play mixer floats mid-left too)
-    band(btn+8,r.left-6, mb?{top:mb.top-30,bottom:mb.bottom+30,left:0}:null);
+    // LEFT margin. in PLAY the mixer + two nappers already fill the left, so cap the left fills at 1 to give it room to breathe (balances the right).
+    band(btn+8,r.left-6, mb?{top:mb.top-30,bottom:mb.bottom+30,left:0}:null, S.mode==='play'?1:null);
     // right margin — but in STUDIO the settings panel (aside) owns the whole right side, so skip the right band there.
     if(S.mode!=='studio') band(r.right+6,W-btn-8,{top:H*0.42,bottom:H+60,left:r.right}); // (play/learn only) worm owns lower-right so fillers stay upper half
     // PHONE: side margins are too thin, so scatter a few buddies in the open SKY above the tank (clear of the header)
@@ -2983,7 +2986,8 @@ const chillers=[]; // full-view slimes with cursor physics
         el.style.filter=`hue-rotate(${Math.floor(p*45)%360}deg) saturate(1.7)`;
         requestAnimationFrame(pulse);})();});
     layer.appendChild(el);sleepers.push({el,fx,size});}
-  if(!MOB){sleeper(0.16,'--yellow',58);sleeper(0.74,'--pink',64);} // pear + pink nappers; no room in the left margin on phones
+  // nappers hang in the upper-left margin. keep just ONE in play (the mixer floats mid-left there, so two would over-load the left); studio can have both.
+  if(!MOB){sleeper(0.14,'--yellow',58); if(S.mode!=='play')sleeper(0.34,'--pink',64);}
   function placeSleepers(){const r=cv.getBoundingClientRect();const ys=[0.12,0.32]; // upper-left margin only — the mixer floats mid-left (~46%), so keep both nappers well ABOVE it
     sleepers.forEach((s,i)=>{s.el.style.left=Math.max(4,r.left-s.size-10)+'px';s.el.style.top=(r.top+r.height*ys[i])+'px';});}
   addEventListener('resize',placeSleepers);requestAnimationFrame(placeSleepers);
