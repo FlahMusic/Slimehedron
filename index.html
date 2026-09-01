@@ -338,8 +338,15 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 }
 canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(circle at 50% 38%,rgba(255,250,255,.32),rgba(210,196,255,.20));max-width:100%;max-height:100%;cursor:crosshair;touch-action:none} /* every finger is its own ball */
 .hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-soft);font-weight:500;background:var(--card);padding:5px 12px;border-radius:10px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-#chordPill{position:absolute;top:8px;right:10px;left:auto;transform:none;background:var(--card);border:1px solid var(--card-brd);border-radius:12px;padding:5px 11px 6px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:var(--shadow);text-align:center;pointer-events:none;min-width:80px} /* docked TOP-RIGHT corner of the tank, out of the way — not floating over the middle */
-#chordPill b{font-size:17px;letter-spacing:.5px}
+/* CHORD READOUT — sits beside the circle-of-fifths wheel (top-left cluster). shows the live chord as a full, readable
+   name (root + type) plus where it's heading, with a progress bar. Scaler/Captain-Chords style, in our pastel palette. */
+#chordPill{position:fixed;left:128px;top:60px;background:rgba(252,249,255,.82);border:1.5px solid var(--card-brd);border-radius:14px;padding:8px 13px 9px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:var(--shadow);text-align:left;pointer-events:none;min-width:104px;z-index:31}
+#chordPill .cpMain{display:flex;align-items:baseline;gap:7px;line-height:1}
+#chordPill b{font-size:26px;font-weight:800;color:#5a4f78;letter-spacing:.5px} /* the root, big & clear */
+#chordPill .cpMain i{font-size:14px;font-weight:700;font-style:normal;color:#9a8fc4} /* the type word: minor / major / dim / 7th */
+#chordPill .cpNext{font-size:12px;font-weight:700;color:#a99fce;margin-top:2px;letter-spacing:.3px}
+#chordPill .cpArrow{color:#c9bfe6;margin-right:3px}
+@media (max-width:820px){#chordPill{left:106px;top:44px;padding:6px 10px 7px}#chordPill b{font-size:21px}}
 #chordNext{font-size:11px;color:var(--ink-soft);font-weight:700;margin-left:8px}
 /* circle of fifths — top-left, right under the "slimehedron" title. bigger + translucent so it blends with the bg
    but still clearly highlights the active key, with a big readable key letter in the middle. never over the play field. */
@@ -358,6 +365,7 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 #cofSvg .cofActive .cofLbl{fill:#fff;opacity:1;font-weight:800}
 #cofSvg #cofTrail{fill:none;stroke:var(--accent,#b388f0);stroke-width:3;stroke-linecap:round;opacity:0}
 #cofSvg #cofHub{font:800 26px system-ui,sans-serif;fill:var(--ink);text-anchor:middle;dominant-baseline:central} /* BIG center key letter, easy to read at a glance */
+#cofSvg .cofDir{font:700 6px system-ui,sans-serif;fill:#a99fce;text-anchor:middle;opacity:.75} /* subtle "4ths / 5ths" direction hints */
 #chordProg{height:3px;border-radius:2px;background:rgba(170,160,200,.3);margin-top:5px;overflow:hidden}
 #chordProg i{display:block;height:100%;width:0;border-radius:2px;transition:width .12s linear}
 aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px;position:relative;z-index:70}
@@ -623,7 +631,11 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 <main>
   <div id="stage">
     <canvas id="cv" width="720" height="720"></canvas>
-    <div id="chordPill" hidden><b id="chordNow">—</b><span id="chordNext"></span><div id="chordProg"><i id="chordProgI"></i></div></div>
+    <div id="chordPill" hidden>
+      <div class="cpMain"><b id="chordNow">—</b><i id="chordNowType"></i></div>
+      <div class="cpNext"><span class="cpArrow">→</span><span id="chordNext">—</span></div>
+      <div id="chordProg"><i id="chordProgI"></i></div>
+    </div>
     <div id="cofWheel" hidden><svg viewBox="0 0 132 132" id="cofSvg" aria-label="circle of fifths — current key"></svg></div>
   </div>
   <aside>
@@ -860,7 +872,7 @@ function setWarmth(w){S.warm=w;if(!AC)return;const t=AC.currentTime;
   hissG.gain.setTargetAtTime(S.playing?w*0.0004:0,t,0.6);}   // just a whisper of hiss
 function setSlimeProcessing(on){if(!AC)return;const t=AC.currentTime;
   slimeComp.threshold.setTargetAtTime(on?-18:0,t,0.2);slimeComp.ratio.setTargetAtTime(on?3:1,t,0.2);slimeEQ.gain.setTargetAtTime(on?-3.5:0,t,0.2);}
-function freqFromCents(cents){const midi=S.root+cents/100;return 440*Math.pow(2,(midi-69)/12);}
+function freqFromCents(cents){const root=Number.isFinite(S.root)?S.root:60,c=Number.isFinite(cents)?cents:0;const midi=root+c/100;const f=440*Math.pow(2,(midi-69)/12);return Number.isFinite(f)?f:440;} // never returns a non-finite freq (a bad note can't crash the audio engine)
 function cutHz(x){return 60*Math.pow(14000/60,x);}
 function cutHzFill(x){return 260*Math.pow(14000/260,Math.max(0,Math.min(1,x)));}
 // waveform per oscillator. "random" isn't a real wave — it picks a FRESH one of the four real types every note,
@@ -868,6 +880,7 @@ function cutHzFill(x){return 260*Math.pow(14000/260,Math.max(0,Math.min(1,x)));}
 const REALWAVES=['sine','triangle','sawtooth','square'];
 function setOscWave(o,w){o.type=(w==='random')?REALWAVES[(Math.random()*4)|0]:w;}
 function playSynth(freq,vel,imp){
+  if(!Number.isFinite(freq)||freq<=0)freq=440; if(!Number.isFinite(vel))vel=90; // BACKSTOP: never let a bad value reach an AudioParam (that threw + glitched the render on note-spam)
   // raindrop model: every hit is TWO sounds — a noise "tick" (the impact), then a tonal "ring"
   // (the trapped-bubble resonance) a few ms later. impact geometry (imp 0..1) sets the character:
   // hard head-on hit = big splashy drop (ticky, short); soft grazing hit = small clean ringer (airy, long).
@@ -1114,11 +1127,25 @@ function chordName(rd){const c0=centsForDegree(rd),a=((Math.round((centsForDegre
   else if(b===7)q='';            // any other in-key stack over a perfect 5th: just call it by its root, no cryptic symbol
   else q='';                     // fallback: bare root name (never "~")
   return root+q;}
-function updateChordPill(){const p=document.getElementById('chordPill');if(!p)return;
-  const n=scaleObj().c.length;
-  document.getElementById('chordNow').textContent=chordName(curRootDeg);
-  document.getElementById('chordNext').textContent=nextRootDeg!=null?'→ '+chordName(nextRootDeg):'';
-  document.getElementById('chordProgI').style.background=`linear-gradient(90deg,${aurora(curRootDeg/n,62)},${aurora((nextRootDeg==null?curRootDeg:nextRootDeg)/n,62)})`;} // bar fills FROM this chord's color INTO the next one's
+// FULL, readable chord name for the studio readout (Scaler/Captain-Chords style): "D minor", "G major", "B dim".
+// also reports a 7th when the band is adding one (the soul 7th/9th colour), e.g. "G 7th".
+function chordFull(rd){const c0=centsForDegree(rd),n=scaleObj().c.length,
+    a=((Math.round((centsForDegree(rd+2)-c0)/100))%12+12)%12,
+    b=((Math.round((centsForDegree(rd+4)-c0)/100))%12+12)%12;
+  const root=NOTE_NAMES[(((S.root+Math.round(c0/100))%12)+12)%12].replace('#','♯');
+  let word='major'; // default: a plain major-ish triad reads as major
+  if(b===7&&a===3)word='minor'; else if(b===7&&a===4)word='major';
+  else if(a===3&&b===6)word='diminished'; else if(a===4&&b===8)word='augmented';
+  else if(b===7&&(a===5||a===2))word='suspended'; else if(b!==7)word='';
+  return {root, word, short:chordName(rd)};}
+function updateChordPill(){const p=document.getElementById('chordPill');if(!p||p.hidden)return;
+  const n=scaleObj().c.length,now=chordFull(curRootDeg);
+  document.getElementById('chordNow').textContent=now.root;
+  document.getElementById('chordNowType').textContent=now.word||''; // "minor" / "major" / "diminished" / "augmented"
+  const nx=document.getElementById('chordNext');
+  nx.parentElement.style.visibility=(nextRootDeg!=null&&nextRootDeg!==curRootDeg)?'visible':'hidden';
+  nx.textContent=nextRootDeg!=null?chordName(nextRootDeg):'';
+  document.getElementById('chordProgI').style.background=`linear-gradient(90deg,${aurora(curRootDeg/n,62)},${aurora((nextRootDeg==null?curRootDeg:nextRootDeg)/n,62)})`;} // bar fills FROM this chord's colour INTO the next one's
 // minor vs major tonality of the current scale, for correct wheel labeling (Am vs C). checks the 3rd degree:
 // a flat/minor 3rd (~300 cents) = minor family (minor pentatonic, aeolian, dorian, phrygian, locrian); else major.
 function isMinorScale(){const c=scaleObj().c;for(const cents of c){const iv=((Math.round(cents)%1200)+1200)%1200;if(iv===300||iv===400)return iv===300;}return false;}
@@ -1133,17 +1160,21 @@ function buildWheel(){const svg=document.getElementById('cofSvg');if(!svg||_cofB
   for(let i=0;i<12;i++){const [x,y]=cofPos(i);
     h+=`<g class="cofNode" data-pc="${COF[i]}"><circle class="cofDot" cx="${x}" cy="${y}" r="7"/><text class="cofLbl" x="${x}" y="${y}">${COF_LBL[i]}</text></g>`;}
   h+='<text id="cofHub" x="66" y="66">A</text>';
+  // the SAME wheel is the circle of FOURTHS read the other way — tiny curved hints so both are represented.
+  h+='<text class="cofDir" x="52" y="14">4ths ↺</text><text class="cofDir" x="80" y="14">↻ 5ths</text>';
   svg.innerHTML=h;_cofBuilt=true;
   // studio: click a key node -> set that root and PIN it (slime rotation stops until slime is toggled off/on)
   svg.addEventListener('click',e=>{if(S.mode!=='studio')return;const g=e.target.closest('.cofNode');if(!g)return;
     const pc=+g.dataset.pc,cur=((S.root%12)+12)%12;let nr=S.root+(((pc-cur+18)%12)-6); // nearest octave placement of that key
     $("root").value=String(nr);$("root").dispatchEvent(new Event('change'));_keyPinned=true;});}
-function updateWheel(){const w=document.getElementById('cofWheel');if(!w||w.hidden)return;buildWheel();
-  const svg=document.getElementById('cofSvg'),pc=((S.root%12)+12)%12,i=COF.indexOf(pc);
+function updateWheel(){const w=document.getElementById('cofWheel');if(!w||w.hidden)return;
+  if(!Number.isFinite(S.root))S.root=60; // guard: a bad/empty saved root must never crash the wheel (was throwing on NaN → killed init)
+  buildWheel();
+  const svg=document.getElementById('cofSvg'),pc=((Math.round(S.root)%12)+12)%12,i=COF.indexOf(pc);
   svg.querySelectorAll('.cofNode').forEach(g=>g.classList.toggle('cofActive',+g.dataset.pc===pc));
   // hub shows the TONIC + its tonality so there's no theory ambiguity: "Am" for a minor scale, "C" for a major one.
   // (a lone "A" could mean A major OR A minor — the little "m" makes it unambiguous, standard circle-of-fifths convention.)
-  const hub=document.getElementById('cofHub');if(hub)hub.textContent=NOTE_NAMES[pc].replace('#','♯')+(isMinorScale()?'m':'');
+  const hub=document.getElementById('cofHub');if(hub)hub.textContent=(NOTE_NAMES[pc]||'C').replace('#','♯')+(isMinorScale()?'m':''); // ||'C' fallback so a bad pc can never throw
   // soft trail: when the key moves, arc from the OLD key node to the NEW one so kids SEE the fifth-step travel round the ring
   if(_cofPrevPc!=null&&_cofPrevPc!==pc){const a=COF.indexOf(_cofPrevPc),b=i;if(a>=0&&b>=0){
     const [x1,y1]=cofPos(a),[x2,y2]=cofPos(b),tr=document.getElementById('cofTrail');
@@ -2067,7 +2098,7 @@ $("newShapeBtn").addEventListener('click',()=>{ // kids' dice: always a DIFFEREN
   sel.dispatchEvent(new Event('change'));});
 let _keyProgrammatic=false; // true only while keyJourney() moves the key itself, so its own change doesn't trip the pin
 $("scale").addEventListener('change',e=>{S.scale=e.target.value;rebuild();updateScaleNote();if(!_keyProgrammatic)_keyPinned=true;updateWheel();}); // human picks a scale = pin it
-$("root").addEventListener('change',e=>{S.root=parseInt(e.target.value);updateScaleNote();if(!_keyProgrammatic)_keyPinned=true;updateWheel();}); // human picks a key = pin it
+$("root").addEventListener('change',e=>{const v=parseInt(e.target.value);S.root=Number.isFinite(v)?v:60;updateScaleNote();if(!_keyProgrammatic)_keyPinned=true;updateWheel();}); // human picks a key = pin it (empty/bad value → default C4, never NaN)
 
 (function(){const ss=$("scale");for(const k in SCALES){const o=document.createElement('option');o.value=k;o.textContent=SCALES[k].n;if(k==="major")o.selected=true;ss.appendChild(o);}
   const rs=$("root");for(let m=48;m<=72;m++){const o=document.createElement('option');o.value=m;o.textContent=NOTE_NAMES[m%12]+(Math.floor(m/12)-1);if(m===60)o.selected=true;rs.appendChild(o);}})();
@@ -2126,10 +2157,10 @@ function applyMode(m){S.mode=m;
   document.body.classList.add('mode-'+m);
   try{localStorage.setItem('slimehedron-mode',m);}catch(e){}
   const p=$("modePill");if(p){p.textContent=m;p.classList.remove('mp-play','mp-learn','mp-studio');p.classList.add('mp-'+m);}
-  // play & studio show the circle-of-fifths wheel as the key indicator; play HIDES the chord pill + wordy scale note (kids just watch the wheel)
+  // play & studio show the circle-of-fifths wheel + the live CHORD READOUT together (top-left cluster); learn clears it.
   const wheel=$("cofWheel"),pill=$("chordPill"),sn=$("scaleNote");
   if(wheel)wheel.hidden=(m==='learn');
-  if(pill&&m==='play')pill.hidden=true; // no chord names for kids
+  if(pill){pill.hidden=(m==='learn'); if(!pill.hidden)updateChordPill();} // chord movement shows in BOTH play & studio now (was stuck hidden)
   if(sn)sn.style.display=(m==='play')?'none':''; // no "5 notes/oct…" text in play
   if(wheel&&!wheel.hidden){_cofPrevPc=null;updateWheel();}
   // play mode: group share + clear into one top-right flex row so they lay out side-by-side and can never overlap
@@ -2909,6 +2940,7 @@ if(!matchMedia('(max-width:820px)').matches)requestAnimationFrame(slimePhysics);
 function setDivUI(d){S.div=d;[...$("divSeg").children].forEach(b=>b.classList.toggle('active',parseFloat(b.dataset.d)===d));}
 $("slimeBig").addEventListener('click',()=>{
   const el=$("slimeBig");el.classList.toggle('on');S.slimeMode=el.classList.contains('on');
+  try{localStorage.setItem('slimehedron-slime',S.slimeMode?'1':'0');}catch(e){} // remember the user's choice (default ON unless THEY turn it off)
   el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop'); // restart squish even on rapid toggles
   setKnobFace('surprise');clearTimeout(el._faceT);el._faceT=setTimeout(()=>{el.classList.remove('pop');setKnobFace('happy');},600);
   initAudio();if(AC&&AC.state==="suspended")AC.resume();setSlimeProcessing(S.slimeMode);
@@ -3067,10 +3099,12 @@ function saveState(){const o={r:{},s:{},t:{},seg:{}};
 let saveTmr=null;const queueSave=()=>{clearTimeout(saveTmr);saveTmr=setTimeout(saveState,600);};
 addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('click',queueSave,true); // ignore synthetic wobble events — only real tweaks queue a save
 (function restore(){let o=null;try{o=JSON.parse(localStorage.getItem('slimehedron2'));}catch(e){}if(!o){window._freshStart=1;return;}
-  for(const id in o.r||{}){const e=$(id);if(e){e.value=o.r[id];e.dispatchEvent(new Event('input'));}}
-  for(const id in o.s||{}){const e=$(id);if(e){e.value=o.s[id];e.dispatchEvent(new Event('change'));}}
-  for(const id in o.t||{}){const e=$(id);if(e&&e.classList.contains('on')!==o.t[id])e.click();}
-  for(const id in o.seg||{}){const e=$(id),b=e&&e.children[o.seg[id]];if(b)b.click();}
+  // EVERY restore is wrapped so ONE bad saved value (e.g. an empty root="") can NEVER halt init → no more "no audio / slime off" brick.
+  const safe=fn=>{try{fn();}catch(e){console.warn('restore skip:',e.message);}};
+  for(const id in o.r||{})safe(()=>{const e=$(id);if(e&&o.r[id]!==''&&o.r[id]!=null){e.value=o.r[id];e.dispatchEvent(new Event('input'));}});
+  for(const id in o.s||{})safe(()=>{const e=$(id);if(e&&o.s[id]!==''&&o.s[id]!=null){e.value=o.s[id];e.dispatchEvent(new Event('change'));}}); // skip EMPTY selects (root/key) — an empty value re-triggered the crash
+  for(const id in o.t||{})safe(()=>{const e=$(id);if(e&&e.classList.contains('on')!==o.t[id])e.click();});
+  for(const id in o.seg||{})safe(()=>{const e=$(id),b=e&&e.children[o.seg[id]];if(b)b.click();});
 })();
 
 // ---------- groove selector: foldered feels, applied to the drums (studio panel; Human is the default) ----------
@@ -3138,7 +3172,8 @@ window.slimeStar=function(){}; // intentionally a no-op — a "win" is its own r
       const sc=$("scale");if(sc){sc.value='major';sc.dispatchEvent(new Event('change'));}
       const rt=$("root");if(rt){rt.value='55';rt.dispatchEvent(new Event('change'));} // G3
       _keyProgrammatic=false;_keyPinned=false;
-      if(!S.slimeMode)$("slimeBig").click();
+      let _sp='1';try{_sp=localStorage.getItem('slimehedron-slime');}catch(e){}
+      if(_sp!=='0'&&!S.slimeMode)$("slimeBig").click(); // auto-slime ON by default (unless the user turned it off themselves)
       if(!drumOn)$("drumBtn").click();
       if(!bandOn)$("bandBtn").click();
       setTimeout(startCoach,900);
@@ -3148,7 +3183,8 @@ window.slimeStar=function(){}; // intentionally a no-op — a "win" is its own r
       _keyProgrammatic=false;_keyPinned=false;
       if(!drumOn)$("drumBtn").click();
       if(!bandOn)$("bandBtn").click();
-      if(!S.slimeMode)$("slimeBig").click(); // auto-slime ON by default in studio (as requested)
+      let _sp='1';try{_sp=localStorage.getItem('slimehedron-slime');}catch(e){}
+      if(_sp!=='0'&&!S.slimeMode)$("slimeBig").click(); // auto-slime ON by default in studio (unless the user turned it off)
       setPlaying(true);
     }else{setPlaying(true);}
     _keyProgrammatic=false;}
