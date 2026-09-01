@@ -156,21 +156,24 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 .psCol{position:fixed;top:50%;transform:translateY(-50%);z-index:76;display:flex;flex-direction:column;gap:14px;pointer-events:none} /* z above the top bars (70) so Sound/Rhythm buttons are never buried; only the buttons catch clicks, not the column gaps */
 .psCol.left{left:18px}.psCol.right{right:18px}
 /* icons are SECONDARY — smaller now so the middle tank owns the space; the readable label is the anchor. */
-.psBtn{width:48px;height:48px;border-radius:16px;border:2px solid rgba(255,255,255,.9);cursor:pointer;pointer-events:auto;
+.psBtn{width:82px;height:82px;border-radius:24px;border:2px solid rgba(255,255,255,.9);cursor:pointer;pointer-events:auto;
   display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
-  box-shadow:0 4px 12px rgba(120,110,160,.24), inset 0 2px 5px rgba(255,255,255,.6);
+  box-shadow:0 5px 16px rgba(120,110,160,.26), inset 0 2px 6px rgba(255,255,255,.6);
   transition:transform .14s, box-shadow .14s;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.psBtn::after{content:"";position:absolute;inset:0;border-radius:14px;background:linear-gradient(160deg,rgba(255,255,255,.55),rgba(255,255,255,0) 55%);pointer-events:none} /* glossy sheen */
+.psBtn::after{content:"";position:absolute;inset:0;border-radius:22px;background:linear-gradient(160deg,rgba(255,255,255,.55),rgba(255,255,255,0) 55%);pointer-events:none} /* glossy sheen */
 .psBtn:active{transform:scale(.92)}
-.psBtn.on{transform:scale(1.08);box-shadow:0 6px 16px rgba(130,100,200,.45), inset 0 2px 5px rgba(255,255,255,.7);border-color:#fff}
-.psBtn svg{width:28px;height:28px;position:relative;z-index:1}
-.psBtn.bandBtn img{width:40px;height:40px;object-fit:contain;position:relative;z-index:1;display:block;filter:drop-shadow(0 1px 1px rgba(120,100,160,.18))}
-.psBtn .psNum{position:absolute;right:5px;bottom:3px;font-weight:900;font-size:13px;z-index:1;text-shadow:0 1px 2px rgba(255,255,255,.7)}
-.psItem{display:flex;flex-direction:column;align-items:center;gap:2px;pointer-events:none}
-.psLbl{font-size:13px;font-weight:800;color:#5a4f78;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 2px rgba(255,255,255,.9);letter-spacing:.2px;white-space:nowrap;pointer-events:none;display:flex;flex-direction:column;align-items:center;line-height:1.1} /* text is the ANCHOR — kept readable */
-.psSub{font-size:10px;font-weight:600;font-style:normal;color:#8377a6;text-transform:lowercase}
-.psCol{gap:10px}
-@media (max-width:820px){.psBtn{width:38px;height:38px;border-radius:12px}.psBtn svg{width:22px;height:22px}.psBtn.bandBtn img{width:32px;height:32px}.psLbl{font-size:10px}.psSub{font-size:8px}}
+.psBtn.on{transform:scale(1.08);box-shadow:0 8px 22px rgba(130,100,200,.45), inset 0 2px 6px rgba(255,255,255,.7);border-color:#fff}
+.psBtn svg{width:48px;height:48px;position:relative;z-index:1}
+.psBtn.bandBtn img{width:66px;height:66px;object-fit:contain;position:relative;z-index:1;display:block;filter:drop-shadow(0 1px 1px rgba(120,100,160,.18))}
+.psBtn .psNum{position:absolute;right:7px;bottom:5px;font-weight:900;font-size:18px;z-index:1;text-shadow:0 1px 2px rgba(255,255,255,.7)}
+.psItem{display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
+.psLbl{font-size:18px;font-weight:800;color:#5a4f78;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 2px rgba(255,255,255,.9);letter-spacing:.2px;white-space:nowrap;pointer-events:none;display:flex;flex-direction:column;align-items:center;line-height:1.15} /* big & readable — text is the anchor */
+.psSub{font-size:16px;font-weight:700;font-style:normal;color:#7a6ea0;text-transform:lowercase} /* the real waveform/genre name — clearly readable now (~3x the old tiny) */
+.psCol{gap:14px}
+/* SHORT screens: 5 big stacked buttons would overflow, so scale them down to fit vertically */
+@media (max-height:760px){.psBtn{width:60px;height:60px}.psBtn svg{width:36px;height:36px}.psBtn.bandBtn img{width:50px;height:50px}.psLbl{font-size:15px}.psSub{font-size:13px}.psCol{gap:9px}}
+/* phones scale down (screen's small), but still legible */
+@media (max-width:820px){.psBtn{width:50px;height:50px;border-radius:16px}.psBtn svg{width:30px;height:30px}.psBtn.bandBtn img{width:42px;height:42px}.psLbl{font-size:13px}.psSub{font-size:11px}.psCol{gap:9px}}
 /* groove selector (studio): tidy folders of feels */
 #grooveCard .gcur{font-size:12px;font-weight:700;color:var(--accent);float:right}
 .chLbl{font-size:10px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px}
@@ -1271,8 +1274,8 @@ function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for
   const man=(S.mode!=='play'&&manualActive())?manualRoot():null; // studio: a human playing OWNS the harmony. play: no chord chasing, kids just jam.
   if(man==null&&S.slimeMode&&!_keyPinned&&++_slimeBars>=64){_slimeBars=0;keyJourney();} // auto-mode: move around the circle of fifths every 64 bars (16 was too soon to settle in)
   if(S.slimeMode&&fillState==='fill'){_wallBars++;
-    if(_wallBars%16===0)breakWall();       // every 16 bars: a wall opens (thins texture, simplifies palette)
-    if(_wallBars%32===0)repairWall();      // every 32 bars: an old gap magically fades back into a wall
+    if(_wallBars%8===0)breakWall();        // every 8 bars a wall opens up (notes pour out) — frequent enough to SEE it happening
+    if(_wallBars%24===0)repairWall();      // every 24 bars an old gap magically fades back into a wall
     if(_wallBars%128===0)explodeReform();  // every 128 bars: the whole shape bursts + reforms into a NEW shape
   }
   const sc=scaleObj().c,n=sc.length,harm=scaleObj().harm||'triad';let rd;
@@ -1491,7 +1494,8 @@ function rebuild(){edges=buildEdges(S.shape);_brokenOrder=[];}
 // this thins a busy texture organically + shrinks the melodic palette so the line stays simple & singable. walls
 // reform after a while so the shape breathes. the current chord's ROOT wall is protected so harmony stays grounded.
 let _brokenOrder=[]; // edges broken, oldest first (so we repair the oldest first)
-function breakWall(){const live=edges.filter(e=>!e.broken);if(live.length<=3)return; // never dissolve the shape entirely
+function breakWall(){const live=edges.filter(e=>!e.broken);
+  const brokenNow=edges.length-live.length; if(brokenNow>=Math.max(1,Math.floor(edges.length*0.34))||live.length<=3)return; // cap open gaps at ~1/3 of the walls (porous, not dissolved) and never below 3 solid walls
   const rootDeg=((curRootDeg%scaleObj().c.length)+scaleObj().c.length)%scaleObj().c.length;
   const cand=live.filter(e=>degOf(e.cents)!==rootDeg); // don't break the tonic wall — harmony stays grounded
   const e=(cand.length?cand:live)[(Math.random()*(cand.length?cand.length:live.length))|0];
@@ -1578,8 +1582,8 @@ function segHit(o,segs){
 }
 function slimeParty(ms,face){ // every slime on screen loses their mind together
   document.querySelectorAll('.slime').forEach(el=>{const b=el.querySelector('.bob');if(!b||!el.dataset.fill)return;
-    b.innerHTML=slimeSVG(cssVar(el.dataset.fill),face||'wow');el.classList.add('squish');
-    setTimeout(()=>{el.classList.remove('squish');b.innerHTML=slimeSVG(cssVar(el.dataset.fill),el.dataset.face||'happy');},ms||2000);});
+    b.innerHTML=slimeSVG(el.dataset.fill,face||'wow');el.classList.add('squish'); // dataset.fill is a family name now (slimeSVG handles it)
+    setTimeout(()=>{el.classList.remove('squish');b.innerHTML=slimeSVG(el.dataset.fill,el.dataset.face||'happy');},ms||2000);});
   if(typeof setKnobFace==='function'){setKnobFace('surprise');setTimeout(()=>setKnobFace('happy'),ms||2000);}}
 let _hype=false; // one anticipation wave per fill cycle
 function startBreak(now){
@@ -2567,14 +2571,21 @@ window.pixSlime=function(fill,face,opt){ // opt: {cap:1} teacher's cap · {girl:
 // MINI SLIMES: hand-drawn crayon art (the ones you made). two color families + rainbow, each with 3
 // expressions so click/spook reactions still animate by swapping frames. colors map by palette hex so
 // none of the placement code below had to change — only which family a slime belongs to.
+// each colour FAMILY has expression frames (happy / blink / wow). more families + more variations now = a richer,
+// less repetitive crowd. teal has 4 arts, so it rotates through them for extra nuance.
 const MINI={green:{happy:'grn',blink:'grn3',wow:'grn2'},violet:{happy:'violet',blink:'violet3',wow:'violet2'},
   blue:{happy:'blue1',blink:'blue3',wow:'blue2'},pear:{happy:'pear1',blink:'pear3',wow:'pear2'},
-  pink:{happy:'pink1',blink:'pink1',wow:'pink2'},rainbow:{happy:'bo',blink:'bo',wow:'bo'}};
-const HEX2CHAR={'#9fe6cf':'green','#c4a9f5':'violet','#a6c8ff':'blue','#ffe39c':'pear','#ffb6d6':'pink','#ffc0a8':'pink'}; // 5 families spread across the palette vars
+  pink:{happy:'pink1',blink:'pink3',wow:'pink2'},teal:{happy:'teal',blink:'teal3',wow:'teal2'},
+  orange:{happy:'orange',blink:'orange',wow:'orange'},white:{happy:'white',blink:'white',wow:'white'},
+  rainbow:{happy:'bo',blink:'bo2',wow:'bo'}};
+const SLIME_FAMS=Object.keys(MINI); // all families, for evenly spreading colour around the field
+const HEX2CHAR={'#9fe6cf':'green','#c4a9f5':'violet','#a6c8ff':'blue','#ffe39c':'pear','#ffb6d6':'pink','#ffc0a8':'orange','#7fd8d0':'teal'}; // palette vars → families
 function slimeSVG(fill,face){
   const ch=MINI[fill]?fill:(HEX2CHAR[(fill||'').toLowerCase()]||'green');
-  const fr=(face==='wow'||face==='surprise'||face==='bigeye')?'wow':(face==='blink'?'blink':'happy');
-  return `<img src="minis/${MINI[ch][fr]}.png" alt="" draggable="false" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none">`;
+  let fr=(face==='wow'||face==='surprise'||face==='bigeye')?'wow':(face==='blink'?'blink':'happy');
+  let file=MINI[ch][fr];
+  if(ch==='teal'&&fr==='happy'&&Math.random()<0.4)file='teal4'; // teal's 4th art shows up sometimes for variety
+  return `<img src="minis/${file}.png" alt="" draggable="false" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none">`;
 }
 // the auto-play switch's knob = the glasses-slime logo, reused from the splash art (face swappable for toggle reactions)
 const SS_GLASSES='<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0"><g fill="none" stroke="#5a4f78" stroke-width="2.2" stroke-linecap="round" opacity=".85"><circle cx="29" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><circle cx="51" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><path d="M37.5 24 q2.5 -2 5 0"/><path d="M21.5 23.5 l-5 -1.5"/><path d="M58.5 23.5 l5 -1.5"/></g></svg>'; // wireframe specs, not welding goggles — face stays visible at knob size
@@ -2598,11 +2609,15 @@ const SPOTS=[
   {edge:'left',cross:{top:'24%'},fill:'--sky'},{edge:'left',cross:{top:'52%'},fill:'--yellow'},{edge:'left',cross:{top:'80%'},fill:'--pink'},
   {edge:'right',cross:{top:'24%'},fill:'--lav'},{edge:'right',cross:{top:'52%'},fill:'--mint'},{edge:'right',cross:{top:'80%'},fill:'--sky'}
 ];
+// ---- colour spread: hand out families in a SHUFFLED cycle so every colour appears and no two neighbours clump ----
+function _shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
+let _famBag=[]; function nextFam(){if(!_famBag.length)_famBag=_shuffle(SLIME_FAMS);return _famBag.pop();} // draws all colours before repeating = even spread
+function randFace(){const r=Math.random();return r<0.7?'happy':(r<0.9?'blink':'wow');} // most happy, some blink, a few wide-eyed = nuance
 const chillers=[]; // full-view slimes with cursor physics
 (function(){try{
   const layer=document.createElement('div');layer.id="slimes";document.body.appendChild(layer);
   const MOB=matchMedia('(max-width:820px)').matches; // phones: fewer, static slimes so the tiny screen stays clean
-  function setFace(el,face){el.dataset.face=face;el.querySelector('.bob').innerHTML=slimeSVG(cssVar(el.dataset.fill),face);}
+  function setFace(el,face){el.dataset.face=face;el.querySelector('.bob').innerHTML=slimeSVG(el.dataset.fill,face);}
   function rest(el){el.style.transform=el.dataset.rest;}
   function hide(el){el.style.transform=el.dataset.hidden;}
   function idle(el){clearTimeout(el._idle);el._idle=setTimeout(()=>{
@@ -2623,26 +2638,29 @@ const chillers=[]; // full-view slimes with cursor physics
     {edge:'bottom',cross:{left:'68%'},fill:'--yellow'},{edge:'bottom',cross:{left:'80%'},fill:'--pink'}];
   (MOB?MOBSPOTS:SPOTS).forEach((s,i)=>{const g=GEO[s.edge];const el=document.createElement('div');el.className="slime peeker peek-"+s.edge;el.style.position="fixed";
     Object.assign(el.style,g.anchor,s.cross);let _r=g.rest,_h=g.hide;if(s.edge==='bottom'){const a=' rotate('+(Math.random()*24-12).toFixed(0)+'deg)';_r+=a;_h+=a;} // upright, each at its own lil angle
-    el.dataset.rest=_r;el.dataset.hidden=_h;el.dataset.fill=s.fill;el.dataset.state="out";el.dataset.face="happy";
-    el.innerHTML=`<div class="bob" style="animation-delay:${(i*0.35).toFixed(2)}s">${slimeSVG(cssVar(s.fill),"happy")}</div>`;
+    const fam=nextFam(),face=randFace(); // even colour spread + a randomized resting expression (nuance)
+    el.dataset.rest=_r;el.dataset.hidden=_h;el.dataset.fill=fam;el.dataset.state="out";el.dataset.face=face;
+    el.innerHTML=`<div class="bob" style="animation-delay:${(i*0.35).toFixed(2)}s">${slimeSVG(fam,face)}</div>`;
     el.style.transform=g.rest;el.addEventListener('click',()=>spook(el));layer.appendChild(el);idle(el);});
   // full-view buddies (freely positioned, get cursor physics)
   function chiller(style,fillVar,delay,size){const el=document.createElement('div');el.className='slime chill';el.style.cssText='position:fixed;'+style;
-    el.innerHTML=`<div class="bob" style="animation-delay:${delay}s">${slimeSVG(cssVar(fillVar),'happy')}</div>`;
+    const fam=nextFam(),face=randFace();
+    el.innerHTML=`<div class="bob" style="animation-delay:${delay}s">${slimeSVG(fam,face)}</div>`;
     el.addEventListener('click',()=>{if(el._busy)return;el._busy=true;
-      el.querySelector('.bob').innerHTML=slimeSVG(cssVar(fillVar),'surprise');el.classList.add('squish');setTimeout(()=>el.classList.remove('squish'),480);
-      setTimeout(()=>{el.querySelector('.bob').innerHTML=slimeSVG(cssVar(fillVar),'happy');el._busy=false;},1500);});
+      el.querySelector('.bob').innerHTML=slimeSVG(fam,'surprise');el.classList.add('squish');setTimeout(()=>el.classList.remove('squish'),480);
+      setTimeout(()=>{el.querySelector('.bob').innerHTML=slimeSVG(fam,face);el._busy=false;},1500);}); // returns to its own resting face
     layer.appendChild(el);chillers.push({el,fillVar,r:size/2,hx:0,hy:0,x:0,y:0,vx:0,vy:0,init:false});}
   // FILL THE NEGATIVE SPACE: a friendly crowd in the side margins, placed BETWEEN the side buttons and
   // the tank so they never cover a button. Scales to the screen — wide desktop = a bunch, phone = skip
   // the margins (no room) and let the tank-edge peekers do the job. Recomputes on resize.
-  const FILLCOLS=['--mint','--sky','--lav','--pink','--yellow']; // cycle all 5 colours down the margins
+  const FILLCOLS=SLIME_FAMS; // all colour families, spread evenly down the margins (kept for legacy call args)
   function addFill(x,y,size,fill){const el=document.createElement('div');el.className='slime mfill';
     el.style.cssText='position:fixed;left:'+(x|0)+'px;top:'+(y|0)+'px;width:'+(size|0)+'px;height:'+((size*0.94)|0)+'px;z-index:6';
-    el.innerHTML='<div class="bob" style="animation-delay:'+(Math.random()*2).toFixed(2)+'s">'+slimeSVG(cssVar(fill),'happy')+'</div>';
+    const fam=nextFam(),face=randFace();
+    el.innerHTML='<div class="bob" style="animation-delay:'+(Math.random()*2).toFixed(2)+'s">'+slimeSVG(fam,face)+'</div>';
     el.addEventListener('click',()=>{if(el._b)return;el._b=1;const b=el.querySelector('.bob');
-      b.innerHTML=slimeSVG(cssVar(fill),'surprise');el.classList.add('squish');setTimeout(()=>el.classList.remove('squish'),480);
-      setTimeout(()=>{b.innerHTML=slimeSVG(cssVar(fill),'happy');el._b=0;},1500);});
+      b.innerHTML=slimeSVG(fam,'surprise');el.classList.add('squish');setTimeout(()=>el.classList.remove('squish'),480);
+      setTimeout(()=>{b.innerHTML=slimeSVG(fam,face);el._b=0;},1500);});
     layer.appendChild(el);}
   let _ci=0;
   function fillMargins(){
