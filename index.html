@@ -340,7 +340,7 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 .hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-soft);font-weight:500;background:var(--card);padding:5px 12px;border-radius:10px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 /* CHORD READOUT — sits beside the circle-of-fifths wheel (top-left cluster). shows the live chord as a full, readable
    name (root + type) plus where it's heading, with a progress bar. Scaler/Captain-Chords style, in our pastel palette. */
-#chordPill{position:fixed;left:210px;top:64px;background:rgba(252,249,255,.82);border:1.5px solid var(--card-brd);border-radius:14px;padding:8px 13px 9px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:var(--shadow);text-align:left;pointer-events:none;min-width:104px;z-index:31} /* sits clear of the bigger 186px wheel */
+#chordPill{position:fixed;left:214px;top:58px;background:rgba(252,249,255,.82);border:1.5px solid var(--card-brd);border-radius:14px;padding:8px 13px 9px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:var(--shadow);text-align:left;pointer-events:none;min-width:104px;z-index:31} /* sits clear of the bigger 186px wheel */
 #chordPill .cpMain{display:flex;align-items:baseline;gap:7px;line-height:1}
 #chordPill b{font-size:26px;font-weight:800;color:#5a4f78;letter-spacing:.5px} /* the root, big & clear */
 #chordPill .cpMain i{font-size:14px;font-weight:700;font-style:normal;color:#9a8fc4} /* the type word: minor / major / dim / 7th */
@@ -1166,27 +1166,29 @@ const PC_LBL=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
 // deg is 0-based diatonic step; the dice transposes the whole set to the CURRENT key. Sourced from
 // widely-documented jazz-standard/pop/classical harmony (ii–V–I, rhythm changes, doo-wop, Pachelbel, Andalusian, etc.).
 // [step, quality] — step 0=tonic, 1=II, 2=III, 3=IV, 4=V, 5=VI, 6=VII.
+// DICE POOL — jazzy + cool-pop only. plain-triad plagal/axis/doo-wop trimmed out (too basic per Flah).
+// every entry has color: 7ths, maj7/m7, m7b5, extensions, secondary dominants, or a strong modal move.
 const FAMOUS=[
-  {n:'ii–V–I (jazz)',      c:[[1,'m7'],[4,'7'],[0,'maj7']]},
-  {n:'ii–V–I extended',    c:[[1,'m7'],[4,'7'],[0,'maj7'],[0,'maj7']]},
-  {n:'I–vi–ii–V (rhythm)', c:[[0,'maj7'],[5,'m7'],[1,'m7'],[4,'7']]},
-  {n:'I–vi–IV–V (doo-wop)',c:[[0,'maj'],[5,'min'],[3,'maj'],[4,'7']]},
-  {n:'I–V–vi–IV (axis)',   c:[[0,'maj'],[4,'maj'],[5,'min'],[3,'maj']]},
-  {n:'vi–IV–I–V',          c:[[5,'min'],[3,'maj'],[0,'maj'],[4,'maj']]},
-  {n:'I–IV–V (blues)',     c:[[0,'7'],[3,'7'],[4,'7'],[0,'7']]},
-  {n:'12-bar heads',       c:[[0,'7'],[0,'7'],[0,'7'],[0,'7'],[3,'7'],[3,'7'],[0,'7'],[0,'7'],[4,'7'],[3,'7'],[0,'7'],[4,'7']]},
-  {n:'Andalusian',         c:[[0,'min'],[6,'maj'],[5,'maj'],[4,'maj']]},
-  {n:'Pachelbel canon',    c:[[0,'maj'],[4,'maj'],[5,'min'],[2,'min'],[3,'maj'],[0,'maj'],[3,'maj'],[4,'maj']]},
-  {n:'iii–vi–ii–V',        c:[[2,'m7'],[5,'m7'],[1,'m7'],[4,'7']]},
-  {n:'Autumn Leaves',      c:[[1,'m7'],[4,'7'],[0,'maj7'],[3,'maj7'],[6,'m7b5'],[2,'7'],[5,'min'],[5,'min']]},
-  {n:'Minor ii–V–i',       c:[[1,'m7b5'],[4,'7'],[0,'min'],[0,'min']]},
-  {n:'I–iii–IV–iv',        c:[[0,'maj'],[2,'min'],[3,'maj'],[3,'min']]},
-  {n:'Montgomery-Ward',    c:[[0,'maj7'],[3,'maj7'],[1,'m7'],[4,'7']]},
-  {n:'Coltrane-ish cycle', c:[[0,'maj7'],[5,'7'],[3,'maj7'],[1,'7']]},
-  {n:'Royal road',         c:[[3,'maj7'],[4,'7'],[2,'m7'],[5,'min']]},
-  {n:'50s ballad',         c:[[0,'maj'],[5,'min'],[1,'m7'],[4,'7']]},
-  {n:'Plagal / rock',      c:[[0,'maj'],[3,'maj'],[3,'maj'],[0,'maj']]},
-  {n:'Epic minor',         c:[[0,'min'],[3,'min'],[5,'maj'],[4,'maj']]}
+  {n:'ii–V–I (jazz)',        c:[[1,'m7'],[4,'7'],[0,'maj7'],[0,'maj7']]},
+  {n:'I–vi–ii–V (rhythm)',   c:[[0,'maj7'],[5,'m7'],[1,'m7'],[4,'7']]},
+  {n:'iii–vi–ii–V',          c:[[2,'m7'],[5,'m7'],[1,'m7'],[4,'7']]},
+  {n:'Autumn Leaves',        c:[[1,'m7'],[4,'7'],[0,'maj7'],[3,'maj7'],[6,'m7b5'],[2,'7'],[5,'min'],[5,'min']]},
+  {n:'Minor ii–V–i',         c:[[1,'m7b5'],[4,'7'],[0,'min'],[0,'min']]},
+  {n:'Montgomery-Ward',      c:[[0,'maj7'],[3,'maj7'],[1,'m7'],[4,'7']]},
+  {n:'Coltrane-ish cycle',   c:[[0,'maj7'],[5,'7'],[3,'maj7'],[1,'7']]},
+  {n:'Royal road (city-pop)',c:[[3,'maj7'],[4,'7'],[2,'m7'],[5,'m7']]},
+  {n:'50s ballad (jazzed)',  c:[[0,'maj7'],[5,'m7'],[1,'m7'],[4,'7']]},
+  {n:'Neo-soul I–IV',        c:[[0,'maj9'],[3,'maj9'],[0,'maj9'],[3,'maj9']]},
+  {n:'Backdoor ii–V',        c:[[1,'m7'],[4,'7'],[3,'m7'],[0,'maj7']]},
+  {n:'Andalusian (spicy)',   c:[[0,'min'],[6,'maj'],[5,'maj7'],[4,'7']]},
+  {n:'Epic minor',           c:[[0,'min'],[3,'m7'],[5,'maj7'],[4,'7']]},
+  {n:'Lofi loop',            c:[[0,'maj7'],[2,'m7'],[5,'m7'],[4,'7sus4']]},
+  {n:'Kiss-from-a-rose',     c:[[5,'min'],[3,'maj7'],[0,'maj7'],[4,'7']]},
+  {n:'Turnaround jazz',      c:[[0,'maj7'],[5,'7'],[1,'m7'],[4,'7']]},
+  {n:'Bossa cool',           c:[[0,'maj7'],[1,'m7'],[4,'7'],[0,'maj7']]},
+  {n:'Modal Dorian vamp',    c:[[0,'m7'],[3,'7'],[0,'m7'],[3,'7']]},
+  {n:'Blues (jazz heads)',   c:[[0,'7'],[3,'7'],[0,'7'],[4,'7']]},
+  {n:'Sus-pop dream',        c:[[0,'add9'],[4,'7sus4'],[5,'m7'],[3,'maj7']]}
 ];
 const MAJSTEP=[0,2,4,5,7,9,11]; // major-scale semitone offsets per diatonic step, for transposing FAMOUS to the key's root pc
 const CHORD_MODE={on:false,prog:[],idx:0,barsLeft:0}; // prog: [{pc:0-11, qual, bars}]
@@ -1353,6 +1355,8 @@ function manualRoot(){const now=performance.now();
   return bestDeg;}
 function noteManual(cents){manualNotes.push({deg:degOf(cents),pc:((S.root+Math.round(cents/100))%12+12)%12,t:performance.now()});if(manualNotes.length>16)manualNotes.shift();
   // chord-follower is a STUDIO feature only. play mode = kids: no chord chasing, the band just grooves in the current key.
+  // CUSTOM CHORD MODE: a locked progression OWNS the harmony — your played notes just jam OVER it, they don't steer it.
+  if(cmActive())return;
   if(bandOn&&S.mode!=='play'){const r=manualRoot();if(r!=null){_prevRootDeg=curRootDeg;curRootDeg=r;nextRootDeg=r;updateChordPill();}}}
 const BASSPAT={'16':{0:'R',4:'R',6:'F',8:'R',12:'R',14:'O'},'12':{0:'R',4:'F',8:'O'},'12c':{0:'R',6:'F'},'20':{0:'R',8:'R',12:'F',16:'O'}}; // odd time sigs
 // 4/4 basslines that ROTATE every 16 bars for motion — the classic shapes (StudyBass / Yamaha):
@@ -2797,9 +2801,11 @@ const GEO={
 // green & violet alternate around the room so no zone reads all-one-color (green#mint / violet#lav map to the two families)
 // five families spread so no two neighbours match and every colour appears ~twice (green#mint blue#sky violet#lav pink#pink pear#yellow)
 const SPOTS=[
-  {edge:'bottom',cross:{left:'12%'},fill:'--mint'},{edge:'bottom',cross:{left:'31%'},fill:'--pink'},
-  {edge:'bottom',cross:{left:'50%'},fill:'--sky'},{edge:'bottom',cross:{left:'69%'},fill:'--yellow'},{edge:'bottom',cross:{left:'88%'},fill:'--lav'},
-  {edge:'left',cross:{top:'24%'},fill:'--sky'},{edge:'left',cross:{top:'52%'},fill:'--yellow'},{edge:'left',cross:{top:'80%'},fill:'--pink'},
+  // bottom-left ~0-20% is where the STUDIO mixer triangle lives — start the bottom row at 26% so no peeker sits on it.
+  {edge:'bottom',cross:{left:'26%'},fill:'--mint'},{edge:'bottom',cross:{left:'42%'},fill:'--pink'},
+  {edge:'bottom',cross:{left:'58%'},fill:'--sky'},{edge:'bottom',cross:{left:'74%'},fill:'--yellow'},{edge:'bottom',cross:{left:'89%'},fill:'--lav'},
+  // left-edge peekers stop at 62% (above the mixer's ~248px height) so the lowest one clears the triangle
+  {edge:'left',cross:{top:'24%'},fill:'--sky'},{edge:'left',cross:{top:'44%'},fill:'--yellow'},{edge:'left',cross:{top:'62%'},fill:'--pink'},
   {edge:'right',cross:{top:'24%'},fill:'--lav'},{edge:'right',cross:{top:'52%'},fill:'--mint'},{edge:'right',cross:{top:'80%'},fill:'--sky'}
 ];
 // ---- colour spread: hand out families in a SHUFFLED cycle so every colour appears and no two neighbours clump ----
@@ -2872,7 +2878,10 @@ const chillers=[]; // full-view slimes with cursor physics
         if(avoid&&cy>avoid.top&&cy<avoid.bottom&&cx>avoid.left)continue; // don't sit on the worm
         const sz=size*(0.85+Math.random()*0.25);
         addFill(cx-sz/2,cy-sz/2,sz,FILLCOLS[_ci++%FILLCOLS.length]);}}
-    band(btn+8,r.left-6);                                   // left margin, between buttons and tank
+    // left margin, between buttons and tank — but the STUDIO mixer triangle lives in the bottom-left, so
+    // pass its box as an avoid-zone: no fill-slime may land on the mixer.
+    const mixEl=document.getElementById('triMix'),mb=(mixEl&&S.mode==='studio')?mixEl.getBoundingClientRect():null;
+    band(btn+8,r.left-6, mb?{top:mb.top-30,bottom:mb.bottom+30,left:0}:null);
     band(r.right+6,W-btn-8,{top:H*0.42,bottom:H+60,left:r.right}); // right margin — the worm owns the lower-right, so fillers stay in the upper half only (no more worm/slime overlap)
     // PHONE: side margins are too thin, so scatter a few buddies in the open SKY above the tank (clear of the header)
     // + one or two low corners — so they're DISTRIBUTED, not all lined up at the bottom like play mode.
