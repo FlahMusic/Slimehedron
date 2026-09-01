@@ -76,7 +76,7 @@ header .spacer{flex:1}
    ball by tapping anywhere, and drums/band live in the mixer. keeps the transport tidy. */
 #dropBtn,#newShapeBtn,#drumBtn,#bandBtn{display:none!important}
 .mode-play #resetBtn,.mode-play header .adv{display:none}
-.mode-play #cofWheel{display:none} /* circle of fifths hidden in the kid mode — too theory-heavy (still shows in studio/learn) */
+/* circle of fifths now shows in play too — you asked for it big & visible everywhere */
 .mode-play #newShapeBtn{display:inline-flex}
 /* play-mode tempo: turtle=slow, rabbit=fast (the standard kids-music tempo metaphor), tucked under Clear top-right */
 /* tempo dial — the app's standard rknob (drag up/down) flanked by turtle/rabbit, in the header next to pause. */
@@ -340,21 +340,21 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 .hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-soft);font-weight:500;background:var(--card);padding:5px 12px;border-radius:10px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 /* CHORD READOUT — sits beside the circle-of-fifths wheel (top-left cluster). shows the live chord as a full, readable
    name (root + type) plus where it's heading, with a progress bar. Scaler/Captain-Chords style, in our pastel palette. */
-#chordPill{position:fixed;left:128px;top:60px;background:rgba(252,249,255,.82);border:1.5px solid var(--card-brd);border-radius:14px;padding:8px 13px 9px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:var(--shadow);text-align:left;pointer-events:none;min-width:104px;z-index:31}
+#chordPill{position:fixed;left:210px;top:64px;background:rgba(252,249,255,.82);border:1.5px solid var(--card-brd);border-radius:14px;padding:8px 13px 9px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:var(--shadow);text-align:left;pointer-events:none;min-width:104px;z-index:31} /* sits clear of the bigger 186px wheel */
 #chordPill .cpMain{display:flex;align-items:baseline;gap:7px;line-height:1}
 #chordPill b{font-size:26px;font-weight:800;color:#5a4f78;letter-spacing:.5px} /* the root, big & clear */
 #chordPill .cpMain i{font-size:14px;font-weight:700;font-style:normal;color:#9a8fc4} /* the type word: minor / major / dim / 7th */
 #chordPill .cpNext{font-size:12px;font-weight:700;color:#a99fce;margin-top:2px;letter-spacing:.3px}
 #chordPill .cpArrow{color:#c9bfe6;margin-right:3px}
-@media (max-width:820px){#chordPill{left:106px;top:44px;padding:6px 10px 7px}#chordPill b{font-size:21px}}
+@media (max-width:820px){#chordPill{left:148px;top:46px;padding:6px 10px 7px}#chordPill b{font-size:21px}}
 #chordNext{font-size:11px;color:var(--ink-soft);font-weight:700;margin-left:8px}
 /* circle of fifths — top-left, right under the "slimehedron" title. bigger + translucent so it blends with the bg
    but still clearly highlights the active key, with a big readable key letter in the middle. never over the play field. */
-#cofWheel{position:fixed;left:10px;top:56px;bottom:auto;transform:none;width:112px;height:112px;pointer-events:none;z-index:30;opacity:.92;filter:drop-shadow(0 3px 10px rgba(120,110,160,.16))}
-.mode-studio #cofWheel{pointer-events:auto} /* studio: you can click a key */
+#cofWheel{position:fixed;left:12px;top:54px;bottom:auto;transform:none;width:186px;height:186px;pointer-events:none;z-index:30;opacity:.95;filter:drop-shadow(0 3px 12px rgba(120,110,160,.18))} /* BIG & readable — was 112px, you couldn't see shit */
+.mode-studio #cofWheel,.mode-play #cofWheel{pointer-events:auto} /* click a key in studio or play */
 /* keybed open used to hide the circle of fifths — but the wheel is top-left and the keybed is at the
    bottom, so they never crowd. keep it visible so you can watch the key/chords actuate while playing. */
-@media (max-width:820px){#cofWheel{width:92px;height:92px;left:6px;top:40px}} /* phone: nestled right under the back button, top-left */
+@media (max-width:820px){#cofWheel{width:132px;height:132px;left:6px;top:42px}} /* phone: still big enough to read, tucked top-left */
 #cofSvg{width:100%;height:100%;overflow:visible}
 #cofSvg .cofRing{fill:rgba(255,255,255,.28);stroke:rgba(255,255,255,.6);stroke-width:1} /* translucent — blends with the bg */
 #cofSvg .cofNode{cursor:default;transition:none}
@@ -365,11 +365,40 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 #cofSvg .cofActive .cofLbl{fill:#fff;opacity:1;font-weight:800}
 #cofSvg #cofTrail{fill:none;stroke:var(--accent,#b388f0);stroke-width:3;stroke-linecap:round;opacity:0}
 #cofSvg #cofHub{font:800 26px system-ui,sans-serif;fill:var(--ink);text-anchor:middle;dominant-baseline:central} /* BIG center key letter, easy to read at a glance */
-#cofSvg .cofDir{font:700 6px system-ui,sans-serif;fill:#a99fce;text-anchor:middle;opacity:.75} /* subtle "4ths / 5ths" direction hints */
 #chordProg{height:3px;border-radius:2px;background:rgba(170,160,200,.3);margin-top:5px;overflow:hidden}
 #chordProg i{display:block;height:100%;width:0;border-radius:2px;transition:width .12s linear}
+/* --- custom chord progression: the "chords" button + translucent editor panel over the wheel --- */
+#chordBtn{position:fixed;left:12px;top:248px;z-index:32;font:800 12px system-ui,sans-serif;color:#6a5f92;background:rgba(252,249,255,.85);border:1.5px solid var(--card-brd);border-radius:11px;padding:6px 16px;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:var(--shadow);letter-spacing:.4px;transition:background .15s} /* sits just under the 186px wheel */
+#chordBtn:hover{background:#fff}
+#chordBtn.on{background:#c9b3f0;color:#fff;border-color:#b79fe8}
+@media (max-width:820px){#chordBtn{top:182px;left:6px;font-size:11px;padding:5px 12px}}
+#chordPanel{position:fixed;left:12px;top:56px;width:290px;z-index:40;background:rgba(250,247,255,.86);border:1.5px solid var(--card-brd);border-radius:16px;padding:11px 12px 12px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(120,110,160,.28)}
+@media (max-width:820px){#chordPanel{left:6px;top:42px;width:min(290px,86vw)}}
+#chordPanel .cpHead{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+#chordPanel .cpTitle{flex:1;font:800 13px system-ui,sans-serif;color:#5a4f78;letter-spacing:.3px}
+#chordPanel .cpHead button{border:none;background:rgba(200,190,225,.4);border-radius:8px;width:28px;height:26px;cursor:pointer;font-size:14px;color:#5a4f78;display:flex;align-items:center;justify-content:center}
+#chordPanel .cpHead button:hover{background:rgba(200,190,225,.7)}
+#cpChips{display:flex;flex-wrap:wrap;gap:6px;min-height:34px;align-items:center}
+.cpChip{position:relative;display:inline-flex;flex-direction:column;align-items:center;background:#fff;border:1.5px solid var(--card-brd);border-radius:10px;padding:5px 12px 5px;cursor:pointer;box-shadow:0 1px 4px rgba(120,110,160,.14);transition:transform .1s}
+.cpChip:hover{transform:translateY(-1px)}
+.cpChip b{font:800 15px system-ui,sans-serif;color:#5a4f78;line-height:1.05}
+.cpChip i{font:700 9px system-ui,sans-serif;font-style:normal;color:#9a8fc4}
+.cpChip .cpX{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:#f4a2b6;color:#fff;border:none;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(150,90,110,.4)}
+.cpChip .cpX:hover{background:#ec7f99}
+.cpChip.active{border-color:#b79fe8;box-shadow:0 0 0 2px rgba(183,159,232,.4)}
+#cpAdd{width:30px;height:34px;border:1.5px dashed #bfb3dd;background:rgba(255,255,255,.5);border-radius:10px;color:#8a7fb0;font-size:19px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#cpAdd:hover{background:#fff;border-color:#a992e0}
+.cpFoot{display:flex;align-items:center;gap:10px;margin-top:10px}
+.cpFollow{flex:1;font:700 11.5px system-ui,sans-serif;color:#6a5f92;display:flex;align-items:center;gap:6px;cursor:pointer}
+.cpFollow input{width:15px;height:15px;accent-color:#b388f0}
+#cpClear{border:none;background:rgba(244,162,182,.22);color:#c76a84;border-radius:8px;padding:5px 11px;font:700 11px system-ui;cursor:pointer}
+#cpClear:hover{background:rgba(244,162,182,.4)}
+#cpEdit{display:flex;gap:6px;margin-top:9px;padding-top:9px;border-top:1px solid rgba(180,170,210,.3);flex-wrap:wrap;align-items:center}
+#cpEdit select{flex:1;min-width:64px;font:700 12px system-ui;padding:4px 6px;border-radius:8px;border:1.5px solid var(--card-brd);background:#fff;color:#5a4f78}
+#cpDone{border:none;background:#b388f0;color:#fff;border-radius:8px;padding:5px 13px;font:800 12px system-ui;cursor:pointer}
+#cpDone:hover{background:#a074e8}
 aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px;position:relative;z-index:70}
-.slime.chill{pointer-events:none} /* the train never blocks a click */
+.slime.chill,.slime.peeker,.slime.rgirl,#wormEl{pointer-events:none} /* decorative edge/ambient slimes are click-through — they can NEVER sit on top of a button and eat the tap. only free-floating field toys stay clickable. */
 @keyframes beatBounce{0%{transform:translateY(0) scale(1,1)}22%{transform:translateY(-15px) scale(1.06,.94)}52%{transform:translateY(0) scale(.97,1.05)}100%{transform:translateY(0) scale(1,1)}}
 .slime.bpop .bob{animation:beatBounce .4s ease-out} /* audio-reactive pop on the beat */
 .mode-play .peek-left,.mode-play .peek-right{display:none} /* play: the candy buttons own the side edges — side peekers would collide, so they step out */
@@ -538,9 +567,11 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <defs><linearGradient id="tmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c6ff"/><stop offset=".5" stop-color="#bdeee0"/><stop offset="1" stop-color="#ffd3e7"/></linearGradient></defs>
       <path d="M50 8 Q55 8 58 13 L88 63 Q92 70 85 74 Q78 78 50 78 Q22 78 15 74 Q8 70 12 63 L42 13 Q45 8 50 8 Z" fill="url(#tmg)" stroke="rgba(255,255,255,.95)" stroke-width="2.5"/>
       <!-- the actual crayon slime band: keys (melody) at top, drummer bottom-left, bassist bottom-right -->
-      <image href="mixslime_keys.png" x="30" y="-42" width="40" height="40" preserveAspectRatio="xMidYMid meet"/>
-      <image href="mixslime_drum.png" x="-42" y="52" width="42" height="40" preserveAspectRatio="xMidYMid meet"/>
-      <image href="mixslime_bass.png" x="82" y="50" width="42" height="42" preserveAspectRatio="xMidYMid meet"/>
+      <!-- one size (40) for all three; each centered the SAME distance outside its own corner so the trio reads as a balanced set -->
+      <image href="mixslime_keys.png" x="30" y="-40" width="40" height="40" preserveAspectRatio="xMidYMid meet"/><!-- apex (50,8): centered x=50, sits above -->
+      <image href="mixslime_drum.png" x="-13" y="54" width="40" height="40" preserveAspectRatio="xMidYMid meet"/><!-- bottom-left corner (~13,74): centered on it, nudged out -->
+      <image href="mixslime_bass.png" x="73" y="54" width="40" height="40" preserveAspectRatio="xMidYMid meet"/><!-- bottom-right corner (~87,74): mirror of the left -->
+
       <circle id="triKnob" cx="50" cy="53" r="10" fill="#9fe6cf" stroke="#fff" stroke-width="3.2" style="filter:drop-shadow(0 2px 4px rgba(120,110,160,.45))"/>
     </svg></div>
   <span id="drumCtl" style="display:flex;align-items:center;gap:8px;opacity:.35;pointer-events:none">
@@ -637,6 +668,23 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <div id="chordProg"><i id="chordProgI"></i></div>
     </div>
     <div id="cofWheel" hidden><svg viewBox="0 0 132 132" id="cofSvg" aria-label="circle of fifths — current key"></svg></div>
+    <button id="chordBtn" hidden title="build a custom chord progression">chords</button>
+    <!-- CUSTOM CHORD PROGRESSION editor — translucent panel that sits OVER the wheel/pill to save space -->
+    <div id="chordPanel" hidden>
+      <div class="cpHead"><span class="cpTitle">chord progression</span>
+        <button id="cpDice" title="roll a famous progression in this key">🎲</button>
+        <button id="cpClose" title="close">✕</button></div>
+      <div id="cpChips"></div>
+      <div class="cpFoot"><label class="cpFollow"><input type="checkbox" id="cpFollow"> follow this progression</label>
+        <button id="cpClear" title="remove all chords">clear</button></div>
+      <!-- inline editor for a single chord (root + quality + bars) -->
+      <div id="cpEdit" hidden>
+        <select id="cpRoot" title="root note"></select>
+        <select id="cpQual" title="chord quality"></select>
+        <select id="cpBars" title="how many bars"><option value="1">1 bar</option><option value="2">2 bars</option><option value="4">4 bars</option></select>
+        <button id="cpDone">ok</button>
+      </div>
+    </div>
   </div>
   <aside>
     <div id="dragBar"></div>
@@ -1022,7 +1070,7 @@ const KITTONE={
 // each groove = 16 slots of {off: timing shift as fraction of a 16th, vel: velocity accent}. downbeat off always 0.
 const GROOVE_DEF={n:'Human',off:[0.0,0.025,0.0,0.025,0.0,0.025,0.0,0.025,0.0,0.025,0.0,0.025,0.0,0.025,0.0,0.025],vel:[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]}; // NEARLY STRAIGHT — only ~2.5% nudge on off-16ths (was 8.3%, sounded too swung). the auto-swing breathes this in/out.
 const GROOVES={
-  Straight:[{n:'Straight',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},{n:'Soft',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.78,0.58,0.81,1.43,0.56,0.54,2.11,0.57,1.94,1.15,0.83,0.51,1.24,0.6,0.87,0.47]},{n:'Punchy',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.11,0.56,1.03,1.11,1.74,0.97,0.58,1.05,1.12,0.55,0.87,1.07,1.63,0.94,0.54,1.12]},{n:'Backbeat',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.03,0.58,0.53,1.45,1.58,0.54,1.14,0.99,0.99,0.54,1.22,1.0,1.57,1.22,0.57,1.05]}],
+  Straight:[{n:'Straight',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]},{n:'Soft',off:[0.0,0.04,0.0,0.05,0.0,0.04,0.0,0.05,0.0,0.04,0.0,0.05,0.0,0.04,0.0,0.05],vel:[1.78,0.58,0.81,1.43,0.56,0.54,2.11,0.57,1.94,1.15,0.83,0.51,1.24,0.6,0.87,0.47]},{n:'Punchy',off:[0.0,-0.03,0.0,-0.03,0.0,-0.03,0.0,-0.03,0.0,-0.03,0.0,-0.03,0.0,-0.03,0.0,-0.03],vel:[1.11,0.56,1.03,1.11,1.74,0.97,0.58,1.05,1.12,0.55,0.87,1.07,1.63,0.94,0.54,1.12]},{n:'Backbeat',off:[0.0,0.0,0.0,0.0,0.06,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.06,0.0,0.0,0.0],vel:[1.03,0.58,0.53,1.55,1.72,0.54,1.14,0.99,0.99,0.54,1.22,1.0,1.7,1.22,0.57,1.05]}],
   Swing:[{n:'Swing 1',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},{n:'Swing 2',off:[0.0,0.125,0.0,0.125,0.0,0.125,0.0,0.125,0.0,0.125,0.0,0.125,0.0,0.125,0.0,0.125],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},{n:'Swing 3',off:[0.0,0.208,0.0,0.208,0.0,0.208,0.0,0.208,0.0,0.208,0.0,0.208,0.0,0.208,0.0,0.208],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},{n:'Swing 4',off:[0.0,0.333,0.0,0.292,0.0,0.292,0.0,0.292,0.0,0.292,0.0,0.292,0.0,0.292,0.0,0.292],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}],
   Triplet:[{n:'Shuffle',off:[0.0,0.333,0.0,0.333,0.0,0.333,0.0,0.333,0.0,0.333,0.0,0.333,0.0,0.333,0.0,0.333],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},{n:'Shuffle Hard',off:[0.0,0.375,0.0,0.375,0.0,0.375,0.0,0.375,0.0,0.375,0.0,0.375,0.0,0.375,0.0,0.375],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},{n:'Triplet',off:[0.0,-0.375,0.0,-0.375,0.0,-0.375,0.0,-0.375,0.0,-0.375,0.0,-0.375,0.0,-0.375,0.0,-0.375],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]},{n:'8th Triplet',off:[0.0,0.292,0.0,-0.375,0.0,0.292,0.0,-0.375,0.0,0.292,0.0,-0.375,0.0,0.292,0.0,-0.375],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}],
   Accented:[{n:'Accent 1',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.17,0.55,0.71,0.69,1.34,0.63,2.59,0.78,1.68,0.48,0.55,0.73,1.61,0.61,1.13,0.73]},{n:'Accent 2',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[1.41,1.2,0.55,0.81,1.29,0.64,1.43,0.67,1.46,1.21,0.56,0.71,1.37,0.63,1.4,0.66]},{n:'Accent 3',off:[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],vel:[0.91,0.49,0.75,1.02,1.78,0.49,0.97,1.5,1.02,0.45,0.88,1.0,1.79,0.51,0.97,1.48]},{n:'Groovy',off:[0.0,0.208,0.0,0.208,0.0,0.167,0.0,0.208,0.0,0.167,0.0,0.167,0.0,0.208,0.0,0.167],vel:[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]}]
@@ -1099,6 +1147,73 @@ function drumStepDur(){let d=60/S.bpm/drumSPB();if(drumFeel==='2')d*=0.5;else if
 // ---------- band: gameboy bass + snes pads, degree-based so ANY scale works (even microtonal) ----------
 let bandOn=false,progIdx=0;
 const PROGS=[[0,4,5,3],[0,5,3,4],[5,3,0,4],[0,3,4,3]]; // I-V-vi-IV, 50s doo-wop, axis, plagal rock — fallback until the melody has spoken
+// ============================================================================
+//  CUSTOM CHORD PROGRESSION MODE — user-built progressions that OVERRIDE the auto
+//  circle-of-fifths transposing. Chords are absolute (root pitch-class + quality),
+//  so any jazzy voicing works regardless of the current scale.
+// ============================================================================
+const CQUAL={ // name -> semitone intervals from the chord root. curated set: triads, 7ths, sus, adds, 6ths.
+  'maj':[0,4,7],       'min':[0,3,7],       'dim':[0,3,6],       'aug':[0,4,8],
+  'sus2':[0,2,7],      'sus4':[0,5,7],      '6':[0,4,7,9],       'm6':[0,3,7,9],
+  'maj7':[0,4,7,11],   'm7':[0,3,7,10],     '7':[0,4,7,10],      'm7b5':[0,3,6,10],
+  'dim7':[0,3,6,9],    'maj9':[0,4,7,11,14],'m9':[0,3,7,10,14],  '9':[0,4,7,10,14],
+  '7sus4':[0,5,7,10],  'add9':[0,4,7,14]
+};
+const CQUAL_ORDER=['maj','min','7','maj7','m7','dim','aug','sus2','sus4','6','m6','m7b5','dim7','9','maj9','m9','7sus4','add9'];
+const CQUAL_LBL={maj:'major',min:'minor','7':'7',maj7:'maj7',m7:'m7',dim:'dim',aug:'aug',sus2:'sus2',sus4:'sus4','6':'6',m6:'m6',m7b5:'m7♭5',dim7:'dim7','9':'9',maj9:'maj9',m9:'m9','7sus4':'7sus4',add9:'add9'};
+const PC_LBL=['C','C♯','D','D♯','E','F','F♯','G','G♯','A','A♯','B'];
+// FAMOUS PROGRESSIONS — degrees are scale-STEPS (major-scale roman numerals) + a quality tag.
+// deg is 0-based diatonic step; the dice transposes the whole set to the CURRENT key. Sourced from
+// widely-documented jazz-standard/pop/classical harmony (ii–V–I, rhythm changes, doo-wop, Pachelbel, Andalusian, etc.).
+// [step, quality] — step 0=tonic, 1=II, 2=III, 3=IV, 4=V, 5=VI, 6=VII.
+const FAMOUS=[
+  {n:'ii–V–I (jazz)',      c:[[1,'m7'],[4,'7'],[0,'maj7']]},
+  {n:'ii–V–I extended',    c:[[1,'m7'],[4,'7'],[0,'maj7'],[0,'maj7']]},
+  {n:'I–vi–ii–V (rhythm)', c:[[0,'maj7'],[5,'m7'],[1,'m7'],[4,'7']]},
+  {n:'I–vi–IV–V (doo-wop)',c:[[0,'maj'],[5,'min'],[3,'maj'],[4,'7']]},
+  {n:'I–V–vi–IV (axis)',   c:[[0,'maj'],[4,'maj'],[5,'min'],[3,'maj']]},
+  {n:'vi–IV–I–V',          c:[[5,'min'],[3,'maj'],[0,'maj'],[4,'maj']]},
+  {n:'I–IV–V (blues)',     c:[[0,'7'],[3,'7'],[4,'7'],[0,'7']]},
+  {n:'12-bar heads',       c:[[0,'7'],[0,'7'],[0,'7'],[0,'7'],[3,'7'],[3,'7'],[0,'7'],[0,'7'],[4,'7'],[3,'7'],[0,'7'],[4,'7']]},
+  {n:'Andalusian',         c:[[0,'min'],[6,'maj'],[5,'maj'],[4,'maj']]},
+  {n:'Pachelbel canon',    c:[[0,'maj'],[4,'maj'],[5,'min'],[2,'min'],[3,'maj'],[0,'maj'],[3,'maj'],[4,'maj']]},
+  {n:'iii–vi–ii–V',        c:[[2,'m7'],[5,'m7'],[1,'m7'],[4,'7']]},
+  {n:'Autumn Leaves',      c:[[1,'m7'],[4,'7'],[0,'maj7'],[3,'maj7'],[6,'m7b5'],[2,'7'],[5,'min'],[5,'min']]},
+  {n:'Minor ii–V–i',       c:[[1,'m7b5'],[4,'7'],[0,'min'],[0,'min']]},
+  {n:'I–iii–IV–iv',        c:[[0,'maj'],[2,'min'],[3,'maj'],[3,'min']]},
+  {n:'Montgomery-Ward',    c:[[0,'maj7'],[3,'maj7'],[1,'m7'],[4,'7']]},
+  {n:'Coltrane-ish cycle', c:[[0,'maj7'],[5,'7'],[3,'maj7'],[1,'7']]},
+  {n:'Royal road',         c:[[3,'maj7'],[4,'7'],[2,'m7'],[5,'min']]},
+  {n:'50s ballad',         c:[[0,'maj'],[5,'min'],[1,'m7'],[4,'7']]},
+  {n:'Plagal / rock',      c:[[0,'maj'],[3,'maj'],[3,'maj'],[0,'maj']]},
+  {n:'Epic minor',         c:[[0,'min'],[3,'min'],[5,'maj'],[4,'maj']]}
+];
+const MAJSTEP=[0,2,4,5,7,9,11]; // major-scale semitone offsets per diatonic step, for transposing FAMOUS to the key's root pc
+const CHORD_MODE={on:false,prog:[],idx:0,barsLeft:0}; // prog: [{pc:0-11, qual, bars}]
+function cmSave(){try{localStorage.setItem('slimehedron-chords',JSON.stringify({on:CHORD_MODE.on,prog:CHORD_MODE.prog}));}catch(e){}}
+function cmLoad(){try{const o=JSON.parse(localStorage.getItem('slimehedron-chords'));if(o&&Array.isArray(o.prog)){CHORD_MODE.prog=o.prog.filter(c=>c&&Number.isFinite(c.pc)&&CQUAL[c.qual]);CHORD_MODE.on=!!o.on&&CHORD_MODE.prog.length>0;}}catch(e){}}
+function cmActive(){return CHORD_MODE.on&&CHORD_MODE.prog.length>0;}
+// the dice: pick a whole famous progression, transpose it to the CURRENT key's tonic pitch-class
+function cmRandomProg(){
+  const rootPc=((S.root%12)+12)%12, minorKey=isMinorScale();
+  const pick=FAMOUS[(Math.random()*FAMOUS.length)|0];
+  CHORD_MODE.prog=pick.c.map(([step,qual])=>{
+    let q=qual;
+    if(minorKey){ // gently recolor for a minor key so it doesn't sound off: tonic/subdom lean minor
+      if(step===0&&(q==='maj'||q==='maj7'))q=(q==='maj7')?'m7':'min';
+      if(step===3&&q==='maj')q='min';
+    }
+    return {pc:((rootPc+MAJSTEP[step%7])%12+12)%12, qual:q, bars:1};
+  });
+  CHORD_MODE.idx=0;CHORD_MODE.barsLeft=0;CHORD_MODE.on=true;cmSave();
+  return pick.n;
+}
+// nearest scale degree to an absolute pitch-class (so the wheel/pill/colors still track custom chords)
+function pcToNearestDeg(pc){const sc=scaleObj().c,n=sc.length,root=((S.root%12)+12)%12,want=((pc-root)%12+12)%12;
+  let best=0,bd=1e9;for(let i=0;i<n;i++){const d=Math.min(Math.abs(sc[i]/100-want),12-Math.abs(sc[i]/100-want));if(d<bd){bd=d;best=i;}}return best;}
+// build the pad chord tones (in cents relative to S.root) for a custom chord — honors the exact quality
+function cmChordCents(c){const base=(((c.pc-((S.root%12)+12)%12)+12)%12); // semitones above root pc, in the 0-11 octave
+  return (CQUAL[c.qual]||CQUAL.maj).map(iv=>(base+iv)*100);}
 // ---- the chord brain: listen to what the melody's been playing, harmonize with THAT ----
 const noteHisto=new Array(24).fill(0);let _prevRootDeg=0; // slow-decay histogram of recent scale degrees: new notes shout, old notes whisper
 function noteFeed(cents,w){const sc=scaleObj().c,n=sc.length,rem=((Math.round(cents)%1200)+1200)%1200;
@@ -1139,7 +1254,19 @@ function chordFull(rd){const c0=centsForDegree(rd),n=scaleObj().c.length,
   else if(b===7&&(a===5||a===2))word='suspended'; else if(b!==7)word='';
   return {root, word, short:chordName(rd)};}
 function updateChordPill(){const p=document.getElementById('chordPill');if(!p||p.hidden)return;
-  const n=scaleObj().c.length,now=chordFull(curRootDeg);
+  const n=scaleObj().c.length;
+  if(cmActive()){ // show the user's EXACT custom chord names, not a diatonic guess
+    const cc=CHORD_MODE.prog[((CHORD_MODE.idx-1)+CHORD_MODE.prog.length)%CHORD_MODE.prog.length];
+    const nn=CHORD_MODE.prog[CHORD_MODE.idx%CHORD_MODE.prog.length];
+    document.getElementById('chordNow').textContent=PC_LBL[cc.pc];
+    document.getElementById('chordNowType').textContent=CQUAL_LBL[cc.qual]||cc.qual;
+    const nxc=document.getElementById('chordNext');
+    nxc.parentElement.style.visibility=(CHORD_MODE.prog.length>1)?'visible':'hidden';
+    nxc.textContent=PC_LBL[nn.pc]+((CQUAL_LBL[nn.qual]||nn.qual)==='major'?'':(CQUAL_LBL[nn.qual]||nn.qual));
+    document.getElementById('chordProgI').style.background=`linear-gradient(90deg,${aurora(curRootDeg/n,62)},${aurora((nextRootDeg==null?curRootDeg:nextRootDeg)/n,62)})`;
+    return;
+  }
+  const now=chordFull(curRootDeg);
   document.getElementById('chordNow').textContent=now.root;
   document.getElementById('chordNowType').textContent=now.word||''; // "minor" / "major" / "diminished" / "augmented"
   const nx=document.getElementById('chordNext');
@@ -1160,8 +1287,6 @@ function buildWheel(){const svg=document.getElementById('cofSvg');if(!svg||_cofB
   for(let i=0;i<12;i++){const [x,y]=cofPos(i);
     h+=`<g class="cofNode" data-pc="${COF[i]}"><circle class="cofDot" cx="${x}" cy="${y}" r="7"/><text class="cofLbl" x="${x}" y="${y}">${COF_LBL[i]}</text></g>`;}
   h+='<text id="cofHub" x="66" y="66">A</text>';
-  // the SAME wheel is the circle of FOURTHS read the other way — tiny curved hints so both are represented.
-  h+='<text class="cofDir" x="52" y="14">4ths ↺</text><text class="cofDir" x="80" y="14">↻ 5ths</text>';
   svg.innerHTML=h;_cofBuilt=true;
   // studio: click a key node -> set that root and PIN it (slime rotation stops until slime is toggled off/on)
   svg.addEventListener('click',e=>{if(S.mode!=='studio')return;const g=e.target.closest('.cofNode');if(!g)return;
@@ -1303,13 +1428,44 @@ function bandBar(t,barI){ // pads: one soft chord per bar; bass root updates for
   if(!bandOn)return;
   if(++_bassBars%16===0)_bassGroove=(_bassGroove+1)%BASSGROOVES.length; // rotate the bass feel every 16 bars for motion
   const man=(S.mode!=='play'&&manualActive())?manualRoot():null; // studio: a human playing OWNS the harmony. play: no chord chasing, kids just jam.
-  if(man==null&&S.slimeMode&&!_keyPinned&&++_slimeBars>=64){_slimeBars=0;keyJourney();} // auto-mode: move around the circle of fifths every 64 bars (16 was too soon to settle in)
+  // CUSTOM CHORD MODE overrides everything: no key-journey transpose, follow the user's progression instead.
+  if(man==null&&!cmActive()&&S.slimeMode&&!_keyPinned&&++_slimeBars>=64){_slimeBars=0;keyJourney();} // auto-mode: move around the circle of fifths every 64 bars (16 was too soon to settle in)
   if(S.slimeMode&&fillState==='fill'){_wallBars++;
     if(_wallBars%8===0)breakWall();        // every 8 bars a wall opens up (notes pour out) — frequent enough to SEE it happening
     if(_wallBars%24===0)repairWall();      // every 24 bars an old gap magically fades back into a wall
     if(_wallBars%128===0)explodeReform();  // every 128 bars: the whole shape bursts + reforms into a NEW shape
   }
   const sc=scaleObj().c,n=sc.length,harm=scaleObj().harm||'triad';let rd;
+  // ==== CUSTOM CHORD PROGRESSION: highest priority. advance by bars, voice the exact chord. ====
+  if(cmActive()){
+    if(CHORD_MODE.barsLeft<=0){ // step to the next chord in the progression (looping)
+      const cur=CHORD_MODE.prog[CHORD_MODE.idx%CHORD_MODE.prog.length];
+      CHORD_MODE.barsLeft=Math.max(1,cur.bars||1);
+      CHORD_MODE.idx=(CHORD_MODE.idx+1)%CHORD_MODE.prog.length;
+    }
+    CHORD_MODE.barsLeft--;
+    const cc=CHORD_MODE.prog[((CHORD_MODE.idx-1)+CHORD_MODE.prog.length)%CHORD_MODE.prog.length];
+    const nn=CHORD_MODE.prog[CHORD_MODE.idx%CHORD_MODE.prog.length];
+    rd=pcToNearestDeg(cc.pc);                 // for wheel/pill/color tracking only
+    nextRootDeg=pcToNearestDeg(nn.pc);
+    _prevRootDeg=curRootDeg;curRootDeg=rd;updateChordPill();
+    const barDur0=drumBar()*drumStepDur();
+    const cents=cmChordCents(cc);             // EXACT chord tones (honors maj7/sus/etc.)
+    // voice-lead the custom chord too
+    if(!window._padV)window._padV=null;
+    const degs0=cents.map((base,i)=>{if(!window._padV||window._padV[i]==null)return base;const prev=window._padV[i];let best=base,bd=1e9;for(const off of [-1200,0,1200]){const c2=base+off;const dd=Math.abs(c2-prev);if(dd<bd){bd=dd;best=c2;}}return best;});
+    window._padV=degs0;
+    bandComp(t,barI,degs0,drumStepDur(),drumBar());
+    const pv0=0.024*Math.min(1,S.bpMix*2);
+    if(S.synth)for(const c of degs0){const po=AC.createOscillator(),pg=AC.createGain(),plp=AC.createBiquadFilter();
+      po.type='triangle';po.frequency.value=freqFromCents(c);
+      plp.type='lowpass';plp.frequency.value=2300;plp.Q.value=0.9;
+      pg.gain.setValueAtTime(0,t);pg.gain.linearRampToValueAtTime(pv0,t+0.75);
+      pg.gain.setValueAtTime(pv0,t+barDur0*0.65);pg.gain.linearRampToValueAtTime(0.0001,t+barDur0);
+      po.connect(plp);plp.connect(pg);pg.connect(bandBus);po.start(t);po.stop(t+barDur0+0.05);
+      sendMidiAt(S.root+c/100,50,S.chPad,t,barDur0*0.9);}
+    return; // custom chord fully handled — skip the diatonic path below
+  }
   // DRONE scales (maqam bayati, slendro, pelog, iwato): the tonic mostly HOLDS. moving chords drag microtones toward
   // 12-TET & sound off to untrained ears — the pros keep a pedal + fifths and let melody roam. so we mostly stay home.
   if(man!=null){rd=man%n;nextRootDeg=man%n;} // hold YOUR chord — no roulette, no lag
@@ -1525,7 +1681,10 @@ function rebuild(){edges=buildEdges(S.shape);_brokenOrder=[];}
 // this thins a busy texture organically + shrinks the melodic palette so the line stays simple & singable. walls
 // reform after a while so the shape breathes. the current chord's ROOT wall is protected so harmony stays grounded.
 let _brokenOrder=[]; // edges broken, oldest first (so we repair the oldest first)
-function breakWall(){const live=edges.filter(e=>!e.broken);
+let _lastBreak=0;
+function breakWall(){
+  const now=performance.now(); if(now-_lastBreak<650)return; _lastBreak=now; // THROTTLE: ball-spam pushed balls.length over MAXBALLS every frame → breakWall fired ~60x/s, flickering walls open/closed = the "glitchy geometry". one break per ~0.65s max.
+  const live=edges.filter(e=>!e.broken);
   const brokenNow=edges.length-live.length; if(brokenNow>=Math.max(1,Math.floor(edges.length*0.34))||live.length<=3)return; // cap open gaps at ~1/3 of the walls (porous, not dissolved) and never below 3 solid walls
   const rootDeg=((curRootDeg%scaleObj().c.length)+scaleObj().c.length)%scaleObj().c.length;
   const cand=live.filter(e=>degOf(e.cents)!==rootDeg); // don't break the tonic wall — harmony stays grounded
@@ -2161,6 +2320,9 @@ function applyMode(m){S.mode=m;
   const wheel=$("cofWheel"),pill=$("chordPill"),sn=$("scaleNote");
   if(wheel)wheel.hidden=(m==='learn');
   if(pill){pill.hidden=(m==='learn'); if(!pill.hidden)updateChordPill();} // chord movement shows in BOTH play & studio now (was stuck hidden)
+  const cbtn=$("chordBtn"),cpan=$("chordPanel");
+  if(cbtn)cbtn.hidden=(m==='learn'); // custom-chord button rides with the wheel (play + studio)
+  if(cpan&&m==='learn')cpan.hidden=true; // never leave the editor open in learn
   if(sn)sn.style.display=(m==='play')?'none':''; // no "5 notes/oct…" text in play
   if(wheel&&!wheel.hidden){_cofPrevPc=null;updateWheel();}
   // play mode: group share + clear into one top-right flex row so they lay out side-by-side and can never overlap
@@ -3207,6 +3369,55 @@ function startCoach(){
   function adv(e){if(e.target.dataset&&e.target.dataset.cs){end();return;}
     setTimeout(()=>{i++;i>=steps.length?end():show();},350);}
   addEventListener('pointerdown',adv,true);show();}
+
+// ============================================================================
+//  CUSTOM CHORD PROGRESSION — panel controller (add/edit/delete/dice/follow)
+// ============================================================================
+(function(){try{
+  const btn=$("chordBtn"),panel=$("chordPanel"),chips=$("cpChips"),edit=$("cpEdit"),
+        selRoot=$("cpRoot"),selQual=$("cpQual"),selBars=$("cpBars"),
+        follow=$("cpFollow");
+  if(!btn||!panel)return;
+  // populate the dropdowns once
+  selRoot.innerHTML=PC_LBL.map((l,i)=>`<option value="${i}">${l}</option>`).join('');
+  selQual.innerHTML=CQUAL_ORDER.map(q=>`<option value="${q}">${CQUAL_LBL[q]}</option>`).join('');
+  let editIdx=-1; // -1 = adding a new chord; >=0 = editing that chord
+  function reflectBtn(){btn.classList.toggle('on',cmActive());}
+  function render(){
+    chips.innerHTML='';
+    CHORD_MODE.prog.forEach((c,i)=>{
+      const el=document.createElement('div');el.className='cpChip'+(i===editIdx?' active':'');
+      el.innerHTML=`<b>${PC_LBL[c.pc]}</b><i>${(CQUAL_LBL[c.qual]||c.qual)}${(c.bars>1?' · '+c.bars+'b':'')}</i><button class="cpX" title="remove">✕</button>`;
+      el.addEventListener('click',ev=>{if(ev.target.classList.contains('cpX')){ev.stopPropagation();CHORD_MODE.prog.splice(i,1);if(CHORD_MODE.prog.length===0){CHORD_MODE.on=false;follow.checked=false;}sync();return;}openEdit(i);});
+      chips.appendChild(el);
+    });
+    const add=document.createElement('button');add.id='cpAdd';add.textContent='+';add.title='add a chord';
+    add.addEventListener('click',()=>openEdit(-1));
+    chips.appendChild(add);
+  }
+  function openEdit(i){editIdx=i;
+    if(i>=0){const c=CHORD_MODE.prog[i];selRoot.value=c.pc;selQual.value=c.qual;selBars.value=c.bars||1;}
+    else{const rootPc=((S.root%12)+12)%12;selRoot.value=rootPc;selQual.value=isMinorScale()?'min':'maj';selBars.value=1;}
+    edit.hidden=false;render();}
+  $("cpDone").addEventListener('click',()=>{
+    const c={pc:+selRoot.value,qual:selQual.value,bars:+selBars.value};
+    if(editIdx>=0)CHORD_MODE.prog[editIdx]=c;else CHORD_MODE.prog.push(c);
+    editIdx=-1;edit.hidden=true;
+    if(CHORD_MODE.prog.length>0&&follow.checked)CHORD_MODE.on=true;
+    sync();});
+  function sync(){cmSave();render();reflectBtn();
+    if(cmActive()){CHORD_MODE.idx=0;CHORD_MODE.barsLeft=0;}
+    updateChordPill();}
+  // dice: whole famous progression in the current key
+  $("cpDice").addEventListener('click',()=>{cmRandomProg();follow.checked=true;editIdx=-1;edit.hidden=true;sync();});
+  $("cpClear").addEventListener('click',()=>{CHORD_MODE.prog=[];CHORD_MODE.on=false;follow.checked=false;editIdx=-1;edit.hidden=true;sync();});
+  follow.addEventListener('change',()=>{CHORD_MODE.on=follow.checked&&CHORD_MODE.prog.length>0;if(CHORD_MODE.on){CHORD_MODE.idx=0;CHORD_MODE.barsLeft=0;}cmSave();reflectBtn();updateChordPill();});
+  // open/close the panel over the wheel
+  btn.addEventListener('click',()=>{panel.hidden=!panel.hidden;if(!panel.hidden){follow.checked=cmActive();render();}});
+  $("cpClose").addEventListener('click',()=>{panel.hidden=true;});
+  // restore saved progression
+  cmLoad();follow.checked=cmActive();render();reflectBtn();
+}catch(e){console.warn('chord panel init skip:',e.message);}})();
 
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
 </script>
