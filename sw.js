@@ -1,4 +1,4 @@
-const C='slimehedron-v57'; // bump each deploy
+const C='slimehedron-v58'; // bump each deploy
 const FILES=['./','./index.html','./learn.js','./landing.html','./manifest.json','./icon-192.png','./icon-512.png','./slimehedron-mascot.png','./bg-desktop.jpg','./bg-mobile.jpg','./slimelogo.png','./band.png','./mixslime_keys.png','./mixslime_drum.png','./mixslime_bass.png','./minis/grn.png','./minis/grn2.png','./minis/grn3.png','./minis/violet.png','./minis/violet2.png','./minis/violet3.png','./minis/bo.png','./minis/blue1.png','./minis/blue2.png','./minis/blue3.png','./minis/pear1.png','./minis/pear2.png','./minis/pear3.png','./minis/pink1.png','./minis/pink2.png','./minis/pink3.png','./minis/teal.png','./minis/teal2.png','./minis/teal3.png','./minis/teal4.png','./minis/orange.png','./minis/bo2.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(FILES)));self.skipWaiting();});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});

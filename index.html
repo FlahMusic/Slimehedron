@@ -391,8 +391,8 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 /* --- custom chord progression: the "chords" button + translucent editor panel over the wheel --- */
 /* centered UNDER the wheel: wheel spans left→left+width; this sits the button's midpoint on the wheel's midpoint.
    left = wheelLeft + wheelWidth/2 - buttonHalf, tuned via clamp to match the wheel's own clamp at every size. */
-#chordBtn{position:fixed;left:clamp(156px,11vw,209px);top:clamp(196px,27vmin,250px);transform:translateX(-50%);z-index:32;font:800 12px system-ui,sans-serif;color:#6a5f92;background:rgba(252,249,255,.85);border:1.5px solid var(--card-brd);border-radius:11px;padding:6px 16px;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:var(--shadow);letter-spacing:.4px;transition:background .15s} /* centered under the 186px wheel (now at left:116) */
-#chordBtn:hover{background:#fff}
+#chordBtn{position:fixed;left:clamp(156px,11vw,209px);top:clamp(196px,27vmin,250px);transform:translateX(-50%);z-index:32;font:800 12px system-ui,sans-serif;color:#fff;background:linear-gradient(135deg,#c9b3f0,#b388f0);border:1.5px solid #a992e0;border-radius:11px;padding:6px 16px;cursor:pointer;box-shadow:var(--shadow);letter-spacing:.4px;transition:filter .15s} /* lilac so it stands out (was white) */
+#chordBtn:hover{filter:brightness(1.06)}
 #chordBtn.on{background:#c9b3f0;color:#fff;border-color:#b79fe8}
 @media (max-width:820px){#chordBtn{top:222px;left:74px;transform:translateX(-50%);font-size:11px;padding:5px 12px}} /* phone: centered under the smaller wheel (~left:74 center), stacked below the readout */
 /* lime→lilac candy panel — playful, matches the meadow palette instead of a plain white box */
@@ -604,9 +604,9 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <path d="M50 8 Q55 8 58 13 L88 63 Q92 70 85 74 Q78 78 50 78 Q22 78 15 74 Q8 70 12 63 L42 13 Q45 8 50 8 Z" fill="url(#tmg)" stroke="rgba(255,255,255,.95)" stroke-width="2.5"/>
       <!-- the actual crayon slime band: keys (melody) at top, drummer bottom-left, bassist bottom-right -->
       <!-- one size (40) for all three; each centered the SAME distance outside its own corner so the trio reads as a balanced set -->
-      <image href="mixslime_keys.png" x="30" y="-40" width="40" height="40" preserveAspectRatio="xMidYMid meet"/><!-- apex (50,8): centered x=50, sits above -->
-      <image href="mixslime_drum.png" x="-13" y="54" width="40" height="40" preserveAspectRatio="xMidYMid meet"/><!-- bottom-left corner (~13,74): centered on it, nudged out -->
-      <image href="mixslime_bass.png" x="73" y="54" width="40" height="40" preserveAspectRatio="xMidYMid meet"/><!-- bottom-right corner (~87,74): mirror of the left -->
+      <image href="mixslime_keys.png" x="30" y="-46" width="40" height="40" preserveAspectRatio="xMidYMid meet"/><!-- apex: backed up higher so it clears the peak -->
+      <image href="mixslime_drum.png" x="-24" y="62" width="40" height="40" preserveAspectRatio="xMidYMid meet"/><!-- bottom-left: pushed further out/down off the corner -->
+      <image href="mixslime_bass.png" x="84" y="62" width="40" height="40" preserveAspectRatio="xMidYMid meet"/><!-- bottom-right: mirror -->
 
       <circle id="triKnob" cx="50" cy="53" r="10" fill="#9fe6cf" stroke="#fff" stroke-width="3.2" style="filter:drop-shadow(0 2px 4px rgba(120,110,160,.45))"/>
     </svg></div>
@@ -2936,7 +2936,8 @@ const chillers=[]; // full-view slimes with cursor physics
     // LEFT margin. in PLAY the mixer + two nappers already fill the left, so cap the left fills at 1 to give it room to breathe (balances the right).
     band(btn+8,r.left-6, mb?{top:mb.top-30,bottom:mb.bottom+30,left:0}:null, S.mode==='play'?1:null);
     // right margin — but in STUDIO the settings panel (aside) owns the whole right side, so skip the right band there.
-    if(S.mode!=='studio') band(r.right+6,W-btn-8,{top:H*0.42,bottom:H+60,left:r.right}); // (play/learn only) worm owns lower-right so fillers stay upper half
+    if(S.mode!=='studio'){const w=document.getElementById('wormEl'),wr=w?w.getBoundingClientRect():null;
+      band(r.right+6,W-btn-8, wr?{top:wr.top-30,bottom:H+60,left:wr.left-30}:{top:H*0.42,bottom:H+60,left:r.right});} // worm owns the lower-right — avoid his WHOLE column incl. his head
     // PHONE: side margins are too thin, so scatter a few buddies in the open SKY above the tank (clear of the header)
     // + one or two low corners — so they're DISTRIBUTED, not all lined up at the bottom like play mode.
     if(matchMedia('(max-width:820px)').matches){
@@ -2954,11 +2955,16 @@ const chillers=[]; // full-view slimes with cursor physics
     el.classList.add('bpop');setTimeout(()=>el.classList.remove('bpop'),400);};
   // ---- every 4 bars: ONE random slime morphs to a NEW colour (+ matching face) and hops to a fresh spot.
   // keeps the crowd from looking samey/static without being chaotic. fades out → swap → fades back in a new place.
-  function slimeSpot(el){ // a fresh random resting position in a safe margin (never on the tank or a control)
+  function wormBox(){const w=document.getElementById('wormEl');if(!w)return null;const r=w.getBoundingClientRect();
+    return {left:r.left-24,right:r.right+24,top:r.top-24,bottom:r.bottom+40};} // padded — the worm's whole column + a margin, so nothing lands on him or his head
+  function inBox(x,y,b){return b&&x>b.left&&x<b.right&&y>b.top&&y<b.bottom;}
+  function slimeSpot(el){ // a fresh random resting position in a safe margin (never on the tank, a control, or the worm)
     const rc=cv.getBoundingClientRect(),W=innerWidth,H=innerHeight,btn=matchMedia('(max-width:820px)').matches?58:118;
-    const left=Math.random()<0.5;
-    const x=left?(btn+6+Math.random()*Math.max(10,rc.left-btn-46)):(rc.right+8+Math.random()*Math.max(10,W-btn-rc.right-46));
-    const y=Math.max(96,rc.top+20)+Math.random()*Math.max(30,(H-120)-(rc.top+20));
+    const wb=wormBox(); let x,y,tries=0;
+    do{const left=Math.random()<0.5;
+      x=left?(btn+6+Math.random()*Math.max(10,rc.left-btn-46)):(rc.right+8+Math.random()*Math.max(10,W-btn-rc.right-46));
+      y=Math.max(96,rc.top+20)+Math.random()*Math.max(30,(H-120)-(rc.top+20));
+    }while(inBox(x+24,y+24,wb)&&++tries<12); // reroll if it landed on the worm
     el.style.left=(x|0)+'px';el.style.top=(y|0)+'px';el.style.right='auto';el.style.bottom='auto';}
   window._morphSlime=function(){const els=layer.querySelectorAll('.mfill');if(!els.length)return;
     const el=els[(Math.random()*els.length)|0];if(el.classList.contains('morphing'))return;
