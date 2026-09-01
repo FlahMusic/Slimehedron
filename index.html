@@ -44,7 +44,17 @@ header h1{font-size:20px;font-weight:700;margin:0;letter-spacing:.5px}
 header h1 .dot{color:var(--accent)}
 header .sub{font-size:12px;color:var(--ink-soft);font-weight:500}
 header .spacer{flex:1}
-.btngroup{display:flex;align-items:center;gap:14px;flex-wrap:nowrap} /* transport + instruments: one family, never split across lines */
+.btngroup{display:flex;align-items:center;gap:14px;flex-wrap:nowrap;min-width:0} /* transport + instruments: one family, never split across lines */
+header h1{flex-shrink:0}
+/* MID-RANGE (tablet / 125-150% desktop zoom): shrink the top bar + reduce gaps BEFORE the hard mobile switch,
+   so the transport row never runs off the edge. This is the "always fits at any zoom" band. */
+@media (max-width:1080px){
+  header{gap:9px;padding:12px 14px}
+  .btngroup{gap:9px}
+  #volTop input[type=range]{width:56px}
+  header h1{font-size:17px}
+  .psBtn{width:70px;height:70px} .psBtn svg{width:42px;height:42px} .psLbl{font-size:16px} .psSub{font-size:14px} /* side buttons ease down so they don't crowd the tank when zoomed */
+}
 #autoRow{display:flex;justify-content:center;padding:0 0 6px;position:relative;z-index:70;pointer-events:none} /* auto-play slime gets his own centered perch under the buttons; bar is click-through so its empty width doesn't block the buttons/slimes below */
 #autoRow>*{pointer-events:auto}
 /* ---- modes: one engine, three doors — classes only change what's visible ---- */
@@ -84,6 +94,10 @@ header .spacer{flex:1}
 .mode-play #tempoDial{display:flex;align-items:center;gap:8px;
   background:rgba(255,255,255,.6);border:2px solid rgba(255,255,255,.9);border-radius:999px;padding:6px 13px;box-shadow:0 4px 12px rgba(120,110,160,.24);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 #tempoDial .td-ico{font-size:11px;font-weight:700;line-height:1;opacity:.7;text-transform:uppercase;letter-spacing:.5px;color:#5a4f78}
+/* master volume in the top bar (left of the tempo knob): icon + short lilac fader */
+#volTop{display:flex;align-items:center;gap:7px;padding:0 10px 0 4px;flex:none}
+#volTop input[type=range]{width:70px;flex:none;height:6px}
+@media (max-width:820px){#volTop input[type=range]{width:52px}#volTop{gap:5px;padding:0 6px 0 2px}}
 #tempoKnob{width:34px;height:34px} /* a touch bigger than the mixer knobs since it's a headline control */
 #tempoKnob .kdot{width:3.5px;height:14px}
 /* DAW-style editable tempo box (Ableton/Logic convention: type or drag the number) — soft to match the UI */
@@ -297,13 +311,16 @@ header h1{margin-left:78px} /* the title steps aside for the back button */
 .btn.on{outline:2px solid var(--accent)}
 main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 #stage{flex:1;display:flex;align-items:center;justify-content:center;position:relative;min-width:0}
+/* FLUID TANK: the 720×720 canvas scales DOWN to fit whatever room the stage has (any zoom / window size),
+   staying a perfect square. This is the core of "always fits" — no more clipping off the edge at 125%+ zoom. */
+#cv{max-width:100%;max-height:100%;width:auto;height:auto;aspect-ratio:1/1}
 /* the MIXER + auto-toggle FLOAT (absolute) so they don't steal vertical height from the tank — the shapes+notes
    are the whole point, so the canvas gets to be the biggest thing on screen. */
 /* STUDIO: mixer bottom-left (the left gutter is empty there). PLAY: the left column holds the Sound buttons, so the
    mixer moves to bottom-CENTER, clear of both candy columns. Never steals tank height in either mode. */
 #triMixBar{position:absolute;z-index:60;padding:0}
 .mode-studio #triMixBar{bottom:10px;left:8px}
-.mode-play #triMixBar{bottom:6px;left:50%;transform:translateX(-50%)}
+.mode-play #triMixBar{bottom:6px;left:clamp(112px,13vw,128px);transform:none} /* bottom-LEFT, right of the Sound button column, in the cloud/bg (clamps in so it stays clear when zoomed) */
 #autoRow{position:absolute;top:100px;left:50%;transform:translateX(-50%);z-index:61;padding:0} /* moved DOWN so it clears the tempo knob up top */
 .mode-learn #triMixBar,.mode-learn #autoRow{display:none}
 /* phone: BOTH modes put the mixer bottom-center (clear of the bottom-left slimes AND the bottom-right menu button)
@@ -340,27 +357,31 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 .hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-soft);font-weight:500;background:var(--card);padding:5px 12px;border-radius:10px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 /* CHORD READOUT — sits beside the circle-of-fifths wheel (top-left cluster). shows the live chord as a full, readable
    name (root + type) plus where it's heading, with a progress bar. Scaler/Captain-Chords style, in our pastel palette. */
-#chordPill{position:fixed;left:214px;top:58px;background:rgba(252,249,255,.82);border:1.5px solid var(--card-brd);border-radius:14px;padding:8px 13px 9px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:var(--shadow);text-align:left;pointer-events:none;min-width:104px;z-index:31} /* sits clear of the bigger 186px wheel */
+#chordPill{position:fixed;left:clamp(140px,24vw,314px);top:58px;background:rgba(252,249,255,.82);border:1.5px solid var(--card-brd);border-radius:14px;padding:8px 13px 9px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:var(--shadow);text-align:left;pointer-events:none;min-width:104px;z-index:31} /* sits clear of the bigger 186px wheel */
 #chordPill .cpMain{display:flex;align-items:baseline;gap:7px;line-height:1}
 #chordPill b{font-size:26px;font-weight:800;color:#5a4f78;letter-spacing:.5px} /* the root, big & clear */
 #chordPill .cpMain i{font-size:14px;font-weight:700;font-style:normal;color:#9a8fc4} /* the type word: minor / major / dim / 7th */
 #chordPill .cpNext{font-size:12px;font-weight:700;color:#a99fce;margin-top:2px;letter-spacing:.3px}
 #chordPill .cpArrow{color:#c9bfe6;margin-right:3px}
-@media (max-width:820px){#chordPill{left:148px;top:46px;padding:6px 10px 7px}#chordPill b{font-size:21px}}
+/* phone: the wheel eats the top-left, so drop the chord readout BELOW it (stacked, not beside) — no overlap on narrow screens */
+@media (max-width:820px){#chordPill{left:6px;top:180px;padding:6px 10px 7px}#chordPill b{font-size:21px}}
 #chordNext{font-size:11px;color:var(--ink-soft);font-weight:700;margin-left:8px}
 /* circle of fifths — top-left, right under the "slimehedron" title. bigger + translucent so it blends with the bg
    but still clearly highlights the active key, with a big readable key letter in the middle. never over the play field. */
-#cofWheel{position:fixed;left:12px;top:54px;bottom:auto;transform:none;width:186px;height:186px;pointer-events:none;z-index:30;opacity:.95;filter:drop-shadow(0 3px 12px rgba(120,110,160,.18))} /* BIG & readable — was 112px, you couldn't see shit */
+/* FLUID: size scales with the smaller viewport dimension, position clamps so it never runs off-screen at high zoom */
+#cofWheel{position:fixed;left:clamp(88px,10vw,128px);top:54px;bottom:auto;transform:none;width:clamp(120px,15vmin,186px);height:clamp(120px,15vmin,186px);pointer-events:none;z-index:30;opacity:.95;filter:drop-shadow(0 3px 12px rgba(120,110,160,.18))} /* right of the Sound button column, shrinks on small/zoomed screens */
 .mode-studio #cofWheel,.mode-play #cofWheel{pointer-events:auto} /* click a key in studio or play */
 /* keybed open used to hide the circle of fifths — but the wheel is top-left and the keybed is at the
    bottom, so they never crowd. keep it visible so you can watch the key/chords actuate while playing. */
-@media (max-width:820px){#cofWheel{width:132px;height:132px;left:6px;top:42px}} /* phone: still big enough to read, tucked top-left */
+@media (max-width:820px){#cofWheel{top:42px}} /* size + left handled by clamp; just nudge up on phones */
 #cofSvg{width:100%;height:100%;overflow:visible}
 #cofSvg .cofRing{fill:rgba(255,255,255,.28);stroke:rgba(255,255,255,.6);stroke-width:1} /* translucent — blends with the bg */
 #cofSvg .cofNode{cursor:default;transition:none}
 .mode-studio #cofSvg .cofNode{cursor:pointer}
 #cofSvg .cofDot{fill:rgba(150,140,185,.35);transition:r .25s ease,fill .25s ease}
-#cofSvg .cofLbl{font:700 10px system-ui,sans-serif;fill:var(--ink);opacity:.7;text-anchor:middle;dominant-baseline:central;pointer-events:none;transition:fill .25s ease} /* readable now (was 8px) */
+#cofSvg .cofLbl{font:700 9px system-ui,sans-serif;fill:var(--ink);opacity:.7;text-anchor:middle;dominant-baseline:central;pointer-events:none;transition:fill .25s ease}
+#cofSvg .cofFlat{font:600 6px system-ui,sans-serif;fill:var(--ink);opacity:.5;text-anchor:middle;dominant-baseline:central;pointer-events:none} /* enharmonic flat name, small + faint under the sharp */
+#cofSvg .cofActive .cofFlat{fill:#fff;opacity:.85}
 #cofSvg .cofActive .cofDot{fill:var(--accent,#b388f0);r:8.5}
 #cofSvg .cofActive .cofLbl{fill:#fff;opacity:1;font-weight:800}
 #cofSvg #cofTrail{fill:none;stroke:var(--accent,#b388f0);stroke-width:3;stroke-linecap:round;opacity:0}
@@ -368,12 +389,12 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 #chordProg{height:3px;border-radius:2px;background:rgba(170,160,200,.3);margin-top:5px;overflow:hidden}
 #chordProg i{display:block;height:100%;width:0;border-radius:2px;transition:width .12s linear}
 /* --- custom chord progression: the "chords" button + translucent editor panel over the wheel --- */
-#chordBtn{position:fixed;left:12px;top:248px;z-index:32;font:800 12px system-ui,sans-serif;color:#6a5f92;background:rgba(252,249,255,.85);border:1.5px solid var(--card-brd);border-radius:11px;padding:6px 16px;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:var(--shadow);letter-spacing:.4px;transition:background .15s} /* sits just under the 186px wheel */
+#chordBtn{position:fixed;left:clamp(132px,13vw,170px);top:clamp(190px,25vmin,248px);z-index:32;font:800 12px system-ui,sans-serif;color:#6a5f92;background:rgba(252,249,255,.85);border:1.5px solid var(--card-brd);border-radius:11px;padding:6px 16px;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:var(--shadow);letter-spacing:.4px;transition:background .15s} /* centered under the 186px wheel (now at left:116) */
 #chordBtn:hover{background:#fff}
 #chordBtn.on{background:#c9b3f0;color:#fff;border-color:#b79fe8}
-@media (max-width:820px){#chordBtn{top:182px;left:6px;font-size:11px;padding:5px 12px}}
-#chordPanel{position:fixed;left:12px;top:56px;width:290px;z-index:40;background:rgba(250,247,255,.86);border:1.5px solid var(--card-brd);border-radius:16px;padding:11px 12px 12px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(120,110,160,.28)}
-@media (max-width:820px){#chordPanel{left:6px;top:42px;width:min(290px,86vw)}}
+@media (max-width:820px){#chordBtn{top:222px;left:6px;font-size:11px;padding:5px 12px}} /* phone: stacked below the wheel + readout, top-left column */
+#chordPanel{position:fixed;left:clamp(80px,10vw,116px);top:56px;width:min(290px,80vw);z-index:40;background:rgba(250,247,255,.86);border:1.5px solid var(--card-brd);border-radius:16px;padding:11px 12px 12px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(120,110,160,.28)} /* opens over the wheel (now at left:116) */
+@media (max-width:820px){#chordPanel{left:70px;top:42px;width:min(290px,82vw)}}
 #chordPanel .cpHead{display:flex;align-items:center;gap:8px;margin-bottom:9px}
 #chordPanel .cpTitle{flex:1;font:800 13px system-ui,sans-serif;color:#5a4f78;letter-spacing:.3px}
 #chordPanel .cpHead button{border:none;background:rgba(200,190,225,.4);border-radius:8px;width:28px;height:26px;cursor:pointer;font-size:14px;color:#5a4f78;display:flex;align-items:center;justify-content:center}
@@ -401,6 +422,15 @@ aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;pa
 .slime.chill,.slime.peeker,.slime.rgirl,#wormEl{pointer-events:none} /* decorative edge/ambient slimes are click-through — they can NEVER sit on top of a button and eat the tap. only free-floating field toys stay clickable. */
 @keyframes beatBounce{0%{transform:translateY(0) scale(1,1)}22%{transform:translateY(-15px) scale(1.06,.94)}52%{transform:translateY(0) scale(.97,1.05)}100%{transform:translateY(0) scale(1,1)}}
 .slime.bpop .bob{animation:beatBounce .4s ease-out} /* audio-reactive pop on the beat */
+/* gentle always-on breathing so the crowd never looks frozen — tiny 3px bob, staggered via per-slime delay so they don't sync */
+@keyframes slimeBreathe{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-3px) scale(1.015,.985)}}
+.slime .bob{animation:slimeBreathe 3.2s ease-in-out infinite}
+.slime.bpop .bob{animation:beatBounce .4s ease-out} /* a beat pop overrides the breathe for its duration */
+/* geometry-break CHEER — a big happy hop, each slime slightly different via delay */
+@keyframes slimeCheer{0%{transform:translateY(0) scale(1,1)}20%{transform:translateY(-22px) scale(1.12,.9)}45%{transform:translateY(0) scale(.9,1.12)}70%{transform:translateY(-11px) scale(1.05,.95)}100%{transform:translateY(0) scale(1,1)}}
+.slime.cheer .bob{animation:slimeCheer .7s ease-out}
+/* fade during a colour morph so the swap isn't a hard pop */
+.slime.morphing{transition:opacity .35s ease}
 .mode-play .peek-left,.mode-play .peek-right{display:none} /* play: the candy buttons own the side edges — side peekers would collide, so they step out */
 .spCredit{position:fixed;bottom:12px;left:0;right:0;text-align:center;font-size:11.5px;font-weight:700;color:#463d66;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 3px rgba(255,255,255,.85)} /* legible on the bright crayon sky: darker ink + soft white halo that pierces without shouting */
 .spCredit a{color:#332c52;text-decoration:none;font-weight:800} .spCredit a:hover{text-decoration:underline}
@@ -542,6 +572,10 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <h1>slimehedron<span class="dot">.</span></h1>
   <span class="spacer"></span>
   <div class="btngroup"><!-- transport + instruments live together as one unbreakable row, every screen size -->
+    <div id="volTop" title="volume — kept in a kid-safe range"><!-- master volume: icon + lilac fader, left of the tempo knob -->
+      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="var(--lav)" stroke="#8a7fb0" stroke-width="1.3" stroke-linejoin="round"/><path d="M16 8.5a4 4 0 0 1 0 7" fill="none" stroke="#8a7fb0" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <input type="range" id="volPlay" min="0" max="100" value="55" aria-label="volume">
+    </div>
     <div id="tempoDial" title="tempo — turn left for slower, right for faster" aria-label="tempo">
       <span class="td-ico">slow</span>
       <div id="tempoKnob" class="rknob"><div class="kdot"></div></div>
@@ -859,7 +893,7 @@ const S={
   synth:true,wave:"triangle",sub:0,
   atk:0.001,dec:0.15,sus:0.18,rel:0.28,
   filt:"lowpass",cut:0.78,res:0,fenv:0.30,
-  vol:0.55,wM:0.34,wD:0.33,wK:0.33,wMg:1,bpMix:0.5,dly:0,warm:0.3,filtOn:true,fxOn:true,chMel:1,chDrum:2,chBass:3,chPad:4,midi:false,midiOut:null,
+  vol:0.4675,wM:0.34,wD:0.33,wK:0.33,wMg:1,bpMix:0.5,dly:0,warm:0.3,filtOn:true,fxOn:true,chMel:1,chDrum:2,chBass:3,chPad:4,midi:false,midiOut:null, // vol = slider 55 × 0.85 kid-safe scale (UI shows 55%, actual gain 0.4675)
   rainRate:0.5,rainAmt:0.35,slimeMode:false,randomShape:true,mpe:false,groove:true,
   scaleLock:true // note-snap ON by default — defined here so it's NEVER undefined (undefined read as "off" = the snap silently not working)
 };
@@ -876,7 +910,9 @@ function initAudio(){
   bandBus.connect(bandMix);bandMix.connect(master); // duck stage -> mix stage
   melBus=AC.createGain();melBus.gain.value=1;melBus.connect(master);
   lim=AC.createDynamicsCompressor(); // module-level so the PCM recorder (startPCM) can tap it on iOS
-  lim.threshold.value=-6;lim.ratio.value=14;lim.attack.value=.003;lim.release.value=.25;
+  // KID-SAFE OUTPUT CEILING: final brickwall limiter. threshold -8.5dBFS (was -6) so sustained loudness stays gentle
+  // for long sessions on earbuds/headphones — peaks physically cannot exceed this. attack fast enough to catch transients.
+  lim.threshold.value=-8.5;lim.ratio.value=16;lim.attack.value=.003;lim.release.value=.25;
   delayNode=AC.createDelay(2.0);delayNode.delayTime.value=60/S.bpm*0.75;
   dlyFb=AC.createGain();dlyFb.gain.value=0.2;
   dlyWet=AC.createGain();dlyWet.gain.value=S.dly;
@@ -1281,13 +1317,19 @@ function isMinorScale(){const c=scaleObj().c;for(const cents of c){const iv=((Ma
 // ---- CIRCLE OF FIFTHS wheel: the ONLY key indicator kids need. 12 nodes in fifths order; the current key glows.
 // play = read-only glow + a soft arc that traces the fifth-step when the key moves. studio = click a key to set+pin it.
 const COF=[0,7,2,9,4,11,6,1,8,3,10,5]; // C G D A E B F# C# G# D# A# F — pitch classes clockwise by fifths
-const COF_LBL=["C","G","D","A","E","B","F♯","C♯","G♯","D♯","A♯","F"]; // kid-plain letters (sharp side only, no double-naming)
+const COF_LBL=["C","G","D","A","E","B","F♯","C♯","G♯","D♯","A♯","F"]; // sharp-name per node (used for the hub letter)
+const COF_FLAT={6:'G♭',7:'D♭',8:'A♭',9:'E♭',10:'B♭'}; // enharmonic flat name for the 5 accidental nodes (shown small under the sharp)
 let _cofBuilt=false,_cofPrevPc=null;
 function cofPos(i){const ang=(i/12)*2*Math.PI-Math.PI/2;return [66+Math.cos(ang)*47,66+Math.sin(ang)*47];}
 function buildWheel(){const svg=document.getElementById('cofSvg');if(!svg||_cofBuilt)return;
   let h='<circle class="cofRing" cx="66" cy="66" r="63"/><path id="cofTrail"/>';
   for(let i=0;i<12;i++){const [x,y]=cofPos(i);
-    h+=`<g class="cofNode" data-pc="${COF[i]}"><circle class="cofDot" cx="${x}" cy="${y}" r="7"/><text class="cofLbl" x="${x}" y="${y}">${COF_LBL[i]}</text></g>`;}
+    const flat=COF_FLAT[i];
+    // accidental nodes show BOTH names: sharp on top, flat just under it (smaller). naturals show one centered letter.
+    const lbl=flat
+      ? `<text class="cofLbl" x="${x}" y="${y-2.5}">${COF_LBL[i]}</text><text class="cofFlat" x="${x}" y="${y+4.5}">${flat}</text>`
+      : `<text class="cofLbl" x="${x}" y="${y}">${COF_LBL[i]}</text>`;
+    h+=`<g class="cofNode" data-pc="${COF[i]}"><circle class="cofDot" cx="${x}" cy="${y}" r="7"/>${lbl}</g>`;}
   h+='<text id="cofHub" x="66" y="66">A</text>';
   svg.innerHTML=h;_cofBuilt=true;
   // studio: click a key node -> set that root and PIN it (slime rotation stops until slime is toggled off/on)
@@ -1774,9 +1816,10 @@ function segHit(o,segs){
     if(d<o.r){const nx=dx/d,ny=dy/d,vn=o.vx*nx+o.vy*ny;if(vn<0){o.vx-=1.85*vn*nx;o.vy-=1.85*vn*ny;}o.x=cxp+nx*o.r;o.y=cyp+ny*o.r;return e;}}
   return null;
 }
-function slimeParty(ms,face){ // every slime on screen loses their mind together
-  document.querySelectorAll('.slime').forEach(el=>{const b=el.querySelector('.bob');if(!b||!el.dataset.fill)return;
+function slimeParty(ms,face){ // every slime on screen loses their mind together — face pop + a staggered CHEER-HOP wave
+  document.querySelectorAll('.slime').forEach((el,i)=>{const b=el.querySelector('.bob');if(!b||!el.dataset.fill)return;
     b.innerHTML=slimeSVG(el.dataset.fill,face||'wow');el.classList.add('squish'); // dataset.fill is a family name now (slimeSVG handles it)
+    setTimeout(()=>{if(!el.classList.contains('cheer')){el.classList.add('cheer');setTimeout(()=>el.classList.remove('cheer'),720);}},(i%12)*45+Math.random()*40); // ripple, not a robotic sync
     setTimeout(()=>{el.classList.remove('squish');b.innerHTML=slimeSVG(el.dataset.fill,el.dataset.face||'happy');},ms||2000);});
   if(typeof setKnobFace==='function'){setKnobFace('surprise');setTimeout(()=>setKnobFace('happy'),ms||2000);}}
 let _hype=false; // one anticipation wave per fill cycle
@@ -2132,7 +2175,8 @@ function loop(now){
   try{draw();}catch(e){console.error('draw error (loop kept alive):',e);}
   if(S.playing&&(drumOn||bandOn)&&AC){ // a slime bounces on every beat, in time with the music
     const bp=(drumStep-(drumTime-AC.currentTime)/drumStepDur())/drumSPB(),fb=Math.floor(bp);
-    if(fb!==_beatIdx){_beatIdx=fb;if(fb>0&&window._bounceSlime)window._bounceSlime();}}
+    if(fb!==_beatIdx){_beatIdx=fb;if(fb>0&&window._bounceSlime)window._bounceSlime();
+      if(fb>0&&fb%16===0&&window._morphSlime)window._morphSlime();}} // every 16 beats (~4 bars): one slime morphs to a new colour + hops to a fresh spot
   requestAnimationFrame(loop);
 }
 // ONE physics tick. Everything that MOVES lives here so it can run on a fixed clock (below).
@@ -2232,7 +2276,10 @@ bindRange("velFix","velFix");bindRange("velMin","velMin");bindRange("velMax","ve
 bindRange("sub","sub",v=>v/100);
 bindRange("atk","atk",v=>v/100*1.5);bindRange("dec","dec",v=>v/100*1.5);bindRange("sus","sus",v=>v/100);bindRange("rel","rel",v=>v/100*2);
 bindRange("cut","cut",v=>v/100);bindRange("res","res",v=>v/100);bindRange("fenv","fenv",v=>v/100);
-bindRange("vol","vol",v=>{const x=v/100;S.vol=x;applyMix();return x;});
+bindRange("vol","vol",v=>{const x=(v/100)*0.85;S.vol=x;applyMix();const vp=$("volPlay");if(vp&&vp.value!=v)vp.value=v;return x;}); // slider 0-100 maps to 0-0.85 gain: even "max" leaves headroom under the -8.5dB limiter (kid-safe ceiling). mirrors the top-bar fader.
+// top-bar master volume fader — drives the SAME kid-safe volume as the settings slider, kept in sync both ways.
+(function(){const vp=$("volPlay"),vs=$("vol");if(!vp)return;
+  vp.addEventListener('input',()=>{const v=+vp.value;const x=(v/100)*0.85;S.vol=x;if(AC&&master){master.gain.setTargetAtTime(x,AC.currentTime,0.05);}if(vs&&vs.value!=v){vs.value=v;const vv=$("volV");if(vv)vv.textContent=v;}});})();
 $("warmSl").addEventListener('input',e=>setWarmth(e.target.value/100)); // safe before audio init: stores S.warm, applied when audio starts
 bindRange("swingSl","swing",v=>v/100);
 bindRange("dly","dly",v=>{const x=Math.pow(v/100,2)*0.5;if(dlyWet){if(dlyWet.gain.setTargetAtTime)dlyWet.gain.setTargetAtTime(x,AC.currentTime,0.05);else dlyWet.gain.value=x;}return x;}); // squared taper, capped at 0.5 wet — front half of the slider stays subtle
@@ -2770,10 +2817,12 @@ window.pixSlime=function(fill,face,opt){ // opt: {cap:1} teacher's cap · {girl:
 // none of the placement code below had to change — only which family a slime belongs to.
 // each colour FAMILY has expression frames (happy / blink / wow). more families + more variations now = a richer,
 // less repetitive crowd. teal has 4 arts, so it rotates through them for extra nuance.
+// white family SCRAPPED — its PNG has an ugly visible white halo. teal4 folded in as a 4th teal variant so every art file is used.
 const MINI={green:{happy:'grn',blink:'grn3',wow:'grn2'},violet:{happy:'violet',blink:'violet3',wow:'violet2'},
   blue:{happy:'blue1',blink:'blue3',wow:'blue2'},pear:{happy:'pear1',blink:'pear3',wow:'pear2'},
   pink:{happy:'pink1',blink:'pink3',wow:'pink2'},teal:{happy:'teal',blink:'teal3',wow:'teal2'},
-  orange:{happy:'orange',blink:'orange',wow:'orange'},white:{happy:'white',blink:'white',wow:'white'},
+  teal2fam:{happy:'teal4',blink:'teal2',wow:'teal'},
+  orange:{happy:'orange',blink:'orange',wow:'orange'},
   rainbow:{happy:'bo',blink:'bo2',wow:'bo'}};
 const SLIME_FAMS=Object.keys(MINI); // all families, for evenly spreading colour around the field
 const HEX2CHAR={'#9fe6cf':'green','#c4a9f5':'violet','#a6c8ff':'blue','#ffe39c':'pear','#ffb6d6':'pink','#ffc0a8':'orange','#7fd8d0':'teal'}; // palette vars → families
@@ -2898,13 +2947,28 @@ const chillers=[]; // full-view slimes with cursor physics
   window._bounceSlime=function(){const els=layer.querySelectorAll('.mfill, .peeker[data-state="out"]');if(!els.length)return;
     const el=els[(Math.random()*els.length)|0];if(el.classList.contains('bpop'))return;
     el.classList.add('bpop');setTimeout(()=>el.classList.remove('bpop'),400);};
+  // ---- every 4 bars: ONE random slime morphs to a NEW colour (+ matching face) and hops to a fresh spot.
+  // keeps the crowd from looking samey/static without being chaotic. fades out → swap → fades back in a new place.
+  function slimeSpot(el){ // a fresh random resting position in a safe margin (never on the tank or a control)
+    const rc=cv.getBoundingClientRect(),W=innerWidth,H=innerHeight,btn=matchMedia('(max-width:820px)').matches?58:118;
+    const left=Math.random()<0.5;
+    const x=left?(btn+6+Math.random()*Math.max(10,rc.left-btn-46)):(rc.right+8+Math.random()*Math.max(10,W-btn-rc.right-46));
+    const y=Math.max(96,rc.top+20)+Math.random()*Math.max(30,(H-120)-(rc.top+20));
+    el.style.left=(x|0)+'px';el.style.top=(y|0)+'px';el.style.right='auto';el.style.bottom='auto';}
+  window._morphSlime=function(){const els=layer.querySelectorAll('.mfill');if(!els.length)return;
+    const el=els[(Math.random()*els.length)|0];if(el.classList.contains('morphing'))return;
+    el.classList.add('morphing');el.style.opacity='0';
+    setTimeout(()=>{const fam=nextFam(),face=randFace();el.dataset.fill=fam;el.dataset.face=face;
+      const b=el.querySelector('.bob');if(b)b.innerHTML=slimeSVG(fam,face);
+      slimeSpot(el);requestAnimationFrame(()=>{el.style.opacity='1';setTimeout(()=>el.classList.remove('morphing'),360);});},360);};
+  // (geometry-break cheer-hop is handled by slimeParty(), already called from startBreak — no duplicate needed)
   // ---- upside-down nappers: hang off the top of the play area, ignore your mouse completely.
   // click one → big-eye mode: pulses to the beat in rainbow for 4 bars, then back to napping. just for the hell of it.
   const sleepers=[];
   function sleeper(fx,fillVar,size){const el=document.createElement('div');el.className='slime';
     el.style.cssText=`position:fixed;width:${size}px;height:${Math.round(size*0.93)}px;transition:none`;
     el.title='hi!';
-    el.innerHTML=`<div>${slimeSVG(cssVar(fillVar),'happy')}</div>`;
+    el.innerHTML=`<div class="bob" style="animation-delay:${(Math.random()*3).toFixed(2)}s">${slimeSVG(cssVar(fillVar),'happy')}</div>`;
     el.addEventListener('click',()=>{if(el._rave)return;el._rave=true;
       el.firstChild.innerHTML=slimeSVG(cssVar(fillVar),'bigeye');
       const t0=performance.now(),spb=60000/S.bpm,dur=16*spb; // 4 bars at the tempo when you woke it
@@ -3366,7 +3430,8 @@ window.slimeStar=function(){}; // intentionally a no-op — a "win" is its own r
 // ---------- first-run coach: signal the three essentials, advance on the child's own action ----------
 function startCoach(){
   try{if(localStorage.getItem('slimehedron-coach'))return;}catch(e){}
-  const steps=[['#cv','tap anywhere — every tap makes a note',1],['#slimeBig','auto-play — the slime jams for you',0],['#triMix','drag the dot — melody · drums · band',0]];
+  // dropped the "tap anywhere" step (Flah: kill the click-the-screen sentence) — tapping is self-evident. keep only the two hints that point at non-obvious controls.
+  const steps=[['#slimeBig','auto-play — the slime jams for you',0],['#triMix','drag the dot — melody · drums · band',0]];
   let i=0;const b=document.createElement('div');b.id='coach';document.body.appendChild(b);
   function show(){const st=steps[i],el=document.querySelector(st[0]);if(!el){end();return;}
     const r=el.getBoundingClientRect();
