@@ -187,7 +187,7 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 /* SHORT screens: 5 big stacked buttons would overflow, so scale them down to fit vertically */
 @media (max-height:760px){.psBtn{width:60px;height:60px}.psBtn svg{width:36px;height:36px}.psBtn.bandBtn img{width:50px;height:50px}.psLbl{font-size:15px}.psSub{font-size:13px}.psCol{gap:9px}}
 /* phones scale down (screen's small), but still legible */
-@media (max-width:820px){.psBtn{width:50px;height:50px;border-radius:16px}.psBtn svg{width:30px;height:30px}.psBtn.bandBtn img{width:42px;height:42px}.psLbl{font-size:13px}.psSub{font-size:11px}.psCol{gap:9px}}
+@media (max-width:820px){.psBtn{width:44px;height:44px;border-radius:14px}.psBtn svg{width:26px;height:26px}.psBtn.bandBtn img{width:36px;height:36px}.psLbl{font-size:11px}.psSub{font-size:9px}.psCol{gap:8px}}
 /* groove selector (studio): tidy folders of feels */
 #grooveCard .gcur{font-size:12px;font-weight:700;color:var(--accent);float:right}
 .chLbl{font-size:10px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px}
@@ -329,8 +329,8 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
   .mode-studio #triMixBar,.mode-play #triMixBar{bottom:6px;left:50%;transform:translateX(-50%)}
   #triMix svg{width:178px!important;height:auto!important} /* bigger mixer + icons on phone (per Flah) */
   /* SLIMES were huge on phones (base 90px). scale to ~desktop proportion, smart-shrinking with the viewport. */
-  .slime{width:clamp(42px,13vw,60px)!important;height:auto!important;aspect-ratio:90/84}
-  #wormEl{width:clamp(40px,11vw,60px)!important}
+  .slime{width:clamp(34px,10.5vw,50px)!important;height:auto!important;aspect-ratio:90/84} /* smaller on phone so more can spread without clutter */
+  #wormEl{width:clamp(36px,10vw,54px)!important}
 }
 /* ===== HARD SAFETY FALLBACK — guarantees a usable layout on ANY small device (no overlaps, ever) =====
    As the screen narrows, the mixer and side buttons step down in size and the tank keeps priority. These caps mean
@@ -341,15 +341,15 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
   .psBtn svg{width:24px!important;height:24px!important}
   .psBtn.bandBtn img{width:34px!important;height:34px!important}
   .psCol{gap:7px!important}
-  .mode-play main{padding:0 50px 8px!important} /* keep the tank clear of the side columns */
+  .mode-play main{padding:268px 46px 8px!important} /* KEEP the top space for the wheel stack (was wiping it to 0) + narrower gutters */
 }
 @media (max-width:400px){
   #triMix svg{width:150px!important}         /* bigger mixer on phones (per Flah) — still clears the tank */
-  .psBtn{width:36px!important;height:36px!important}
-  .psBtn svg{width:20px!important;height:20px!important}
-  .psBtn.bandBtn img{width:29px!important;height:29px!important}
+  .psBtn{width:38px!important;height:38px!important}
+  .psBtn svg{width:21px!important;height:21px!important}
+  .psBtn.bandBtn img{width:30px!important;height:30px!important}
   .psLbl{font-size:9px!important}.psSub{font-size:7px!important}
-  .mode-play main{padding:0 44px 8px!important}
+  .mode-play main{padding:262px 42px 8px!important}
   #menuBtn{width:46px!important;height:46px!important;right:8px!important;bottom:8px!important} /* smaller FAB, tucked in the corner */
 }
 @media (max-height:520px){ /* very SHORT screens (landscape phones): shrink the floating mixer so it can't cover the tank */
@@ -500,15 +500,20 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 .chCol span{font-size:14px;line-height:1}
 @media (max-width:820px){
   body{height:100dvh}
-  /* MOBILE TOP BAR — one tight row (vol · tempo · pause · record), like desktop, no wasted top space, no wrap. */
-  header{flex-wrap:nowrap;gap:6px;padding:48px 8px 6px;justify-content:center}
-  header h1{display:none} /* redundant on the tiny header — back button + doors brand it */
+  /* MOBILE TOP BAR — transport (vol · tempo · pause · record) is the VERY TOP centered row, tidy + tight. */
+  header{flex-wrap:nowrap;gap:5px;padding:8px 6px 4px;justify-content:center}
+  header h1{display:none}
   header .spacer{display:none}
-  .btngroup{gap:6px;flex-wrap:nowrap}
-  #volTop{gap:3px;padding:0 1px} #volTop input[type=range]{width:34px} #volTop svg{width:15px;height:15px}
+  .btngroup{gap:5px;flex-wrap:nowrap}
+  #volTop{gap:3px;padding:0 1px} #volTop input[type=range]{width:32px} #volTop svg{width:14px;height:14px}
   .mode-play #tempoDial{padding:2px 5px;gap:2px} #tempoDial .td-ico{font-size:10px} #tempoKnob{width:22px;height:22px}
-  .btn.big,.btn.primary{min-height:34px!important;padding:5px 8px!important;font-size:12px!important;border-radius:11px!important} /* compact transport — no oversized pause/record */
-  #recDot{width:16px;height:16px}
+  .btn.big,.btn.primary{min-height:32px!important;padding:4px 8px!important;font-size:12px!important;border-radius:11px!important} /* compact transport */
+  #recDot{width:15px;height:15px}
+  /* back = just an arrow, tiny, top-left; share/clear shrink and drop to their own row UNDER the transport, top-right */
+  #exitMode{top:8px!important;left:6px!important;padding:6px 9px!important;font-size:0!important;z-index:262} /* hide the word, keep the ← (added via ::before) */
+  #exitMode::before{content:"←";font-size:16px;font-weight:800}
+  .mode-play #topRight{top:auto!important;bottom:auto!important;right:6px!important;top:44px!important;gap:5px} /* share+clear sit on a 2nd row below the transport */
+  .mode-play #topRight #shareApp,.mode-play #topRight #clearBtn{padding:6px 9px!important;font-size:11px!important;min-height:0!important}
   #autoRow{padding:0;margin:0}
   #triMixBar{justify-content:center;gap:10px}
   #drumBtn svg,#dropBtn svg{width:22px;height:22px}
@@ -518,15 +523,15 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   canvas{border-radius:16px}
   /* ---- MOBILE top-band stack: slime toggle → wheel (centered) → chords button, all above the tank ---- */
   /* tight vertical stack, all centered: toggle → wheel → chords button → tank */
-  #autoRow{position:fixed;top:88px;left:50%;transform:translateX(-50%);z-index:61}
+  #autoRow{position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:61}
   /* ID-scoped so these WIN over the base .slimeswitch rules that appear later in the file (equal-specificity order trap) */
   #autoRow .slimeswitch{width:84px;height:38px;border-radius:19px}   /* was 150×66 — must be SMALLER than the wheel */
   #autoRow .ss-knob{width:30px;height:30px;top:4px;left:4px} #autoRow .slimeswitch.on .ss-knob{left:50px} #autoRow .ss-knob .sic{width:25px;height:23px}
-  #cofWheel{left:50%!important;top:134px!important;transform:translateX(-50%)!important;width:clamp(124px,36vw,150px)!important;height:clamp(124px,36vw,150px)!important} /* CENTERED above tank; clearly bigger than the toggle now */
+  #cofWheel{left:50%!important;top:102px!important;transform:translateX(-50%)!important;width:clamp(106px,31vw,128px)!important;height:clamp(106px,31vw,128px)!important} /* raised + ~15% smaller so it never touches the tank */
   #chordPill{display:none!important} /* phone: the wheel hub already shows the key — drop the separate readout to save vertical room */
-  #chordBtn{left:50%!important;top:278px!important;transform:translateX(-50%)!important} /* centered under the (bigger) wheel */
-  #chordPanel{left:50%!important;top:96px!important;transform:translateX(-50%)!important;width:min(300px,90vw)}
-  .mode-play main{padding:314px 50px 8px} /* tank sits below the wheel stack; reserve side columns */
+  #chordBtn{left:50%!important;top:236px!important;transform:translateX(-50%)!important;font-size:11px!important;padding:4px 12px!important} /* raised, clear of the tank */
+  #chordPanel{left:50%!important;top:64px!important;transform:translateX(-50%)!important;width:min(300px,90vw)}
+  .mode-play main{padding:268px 44px 8px} /* tank sits below the raised wheel stack; tighter side gutters */
   main{padding:0 8px 8px}
   aside{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:74vh;background:rgba(246,240,255,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-radius:22px 22px 0 0;box-shadow:0 -12px 40px rgba(120,100,170,.4);padding:8px 14px 24px;transform:translateY(105%);transition:transform .32s cubic-bezier(.3,1,.3,1);z-index:80;overflow-y:auto}
   aside.open{transform:translateY(0)}
@@ -627,7 +632,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </svg></div>
   <span id="drumCtl" style="display:flex;align-items:center;gap:8px;opacity:.35;pointer-events:none">
     <svg width="16" height="16" viewBox="0 0 24 24" style="flex:none"><use href="#icDrum"/></svg><!-- this cluster = the drums -->
-    <select id="drumKit" style="flex:none;width:auto" title="drum kit / style"><option value="pop" selected>pop</option><option value="rock">rock</option><option value="disco">disco</option><option value="bossa">bossa nova</option><option value="samba">samba</option><option value="march">march</option><option value="industrial">industrial</option><option value="conga">conga</option><option value="chip">chiptune</option><option value="beep">electro</option></select>
+    <select id="drumKit" style="flex:none;width:auto" title="drum kit / style"><option value="pop" selected>pop</option><option value="rock">rock</option><option value="disco">disco</option><option value="bossa">bossa nova</option><option value="samba">samba</option><option value="march">march</option><option value="industrial">industrial</option><option value="jazz">jazz</option><option value="conga">conga</option><option value="chip">chiptune</option><option value="beep">electro</option></select>
     <select id="divSel" style="flex:none;width:auto" title="note division (T = triplet)"><option value="1/2">1/2</option><option value="1/4">1/4</option><option value="1/8" selected>1/8</option><option value="1/8T">1/8T</option><option value="1/16">1/16</option><option value="1/16T">1/16T</option><option value="1/32">1/32</option></select>
     <select id="drumSig" style="flex:none;width:auto" title="time signature"><option value="16" selected>4/4</option><option value="12">3/4</option><option value="12c">6/8</option><option value="20" title="counts 1-2-3 1-2">5/4</option><option value="14" title="counts 1-2 1-2 1-2-3">7/8</option><option value="18" title="counts 1-2 1-2 1-2 1-2-3">9/8</option></select>
   </span>
@@ -747,7 +752,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <h2>timing</h2>
       <div class="row"><label>tempo (BPM)</label><input type="number" id="bpmNumSide" class="numin" min="40" max="220" step="0.01" value="80" title="type an exact BPM"><input type="range" id="bpm" min="40" max="220" value="80"><span class="val" id="bpmV">80</span></div>
       <div class="row"><label title="drum kit / rhythm style">drum kit</label>
-        <select id="drumKitSide" style="flex:none;width:auto"><option value="pop" selected>pop</option><option value="rock">rock</option><option value="disco">disco</option><option value="bossa">bossa nova</option><option value="samba">samba</option><option value="march">march</option><option value="industrial">industrial</option><option value="conga">conga</option><option value="chip">chiptune</option><option value="beep">electro</option></select></div>
+        <select id="drumKitSide" style="flex:none;width:auto"><option value="pop" selected>pop</option><option value="rock">rock</option><option value="disco">disco</option><option value="bossa">bossa nova</option><option value="samba">samba</option><option value="march">march</option><option value="industrial">industrial</option><option value="jazz">jazz</option><option value="conga">conga</option><option value="chip">chiptune</option><option value="beep">electro</option></select></div>
       <div class="row"><label title="time signature">time signature</label>
         <select id="drumSigSide" style="flex:none;width:auto"><option value="16" selected>4/4</option><option value="12">3/4</option><option value="12c">6/8</option><option value="20">5/4</option><option value="14">7/8</option><option value="18">9/8</option></select></div>
       <div class="row"><label title="how many notes fit in each beat">subdivision</label>
@@ -1082,18 +1087,24 @@ function initDrums(){if(drumBus)return;drumBus=AC.createGain();drumBus.gain.valu
   drumEQ=AC.createBiquadFilter();drumEQ.type='peaking';drumEQ.frequency.value=180;drumEQ.gain.value=2.2;drumEQ.Q.value=0.7; // a touch of low-mid body so kick+snare feel foundational
   drumBus.connect(drumComp);drumComp.connect(drumEQ);drumEQ.connect(slimeEQ);applyMix();} // drum level lives in the triangle mixer now
 function rep(base,bars){const out=[];for(let b=0;b<bars;b++)for(const st of base)out.push(st+16*b);return out;}
+function bars(...b){const out=[];b.forEach((st,i)=>st.forEach(x=>out.push(x+16*i)));return out;} // 4 DIFFERENT bars (casio styles breathe: the kick moves, bar 4 gets a pickup)
+// RHYTHM SOURCES: pop / rock / disco / bossa / jazz are step positions derived from open-source MIDI
+// (casio-music-data by Nicholas Opuni, github.com/nicholasopuni31/casio-music-data — used with credit per its
+// README; muted.io/drum-patterns for reference grooves). Extracted offline by patterns/tools/midi2patterns.py —
+// no MIDI is parsed or fetched at runtime. Full attribution: THIRD-PARTY.md
 const KITS={ // 64 sixteenth-steps = 4 bars
   chip:{K:rep([0,8],4),s:rep([4,12],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[],r:[]}, // gameboy 4/4: kick / hat / snare / hat
   conga:{K:rep([0,8],4),r:rep([4,12],4),c:rep([2,7,11],4),C:rep([3,6,14],4),h:[]}, // now a HEAD-BOPPER: kick on 1&3, rim backbeat on 2&4, congas syncopated on top (was all-conga, no kick = no beat)
-  bossa:{r:rep([0,6,12],2).concat(rep([4,8],2).map(x=>x+32)),h:rep([0,2,4,6,8,10,12,14],4),K:rep([0,8],4),c:[],C:[]},
-  rock:{K:rep([0,8,10],4),s:rep([4,12],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[],r:[]},
+  bossa:{K:rep([0,6,8,14],4),h:rep([0,2,4,6,8,10,12,14],4),r:rep([0,6],4),c:[],C:[],s:[]}, // casio "Bossa Nova 1": surdo kick on 1 + the & of 2, side-stick clave, straight-8th hats
+  rock:{K:bars([0,6,8,14],[0,8,10,14],[0,6,8,14],[2,6,10,14]),s:rep([4,12],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[],r:[]}, // casio "Rock 2": the kick shifts every bar so 4 bars never repeat flat
   beep:{K:rep([0,4,8,12],4),r:rep([2,6,10,14],4),h:[],c:[],C:rep([15],4)},
   // ---- original recreations of classic home-keyboard "styles" (genre conventions, not copied data) ----
-  pop:{K:rep([0,8],4),s:rep([4,12],4),h:rep([0,4,8,12],4),c:[],C:[],r:[]},                      // BASIC pop (old-Casio simple): kick 1·3, snare 2·4, hats on the quarter beats — lots of room for the melody
-  disco:{K:rep([0,4,8,12],4),s:rep([4,12],4),h:rep([2,6,10,14],4),c:[],C:[],r:[]},              // four-on-the-floor: kick every beat, open hats on every off-beat
+  pop:{K:rep([0,6,10],4),s:bars([4,12],[4,12],[4,12],[4,10,12]),h:bars([0,2,4,6,8,10,12,14],[0,2,4,6,8,10,12,14,15],[0,2,4,6,8,10,12,14],[0,2,4,6,8,10,12,14]),c:bars([],[],[],[14]),C:[],r:[]}, // casio "8 Beat Pop": the & -of-2 kick push + a snare pickup in bar 4                      // BASIC pop (old-Casio simple): kick 1·3, snare 2·4, hats on the quarter beats — lots of room for the melody
+  disco:{K:rep([0,4,8,12],4),s:rep([4,12],4),h:rep([0,1,2,4,5,6,8,9,10,12,13,14],4),c:[],C:rep([2,6,10,14],4),r:[]}, // casio "Disco 1": 4-on-floor + the gapped 16th hat shuffle + off-beat perc. (casio claps the backbeat; kept it on snare so it still hits)              // four-on-the-floor: kick every beat, open hats on every off-beat
   march:{K:rep([0,8],4),s:rep([4,6,12,14,15],4),h:rep([0,4,8,12],4),c:[],C:[],r:[]},            // marching band: kick 1·3, snare cadence w/ a roll into the 1
   samba:{K:rep([0,8],4),c:rep([2,6,10,14],4),C:rep([3,7,11,15],4),r:rep([0,3,6,10,12],4),h:rep([0,2,4,6,8,10,12,14],4)}, // festive latin: syncopated congas + clave
-  industrial:{K:rep([0,4,8,12],4),s:rep([4,12],4),r:rep([2,6,10,14],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[]} // relentless machine: 4-on-floor kick, clap backbeat, off-beat metal clang
+  industrial:{K:rep([0,4,8,12],4),s:rep([4,12],4),r:rep([2,6,10,14],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[]},
+  jazz:{K:rep([0,11],4),s:bars([4,12],[4,12],[4,12],[4,12,15]),h:rep([0,4,7,8,12,15],4),c:[],C:[],r:[]} // casio "Jazz Voices": swung ride (ding · ding-da), light kick, real 2 & 4 backbeat // relentless machine: 4-on-floor kick, clap backbeat, off-beat metal clang
 };
 const PATTERNS={ // real signature skeletons, role-based: lo=kick, mid=snare, hi=pulse
   '12':{lo:[0],mid:[4,8],hi:[0,2,4,6,8,10]},                 // 3/4 waltz: BOOM chick chick
@@ -1105,7 +1116,7 @@ const PATTERNS={ // real signature skeletons, role-based: lo=kick, mid=snare, hi
 // each kit's low/mid/hi voice. mid=snare-ish, hi=hat-ish. we lead with the NOISE voices (s snare, h hat) so beats sound
 // like drums, not bleeps; 'C' (tom) and 'r' (rim click) are now proper drum sounds too, used where they add character.
 const KITVOICE={chip:{lo:'K',mid:'s',hi:'h'},conga:{lo:'K',mid:'C',hi:'h'},bossa:{lo:'K',mid:'s',hi:'h'},rock:{lo:'K',mid:'s',hi:'h'},beep:{lo:'K',mid:'r',hi:'h'},
-  pop:{lo:'K',mid:'s',hi:'h'},disco:{lo:'K',mid:'s',hi:'h'},march:{lo:'K',mid:'s',hi:'h'},samba:{lo:'K',mid:'C',hi:'h'},industrial:{lo:'K',mid:'s',hi:'h'}};
+  pop:{lo:'K',mid:'s',hi:'h'},disco:{lo:'K',mid:'s',hi:'h'},march:{lo:'K',mid:'s',hi:'h'},samba:{lo:'K',mid:'C',hi:'h'},industrial:{lo:'K',mid:'s',hi:'h'},jazz:{lo:'K',mid:'s',hi:'h'}};
 // each kit = a 909-style engine tuned to a distinct CHARACTER. st=style branches the kick/snare/hat recipe so the
 // five play kits truly sound different (punchy / boomy / acoustic / brushy / sub), never one samey chiptune beep.
 // kf=kick start Hz, ke=kick end Hz, kd=kick decay, kv=kick vol, kc=click amount · sf=snare noise Hz, sd=snare decay,
@@ -1120,7 +1131,8 @@ const KITTONE={
   conga:{st:'909',kf:150,ke:45,kd:0.3,kv:0.85,kc:0.5,sf:1800,sd:0.09,sb:190,sn:0.7,hf:7500,hd:0.03,hm:0.4},
   beep:{st:'chip',kf:185,ke:62,kd:0.18,kv:0.78,kc:0.4,sf:2300,sd:0.06,sb:215,sn:0.5,hf:9000,hd:0.024,hm:0.3},
   march:{st:'acoustic',kf:140,ke:55,kd:0.2,kv:0.95,kc:0.8,sf:2600,sd:0.07,sb:210,sn:0.85,hf:7000,hd:0.02,hm:0.3},
-  samba:{st:'909',kf:160,ke:50,kd:0.22,kv:0.85,kc:0.6,sf:2200,sd:0.07,sb:200,sn:0.7,hf:9200,hd:0.03,hm:0.5}
+  samba:{st:'909',kf:160,ke:50,kd:0.22,kv:0.85,kc:0.6,sf:2200,sd:0.07,sb:200,sn:0.7,hf:9200,hd:0.03,hm:0.5},
+  jazz:{st:'brush',kf:135,ke:50,kd:0.28,kv:0.7,kc:0.3,sf:2500,sd:0.11,sb:195,sn:0.92,hf:7800,hd:0.045,hm:0.3}
 };
 // ===== GROOVE ENGINE: micro-timing + velocity "feels" baked from the MIDI groove pack =====
 // each groove = 16 slots of {off: timing shift as fraction of a 16th, vel: velocity accent}. downbeat off always 0.
@@ -1680,7 +1692,7 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
       }
       // SIMPLE kits (pop/bossa/industrial/march) stay clean — no ghost-note clutter, no busy fills. leaves the
       // whole floor for the melody. the busier kits (rock/disco/samba/conga) still get a LITTLE life, but much less.
-      const SIMPLE={pop:1,bossa:1,industrial:1,march:1,chip:1}, simple=SIMPLE[drumKit];
+      const SIMPLE={pop:1,bossa:1,industrial:1,march:1,chip:1,jazz:1}, simple=SIMPLE[drumKit];
       if(!simple){
         // a rare, quiet ghost hat (only ~1 bar in 4, and softer) — a breath of life, not a wall of ticks
         if(KITVOICE[drumKit].hi==='h'&&inBar===6&&(barI&1)===0&&!kit.h.includes(pst))dHit('h',gt,0.15*hum);
@@ -2518,7 +2530,7 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
   // COOL pastel backgrounds so the warm/green crayon band icon stays clearly visible (warm bgs like peach/mint would blend into it)
   const DK=[['pop','#e6f2ff','#c4e0ff','#3a6ea8','1','pop'],['rock','#efe6ff','#d4c2f5','#6b4fa8','2','rock'],
             ['disco','#e7e8ff','#c6caf5','#4a4a9e','3','disco'],['bossa','#eef1f6','#d3dbe8','#5a6478','4','bossa'],
-            ['industrial','#e4e7ee','#c2c8d6','#4a5568','5','industrial']];
+            ['jazz','#e4e7ee','#c2c8d6','#4a5568','5','jazz']];
   const dl=$("psDrums");if(dl)dl.innerHTML=DK.map(([k,c1,c2,nc,n,nm])=>
     `<div class="psItem"><button class="psBtn bandBtn" data-kit="${k}" title="Rhythm ${n} · ${nm}" style="background:linear-gradient(160deg,${c1},${c2})"><img src="band.png" alt="" draggable="false"></button><span class="psLbl">Rhythm ${n}<i class="psSub">${nm}</i></span></div>`).join('');
   dl&&dl.addEventListener('pointerdown',e=>{const b=e.target.closest('.psBtn');if(!b)return;
@@ -2914,8 +2926,8 @@ const chillers=[]; // full-view slimes with cursor physics
   // across the full width so the crowd is visible and even (not clumped/stacked). skip 12% to leave room for the rgirl.
   // phone bottom peekers — kept CLEAR of the bottom-center mixer (~50%) and the bottom-right menu button (~93%),
   // so a slime never sits on a control. fewer of them = tidy, not cluttered.
-  const MOBSPOTS=[{edge:'bottom',cross:{left:'9%'},fill:'--mint'},{edge:'bottom',cross:{left:'24%'},fill:'--sky'},
-    {edge:'bottom',cross:{left:'68%'},fill:'--yellow'},{edge:'bottom',cross:{left:'80%'},fill:'--pink'}];
+  const MOBSPOTS=[{edge:'bottom',cross:{left:'7%'},fill:'--mint'},{edge:'bottom',cross:{left:'20%'},fill:'--sky'},
+    {edge:'bottom',cross:{left:'82%'},fill:'--yellow'},{edge:'bottom',cross:{left:'94%'},fill:'--pink'}]; // pushed to the far corners so they clear the bottom-centre mixer field
   (MOB?MOBSPOTS:SPOTS).forEach((s,i)=>{const g=GEO[s.edge];const el=document.createElement('div');el.className="slime peeker peek-"+s.edge;el.style.position="fixed";
     Object.assign(el.style,g.anchor,s.cross);let _r=g.rest,_h=g.hide;if(s.edge==='bottom'){const a=' rotate('+(Math.random()*24-12).toFixed(0)+'deg)';_r+=a;_h+=a;} // upright, each at its own lil angle
     const fam=nextFam(),face=randFace(); // even colour spread + a randomized resting expression (nuance)
@@ -2971,10 +2983,24 @@ const chillers=[]; // full-view slimes with cursor physics
     // PHONE: the space above the tank now holds the UI stack (toggle → wheel → chords), so NO sky-scatter there —
     // that was cluttering the controls. mobile decoration lives only in the bottom margin below the tank.
     if(matchMedia('(max-width:820px)').matches){
-      const botTop=r.bottom+16, botBot=H-70;
-      if(botBot-botTop>50){const cols=[0.12,0.34,0.66,0.88]; // corners, clear of the bottom-center mixer
-        cols.forEach((fx,i)=>{const sz=38+Math.random()*8,cx=fx*W,cy=botTop+(botBot-botTop)*(0.3+0.4*Math.random());
-          addFill(cx-sz/2,cy-sz/2,sz,FILLCOLS[_ci++%FILLCOLS.length]);});}
+      // MOBILE spread: small slimes scattered around the WHOLE page — beside the wheel (upper sides, in the button gutters),
+      // down both side gutters, and along the bottom — but a KEEP-OUT radius around the mixer so they never crowd it.
+      const mx=document.getElementById('triMix'),mR=mx?mx.getBoundingClientRect():null;
+      const mcx=mR?mR.left+mR.width/2:W/2, mcy=mR?mR.top+mR.height/2:H-90, keep=(mR?mR.width:150)*0.95+40; // no slime within ~this radius of the mixer centre
+      const wR=document.getElementById('cofWheel'),whb=wR?wR.getBoundingClientRect():null;
+      const spots=[
+        // beside the wheel (the empty gutter between the Sound/Rhythm columns and the centered wheel)
+        whb?[btn+10,whb.top+whb.height*0.5]:null, whb?[W-btn-30,whb.top+whb.height*0.4]:null,
+        // side gutters, mid-page
+        [btn+8,r.top+r.height*0.35],[W-btn-30,r.top+r.height*0.5],[btn+10,r.top+r.height*0.7],[W-btn-30,r.top+r.height*0.78],
+        // bottom row (corners, away from centre mixer)
+        [W*0.12,H-96],[W*0.30,H-72],[W*0.70,H-72],[W*0.88,H-96]
+      ].filter(Boolean);
+      spots.forEach(([cx,cy])=>{
+        if(Math.hypot(cx-mcx,cy-mcy)<keep)return;         // KEEP-OUT: skip anything inside the mixer's field
+        if(cy<r.top-10)return;                              // don't drift up into the wheel/controls
+        const sz=30+Math.random()*8;                        // TINY on phone so a few more don't clutter
+        addFill(cx-sz/2+(Math.random()*10-5),cy-sz/2,sz,FILLCOLS[_ci++%FILLCOLS.length]);});
     }
   }
   requestAnimationFrame(fillMargins);let _fmT;addEventListener('resize',()=>{clearTimeout(_fmT);_fmT=setTimeout(fillMargins,220);});
@@ -2988,13 +3014,16 @@ const chillers=[]; // full-view slimes with cursor physics
   function wormBox(){const w=document.getElementById('wormEl');if(!w)return null;const r=w.getBoundingClientRect();
     return {left:r.left-24,right:r.right+24,top:r.top-24,bottom:r.bottom+40};} // padded — the worm's whole column + a margin, so nothing lands on him or his head
   function inBox(x,y,b){return b&&x>b.left&&x<b.right&&y>b.top&&y<b.bottom;}
-  function slimeSpot(el){ // a fresh random resting position in a safe margin (never on the tank, a control, or the worm)
+  function slimeSpot(el){ // a fresh random resting position in a safe margin (never on the tank, a control, the worm, or the mixer)
     const rc=cv.getBoundingClientRect(),W=innerWidth,H=innerHeight,btn=matchMedia('(max-width:820px)').matches?58:118;
-    const wb=wormBox(); let x,y,tries=0;
+    const wb=wormBox();
+    const mx=document.getElementById('triMix'),mR=mx?mx.getBoundingClientRect():null;
+    const mcx=mR?mR.left+mR.width/2:-999,mcy=mR?mR.top+mR.height/2:-999,mkeep=(mR?mR.width:0)*0.95+40;
+    let x,y,tries=0;
     do{const left=Math.random()<0.5;
       x=left?(btn+6+Math.random()*Math.max(10,rc.left-btn-46)):(rc.right+8+Math.random()*Math.max(10,W-btn-rc.right-46));
       y=Math.max(96,rc.top+20)+Math.random()*Math.max(30,(H-120)-(rc.top+20));
-    }while(inBox(x+24,y+24,wb)&&++tries<12); // reroll if it landed on the worm
+    }while((inBox(x+24,y+24,wb)||Math.hypot(x+24-mcx,y+24-mcy)<mkeep)&&++tries<16); // reroll off the worm AND the mixer field
     el.style.left=(x|0)+'px';el.style.top=(y|0)+'px';el.style.right='auto';el.style.bottom='auto';}
   window._morphSlime=function(){const els=layer.querySelectorAll('.mfill');if(!els.length)return;
     const el=els[(Math.random()*els.length)|0];if(el.classList.contains('morphing'))return;
