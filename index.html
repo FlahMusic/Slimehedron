@@ -327,7 +327,7 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
    and shrink it so it never crowds the tank. tank stays the hero. */
 @media (max-width:820px){
   .mode-studio #triMixBar,.mode-play #triMixBar{bottom:6px;left:50%;transform:translateX(-50%)}
-  #triMix svg{width:132px!important;height:auto!important}
+  #triMix svg{width:178px!important;height:auto!important} /* bigger mixer + icons on phone (per Flah) */
   /* SLIMES were huge on phones (base 90px). scale to ~desktop proportion, smart-shrinking with the viewport. */
   .slime{width:clamp(42px,13vw,60px)!important;height:auto!important;aspect-ratio:90/84}
   #wormEl{width:clamp(40px,11vw,60px)!important}
@@ -336,7 +336,7 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
    As the screen narrows, the mixer and side buttons step down in size and the tank keeps priority. These caps mean
    even on a tiny/odd phone the controls can't collide with each other or cover the tank. Desktop is untouched. */
 @media (max-width:600px){
-  #triMix svg{width:132px!important}
+  #triMix svg{width:164px!important}
   .psBtn{width:42px!important;height:42px!important}
   .psBtn svg{width:24px!important;height:24px!important}
   .psBtn.bandBtn img{width:34px!important;height:34px!important}
@@ -505,29 +505,28 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   header h1{display:none} /* redundant on the tiny header — back button + doors brand it */
   header .spacer{display:none}
   .btngroup{gap:6px;flex-wrap:nowrap}
-  #volTop{gap:4px;padding:0 2px} #volTop input[type=range]{width:44px} #volTop svg{width:17px;height:17px}
-  .mode-play #tempoDial{padding:2px 6px;gap:3px} #tempoDial .td-ico{font-size:11px} #tempoKnob{width:26px;height:26px}
-  .btn.big,.btn.primary{min-height:36px;padding:5px 9px;font-size:12px;border-radius:12px}
-  #recDot{width:18px;height:18px}
-  /* slime toggle drops BELOW the top bar, centered, and shrinks (was a giant 150px) */
+  #volTop{gap:3px;padding:0 1px} #volTop input[type=range]{width:34px} #volTop svg{width:15px;height:15px}
+  .mode-play #tempoDial{padding:2px 5px;gap:2px} #tempoDial .td-ico{font-size:10px} #tempoKnob{width:22px;height:22px}
+  .btn.big,.btn.primary{min-height:34px!important;padding:5px 8px!important;font-size:12px!important;border-radius:11px!important} /* compact transport — no oversized pause/record */
+  #recDot{width:16px;height:16px}
   #autoRow{padding:0;margin:0}
   #triMixBar{justify-content:center;gap:10px}
-  .btn.big{min-height:42px;padding:6px 11px;font-size:13px;border-radius:14px}
-  #drumBtn svg,#dropBtn svg{width:24px;height:24px}
-  #bandBtn svg{width:37px;height:28px}
-  .btn{padding:7px 11px;font-size:12px}
+  #drumBtn svg,#dropBtn svg{width:22px;height:22px}
+  #bandBtn svg{width:34px;height:26px}
+  .btn{padding:6px 10px;font-size:12px}
   #stage{min-height:0}
   canvas{border-radius:16px}
   /* ---- MOBILE top-band stack: slime toggle → wheel (centered) → chords button, all above the tank ---- */
   /* tight vertical stack, all centered: toggle → wheel → chords button → tank */
   #autoRow{position:fixed;top:88px;left:50%;transform:translateX(-50%);z-index:61}
-  .slimeswitch{width:92px;height:42px;border-radius:21px}            /* was 150×66 — too big for a phone */
-  .ss-knob{width:34px;height:34px;top:4px;left:4px} .slimeswitch.on .ss-knob{left:54px} .ss-knob .sic{width:28px;height:26px}
-  #cofWheel{left:50%!important;top:136px!important;transform:translateX(-50%)!important;width:clamp(100px,28vw,120px)!important;height:clamp(100px,28vw,120px)!important} /* CENTERED above the tank, below the toggle */
+  /* ID-scoped so these WIN over the base .slimeswitch rules that appear later in the file (equal-specificity order trap) */
+  #autoRow .slimeswitch{width:84px;height:38px;border-radius:19px}   /* was 150×66 — must be SMALLER than the wheel */
+  #autoRow .ss-knob{width:30px;height:30px;top:4px;left:4px} #autoRow .slimeswitch.on .ss-knob{left:50px} #autoRow .ss-knob .sic{width:25px;height:23px}
+  #cofWheel{left:50%!important;top:134px!important;transform:translateX(-50%)!important;width:clamp(124px,36vw,150px)!important;height:clamp(124px,36vw,150px)!important} /* CENTERED above tank; clearly bigger than the toggle now */
   #chordPill{display:none!important} /* phone: the wheel hub already shows the key — drop the separate readout to save vertical room */
-  #chordBtn{left:50%!important;top:256px!important;transform:translateX(-50%)!important} /* chords button VISIBLE + centered under the wheel (was missing on mobile) */
+  #chordBtn{left:50%!important;top:278px!important;transform:translateX(-50%)!important} /* centered under the (bigger) wheel */
   #chordPanel{left:50%!important;top:96px!important;transform:translateX(-50%)!important;width:min(300px,90vw)}
-  .mode-play main{padding:292px 50px 8px} /* tank sits below the wheel stack; reserve side columns */
+  .mode-play main{padding:314px 50px 8px} /* tank sits below the wheel stack; reserve side columns */
   main{padding:0 8px 8px}
   aside{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:74vh;background:rgba(246,240,255,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-radius:22px 22px 0 0;box-shadow:0 -12px 40px rgba(120,100,170,.4);padding:8px 14px 24px;transform:translateY(105%);transition:transform .32s cubic-bezier(.3,1,.3,1);z-index:80;overflow-y:auto}
   aside.open{transform:translateY(0)}
@@ -925,7 +924,10 @@ function initAudio(){
   AC=new (window.AudioContext||window.webkitAudioContext)();
   master=AC.createGain();master.gain.value=S.vol;
   bandBus=AC.createGain();bandBus.gain.value=1;bandMix=AC.createGain();bandMix.gain.value=1;
-  bandBus.connect(bandMix);bandMix.connect(master); // duck stage -> mix stage
+  // phone-friendly mid-bass lift: a gentle peak at ~120Hz (the lowest band small speakers actually reproduce) so
+  // the bass has presence on laptops/phones without booming on headphones. sits before the mix/master stages.
+  const bandEQ=AC.createBiquadFilter();bandEQ.type='peaking';bandEQ.frequency.value=120;bandEQ.Q.value=0.8;bandEQ.gain.value=3.5;
+  bandBus.connect(bandEQ);bandEQ.connect(bandMix);bandMix.connect(master); // duck -> EQ -> mix -> master
   melBus=AC.createGain();melBus.gain.value=1;melBus.connect(master);
   lim=AC.createDynamicsCompressor(); // module-level so the PCM recorder (startPCM) can tap it on iOS
   // KID-SAFE OUTPUT CEILING: final brickwall limiter. threshold -8.5dBFS (was -6) so sustained loudness stays gentle
@@ -1587,15 +1589,27 @@ function bassNote(tok,t,hum,dur){ // bass pluck by default; pass `dur` (seconds)
     const D=Math.max(0.18,dur||0.5),rel=Math.min(0.14,D*0.45),hold=D-rel*0.6;
     o.type='sine';lp.type='lowpass';lp.frequency.value=420;lp.Q.value=0.5; // SOFT filtered sine = a round, subtle bass (no buzz, sits under the mix)
     sub.type='sine';sg.gain.value=0.28; // a gentle sub underneath for a hint of weight (not boom)
+    // MISSING-FUNDAMENTAL layer: phone speakers can't reproduce the low sine/sub, so add UPPER HARMONICS of the bass
+    // note in the 200–700Hz band the speaker CAN play — the ear reconstructs the missing low pitch from them.
+    // (research: harmonics ~250-700Hz let the brain 'hear' bass a speaker physically can't make.) audible on all devices.
+    const har=AC.createOscillator(),hg=AC.createGain(),hbp=AC.createBiquadFilter();
+    har.type='triangle'; // triangle = odd harmonics, warm not buzzy — the natural overtones of a plucked/upright bass
+    hbp.type='bandpass';hbp.frequency.value=Math.min(520,Math.max(180,f*3.2));hbp.Q.value=0.9; // focus the harmonics in the phone-audible mid-bass
+    hg.gain.value=0.11*(hum||1); // subtle — it fills in the low end without turning into a mid honk
     if(_lastBassFreq&&Math.abs(_lastBassFreq-f)<f*0.6){ // glide only for nearby notes (a walk); big leaps just jump
       o.frequency.setValueAtTime(_lastBassFreq,t);o.frequency.exponentialRampToValueAtTime(f,t+0.05);
       sub.frequency.setValueAtTime(_lastBassFreq/2,t);sub.frequency.exponentialRampToValueAtTime(f/2,t+0.05);
-    }else{o.frequency.setValueAtTime(f,t);sub.frequency.setValueAtTime(f/2,t);}
+      har.frequency.setValueAtTime(_lastBassFreq,t);har.frequency.exponentialRampToValueAtTime(f,t+0.05);
+    }else{o.frequency.setValueAtTime(f,t);sub.frequency.setValueAtTime(f/2,t);har.frequency.setValueAtTime(f,t);}
     _lastBassFreq=f;
     g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+0.015); // quick soft attack (fingered, not clicky)
     g.gain.setValueAtTime(v,t+hold);g.gain.exponentialRampToValueAtTime(0.0008,t+D); // hold full, then a smooth release tail
     o.connect(lp);sub.connect(sg);sg.connect(lp);lp.connect(g);g.connect(bandBus);
-    o.start(t);o.stop(t+D+0.06);sub.start(t);sub.stop(t+D+0.06);}
+    // harmonic layer rides the SAME envelope so it plucks + sustains with the note
+    const heg=AC.createGain();heg.gain.setValueAtTime(0.0001,t);heg.gain.exponentialRampToValueAtTime(v,t+0.015);
+    heg.gain.setValueAtTime(v,t+hold);heg.gain.exponentialRampToValueAtTime(0.0008,t+D);
+    har.connect(hbp);hbp.connect(hg);hg.connect(heg);heg.connect(bandBus);
+    o.start(t);o.stop(t+D+0.06);sub.start(t);sub.stop(t+D+0.06);har.start(t);har.stop(t+D+0.06);}
   sendMidiAt(S.root+c/100-12,96,S.chBass,t,Math.max(0.2,(dur||0.5)*0.95));
 }
 // per-instrument humanization (research: real drummers vary hats a LOT for ghosting, keep kicks tight; and nudge
@@ -2954,13 +2968,13 @@ const chillers=[]; // full-view slimes with cursor physics
     // right margin — but in STUDIO the settings panel (aside) owns the whole right side, so skip the right band there.
     if(S.mode!=='studio'){const w=document.getElementById('wormEl'),wr=w?w.getBoundingClientRect():null;
       band(r.right+6,W-btn-8, wr?{top:wr.top-30,bottom:H+60,left:wr.left-30}:{top:H*0.42,bottom:H+60,left:r.right});} // worm owns the lower-right — avoid his WHOLE column incl. his head
-    // PHONE: side margins are too thin, so scatter a few buddies in the open SKY above the tank (clear of the header)
-    // + one or two low corners — so they're DISTRIBUTED, not all lined up at the bottom like play mode.
+    // PHONE: the space above the tank now holds the UI stack (toggle → wheel → chords), so NO sky-scatter there —
+    // that was cluttering the controls. mobile decoration lives only in the bottom margin below the tank.
     if(matchMedia('(max-width:820px)').matches){
-      const skyTop=Math.max(96,r.top-96),skyBot=r.top-14;
-      if(skyBot-skyTop>40){const sky=[0.16,0.42,0.7,0.9];
-        sky.forEach((fx,i)=>{const sz=40+Math.random()*10,cx=fx*W,cy=skyTop+(skyBot-skyTop)*(0.3+0.4*Math.random());
-          if(cy<70)return; addFill(cx-sz/2,cy-sz/2,sz,FILLCOLS[_ci++%FILLCOLS.length]);});}
+      const botTop=r.bottom+16, botBot=H-70;
+      if(botBot-botTop>50){const cols=[0.12,0.34,0.66,0.88]; // corners, clear of the bottom-center mixer
+        cols.forEach((fx,i)=>{const sz=38+Math.random()*8,cx=fx*W,cy=botTop+(botBot-botTop)*(0.3+0.4*Math.random());
+          addFill(cx-sz/2,cy-sz/2,sz,FILLCOLS[_ci++%FILLCOLS.length]);});}
     }
   }
   requestAnimationFrame(fillMargins);let _fmT;addEventListener('resize',()=>{clearTimeout(_fmT);_fmT=setTimeout(fillMargins,220);});
