@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slimehedron — flyer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#5a4f78; --ink-soft:#8a7fb0;
+    --mint:#9fe6cf; --lav:#c4a9f5; --sky:#a6c8ff; --pink:#ffb6d6; --pear:#ffe39c; --orange:#ffc0a8;
+    --card:rgba(255,255,255,.72); --brd:rgba(255,255,255,.9);
+    --shadow:0 10px 30px rgba(120,110,160,.20);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#e9eef0}
+  body{font-family:'Quicksand',system-ui,sans-serif;color:var(--ink);display:flex;justify-content:center;padding:24px}
+
+  /* ---- the poster: A-series portrait ratio, print-clean ---- */
+  .poster{position:relative;width:820px;min-height:1160px;border-radius:34px;overflow:hidden;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(255,255,255,.55), rgba(255,255,255,0) 60%),
+      linear-gradient(170deg,#d7f3ea 0%, #eae6ff 42%, #ffe9f3 72%, #fff6e6 100%);
+    box-shadow:0 30px 80px rgba(120,110,160,.30)}
+  /* soft crayon meadow band at the very bottom */
+  .poster::after{content:"";position:absolute;left:0;right:0;bottom:0;height:150px;
+    background:linear-gradient(0deg, rgba(159,230,207,.55), rgba(159,230,207,0));pointer-events:none}
+
+  /* decorative real slimes, scattered + faint so they never fight the content */
+  .deco{position:absolute;width:66px;opacity:.9;filter:drop-shadow(0 6px 8px rgba(150,120,190,.18));pointer-events:none;z-index:1}
+
+  .wrap{position:relative;z-index:3;padding:46px 54px 40px}
+
+  /* ---------- HERO ---------- */
+  .hero{text-align:center;margin-bottom:6px}
+  .hero img.mascot{width:190px;height:auto;display:block;margin:0 auto;filter:drop-shadow(0 10px 16px rgba(150,120,190,.28))}
+  .title{font-size:60px;font-weight:700;letter-spacing:.5px;line-height:1;margin-top:6px}
+  .title .dot{color:var(--lav)}
+  .tag{font-size:21px;font-weight:600;color:var(--ink-soft);margin-top:12px;line-height:1.35}
+  .tag b{color:var(--ink)}
+
+  /* ---------- MODE STRIP ---------- */
+  .modes{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin:30px 0 26px}
+  .screen{background:var(--card);border:1.5px solid var(--brd);border-radius:20px;padding:12px 12px 14px;
+    box-shadow:var(--shadow);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  .screen .win{position:relative;height:132px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.85);
+    box-shadow:inset 0 0 0 1px rgba(180,170,210,.18)}
+  .screen h3{font-size:19px;font-weight:700;margin:11px 2px 1px;text-align:center}
+  .screen p{font-size:12.5px;font-weight:600;color:var(--ink-soft);text-align:center;line-height:1.3}
+
+  /* LEARN vignette */
+  .vLearn{background:linear-gradient(160deg,#eef8f0,#efeaff)}
+  .vLearn .row{position:absolute;left:9px;right:9px;height:19px;border-radius:8px;background:rgba(255,255,255,.85);
+    display:flex;align-items:center;gap:6px;padding:0 7px;font-size:9.5px;font-weight:700;color:#6a5f92;box-shadow:0 1px 3px rgba(120,110,160,.12)}
+  .vLearn .dot{width:5px;height:5px;border-radius:50%;background:#cbb4f0}
+  .vLearn .row img{width:13px;height:13px;margin-left:auto}
+
+  /* PLAY vignette */
+  .vPlay{background:linear-gradient(180deg,#dff1ff 0%,#eafbe9 60%,#e7f7d9 100%)}
+  .vPlay svg{position:absolute;inset:0;width:100%;height:100%}
+  .vPlay .note{position:absolute;width:10px;height:10px;border-radius:50%;box-shadow:0 0 8px 1px rgba(255,255,255,.7)}
+  .vPlay img{position:absolute;width:26px}
+
+  /* STUDIO vignette */
+  .vStudio{background:linear-gradient(180deg,#f2ecff,#e9f2ff)}
+  .vStudio .panel{position:absolute;right:6px;top:6px;bottom:6px;width:52%;background:rgba(255,255,255,.9);border-radius:9px;padding:7px 8px;box-shadow:0 2px 6px rgba(120,110,160,.14)}
+  .vStudio .fld{display:flex;align-items:center;justify-content:space-between;font-size:8px;font-weight:700;color:#6a5f92;margin:0 0 5px}
+  .vStudio .bar{height:4px;border-radius:3px;background:linear-gradient(90deg,var(--lav),var(--mint));margin-top:2px}
+  .vStudio .poly{position:absolute;left:8px;top:14px;bottom:14px;width:38%}
+  .vStudio .poly svg{width:100%;height:100%}
+
+  /* ---------- VALUE BANNER (the differentiator) ---------- */
+  .banner{background:linear-gradient(135deg,rgba(159,230,207,.55),rgba(196,169,245,.5));border:1.5px solid var(--brd);
+    border-radius:18px;padding:16px 18px;display:flex;flex-wrap:wrap;gap:10px 14px;justify-content:center;box-shadow:var(--shadow)}
+  .chip{background:rgba(255,255,255,.85);border-radius:999px;padding:8px 16px;font-size:15px;font-weight:700;color:var(--ink)}
+  .chip b{color:#4f8a41}
+
+  /* ---------- PEDAGOGY LINE ---------- */
+  .ped{text-align:center;font-size:16px;font-weight:600;color:var(--ink-soft);line-height:1.45;margin:24px 8px 4px}
+  .ped b{color:var(--ink)}
+
+  /* ---------- CTA / URL ---------- */
+  .cta{margin:26px auto 6px;max-width:560px;text-align:center}
+  .cta .lead{font-size:18px;font-weight:700;margin-bottom:10px}
+  .url{display:inline-block;background:#fff;border:2px solid var(--lav);border-radius:14px;padding:13px 26px;
+    font-size:19px;font-weight:700;color:#6a5f92;letter-spacing:.3px;box-shadow:var(--shadow)}
+  .url small{display:block;font-size:11px;font-weight:600;color:var(--ink-soft);margin-top:3px;letter-spacing:.2px}
+
+  /* ---------- FOOTER ---------- */
+  .foot{text-align:center;font-size:13.5px;font-weight:600;color:var(--ink-soft);margin-top:22px;line-height:1.5}
+  .foot b{color:var(--ink)}
+
+  @media print{
+    @page{size:A4 portrait;margin:0}
+    body{padding:0;background:#fff}
+    .poster{box-shadow:none;border-radius:0;width:100%;min-height:100vh}
+  }
+</style>
+</head>
+<body>
+<div class="poster">
+  <!-- decorative real slimes (transparent PNGs — no borders) -->
+  <img class="deco" src="minis/grn.png"    style="top:24px;left:26px;width:58px;transform:rotate(-8deg)">
+  <img class="deco" src="minis/pink1.png"  style="top:40px;right:30px;width:60px;transform:rotate(9deg)">
+  <img class="deco" src="minis/blue1.png"  style="top:560px;left:14px;width:56px">
+  <img class="deco" src="minis/pear1.png"  style="top:600px;right:16px;width:58px;transform:rotate(6deg)">
+  <img class="deco" src="minis/orange.png" style="bottom:120px;left:34px;width:62px;transform:rotate(-6deg)">
+  <img class="deco" src="minis/teal.png"   style="bottom:96px;right:40px;width:60px;transform:rotate(7deg)">
+  <img class="deco" src="minis/bo.png"      style="bottom:30px;left:50%;transform:translateX(-50%);width:56px">
+
+  <div class="wrap">
+
+    <!-- HERO -->
+    <div class="hero">
+      <img class="mascot" src="slimelogo.png" alt="Slimehedron">
+      <div class="title">slimehedron<span class="dot">.</span></div>
+      <div class="tag">a whole music studio that grows with your kid —<br><b>learn it, play it, create it.</b></div>
+    </div>
+
+    <!-- THREE MODES (real art, in-style product vignettes) -->
+    <div class="modes">
+
+      <!-- LEARN -->
+      <div class="screen">
+        <div class="win vLearn">
+          <div class="row" style="top:10px"><span>pulse</span><span class="dot"></span><span class="dot"></span><img src="minis/grn.png"></div>
+          <div class="row" style="top:35px"><span>pitch</span><span class="dot"></span><img src="minis/blue1.png"></div>
+          <div class="row" style="top:60px"><span>rhythm</span><span class="dot"></span><span class="dot"></span><img src="minis/pear1.png"></div>
+          <div class="row" style="top:85px"><span>chords</span><span class="dot"></span><img src="minis/violet.png"></div>
+          <div class="row" style="top:110px"><span>modes</span><span class="dot"></span><img src="minis/pink1.png"></div>
+        </div>
+        <h3>learn</h3>
+        <p>a real music curriculum,<br>ear-first — no rush</p>
+      </div>
+
+      <!-- PLAY -->
+      <div class="screen">
+        <div class="win vPlay">
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+            <defs><linearGradient id="rain" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ffb3c8"/><stop offset=".33" stop-color="#ffe39c"/>
+              <stop offset=".66" stop-color="#9fe6cf"/><stop offset="1" stop-color="#c4a9f5"/></linearGradient></defs>
+            <polygon points="50,12 84,34 84,70 50,90 16,70 16,34" fill="none" stroke="url(#rain)" stroke-width="2.4" stroke-linejoin="round"/>
+            <path d="M22,66 Q50,58 78,66 L78,84 Q50,90 22,84 Z" fill="rgba(159,230,207,.55)"/>
+          </svg>
+          <span class="note" style="left:40%;top:34%;background:#ff6f8e"></span>
+          <span class="note" style="left:58%;top:44%;background:#8ad6ff"></span>
+          <span class="note" style="left:47%;top:60%;background:#ffd24d"></span>
+          <span class="note" style="left:33%;top:52%;background:#b388f0"></span>
+          <span class="note" style="left:62%;top:64%;background:#7bd88a"></span>
+          <img src="minis/orange.png" style="left:6px;bottom:4px">
+          <img src="minis/violet.png" style="right:6px;bottom:4px">
+        </div>
+        <h3>play</h3>
+        <p>tap anywhere, make music —<br>no wrong notes</p>
+      </div>
+
+      <!-- STUDIO -->
+      <div class="screen">
+        <div class="win vStudio">
+          <div class="poly">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+              <polygon points="50,14 82,38 70,82 30,82 18,38" fill="none" stroke="url(#rain)" stroke-width="2.4" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="panel">
+            <div class="fld"><span>tempo</span><span>80</span></div><div class="bar" style="width:62%"></div>
+            <div class="fld" style="margin-top:8px"><span>scale</span><span>major</span></div><div class="bar" style="width:80%;background:linear-gradient(90deg,var(--sky),var(--pink))"></div>
+            <div class="fld" style="margin-top:8px"><span>groove</span><span>human</span></div><div class="bar" style="width:45%;background:linear-gradient(90deg,var(--pear),var(--mint))"></div>
+            <div class="fld" style="margin-top:8px"><span>MIDI out</span><span>on</span></div><div class="bar" style="width:70%;background:linear-gradient(90deg,var(--lav),var(--sky))"></div>
+          </div>
+        </div>
+        <h3>studio</h3>
+        <p>deep as the ocean —<br>MIDI, scales, full band</p>
+      </div>
+
+    </div>
+
+    <!-- THE DIFFERENTIATOR -->
+    <div class="banner">
+      <span class="chip"><b>free</b> forever</span>
+      <span class="chip">no ads</span>
+      <span class="chip">no accounts</span>
+      <span class="chip">no data collected</span>
+      <span class="chip">nothing to buy</span>
+    </div>
+
+    <!-- PEDAGOGY -->
+    <p class="ped">from steady beat to scales, chords &amp; modes —<br><b>kids learn music by making it.</b> runs in any browser, on any device.</p>
+
+    <!-- CTA -->
+    <div class="cta">
+      <div class="lead">open it now — nothing to install.</div>
+      <span class="url">flahmusic.github.io/Slimehedron<small>PLACEHOLDER · swap for your domain when ready</small></span>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="foot"><b>made with care, not dark patterns.</b><br>no streaks · no guilt · no nagging · safe for the littlest hands</div>
+
+  </div>
+</div>
+</body>
+</html>
