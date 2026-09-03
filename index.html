@@ -237,7 +237,7 @@ body.kb-open #kbBtn{bottom:calc(140px + env(safe-area-inset-bottom))} /* lift th
 }
 body:has(#splash:not(.gone)) #exitMode{display:none} /* already at the doors — nothing to go back to */
 header h1{margin-left:78px} /* the title steps aside for the back button */
-@media (max-width:820px){#exitMode{top:6px;left:8px;padding:7px 11px;font-size:12px}header h1{margin-left:0}}
+@media (max-width:820px){#exitMode{top:6px;left:4px;padding:6px 9px;font-size:12px}header h1{margin-left:0}header{padding-left:34px}}
 #learnOverlay{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(230,222,250,.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 #learnOverlay[hidden]{display:none}
 .lCard{background:rgba(252,249,255,.96);border:1px solid var(--card-brd);border-radius:22px;box-shadow:var(--shadow);padding:20px 24px;width:min(92vw,620px);max-height:88vh;overflow-y:auto;text-align:center}
@@ -326,8 +326,10 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 /* phone: BOTH modes put the mixer bottom-center (clear of the bottom-left slimes AND the bottom-right menu button)
    and shrink it so it never crowds the tank. tank stays the hero. */
 @media (max-width:820px){
-  .mode-studio #triMixBar,.mode-play #triMixBar{bottom:6px;left:50%;transform:translateX(-50%)}
-  #triMix svg{width:178px!important;height:auto!important} /* bigger mixer + icons on phone (per Flah) */
+  /* phone: mixer sits TOP-LEFT, tucked under the volume fader. it used to be bottom-centre at 178px, which
+     put it straight on top of the tank — the geometry is the hero, nothing may cover it. */
+  .mode-studio #triMixBar,.mode-play #triMixBar{top:52px;left:4px;bottom:auto;transform:none}
+  #triMix svg{width:88px!important;height:auto!important}
   /* SLIMES were huge on phones (base 90px). scale to ~desktop proportion, smart-shrinking with the viewport. */
   .slime{width:clamp(34px,10.5vw,50px)!important;height:auto!important;aspect-ratio:90/84} /* smaller on phone so more can spread without clutter */
   #wormEl{width:clamp(36px,10vw,54px)!important}
@@ -336,25 +338,27 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
    As the screen narrows, the mixer and side buttons step down in size and the tank keeps priority. These caps mean
    even on a tiny/odd phone the controls can't collide with each other or cover the tank. Desktop is untouched. */
 @media (max-width:600px){
-  #triMix svg{width:164px!important}
+  #triMix svg{width:82px!important}
   .psBtn{width:42px!important;height:42px!important}
   .psBtn svg{width:24px!important;height:24px!important}
   .psBtn.bandBtn img{width:34px!important;height:34px!important}
   .psCol{gap:7px!important}
-  .mode-play main{padding:268px 46px 8px!important} /* KEEP the top space for the wheel stack (was wiping it to 0) + narrower gutters */
+  .mode-play main{padding:max(300px,40vh) 16px 8px!important} /* wheel stack up top, then the tank LOW. the vh term is what kills the dead band on tall phones; the px floor keeps the wheel clear on short ones */
 }
 @media (max-width:400px){
-  #triMix svg{width:150px!important}         /* bigger mixer on phones (per Flah) — still clears the tank */
+  #triMix svg{width:76px!important}          /* smaller still on the narrowest phones — must clear the wheel */
   .psBtn{width:38px!important;height:38px!important}
   .psBtn svg{width:21px!important;height:21px!important}
   .psBtn.bandBtn img{width:30px!important;height:30px!important}
   .psLbl{font-size:9px!important}.psSub{font-size:7px!important}
-  .mode-play main{padding:262px 42px 8px!important}
+  .mode-play main{padding:max(296px,40vh) 14px 8px!important}
   #menuBtn{width:46px!important;height:46px!important;right:8px!important;bottom:8px!important} /* smaller FAB, tucked in the corner */
 }
 @media (max-height:520px){ /* very SHORT screens (landscape phones): shrink the floating mixer so it can't cover the tank */
-  #triMix svg{width:84px!important}
+  #triMix svg{width:70px!important}
+  .mode-play #triMixBar,.mode-studio #triMixBar{top:auto!important;bottom:4px!important;left:4px!important;transform:none!important} /* landscape is wider than 820px so it missed the phone rule and sat on the wheel */
   #autoRow{top:44px!important}
+  .mode-play main{padding:150px 14px 6px!important} /* short/landscape phones: give the height back to the tank */
 }
 canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(circle at 50% 38%,rgba(255,250,255,.32),rgba(210,196,255,.20));max-width:100%;max-height:100%;cursor:crosshair;touch-action:none} /* every finger is its own ball */
 .hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-soft);font-weight:500;background:var(--card);padding:5px 12px;border-radius:10px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
@@ -510,8 +514,9 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   .btn.big,.btn.primary{min-height:32px!important;padding:4px 8px!important;font-size:12px!important;border-radius:11px!important} /* compact transport */
   #recDot{width:15px;height:15px}
   /* back = just an arrow, tiny, top-left; share/clear shrink and drop to their own row UNDER the transport, top-right */
-  #exitMode{top:8px!important;left:6px!important;padding:6px 9px!important;font-size:0!important;z-index:262} /* hide the word, keep the ← (added via ::before) */
-  #exitMode::before{content:"←";font-size:16px;font-weight:800}
+  #exitMode{top:9px!important;left:3px!important;padding:3px 6px!important;font-size:0!important;z-index:262} /* hide the word, keep the ← (added via ::before) */
+  #exitMode::before{content:"←";font-size:13px;font-weight:800}
+  header{padding-left:30px} /* keep the volume speaker clear of the back arrow */
   .mode-play #topRight{top:auto!important;bottom:auto!important;right:6px!important;top:44px!important;gap:5px} /* share+clear sit on a 2nd row below the transport */
   .mode-play #topRight #shareApp,.mode-play #topRight #clearBtn{padding:6px 9px!important;font-size:11px!important;min-height:0!important}
   #autoRow{padding:0;margin:0}
@@ -604,7 +609,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <span class="spacer"></span>
   <div class="btngroup"><!-- transport + instruments live together as one unbreakable row, every screen size -->
     <div id="volTop" title="volume — kept in a kid-safe range"><!-- master volume: icon + lilac fader, left of the tempo knob -->
-      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="var(--lav)" stroke="#8a7fb0" stroke-width="1.3" stroke-linejoin="round"/><path d="M16 8.5a4 4 0 0 1 0 7" fill="none" stroke="#8a7fb0" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <svg width="23" height="23" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="#8f7fd4" stroke="#5b4f8a" stroke-width="1.7" stroke-linejoin="round"/><path d="M16 8.5a4 4 0 0 1 0 7" fill="none" stroke="#5b4f8a" stroke-width="2" stroke-linecap="round"/><path d="M18.5 6a7 7 0 0 1 0 12" fill="none" stroke="#5b4f8a" stroke-width="1.7" stroke-linecap="round" opacity=".75"/></svg>
       <input type="range" id="volPlay" min="0" max="100" value="55" aria-label="volume">
     </div>
     <div id="tempoDial" title="tempo — turn left for slower, right for faster" aria-label="tempo">
@@ -2804,7 +2809,7 @@ function mark(inp){inp.dataset.touched=performance.now();}
 function enhanceKnobs(){
   document.querySelectorAll('input[type=range]').forEach(inp=>{
     inp.addEventListener('pointerdown',()=>mark(inp)); // EVERY slider marks as human-touched — the wobble must never fight your hand (swing lived in advBar and never got marked = the snap-back bug)
-    if(inp.closest('#advBar')||inp.closest('#triMixBar')||inp.id==='playBpm')return; // top-bar sliders + the tempo knob (built manually) stay plain — no duplicate knob
+    if(inp.closest('#advBar')||inp.closest('#triMixBar')||inp.id==='playBpm'||inp.id==='volPlay'||inp.id==='vol')return; // top-bar sliders, the tempo knob (built manually) and BOTH volume faders stay plain — a dial + a slider for the same value is just clutter
     const min=parseFloat(inp.min)||0,max=parseFloat(inp.max)||100;
     const k=document.createElement('div');k.className='rknob';k.title=inp.title||'';const hue=hashHue(inp.id||'x');
     k.style.setProperty('--kc',`hsl(${hue},68%,82%)`);k.style.setProperty('--kc2',`hsl(${hue},58%,62%)`);
