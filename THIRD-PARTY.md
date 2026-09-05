@@ -50,6 +50,18 @@ Nothing is loaded at runtime — the MIDI was read once, offline, by
 
 ---
 
+## Typeface
+
+### Quicksand — Andrew Paglinawan
+* https://fonts.google.com/specimen/Quicksand
+* License: **SIL Open Font License 1.1** — self-hosting and redistribution are expressly permitted.
+* Shipped as `fonts/quicksand-latin.woff2` and `fonts/quicksand-latin-ext.woff2` (variable, weights 400-700).
+* Self-hosted deliberately: the Google Fonts CDN was a third-party request on every page load, which leaked
+  the visitor's IP, render-blocked, and is blocked on many school networks. Slimehedron now makes **zero**
+  external network requests.
+
+---
+
 ## Icons
 Play / pause / stop icons on muted.io are Feather Icons (MIT) — noted only because
 they appear in that source page, not used here.

@@ -9,15 +9,25 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover"/><!-- pinch-zoom MUST stay available (WCAG 1.4.4). the tank sets touch-action:none so zoom never fights ball spawning. -->
 <title>slimehedron</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#c4a9f5">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Quicksand is SELF-HOSTED (SIL Open Font License 1.1). google fonts was a third-party request on every
+     load: it leaks the visitor's IP, render-blocks, and is blocked on plenty of school networks — which for a
+     kids' app is the wrong trade. one variable woff2 per subset covers weights 400-700. -->
+<link rel="preload" href="fonts/quicksand-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+@font-face{font-family:'Quicksand';font-style:normal;font-weight:400 700;font-display:swap;
+  src:url(fonts/quicksand-latin.woff2) format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;}
+@font-face{font-family:'Quicksand';font-style:normal;font-weight:400 700;font-display:swap;
+  src:url(fonts/quicksand-latin-ext.woff2) format('woff2');
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF;}
+</style>
 <style>
 :root{
   --bg1:#e3d4ff; --bg2:#c4f0e2; --bg3:#ffd3e7; --bg4:#cfe2ff; --bg5:#fff0cf;
@@ -187,7 +197,12 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 /* SHORT screens: 5 big stacked buttons would overflow, so scale them down to fit vertically */
 @media (max-height:760px){.psBtn{width:60px;height:60px}.psBtn svg{width:36px;height:36px}.psBtn.bandBtn img{width:50px;height:50px}.psLbl{font-size:15px}.psSub{font-size:13px}.psCol{gap:9px}}
 /* phones scale down (screen's small), but still legible */
-@media (max-width:820px){.psBtn{width:44px;height:44px;border-radius:14px}.psBtn svg{width:26px;height:26px}.psBtn.bandBtn img{width:36px;height:36px}.psLbl{font-size:11px}.psSub{font-size:9px}.psCol{gap:8px}}
+@media (max-width:820px){.psBtn{width:52px;height:52px;border-radius:16px}.psBtn svg{width:30px;height:30px}.psBtn.bandBtn img{width:42px;height:42px}.psCol{gap:8px}
+  /* phone: hide the "Rhythm 1"/"Sound 1" number (font-size:0 kills the text node, not the child) and let the
+     style name carry the label at a readable size. 9px/7px labels were the worst offender in the audit. */
+  .psLbl{font-size:0!important;line-height:0}
+  .psSub{font-size:14px!important;line-height:1.25;display:block;font-weight:800;color:#5a4f78}
+}
 /* groove selector (studio): tidy folders of feels */
 #grooveCard .gcur{font-size:12px;font-weight:700;color:var(--accent);float:right}
 .chLbl{font-size:10px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px}
@@ -339,18 +354,18 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
    even on a tiny/odd phone the controls can't collide with each other or cover the tank. Desktop is untouched. */
 @media (max-width:600px){
   #triMix svg{width:82px!important}
-  .psBtn{width:42px!important;height:42px!important}
-  .psBtn svg{width:24px!important;height:24px!important}
+  .psBtn{width:50px!important;height:50px!important}
+  .psBtn svg{width:28px!important;height:28px!important}
   .psBtn.bandBtn img{width:34px!important;height:34px!important}
   .psCol{gap:7px!important}
   .mode-play main{padding:max(300px,40vh) 16px 8px!important} /* wheel stack up top, then the tank LOW. the vh term is what kills the dead band on tall phones; the px floor keeps the wheel clear on short ones */
 }
 @media (max-width:400px){
   #triMix svg{width:76px!important}          /* smaller still on the narrowest phones — must clear the wheel */
-  .psBtn{width:38px!important;height:38px!important}
-  .psBtn svg{width:21px!important;height:21px!important}
-  .psBtn.bandBtn img{width:30px!important;height:30px!important}
-  .psLbl{font-size:9px!important}.psSub{font-size:7px!important}
+  .psBtn{width:48px!important;height:48px!important}   /* Material 48dp minimum — was 38 */
+  .psBtn svg{width:27px!important;height:27px!important}
+  .psBtn.bandBtn img{width:38px!important;height:38px!important}
+  .psSub{font-size:13px!important}
   .mode-play main{padding:max(296px,40vh) 14px 8px!important}
   #menuBtn{width:46px!important;height:46px!important;right:8px!important;bottom:8px!important} /* smaller FAB, tucked in the corner */
 }
@@ -360,6 +375,13 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
   #autoRow{top:44px!important}
   .mode-play main{padding:150px 14px 6px!important} /* short/landscape phones: give the height back to the tank */
 }
+#cv:focus-visible{outline:4px solid var(--accent,#b388f0);outline-offset:3px}
+#aimDot{position:fixed;z-index:40;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;pointer-events:none;
+  border:3px solid var(--accent,#b388f0);box-shadow:0 0 0 2px rgba(255,255,255,.9),0 2px 8px rgba(90,79,120,.35);background:rgba(255,255,255,.28)}
+#aimDot::after{content:'';position:absolute;inset:12px;border-radius:50%;background:var(--accent,#b388f0)}
+#aimDot.pop{animation:aimPop .32s ease-out}
+@keyframes aimPop{0%{transform:scale(1)}45%{transform:scale(1.55)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){#aimDot.pop{animation:none}}
 canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(circle at 50% 38%,rgba(255,250,255,.32),rgba(210,196,255,.20));max-width:100%;max-height:100%;cursor:crosshair;touch-action:none} /* every finger is its own ball */
 .hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-soft);font-weight:500;background:var(--card);padding:5px 12px;border-radius:10px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 /* CHORD READOUT — sits beside the circle-of-fifths wheel (top-left cluster). shows the live chord as a full, readable
@@ -386,10 +408,10 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 #cofSvg .cofNode{cursor:default;transition:none}
 .mode-studio #cofSvg .cofNode{cursor:pointer}
 #cofSvg .cofDot{fill:rgba(150,140,185,.35);transition:r .25s ease,fill .25s ease}
-#cofSvg .cofLbl{font:700 9px system-ui,sans-serif;fill:var(--ink);opacity:.7;text-anchor:middle;dominant-baseline:central;pointer-events:none;transition:fill .25s ease}
-#cofSvg .cofFlat{font:600 6px system-ui,sans-serif;fill:var(--ink);opacity:.5;text-anchor:middle;dominant-baseline:central;pointer-events:none} /* enharmonic flat name, small + faint under the sharp */
+#cofSvg .cofLbl{font:800 12.5px system-ui,sans-serif;fill:var(--ink);opacity:.92;text-anchor:middle;dominant-baseline:central;pointer-events:none;transition:fill .25s ease}
+#cofSvg .cofFlat{font:700 8.5px system-ui,sans-serif;fill:var(--ink);opacity:.72;text-anchor:middle;dominant-baseline:central;pointer-events:none} /* enharmonic flat name, small + faint under the sharp */
 #cofSvg .cofActive .cofFlat{fill:#fff;opacity:.85}
-#cofSvg .cofActive .cofDot{fill:var(--accent,#b388f0);r:8.5}
+#cofSvg .cofActive .cofDot{fill:var(--accent,#b388f0);r:10.5}
 #cofSvg .cofActive .cofLbl{fill:#fff;opacity:1;font-weight:800}
 #cofSvg #cofTrail{fill:none;stroke:var(--accent,#b388f0);stroke-width:3;stroke-linecap:round;opacity:0}
 #cofSvg #cofHub{font:800 26px system-ui,sans-serif;fill:var(--ink);text-anchor:middle;dominant-baseline:central} /* BIG center key letter, easy to read at a glance */
@@ -398,10 +420,10 @@ canvas{border-radius:28px;box-shadow:var(--shadow);background:radial-gradient(ci
 /* --- custom chord progression: the "chords" button + translucent editor panel over the wheel --- */
 /* centered UNDER the wheel: wheel spans left→left+width; this sits the button's midpoint on the wheel's midpoint.
    left = wheelLeft + wheelWidth/2 - buttonHalf, tuned via clamp to match the wheel's own clamp at every size. */
-#chordBtn{position:fixed;left:clamp(156px,11vw,209px);top:clamp(196px,27vmin,250px);transform:translateX(-50%);z-index:32;font:800 12px system-ui,sans-serif;color:#fff;background:linear-gradient(135deg,#c9b3f0,#b388f0);border:1.5px solid #a992e0;border-radius:11px;padding:6px 16px;cursor:pointer;box-shadow:var(--shadow);letter-spacing:.4px;transition:filter .15s} /* lilac so it stands out (was white) */
+#chordBtn{position:fixed;left:clamp(156px,11vw,209px);top:clamp(196px,27vmin,250px);transform:translateX(-50%);z-index:32;font:800 14px system-ui,sans-serif;min-height:32px;color:#fff;background:linear-gradient(135deg,#c9b3f0,#b388f0);border:1.5px solid #a992e0;border-radius:11px;padding:6px 16px;cursor:pointer;box-shadow:var(--shadow);letter-spacing:.4px;transition:filter .15s} /* lilac so it stands out (was white) */
 #chordBtn:hover{filter:brightness(1.06)}
 #chordBtn.on{background:#c9b3f0;color:#fff;border-color:#b79fe8}
-@media (max-width:820px){#chordBtn{font-size:11px;padding:5px 12px}} /* position handled by the mobile top-band block below */
+@media (max-width:820px){#chordBtn{font-size:14px;padding:6px 14px}} /* position handled by the mobile top-band block below */
 /* lime→lilac candy panel — playful, matches the meadow palette instead of a plain white box */
 #chordPanel{position:fixed;left:clamp(80px,10vw,116px);top:56px;width:min(290px,80vw);z-index:40;background:linear-gradient(150deg,rgba(213,245,214,.92),rgba(233,226,255,.92) 60%,rgba(244,230,255,.92));border:1.5px solid rgba(200,225,190,.85);border-radius:16px;padding:11px 12px 12px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(120,150,110,.24)}
 /* mobile chord panel position handled by the top-band block below */
@@ -456,7 +478,7 @@ aside::-webkit-scrollbar-thumb{background:rgba(180,170,210,.5);border-radius:8px
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:9px 0}
 .row label{font-size:13px;font-weight:600}
 .row .val{font-size:12px;color:var(--ink-soft);font-weight:600;min-width:46px;text-align:right}
-input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:6px;flex:1;background:linear-gradient(90deg,var(--lav),var(--mint));outline:none}
+input[type=range]{-webkit-appearance:none;appearance:none;height:6px;padding:9px 0;box-sizing:content-box;border-radius:6px;flex:1;background:linear-gradient(90deg,var(--lav),var(--mint));background-clip:content-box;outline:none} /* 6px visible bar, 24px touch target. background-clip MUST come after the background shorthand — the shorthand resets it. */
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--accent);cursor:pointer;box-shadow:0 2px 6px rgba(120,110,160,.4)}
 select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);background:rgba(255,255,255,.7);border:1px solid var(--card-brd);border-radius:10px;padding:7px 9px;cursor:pointer;flex:1;min-width:0}
 .seg{display:flex;background:rgba(255,255,255,.45);border-radius:12px;padding:3px;gap:3px;flex:1}
@@ -509,16 +531,16 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   header h1{display:none}
   header .spacer{display:none}
   .btngroup{gap:5px;flex-wrap:nowrap}
-  #volTop{gap:3px;padding:0 1px} #volTop input[type=range]{width:32px} #volTop svg{width:14px;height:14px}
-  .mode-play #tempoDial{padding:2px 5px;gap:2px} #tempoDial .td-ico{font-size:10px} #tempoKnob{width:22px;height:22px}
+  #volTop{gap:5px;padding:0 2px} #volTop input[type=range]{width:52px} #volTop svg{width:20px;height:20px}
+  .mode-play #tempoDial{padding:3px 6px;gap:3px} #tempoDial .td-ico{font-size:12px} #tempoKnob{width:28px;height:28px}
   .btn.big,.btn.primary{min-height:32px!important;padding:4px 8px!important;font-size:12px!important;border-radius:11px!important} /* compact transport */
   #recDot{width:15px;height:15px}
   /* back = just an arrow, tiny, top-left; share/clear shrink and drop to their own row UNDER the transport, top-right */
-  #exitMode{top:9px!important;left:3px!important;padding:3px 6px!important;font-size:0!important;z-index:262} /* hide the word, keep the ← (added via ::before) */
+  #exitMode{top:7px!important;left:3px!important;padding:6px 7px!important;font-size:0!important;z-index:262;min-height:28px;display:flex;align-items:center} /* hide the word, keep the ← (added via ::before) */
   #exitMode::before{content:"←";font-size:13px;font-weight:800}
-  header{padding-left:30px} /* keep the volume speaker clear of the back arrow */
+  header{padding-left:44px} /* keep the volume speaker clear of the back arrow (arrow ends at x=37 on a 375px screen) */
   .mode-play #topRight{top:auto!important;bottom:auto!important;right:6px!important;top:44px!important;gap:5px} /* share+clear sit on a 2nd row below the transport */
-  .mode-play #topRight #shareApp,.mode-play #topRight #clearBtn{padding:6px 9px!important;font-size:11px!important;min-height:0!important}
+  .mode-play #topRight #shareApp,.mode-play #topRight #clearBtn{padding:7px 11px!important;font-size:13px!important;min-height:30px!important;display:flex;align-items:center}
   #autoRow{padding:0;margin:0}
   #triMixBar{justify-content:center;gap:10px}
   #drumBtn svg,#dropBtn svg{width:22px;height:22px}
@@ -532,9 +554,9 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   /* ID-scoped so these WIN over the base .slimeswitch rules that appear later in the file (equal-specificity order trap) */
   #autoRow .slimeswitch{width:84px;height:38px;border-radius:19px}   /* was 150×66 — must be SMALLER than the wheel */
   #autoRow .ss-knob{width:30px;height:30px;top:4px;left:4px} #autoRow .slimeswitch.on .ss-knob{left:50px} #autoRow .ss-knob .sic{width:25px;height:23px}
-  #cofWheel{left:50%!important;top:102px!important;transform:translateX(-50%)!important;width:clamp(106px,31vw,128px)!important;height:clamp(106px,31vw,128px)!important} /* raised + ~15% smaller so it never touches the tank */
+  #cofWheel{left:50%!important;top:100px!important;transform:translateX(-50%)!important;width:clamp(132px,37vw,158px)!important;height:clamp(132px,31vw,128px)!important} /* raised + ~15% smaller so it never touches the tank */
   #chordPill{display:none!important} /* phone: the wheel hub already shows the key — drop the separate readout to save vertical room */
-  #chordBtn{left:50%!important;top:236px!important;transform:translateX(-50%)!important;font-size:11px!important;padding:4px 12px!important} /* raised, clear of the tank */
+  #chordBtn{left:50%!important;top:236px!important;transform:translateX(-50%)!important;font-size:14px!important;padding:6px 14px!important} /* raised, clear of the tank */
   #chordPanel{left:50%!important;top:64px!important;transform:translateX(-50%)!important;width:min(300px,90vw)}
   .mode-play main{padding:268px 44px 8px} /* tank sits below the raised wheel stack; tighter side gutters */
   main{padding:0 8px 8px}
@@ -577,7 +599,13 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 @keyframes moteIdle{0%,100%{transform:translateY(0)}50%{transform:translateY(-1.5px)}}
 @keyframes moteHop{0%{transform:translateY(0) scale(1,1)}18%{transform:translateY(0) scale(1.16,.82)}
   52%{transform:translateY(-7px) scale(.93,1.1)}100%{transform:translateY(0) scale(1,1)}}
-@media (prefers-reduced-motion:reduce){.mote .mh,.mote.hop .mh{animation:none}}
+@media (prefers-reduced-motion:reduce){
+  /* every purely decorative animation stops. functional indicators (record pulse, the playhead) stay —
+     WCAG 2.3.3 is about decorative motion, and a music toy still has to show you it's running. */
+  .mote .mh,.mote.hop .mh,.slime .bob,.slime.bpop .bob,.slime.cheer .bob,.slime.squish .bob,
+  .slime.peeker,#wormEl,#wormEl *,.spark,.gdecor,.pxbob,#splash .bob{animation:none!important;transition:none!important}
+  .mote{opacity:.7}
+}
 .slime.squish .bob{animation:squish .46s ease}
 @keyframes bob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.03)}}
 @keyframes squish{0%{transform:translateY(0) scale(1,1)}18%{transform:translateY(3px) scale(1.2,.8)}46%{transform:translateY(-11px) scale(.88,1.14)}70%{transform:translateY(0) scale(1.06,.95)}86%{transform:translateY(-3px) scale(.98,1.03)}100%{transform:translateY(0) scale(1,1)}} /* click = squash, hop, settle — a proper bounce, all GPU transform so no lag */
@@ -1373,9 +1401,9 @@ function buildWheel(){const svg=document.getElementById('cofSvg');if(!svg||_cofB
     const flat=COF_FLAT[i];
     // accidental nodes show BOTH names: sharp on top, flat just under it (smaller). naturals show one centered letter.
     const lbl=flat
-      ? `<text class="cofLbl" x="${x}" y="${y-2.5}">${COF_LBL[i]}</text><text class="cofFlat" x="${x}" y="${y+4.5}">${flat}</text>`
+      ? `<text class="cofLbl" x="${x}" y="${y-3.5}">${COF_LBL[i]}</text><text class="cofFlat" x="${x}" y="${y+6}">${flat}</text>`
       : `<text class="cofLbl" x="${x}" y="${y}">${COF_LBL[i]}</text>`;
-    h+=`<g class="cofNode" data-pc="${COF[i]}"><circle class="cofDot" cx="${x}" cy="${y}" r="7"/>${lbl}</g>`;}
+    h+=`<g class="cofNode" data-pc="${COF[i]}"><circle class="cofDot" cx="${x}" cy="${y}" r="9"/>${lbl}</g>`;}
   h+='<text id="cofHub" x="66" y="66">A</text>';
   svg.innerHTML=h;_cofBuilt=true;
   // studio: click a key node -> set that root and PIN it (slime rotation stops until slime is toggled off/on)
@@ -2285,7 +2313,14 @@ async function acquireWake(){try{if('wakeLock' in navigator && !document.hidden 
   _wakeLock.addEventListener('release',()=>{_wakeLock=null;});}}catch(e){_wakeLock=null;}} // denied/unsupported = graceful no-op
 function releaseWake(){try{if(_wakeLock){_wakeLock.release();_wakeLock=null;}}catch(e){}}
 // coming back to the app: resume the audio if the OS napped it, and re-grab the wake lock (both self-heal, no refresh needed).
-function wakeAudio(){if(AC&&AC.state==='suspended')AC.resume().catch(()=>{});if(S.playing){if(_keep.paused)_keep.play().catch(()=>{});acquireWake();}}
+function wakeAudio(){
+  // iOS has a FOURTH state beyond running/suspended/closed: 'interrupted' (phone call, Siri, screen lock).
+  // resume() alone can leave it wedged, so an interrupted context gets suspend->resume to unstick it.
+  if(AC&&AC.state==='interrupted'){AC.suspend().then(()=>AC.resume()).catch(()=>{});}
+  else if(AC&&AC.state==='suspended')AC.resume().catch(()=>{});
+  if(S.playing){if(_keep.paused)_keep.play().catch(()=>{});acquireWake();}}
+// a context can slip to interrupted with no visibility event at all — poll cheaply while we're meant to be playing
+setInterval(()=>{if(AC&&S.playing&&(AC.state==='interrupted'||AC.state==='suspended'))wakeAudio();},2000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseWake();else wakeAudio();});
 addEventListener('focus',wakeAudio); addEventListener('pageshow',wakeAudio); // extra nets: some phones fire focus/pageshow but not visibilitychange
 if('mediaSession' in navigator){
@@ -2801,6 +2836,41 @@ addEventListener('keydown',e=>{
   else if(e.code==='ArrowUp'||e.code==='ArrowDown'){e.preventDefault();
     setBpm(S.bpm+(e.code==='ArrowUp'?2:-2));}
 });
+// ---------- KEYBOARD + SCREEN-READER ACCESS TO THE TANK ----------
+// the tank was a bare <canvas>: not focusable, no role, no label — completely unreachable without a mouse
+// or a touchscreen. this follows the Chrome Music Lab Song Maker pattern: ONE role="application" container
+// with a roving visual cursor, arrow keys to aim, enter/space to act. (never make 720x720 cells tabbable.)
+(function(){
+  cv.setAttribute('role','application');
+  cv.setAttribute('tabindex','0');
+  cv.setAttribute('aria-label','Slime tank. Use the arrow keys to move the aim marker, then press Enter or Space to drop a ball. Hold Shift with an arrow for a smaller step. Press Escape to leave the tank.');
+  const dot=document.createElement('div');dot.id='aimDot';dot.hidden=true;dot.setAttribute('aria-hidden','true');
+  document.body.appendChild(dot);
+  let ax=0.5,ay=0.3,on=false;
+  function place(){const r=cv.getBoundingClientRect();dot.style.left=(r.left+ax*r.width)+'px';dot.style.top=(r.top+ay*r.height)+'px';}
+  function show(v){on=v;dot.hidden=!v;if(v)place();}
+  cv.addEventListener('focus',()=>show(true));
+  cv.addEventListener('blur',()=>show(false));
+  addEventListener('resize',()=>{if(on)place();});
+  addEventListener('scroll',()=>{if(on)place();},true);
+  cv.addEventListener('keydown',e=>{
+    const step=e.shiftKey?0.025:0.09;let used=true;
+    if(e.key==='ArrowLeft')      ax=Math.max(.04,ax-step);
+    else if(e.key==='ArrowRight')ax=Math.min(.96,ax+step);
+    else if(e.key==='ArrowUp')   ay=Math.max(.04,ay-step);
+    else if(e.key==='ArrowDown') ay=Math.min(.96,ay+step);
+    else if(e.key==='Enter'||e.key===' '){
+      initAudio();if(AC&&AC.state==='suspended')AC.resume();
+      spawn(ax*W,ay*H);if(!S.playing)setPlaying(true);
+      dot.classList.remove('pop');void dot.offsetWidth;dot.classList.add('pop');
+    }
+    else if(e.key==='Escape'){cv.blur();}
+    else used=false;
+    // stopPropagation matters: the document handler maps arrows to BPM and space to a ball rainstorm.
+    // while the tank has focus those keys belong to the tank.
+    if(used){e.preventDefault();e.stopPropagation();if(e.key!=='Escape'){show(true);place();}}
+  });
+})();
 cv.addEventListener('pointerdown',e=>{initAudio();if(AC.state==="suspended")AC.resume();const r=cv.getBoundingClientRect();const x=(e.clientX-r.left)*(W/r.width),y=(e.clientY-r.top)*(H/r.height);spawn(x,y);if(!S.playing)setPlaying(true);});
 
 // ---------- moog knobs ----------
