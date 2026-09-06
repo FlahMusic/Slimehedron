@@ -1,4 +1,4 @@
-// Slimehedron — Copyright © 2026 FlahMusic (Flah). AGPL-3.0. Any distributed/web-hosted
+// Slimehedron — Copyright © 2026 FlahMusic (Flah). GPL-3.0-or-later. SPDX-License-Identifier: GPL-3.0-or-later. Any distributed/web-hosted
 // version must stay open-source under the same license + keep credit. github.com/FlahMusic/Slimehedron
 // ================= slimehedron LEARN MODE =================
 // four courses on colored panes · pixel-art scene generator (7 seeded looks per mode) ·
@@ -227,6 +227,170 @@ window.LEARN=(function(){
     if(row)row.innerHTML=(hlQ>=3)
       ? `<button class="btn primary" data-a="hl" data-s="3">see how you did \u25b8</button>`
       : `<button class="btn primary" data-a="hlq">\u25b8 next note (${hlQ+1} of 3)</button>`;}
+
+  // ============ course: DYNAMICS \u2014 lesson "loud & soft" (the third building block: how BIG a sound is) ============
+  // Accurate & kid-first: dynamics = how loud or soft a sound is. Loud = strong, exciting, grabs your attention;
+  // soft = gentle, calm, close. It's a THIRD, separate thing from tempo (speed) and pitch (high/low). Musicians use
+  // loud & soft to add feeling and surprise. Experience \u2192 name \u2192 listening game \u2192 you-try, ties back to both lessons.
+  let dyQ=0,dyRight=0,dyCur='';
+  function dyHit(vel,face){lessonNote(261.63,vel,0.9);const p=$id('dyPad');if(p){p.classList.remove('pulse');void p.offsetWidth;p.classList.add('pulse');}}
+  function dyCard(inner){ov.innerHTML=`<div class="lCard"><h3>loud &amp; soft</h3>${inner}</div>`;}
+  const DYPAD='<div id="dyPad" style="width:92px;height:88px;margin:8px auto">'+slimeSVG('#ffd3a8','happy')+'</div>';
+  function loudSoft(step){stopJam();onKey=null;setLC('dynamics');step=step|0;
+    if(step===0){
+      dyCard(`<p class="lSub">The same note can be played <b>soft</b> and gentle\u2026 or <b>loud</b> and strong. Same pitch \u2014 different power. Listen:</p>
+        ${DYPAD}
+        <div class="lFeed" id="lFeed">tap a button to hear it.</div>
+        <div class="lRow"><button class="btn" data-a="dyplay" data-v="34">\u25b8 soft</button><button class="btn" data-a="dyplay" data-v="122">\u25b8 loud</button></div>
+        <div class="lRow"><button class="btn primary" data-a="dy" data-s="1">I hear it \u25b8</button><button class="btn" data-a="home">\u2039 back</button></div>`);
+    }else if(step===1){
+      dyCard(`<p class="lSub">How loud or soft a sound is, is called its <b>dynamics</b>.</p>
+        <div class="lFeed" style="line-height:1.5"><b>Loud</b> feels strong and exciting \u2014 it grabs your ear.<br><b>Soft</b> feels gentle, calm, and close \u2014 like a secret.<br><span style="opacity:.75">That's three things now: <b>tempo</b> (how fast), <b>pitch</b> (how high), and <b>dynamics</b> (how loud). Music mixes all three.</span></div>
+        <div class="lRow"><button class="btn" data-a="dyplay" data-v="34">\u25b8 soft</button><button class="btn" data-a="dyplay" data-v="122">\u25b8 loud</button></div>
+        <div class="lRow"><button class="btn primary" data-a="dy" data-s="2">quiz me \u25b8</button></div>`);
+    }else if(step===2){ dyQ=0;dyRight=0;
+      dyCard(`<p class="lSub">I'll play the same note \u2014 you tell me: <b>loud</b> or <b>soft</b>? (three rounds)</p>${DYPAD}
+        <div class="lRow"><button class="btn primary" data-a="dyq">\u25b8 play the first one</button></div>`);
+    }else if(step===3){
+      dyCard(`<div style="width:92px;height:88px;margin:8px auto">${slimeSVG('#ffd3a8','wow')}</div>
+        <div class="lFeed">You got <b>${dyRight} of 3</b>. Loud and soft \u2014 you've got the feel.</div>
+        <p class="lSub">${kindWord()}</p>
+        <div class="lRow"><button class="btn primary" data-a="dy" data-s="4">you try \u25b8</button><button class="btn" data-a="dy" data-s="2">\u21bb quiz again</button></div>`);
+    }else if(step===4){
+      dyCard(`<p class="lSub">Now <b>you</b> set how loud it is. Slide from a whisper (left) to a shout (right), then tap the slime to hear it.</p>
+        ${DYPAD}
+        <div class="lRow" style="align-items:center;gap:10px"><span class="sub">soft</span><input type="range" id="dySl" min="12" max="127" value="70" style="flex:1"><span class="sub">loud</span></div>
+        <div class="lRow"><button class="btn" data-a="dytap">\u25b8 play it</button></div>
+        <div class="lFeed" id="lFeed">set the slider, then press play.</div>
+        <div class="lRow"><button class="btn primary" data-a="dy" data-s="5">I feel it \u25b8</button></div>`);
+    }else{ prog.dyn=Math.max(prog.dyn|0,1);saveP();
+      dyCard(`<div style="width:92px;height:88px;margin:8px auto">${slimeSVG('#ffd3a8','happy')}</div>
+        <div class="lFeed">You learned <b>dynamics</b> \u2014 loud vs soft. Speed, height, and loudness are the three basic tools every musician plays with.</div>
+        <p class="lSub">${kindWord()}</p>
+        <div class="lRow"><button class="btn primary" data-a="crs" data-c="pitch">back to pitch \u25b8</button><button class="btn" data-a="home">\u2039 learn menu</button></div>`);
+    }}
+  function dyAsk(){dyCur=Math.random()<0.5?'soft':'loud';dyHit(dyCur==='soft'?32:122);
+    const row=ov.querySelector('.lRow');if(row)row.innerHTML=
+      `<button class="btn" data-a="dyguess" data-g="soft">soft</button><button class="btn" data-a="dyguess" data-g="loud">loud</button>`;
+    if(lf())lf().textContent='listening\u2026 loud or soft?';}
+  function dyGuess(g){const ok=(g===dyCur);if(ok)dyRight++;dyQ++;
+    if(lf())lf().textContent=ok?`yes \u2014 that one was ${dyCur}.`:`that one was actually ${dyCur}. no worries \u2014 next one.`;
+    const row=ov.querySelector('.lRow');
+    if(row)row.innerHTML=(dyQ>=3)
+      ? `<button class="btn primary" data-a="dy" data-s="3">see how you did \u25b8</button>`
+      : `<button class="btn primary" data-a="dyq">\u25b8 next one (${dyQ+1} of 3)</button>`;}
+
+  // ============ course: MELODY MOVES \u2014 lesson "steps & skips" (how a tune travels; the singable idea) ============
+  // Accurate & kid-first: a melody moves by STEP (to the very next note \u2014 smooth, easy to sing) or by SKIP/leap
+  // (jumping over notes \u2014 bold, surprising). Real tunes mostly step, with a few skips for excitement. Uses the piano
+  // so the child HEARS and PLAYS it. Ties to pitch: "these are the high/low sounds, now moving up and down."
+  let ssQ=0,ssRight=0,ssCur='',ssLast=null;
+  const WKI=[0,2,4,5,7,9,11,12]; // white-key semitones in one octave (index = which white key)
+  function ssPlaySeq(seq,vel){seq.forEach((s,i)=>setTimeout(()=>pianoPlay(s,vel||96),i*430));}
+  function ssCard(inner,piano){ov.innerHTML=`<div class="lCard"><h3>steps &amp; skips</h3>${inner}${piano?pianoHTML():''}<div class="lFeed" id="lFeed"></div>
+    <div class="lRow" id="ssRow"></div></div>`;}
+  function stepsSkips(step){stopJam();onKey=null;setLC('melody');step=step|0;
+    if(step===0){ov.innerHTML=`<div class="lCard"><h3>steps &amp; skips</h3>
+        <p class="lSub">A tune travels two ways: it can <b>step</b> to the very next note, or <b>skip</b> over notes to a farther one. Hear both:</p>
+        <div class="lFeed" id="lFeed">tap a button.</div>
+        <div class="lRow"><button class="btn" data-a="ssdemo" data-k="step">\u25b8 hear steps</button><button class="btn" data-a="ssdemo" data-k="skip">\u25b8 hear skips</button></div>
+        <div class="lRow"><button class="btn primary" data-a="ss" data-s="1">I hear it \u25b8</button><button class="btn" data-a="home">\u2039 back</button></div></div>`;
+    }else if(step===1){ov.innerHTML=`<div class="lCard"><h3>steps &amp; skips</h3>
+        <p class="lSub">Moving to the <b>next-door</b> note is a <b>step</b> \u2014 smooth, and easy to sing. Jumping over notes is a <b>skip</b> (a leap) \u2014 bold and exciting.</p>
+        <div class="lFeed" style="line-height:1.5">Most catchy tunes <b>mostly step</b>, with a few skips sprinkled in for surprise. Try humming a step-line \u2014 it feels natural. A big skip makes you sit up!</div>
+        <div class="lRow"><button class="btn" data-a="ssdemo" data-k="step">\u25b8 steps</button><button class="btn" data-a="ssdemo" data-k="skip">\u25b8 skips</button></div>
+        <div class="lRow"><button class="btn primary" data-a="ss" data-s="2">quiz me \u25b8</button></div></div>`;
+    }else if(step===2){ssQ=0;ssRight=0;ov.innerHTML=`<div class="lCard"><h3>steps &amp; skips</h3>
+        <p class="lSub">I'll play two notes \u2014 was that a <b>step</b> or a <b>skip</b>? (three rounds)</p>
+        <div class="lFeed" id="lFeed"></div><div class="lRow" id="ssRow"><button class="btn primary" data-a="ssq">\u25b8 play the first pair</button></div></div>`;
+    }else if(step===3){ov.innerHTML=`<div class="lCard"><h3>steps &amp; skips</h3>
+        <div style="width:92px;height:88px;margin:8px auto">${slimeSVG('#c4a9f5','wow')}</div>
+        <div class="lFeed">You got <b>${ssRight} of 3</b>. You can hear the difference between a smooth step and a bold skip.</div>
+        <p class="lSub">${kindWord()}</p>
+        <div class="lRow"><button class="btn primary" data-a="ss" data-s="4">you try \u25b8</button><button class="btn" data-a="ss" data-s="2">\u21bb quiz again</button></div></div>`;
+    }else if(step===4){ssLast=null;ssCard(`<p class="lSub">Your turn on the keys. Play two <b>next-door</b> keys for a step, or two <b>far-apart</b> keys for a skip \u2014 I'll tell you which.</p>`,true);
+      lf().textContent='play two keys\u2026';
+      onKey=s=>{pianoPlay(s);const wi=WKI.indexOf(s);if(wi<0){lf().textContent='(that was a black key \u2014 try the white ones)';return;}
+        if(ssLast==null){ssLast=wi;lf().textContent='\u2026now play another key.';return;}
+        const d=Math.abs(wi-ssLast);ssLast=wi;
+        lf().textContent=d===0?'same note \u2014 play a different one!':d===1?'that was a STEP \u2014 smooth and singable.':'that was a SKIP \u2014 bold and exciting!';};
+    }else{prog.melody=Math.max(prog.melody|0,1);saveP();ov.innerHTML=`<div class="lCard"><h3>steps &amp; skips</h3>
+        <div style="width:92px;height:88px;margin:8px auto">${slimeSVG('#c4a9f5','happy')}</div>
+        <div class="lFeed">You learned how melodies <b>move</b> \u2014 mostly by step, with skips for surprise. That's the secret to a singable tune.</div>
+        <p class="lSub">${kindWord()}</p>
+        <div class="lRow"><button class="btn primary" data-a="crs" data-c="piano">next: the piano \u25b8</button><button class="btn" data-a="home">\u2039 learn menu</button></div></div>`;
+    }}
+  function ssDemo(kind){if(kind==='step')ssPlaySeq([0,2,4,5,7,5,4,2,0]);   // C-D-E-F-G-F-E-D-C = all steps
+    else ssPlaySeq([0,4,7,12,7,4,0]);                                      // C-E-G-C-G-E-C = all skips
+    if(lf())lf().textContent=kind==='step'?'steps: smooth, walking up and down.':'skips: bold jumps over notes.';}
+  function ssAsk(){const skip=Math.random()<0.5;ssCur=skip?'skip':'step';
+    const pairs=skip?[[0,4],[2,7],[4,11],[0,7]]:[[0,2],[2,4],[5,7],[7,9]];const p=pairs[(Math.random()*pairs.length)|0];
+    pianoPlay(p[0]);setTimeout(()=>pianoPlay(p[1]),450);
+    const row=$id('ssRow');if(row)row.innerHTML=`<button class="btn" data-a="ssguess" data-g="step">step</button><button class="btn" data-a="ssguess" data-g="skip">skip</button>`;
+    if(lf())lf().textContent='listening\u2026 step or skip?';}
+  function ssGuess(g){const ok=(g===ssCur);if(ok)ssRight++;ssQ++;
+    if(lf())lf().textContent=ok?`yes \u2014 that was a ${ssCur}.`:`that was actually a ${ssCur}. no worries.`;
+    const row=$id('ssRow');if(row)row.innerHTML=(ssQ>=3)
+      ? `<button class="btn primary" data-a="ss" data-s="3">see how you did \u25b8</button>`
+      : `<button class="btn primary" data-a="ssq">\u25b8 next pair (${ssQ+1} of 3)</button>`;}
+
+  // ============ course: FEELING \u2014 lesson "happy & sad chords" (major vs minor: the emotional hinge) ============
+  // Accurate & kid-first, taken SLOWLY (this is a big idea): a chord is a few notes played together. A MAJOR chord
+  // (C-E-G) sounds happy/bright; a MINOR chord (C-E\u266d-G) sounds sad/gentle. The ONLY difference is the MIDDLE note
+  // sliding down by the smallest step. That one tiny move flips the whole feeling. Lots of reassurance, no rush.
+  let mmQ=0,mmRight=0,mmCur='',mmMinor=false;
+  const MM_ROOT=261.63; // C4
+  function mmChord(minor){if(!AC)return;[0,minor?3:4,7].forEach((s,i)=>setTimeout(()=>lessonNote(MM_ROOT*Math.pow(2,s/12),100,1.4),i*70));
+    const p=$id('mmPad');if(p){p.classList.remove('pulse');void p.offsetWidth;p.classList.add('pulse');}}
+  function mmMid(){ // play just the middle note sliding E -> E\u266d so the hinge is obvious
+    lessonNote(MM_ROOT*Math.pow(2,4/12),100,0.7);setTimeout(()=>lessonNote(MM_ROOT*Math.pow(2,3/12),100,1.0),620);}
+  function mmCard(inner){ov.innerHTML=`<div class="lCard"><h3>happy &amp; sad chords</h3>${inner}</div>`;}
+  const MMPAD='<div id="mmPad" style="width:92px;height:88px;margin:8px auto">'+slimeSVG('#ffb6d6','happy')+'</div>';
+  function majMin(step){stopJam();onKey=null;setLC('feeling');step=step|0;
+    if(step===0){
+      mmCard(`<p class="lSub">When a few notes play together, that's a <b>chord</b>. Some chords sound happy, some sound sad. Just listen \u2014 no need to figure anything out yet:</p>
+        ${MMPAD}
+        <div class="lFeed" id="lFeed">tap a button to hear it.</div>
+        <div class="lRow"><button class="btn" data-a="mmplay" data-m="0">\u25b8 happy chord</button><button class="btn" data-a="mmplay" data-m="1">\u25b8 sad chord</button></div>
+        <div class="lRow"><button class="btn primary" data-a="mm" data-s="1">I feel the difference \u25b8</button><button class="btn" data-a="home">\u2039 back</button></div>`);
+    }else if(step===1){
+      mmCard(`<p class="lSub">The happy one is a <b>major</b> chord. The sad one is a <b>minor</b> chord.</p>
+        <div class="lFeed" style="line-height:1.55">Here's the magic part: they're <b>almost the same chord</b>. Only the <b>middle note</b> is different \u2014 in the sad one, it slid <b>down by the tiniest step</b>. That one little move changes the whole feeling. Listen to just that note slide:</div>
+        <div class="lRow"><button class="btn" data-a="mmslide">\u25b8 hear the middle note slide down</button></div>
+        <div class="lRow"><button class="btn" data-a="mmplay" data-m="0">\u25b8 happy</button><button class="btn" data-a="mmplay" data-m="1">\u25b8 sad</button></div>
+        <p class="lSub" style="margin-top:8px">This is a big idea \u2014 it's totally fine to just enjoy the sound for now and come back later.</p>
+        <div class="lRow"><button class="btn primary" data-a="mm" data-s="2">try a little game \u25b8</button></div>`);
+    }else if(step===2){ mmQ=0;mmRight=0;
+      mmCard(`<p class="lSub">I'll play a chord \u2014 does it feel <b>happy</b> or <b>sad</b>? Trust your gut, there's no wrong feeling. (three rounds)</p>${MMPAD}
+        <div class="lRow"><button class="btn primary" data-a="mmq">\u25b8 play the first chord</button></div>`);
+    }else if(step===3){
+      mmCard(`<div style="width:92px;height:88px;margin:8px auto">${slimeSVG('#ffb6d6','wow')}</div>
+        <div class="lFeed">You felt <b>${mmRight} of 3</b>. Your heart already knows major from minor \u2014 that's something people feel before they can name it.</div>
+        <p class="lSub">${kindWord()}</p>
+        <div class="lRow"><button class="btn primary" data-a="mm" data-s="4">you try \u25b8</button><button class="btn" data-a="mm" data-s="2">\u21bb play again</button></div>`);
+    }else if(step===4){ mmMinor=false;
+      mmCard(`<p class="lSub">Now <b>you</b> flip the feeling. Tap to slide the middle note down (sad) or up (happy), then hear the whole chord change.</p>
+        ${MMPAD}
+        <div class="lRow"><button class="btn" data-a="mmflip">\u2195 flip the middle note</button><button class="btn primary" data-a="mmhear">\u25b8 play the chord</button></div>
+        <div class="lFeed" id="lFeed">right now it's a <b>happy</b> (major) chord.</div>
+        <div class="lRow"><button class="btn primary" data-a="mm" data-s="5">I get it \u25b8</button></div>`);
+    }else{ prog.feeling=Math.max(prog.feeling|0,1);saveP();
+      mmCard(`<div style="width:92px;height:88px;margin:8px auto">${slimeSVG('#ffb6d6','happy')}</div>
+        <div class="lFeed">You learned the biggest secret of feeling in music: <b>major</b> sounds happy, <b>minor</b> sounds sad, and one tiny note is all it takes to flip between them.</div>
+        <p class="lSub">Take your time with this one \u2014 maybe sleep on it and play with the two chords again tomorrow. There's no rush at all.</p>
+        <div class="lRow"><button class="btn primary" data-a="crs" data-c="chords">explore more chords \u25b8</button><button class="btn" data-a="home">\u2039 learn menu</button></div>`);
+    }}
+  function mmAsk(){mmCur=Math.random()<0.5?'sad':'happy';mmChord(mmCur==='sad');
+    const row=ov.querySelector('.lRow');if(row)row.innerHTML=
+      `<button class="btn" data-a="mmguess" data-g="happy">happy</button><button class="btn" data-a="mmguess" data-g="sad">sad</button>`;
+    if(lf())lf().textContent='listening\u2026 happy or sad?';}
+  function mmGuess(g){const ok=(g===mmCur);if(ok)mmRight++;mmQ++;
+    if(lf())lf().textContent=ok?`yes \u2014 that one was ${mmCur} (${mmCur==='happy'?'major':'minor'}).`:`that one felt ${mmCur} to most ears \u2014 but feelings can differ, that's okay.`;
+    const row=ov.querySelector('.lRow');
+    if(row)row.innerHTML=(mmQ>=3)
+      ? `<button class="btn primary" data-a="mm" data-s="3">see how you did \u25b8</button>`
+      : `<button class="btn primary" data-a="mmq">\u25b8 next chord (${mmQ+1} of 3)</button>`;}
+  function mmFlip(){mmMinor=!mmMinor;mmChord(mmMinor);if(lf())lf().innerHTML=mmMinor?'now it\u2019s a <b>sad</b> (minor) chord.':'now it\u2019s a <b>happy</b> (major) chord.';}
   // ============ course 1: the piano ============
   const HINT={0:'left of the 2 black keys',2:'between the 2 black keys',4:'right of the 2 black keys',
     5:'left of the 3 black keys',7:'in the 3 — left side',9:'in the 3 — right side',
@@ -898,13 +1062,16 @@ window.LEARN=(function(){
   const PANES=[
     ['pulse','linear-gradient(150deg,#d9f7ec,#eefdf7)',icoBeat,34,0,'#9fe6cf'],
     ['pitch','linear-gradient(150deg,#dbe9ff,#eef4ff)',icoKeys([0,4],1),40,0,'#a6c8ff'],
+    ['dynamics','linear-gradient(150deg,#ffe9d9,#fff4ea)',icoBeat,40,0,'#ffd3a8'],
+    ['melody','linear-gradient(150deg,#ece0ff,#f5efff)',icoKeys([0,4],1),44,0,'#c4a9f5'],
+    ['feeling','linear-gradient(150deg,#ffe0ee,#fff0f7)',icoKeys([0,2,4]),46,0,'#ffb6d6'],
     ['rhythm','linear-gradient(150deg,#d2f5e8,#e8fbf4)',icoBeat,34,0,'#9fe6cf'],
     ['piano','linear-gradient(150deg,#e7dbff,#f3edff)',icoKeys([]),44,1,'#c4a9f5'],
     ['intervals','linear-gradient(150deg,#ffe9d9,#fff4ea)',icoKeys([0,4],1),52,0,'#ffd3a8'],
     ['chords','linear-gradient(150deg,#cfe2ff,#e9f2ff)',icoKeys([0,2,4]),60,1,'#a6c8ff'],
     ['modes','linear-gradient(150deg,#ffe0ee,#fff0f7)',icoModes,68,0,'#ffb6d6']
   ];
-  function crsProg(c){const T={pulse:[prog.pulse|0,1],pitch:[prog.pitch|0,1],rhythm:[prog.r|0,8],piano:[Object.keys(prog.pl||{}).length,8],intervals:[Math.min(prog.iv|0,10),10],chords:[prog.ch|0,12],modes:[M7.filter(m=>(prog.g[m.k]|0)>=3).length,7]}[c];
+  function crsProg(c){const T={pulse:[prog.pulse|0,1],pitch:[prog.pitch|0,1],dynamics:[prog.dyn|0,1],melody:[prog.melody|0,1],feeling:[prog.feeling|0,1],rhythm:[prog.r|0,8],piano:[Object.keys(prog.pl||{}).length,8],intervals:[Math.min(prog.iv|0,10),10],chords:[prog.ch|0,12],modes:[M7.filter(m=>(prog.g[m.k]|0)>=3).length,7]}[c];
     const f=Math.round(5*Math.min(1,T[0]/T[1]));
     return `<span class="crsDots">${'\u25cf'.repeat(f)}${'\u25cb'.repeat(5-f)}</span>`;}
   const ov=document.createElement('div');ov.id='learnOverlay';ov.hidden=true;document.body.appendChild(ov);
@@ -930,7 +1097,7 @@ window.LEARN=(function(){
     const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
     if(a==='home')home();
     else if(a==='crs'){const c=b.dataset.c;
-      if(c==='pulse')fastSlow(0);else if(c==='pitch')highLow(0);else if(c==='rhythm')rhythmCourse();else if(c==='piano')pianoMenu();else if(c==='chords')chordCourse(+(b.dataset.i||0));
+      if(c==='pulse')fastSlow(0);else if(c==='pitch')highLow(0);else if(c==='dynamics')loudSoft(0);else if(c==='melody')stepsSkips(0);else if(c==='feeling')majMin(0);else if(c==='rhythm')rhythmCourse();else if(c==='piano')pianoMenu();else if(c==='chords')chordCourse(+(b.dataset.i||0));
       else if(c==='intervals')ivCourse(!!b.dataset.i);else mHome();}
     else if(a==='fs')fastSlow(+(b.dataset.s||0));
     else if(a==='fsplay')fsPlay(+b.dataset.b,3);
@@ -940,6 +1107,22 @@ window.LEARN=(function(){
     else if(a==='hlplay')hlHear(b.dataset.f==='low'?HL_LO:HL_HI);
     else if(a==='hlq')hlAsk();
     else if(a==='hlguess')hlGuess(b.dataset.g);
+    else if(a==='dy')loudSoft(+(b.dataset.s||0));
+    else if(a==='dyplay')dyHit(+b.dataset.v);
+    else if(a==='dyq')dyAsk();
+    else if(a==='dyguess')dyGuess(b.dataset.g);
+    else if(a==='dytap'){const sl=$id('dySl');dyHit(sl?+sl.value:70);}
+    else if(a==='ss')stepsSkips(+(b.dataset.s||0));
+    else if(a==='ssdemo')ssDemo(b.dataset.k);
+    else if(a==='ssq')ssAsk();
+    else if(a==='ssguess')ssGuess(b.dataset.g);
+    else if(a==='mm')majMin(+(b.dataset.s||0));
+    else if(a==='mmplay')mmChord(b.dataset.m==='1');
+    else if(a==='mmslide')mmMid();
+    else if(a==='mmq')mmAsk();
+    else if(a==='mmguess')mmGuess(b.dataset.g);
+    else if(a==='mmflip')mmFlip();
+    else if(a==='mmhear')mmChord(mmMinor);
     else if(a==='pmenu')pianoMenu();
     else if(a==='pkeys'){pIdx=0;pFound={};pianoView();}
     else if(a==='plsn')scaleLesson(+b.dataset.l,+(b.dataset.r||0));
