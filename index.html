@@ -1899,14 +1899,43 @@ function shapeVerts(shapeVal){
 function inPoly(x,y,vs){let inside=false;for(let i=0,j=vs.length-1;i<vs.length;j=i++){
   const[xi,yi]=vs[i],[xj,yj]=vs[j];
   if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))inside=!inside;}return inside;}
+// ===== WHICH WALL GETS WHICH NOTE =====
+// It used to be a flat ascending scale: wall i -> degree floor(i/N*td). Every note was in key, but a
+// bouncing ball then plays RANDOM scale steps, which is why it read as a note generator and not a melody.
+// Real melodies are chord tones with passing tones between them. So we still run ASCENDING around the
+// shape (the rainbow and the "walk up the scale" lesson survive) but we hand out more walls to the tonic
+// triad than to the passing tones. A random bounce now lands on consonance most of the time, and the
+// chaos is completely untouched — we changed the odds, not the physics.
+// Two of every three walls get PULLED onto the nearest tonic-triad tone; every third wall is left as a
+// passing tone. The list still ascends (the rainbow and the "walk up the scale" lesson survive) and the
+// physics is untouched — we only changed the ODDS that a random bounce lands on consonance.
+// A pull-to-triad that would land on the note we just used is skipped, so we keep colour instead of
+// stacking duplicates, and the pentagon stops pairing F with B (that tritone was the worst thing it did).
+function wallDegrees(N,td){
+  const len=scaleObj().c.length;
+  const isTri=d=>{const m=((d%len)+len)%len;return m===0||m===2||m===4;}; // root, 3rd, 5th of the key
+  const out=[];let prev=-1;
+  for(let i=0;i<N;i++){
+    let d=Math.round(i/N*td);                      // where an even spread would put this wall
+    let best=null,bd=99;                           // ...then pull it to the nearest chord tone ABOVE the last one
+    for(let c=d-1;c<=d+1;c++){
+      if(c<0||c>=td||c<=prev||!isTri(c))continue;
+      const dist=Math.abs(c-d); if(dist<bd){bd=dist;best=c;}
+    }
+    if(best!=null)d=best;                          // no chord tone within reach? keep the passing tone
+    if(d<prev)d=prev; if(d>=td)d=td-1;
+    out.push(d);prev=d;
+  }
+  return out;
+}
 function buildEdges(shapeVal){
-  const edges=[],td=totalDegrees(),verts=shapeVerts(shapeVal),N=verts.length;
+  const edges=[],td=totalDegrees(),verts=shapeVerts(shapeVal),N=verts.length,DEGMAP=wallDegrees(N,td);
   let cx=0,cy=0;for(const[x,y]of verts){cx+=x;cy+=y;}cx/=N;cy/=N; // centroid = a point known to be inside
   for(let i=0;i<N;i++){const[ax,ay]=verts[i],[bx,by]=verts[(i+1)%N];
     let nx=-(by-ay),ny=(bx-ax);const len=Math.hypot(nx,ny)||1;nx/=len;ny/=len;
     if((nx*(cx-ax)+ny*(cy-ay))<0){nx=-nx;ny=-ny;} // point each wall's push-direction INWARD (toward the centroid)
-    const deg=Math.floor(i/N*td);
-    edges.push({ax,ay,bx,by,nx,ny,cents:centsForDegree(deg),hue:deg/td,flash:0,broken:false});}
+    const deg=DEGMAP[i];
+    edges.push({ax,ay,bx,by,nx,ny,deg,cents:centsForDegree(deg),hue:deg/td,flash:0,broken:false});}
   let ar=0;for(let i=0;i<N;i++){const[ax,ay]=verts[i],[bx,by]=verts[(i+1)%N];ar+=ax*by-bx*ay;} // shoelace: real area of ANY shape (heart, star…)
   edges._verts=verts;edges._area=Math.abs(ar)/2;return edges; // stash corners + area so goo budget & ball-inside test work for every shape
 }
