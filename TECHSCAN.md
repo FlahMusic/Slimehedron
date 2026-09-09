@@ -1,5 +1,16 @@
 # Slimehedron Weekly Tech Scan
 
+## 2026-09-09
+
+Quiet week — nothing genuinely new dropped in the last 1–2 weeks. Checked Tone.js release history, Faust/faustwasm and IFC-26 conference chatter, Elementary Audio/RNBO/Cmajor DSP-language landscape, MTS-ESP, and the xenharmonic tooling scene (Scale Workshop, Sevish). No new releases or announcements surfaced beyond what's already logged in prior entries.
+
+- **Tone.js** – still on 15.x line, no new stable release since the last scan. No action.
+- **Faust / faustwasm** – active community (IFC-26 conference happened June 2026), but no new browser-relevant tooling this week. `faust2webaudiowasm` remains the path if Slimehedron ever wants DSP-as-WASM; still **Hard**/unnecessary for current scope.
+- **Sevish** – shipped a "Catalogue of Xenharmonic Releases" (community archive site, Aug 2026), not a dev tool — no relevance to Slimehedron's codebase.
+- **MTS-ESP / Scale Workshop** – unchanged; Scale Workshop remains the reference for .scl/.kbm export, no browser-native MTS-ESP exists.
+
+**Summary:** No breaking changes, no new libraries worth adopting. Single-file vanilla JS + Web Audio approach remains sound. Nothing to integrate this week.
+
 ## 2026-08-25
 
 - **sfizz-webaudio** (MIT/GPL) – SFZ sampler as WebAudio library; WASM-based. Adds acoustic sample layers without bloat. **Medium** integration. Risk: bundle size, but offline-safe.

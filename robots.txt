@@ -1,0 +1,9 @@
+# Slimehedron — a free, static, single-page music toy.
+# Everything here is public and safe to index; there is no API, no user data and no login.
+# Crawl-delay asks well-behaved bots to space their requests out. It is advisory: Google ignores it,
+# Bing and others honour it. Abusive traffic is handled at the host, not here.
+User-agent: *
+Allow: /
+Crawl-delay: 10
+
+Sitemap: https://flahmusic.github.io/Slimehedron/sitemap.xml
