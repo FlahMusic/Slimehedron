@@ -103,6 +103,29 @@ header h1{flex-shrink:0}
    we hide them in BOTH modes (studio uses the side panel; play uses the candy buttons). keeps the top clean. */
 #triMixBar{display:flex;justify-content:center}
 #triMixBar>*:not(#triMix){display:none!important}
+/* the strip itself: one row, always visible in studio, directly under the transport */
+#studioBar{display:none}
+.mode-studio #studioBar{display:flex;position:fixed;z-index:72;align-items:center;justify-content:flex-start;
+  gap:4px;padding:5px 9px;border-radius:14px;
+  background:rgba(252,249,255,.9);border:1.5px solid var(--card-brd);box-shadow:var(--shadow);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);overflow-x:auto;scrollbar-width:thin}
+#studioBar::-webkit-scrollbar{height:4px}
+#studioBar::-webkit-scrollbar-thumb{background:rgba(150,140,185,.4);border-radius:3px}
+#studioBar .sbGrp{display:flex;align-items:center;gap:5px;flex:none}
+#studioBar .sbSep{width:1px;height:22px;background:rgba(150,140,185,.3);flex:none;margin:0 3px}
+#studioBar .sbLbl{font:700 9.5px system-ui,sans-serif;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-soft);flex:none}
+#studioBar select,#studioBar input[type=number]{flex:none;width:auto;font-size:12.5px;padding:5px 7px;min-height:34px}
+#studioBar input[type=number]{width:62px}
+#studioBar #sbTap{border:1.5px solid rgba(160,150,200,.45);background:#fff;border-radius:9px;padding:6px 10px;
+  font:800 11px inherit;color:#5a4f78;cursor:pointer;min-height:34px;flex:none}
+#studioBar #sbTap:active{background:var(--mint)}
+#studioBar #drumCtl{opacity:1!important;pointer-events:auto!important} /* the strip is always live; the kit selects are useful even before drums are on */
+@media (max-width:820px){
+  .mode-studio #studioBar{top:calc(env(safe-area-inset-top) + 46px);padding:4px 7px;gap:3px;max-width:98vw;border-radius:12px}
+  #studioBar select,#studioBar input[type=number]{font-size:12px;padding:4px 6px;min-height:32px}
+  #studioBar .sbLbl{display:none} /* the icons and the values carry it; labels are the first thing to go */
+}
+.mode-studio #studioBar{top:var(--sbTop,60px);left:var(--sbLeft,8px);width:var(--sbW,auto);max-width:none}
 /* drop-ball, dice(new shape), and the drum/band mute buttons are gone from the header in every mode — you drop a
    ball by tapping anywhere, and drums/band live in the mixer. keeps the transport tidy. */
 #dropBtn,#newShapeBtn,#drumBtn,#bandBtn{display:none!important}
@@ -271,6 +294,33 @@ header h1{margin-left:84px} /* the title steps aside for the back button */
 @media (max-width:820px){#exitMode{top:6px;left:4px;padding:6px 9px;font-size:12px}header h1{margin-left:0}header{padding-left:34px}}
 #learnOverlay{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(230,222,250,.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 #learnOverlay[hidden]{display:none}
+/* ===== LEARN KEYBED =====
+   Replaces the "pitch ribbon" I proposed. A keyboard IS spatial pitch encoding -- left to right, low to
+   high -- and unlike an invented ribbon it is the format every kids' music app already uses (Prodigies,
+   Simply Piano, Duolingo Music) AND it doubles as the precise input surface. One key per WALL of the
+   current shape, so the keybed and the tank are the same instrument seen two ways.
+   States, matching the conventions those apps established: `nxt` = play this one next, `lit` = the tank
+   is sounding this now, `ok` = you got it. */
+#labKeys{position:fixed;left:50%;transform:translateX(-50%);z-index:118;display:none;
+  gap:4px;padding:7px 9px;border-radius:14px;background:rgba(252,249,255,.94);
+  border:1.5px solid var(--card-brd);box-shadow:0 6px 22px rgba(120,110,160,.25);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);max-width:96vw;overflow-x:auto;
+  touch-action:manipulation;scrollbar-width:thin}
+body.lab-on #labKeys{display:flex}
+#labKeys::-webkit-scrollbar{height:4px}
+#labKeys::-webkit-scrollbar-thumb{background:rgba(150,140,185,.4);border-radius:3px}
+.lk{flex:none;width:clamp(38px,7.2vw,68px);height:clamp(56px,11vh,88px);border-radius:0 0 9px 9px;
+  border:2.5px solid #5a4f78;border-top-width:0;background:#fff6ee;cursor:pointer;position:relative;
+  display:flex;align-items:flex-end;justify-content:center;padding-bottom:7px;
+  font:800 12.5px system-ui,sans-serif;color:#5a4f78;box-sizing:border-box;transition:background .08s,transform .06s;
+  box-shadow:inset -3px -4px 0 rgba(90,79,120,.1),inset 3px 0 0 rgba(255,255,255,.75)}
+.lk:active{transform:translateY(2px);background:#ffeccd}
+.lk .lkHue{position:absolute;left:0;right:0;top:0;height:7px;border-bottom:2px solid #5a4f78} /* the wall's own colour, so key and wall are visibly the same note */
+.lk.lit{background:#ffe6a8;transform:translateY(2px)}          /* the tank is sounding this right now */
+.lk.nxt{background:#e4fff3;box-shadow:inset 0 0 0 3px #5fd6ab} /* play this one next */
+.lk.ok{background:#a9efc4}                                      /* you got it */
+.lk:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.lk{transition:none}}
 /* DOCK MODE: the tank stays visible and playable, the lesson talks from the side (or the bottom on a
    phone). This is the whole point of the rebuild -- a lesson about a bouncing ball that hides the
    bouncing ball is a worksheet with extra steps. */
@@ -284,17 +334,24 @@ header h1{margin-left:84px} /* the title steps aside for the back button */
 #learnOverlay.lab .lBtns{margin-top:6px}
 @media (max-width:820px){
   #learnOverlay.lab{align-items:flex-end;justify-content:center}
-  #learnOverlay.lab .lCard{width:100%;height:auto;max-height:56dvh;border-radius:22px 22px 0 0;
+  #learnOverlay.lab .lCard{width:100%;height:auto;max-height:44dvh;border-radius:22px 22px 0 0;
     box-shadow:0 -10px 30px rgba(120,110,160,.24);padding:14px 16px calc(16px + env(safe-area-inset-bottom))}
+  #labKeys{padding:5px 6px;gap:3px}
+  .lk{width:clamp(34px,9vw,46px);height:clamp(50px,8dvh,64px);font-size:11.5px}
 }
 /* while a lesson is driving the tank, the play-mode furniture steps aside so the geometry is the whole show */
 body.lab-on #playSide,body.lab-on #triMixBar,body.lab-on #autoRow,body.lab-on #kbBtn,body.lab-on #chordBtn{display:none!important}
 /* RESERVE the dock's space instead of letting it float over the tank. The tank is square and centred in
    `main`, so shrinking main is what actually keeps the geometry fully visible -- exactly the same lesson
    as the circle-of-fifths: don't overlap and hope, take the room out of the layout. */
-body.lab-on main{padding:64px 424px 8px 16px!important}
+/* the keybed sits under the tank, so the tank stops short of the bottom by the keybed's full height
+   (keys up to 88px + the strip's padding and border). Measured, not eyeballed: when this was 104px the
+   keybed's clamp pushed it back up over the tank by a few pixels. */
+body.lab-on main{padding:64px 424px 126px 16px!important}
+.mode-studio main{padding-top:104px} /* the transport strip lives here; the tank starts below it */
+@media (max-width:820px){.mode-studio main{padding-top:92px}}
 @media (max-width:1180px){body.lab-on main{padding-right:400px!important}}
-@media (max-width:820px){body.lab-on main{padding:52px 10px calc(58dvh) 10px!important}}
+@media (max-width:820px){body.lab-on main{padding:52px 10px calc(44dvh + 92px) 10px!important}} /* dock + keybed */
 .labBar{display:flex;align-items:center;gap:8px;margin:0 0 6px}
 .labBar .labBack{border:0;background:rgba(180,170,220,.2);border-radius:10px;padding:6px 10px;font:800 12px inherit;color:#5a4f78;cursor:pointer}
 .labStep{font:700 11px system-ui,sans-serif;color:var(--ink-soft);letter-spacing:.5px;text-transform:uppercase}
@@ -798,6 +855,10 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   <button class="btn warn" id="clearBtn" title="clear all balls &amp; liquid">clear</button>
   <button class="btn" id="resetBtn" title="start fresh">↺</button>
 </header>
+<!-- STUDIO TRANSPORT STRIP: the four things you actually reach for constantly, never behind a menu.
+     Populated at runtime by MOVING the existing (already-wired) controls in, so there is exactly one
+     #bpmNum, one #drumSig etc. in the document - duplicating them would fork the state. -->
+<div id="studioBar"></div>
 <div id="autoRow"><button class="slimeswitch" id="slimeBig" title="auto-play"><span class="ss-knob"><span class="sic">✨</span></span></button></div>
 <div id="triMixBar">
   <div id="triMix" title="drag to mix: melody (top) · drums (left) · band (right)">
@@ -1661,18 +1722,75 @@ function keepTankClear(){
   const w=wheel.getBoundingClientRect(),t=cv.getBoundingClientRect();
   if(w.width<2||t.width<2)return;
   const GAP=8;
-  const over=w.left<t.right&&w.right>t.left&&w.top<t.bottom&&w.bottom>t.top;
-  if(!over)return;
+  // the wheel must clear the TANK and the studio transport strip. The strip is a fixed bar that appeared
+  // after this function was written, and the wheel promptly parked underneath it -- so obstacles are a
+  // list now, not a single rect, and anything added later joins the list instead of getting its own hack.
+  const obstacles=[t];
+  const sb=document.getElementById('studioBar');
+  if(sb&&getComputedStyle(sb).display!=='none'){const r=sb.getBoundingClientRect();if(r.width>2)obstacles.push(r);}
+  const hits=r=>obstacles.some(o=>r.left<o.right&&r.right>o.left&&r.top<o.bottom&&r.bottom>o.top);
+  if(!hits(w))return;
   // pick the cheapest escape: straight up, or out to whichever side has more free room.
-  const upRoom=t.top-GAP-w.height, leftRoom=t.left-GAP-w.width, rightRoom=innerWidth-(t.right+GAP)-w.width;
-  const dyUp=(t.top-GAP)-w.bottom;                         // negative = move up by this much
-  if(upRoom>=6&&Math.abs(dyUp)<=w.height*1.6){wheel.style.marginTop=Math.round(dyUp)+'px';return;}
-  if(leftRoom>=6&&leftRoom>=rightRoom){wheel.style.marginLeft=Math.round((t.left-GAP)-w.right)+'px';return;}
-  if(rightRoom>=6){wheel.style.marginLeft=Math.round((t.right+GAP)-w.left)+'px';return;}
-  if(upRoom>=6){wheel.style.marginTop=Math.round(dyUp)+'px';return;}
-  wheel.style.marginTop=Math.round(dyUp)+'px';             // nowhere is roomy: up is still the least-bad
+  // Try each escape as a (dx,dy) PAIR and keep the first that genuinely clears everything. Single-axis
+  // moves were not enough: right-of-the-tank still sat under the transport strip, and below-the-strip
+  // still clipped the tank's corner -- it needed both at once. Also treat the side panel as an obstacle,
+  // since "somewhere on screen" is not the same as "somewhere usable".
+  // the TOP BARS only (strip + header): what the wheel must drop below. Measured before the tall side
+  // panel joins the obstacle list, or its 700px height would be mistaken for a bar to clear.
+  let barBot=0;
+  for(const sel of ['#studioBar','header']){const el=document.querySelector(sel);
+    if(!el||getComputedStyle(el).display==='none')continue;
+    const r=el.getBoundingClientRect();
+    if(r.width>2&&r.top<innerHeight*0.35)barBot=Math.max(barBot,r.bottom);}
+  const asideEl=document.querySelector('aside');
+  if(asideEl&&getComputedStyle(asideEl).display!=='none'){const r=asideEl.getBoundingClientRect();if(r.width>2)obstacles.push(r);}
+  const topMost=Math.min.apply(null,obstacles.map(o=>o.top));
+  const belowBars=barBot?(barBot+GAP)-w.top:0;
+  const cands=[
+    [0,(topMost-GAP)-w.bottom],                     // straight up, above everything
+    [(t.right+GAP)-w.left, belowBars],              // right of the tank, under the bars
+    [(t.left-GAP)-w.right, belowBars],              // left of the tank, under the bars
+    [(t.right+GAP)-w.left, 0],                      // right of the tank, where it already sits
+    [0,belowBars]                                   // just under the bars
+  ];
+  for(const [dx,dy] of cands){
+    if(!isFinite(dx)||!isFinite(dy))continue;
+    wheel.style.marginLeft=Math.round(dx)+'px';wheel.style.marginTop=Math.round(dy)+'px';
+    const nb=wheel.getBoundingClientRect();
+    if(nb.top>=2&&nb.bottom<=innerHeight-2&&nb.left>=2&&nb.right<=innerWidth-2&&!hits(nb))return;
+  }
+  // Nothing was fully clean. Do NOT keep shoving it upward -- that walked it off the top of the screen in
+  // studio, and a control you cannot see is strictly worse than one that slightly overlaps. Instead: drop
+  // it just BELOW the lowest fixed bar, then clamp hard into the viewport.
+  wheel.style.removeProperty('margin-top');wheel.style.removeProperty('margin-left');
+  const cur=wheel.getBoundingClientRect();
+  let dy=0,dx=0;
+  if(barBot&&cur.top<barBot+GAP)dy=(barBot+GAP)-cur.top;
+  if(cur.top+dy<2)dy=2-cur.top;
+  if(cur.bottom+dy>innerHeight-2)dy=(innerHeight-2)-cur.bottom;
+  if(cur.left<2)dx=2-cur.left;
+  if(cur.right+dx>innerWidth-2)dx=(innerWidth-2)-cur.right;
+  if(dy)wheel.style.marginTop=Math.round(dy)+'px';
+  if(dx)wheel.style.marginLeft=Math.round(dx)+'px';
 }
 window._keepTankClear=keepTankClear;
+// ---------- STUDIO STRIP placement: measured, never guessed ----------
+function placeStudioBar(){
+  const bar=document.getElementById('studioBar');if(!bar)return;
+  if(getComputedStyle(bar).display==='none')return;
+  const hdr=document.querySelector('header'),aside=document.querySelector('aside');
+  const hb=hdr?hdr.getBoundingClientRect():{bottom:52};
+  const ab=(aside&&getComputedStyle(aside).display!=='none')?aside.getBoundingClientRect():null;
+  const GAP=8;
+  const left=GAP;
+  const right=(ab&&ab.left>innerWidth*0.5)?(innerWidth-ab.left+GAP):GAP; // only a real right-hand panel reserves room
+  const w=Math.max(180,innerWidth-left-right);
+  bar.style.setProperty('--sbTop',Math.round(hb.bottom+GAP)+'px');
+  bar.style.setProperty('--sbLeft',Math.round(left)+'px');
+  bar.style.setProperty('--sbW',Math.round(w)+'px');
+}
+window._placeStudioBar=placeStudioBar;
+addEventListener('resize',()=>{clearTimeout(window._sbT);window._sbT=setTimeout(placeStudioBar,120);});
 addEventListener('resize',()=>{clearTimeout(window._ktcT);window._ktcT=setTimeout(keepTankClear,140);});
 function updateWheel(){const w=document.getElementById('cofWheel');if(!w||w.hidden)return;
   if(!Number.isFinite(S.root))S.root=60; // guard: a bad/empty saved root must never crash the wheel (was throwing on NaN → killed init)
@@ -2170,7 +2288,15 @@ function chordDegrees(){                          // scale-degree offsets (0..le
   }
   return _CHORDC[key]=set;
 }
+var _labExact=false; // hoisted: wallDegrees runs at boot, long before `const LAB` is initialised
 function wallDegrees(N,td){
+  // LESSONS get the literal map. Nothing is snapped, nothing is skipped, and the walls read do-re-mi
+  // clockwise, which is the whole point of a scale lesson. LAB.take() sizes the shape so N === td.
+  if(_labExact){
+    const out=[];for(let i=0;i<N;i++)out.push(td?Math.min(td-1,Math.round(i*td/N)):0);
+    if(N===td)for(let i=0;i<N;i++)out[i]=i;   // the case we actually engineer for: one wall per note
+    return out;
+  }
   const len=scaleObj().c.length,CT=chordDegrees();
   const isTri=d=>CT.indexOf(((d%len)+len)%len)>=0; // the home chord of THIS scale, in whatever tuning it uses
   const out=[];let prev=-1;
@@ -2894,7 +3020,8 @@ function applyMode(m){S.mode=m;
   if(cpan&&m==='learn')cpan.hidden=true; // never leave the editor open in learn
   if(sn)sn.style.display=(m==='play')?'none':''; // no "5 notes/oct…" text in play
   if(wheel&&!wheel.hidden){_cofPrevPc=null;updateWheel();}
-  setTimeout(keepTankClear,60);setTimeout(keepTankClear,420); // after the mode's layout settles
+  setTimeout(()=>{placeStudioBar();keepTankClear();},60);
+  setTimeout(()=>{placeStudioBar();keepTankClear();},420); // after the mode's layout settles
   // "clear" is the only floating top-right control left (share moved to the splash), so it gets a simple home:
   // its own fixed slot in play, back in the header row everywhere else. Nothing can stack on it any more.
   const clr=$("clearBtn");let tr=$("topRight");
@@ -3111,9 +3238,10 @@ let manualHold=false; // a human is playing: auto ball-dropping yields the stage
 //     LAB.labels(a)  write text on the walls (do re mi, 1 2 3, note names -- whatever the lesson wants)
 //  Everything is opt-in and restorable, so a lesson can never leave play/studio in a strange state.
 // ================================================================================================
-const LAB={_on:false,_saved:null,_hit:null,_labels:null,_hold:false};
+const LAB={_on:false,_saved:null,_hit:null,_labels:null,_hold:false,_touch:false,_exact:false};
 LAB.take=function(cfg){
   cfg=cfg||{};
+  LAB._touch=(cfg.touch!==false); // lessons get a directly playable tank unless one opts out
   if(!LAB._on){ // remember EVERYTHING we are about to touch, once
     LAB._saved={shape:S.shape,scale:S.scale,root:S.root,octs:S.octs,slime:S.slimeMode,
       drum:(typeof drumOn!=='undefined'&&drumOn),band:(typeof bandOn!=='undefined'&&bandOn),
@@ -3122,10 +3250,21 @@ LAB.take=function(cfg){
   }
   if(S.slimeMode)S.slimeMode=false;               // the lesson drives, not the auto-jammer
   S.randomShape=false;                            // no surprise shape changes mid-explanation
-  if(cfg.shape!=null)S.shape=cfg.shape;
   if(cfg.scale!=null){S.scale=cfg.scale;const el=$("scale");if(el)el.value=cfg.scale;}
   if(cfg.root!=null){S.root=cfg.root;const el=$("root");if(el)el.value=String(cfg.root);}
   if(cfg.octs!=null)S.octs=cfg.octs;
+  // EXACT mode: size the polygon to the scale so every note gets a wall. `exact:false` opts a lesson out
+  // (the beat lesson does not care about pitch and wants a plain square).
+  LAB._exact=_labExact=(cfg.exact!==false);
+  if(_labExact){
+    const len=scaleObj().c.length;
+    let octs=Math.max(1,S.octs|0);
+    while(len*octs>12&&octs>1)octs--;          // regular polygons stop at 12 sides
+    S.octs=octs;
+    const need=Math.max(3,Math.min(12,len*octs));
+    S.shape=String(need);                       // one side per note, always
+    const os=$("octs");if(os)os.value=String(octs);
+  }else if(cfg.shape!=null)S.shape=cfg.shape;
   if(cfg.bpm!=null)S.bpm=cfg.bpm;
   if(cfg.grav!=null)S.grav=cfg.grav;
   if(typeof drumOn!=='undefined'&&cfg.drums!=null&&drumOn!==cfg.drums&&$("drumBtn"))$("drumBtn").click();
@@ -3133,11 +3272,13 @@ LAB.take=function(cfg){
   balls.length=0;rebuild();
   try{updateScaleNote();updateWheel();}catch(e){}
   initAudio();if(AC&&AC.state==='suspended')AC.resume();
+  if(window._labKeysBuild)setTimeout(window._labKeysBuild,0); // the keybed mirrors whatever shape/scale this lesson chose
   return LAB;
 };
 LAB.give=function(){
   if(!LAB._on)return;
   const v=LAB._saved;LAB._on=false;LAB._saved=null;LAB._hit=null;LAB._labels=null;LAB._hold=false;
+  LAB._exact=_labExact=false; // play/studio get their musical chord-tone mapping back
   if(!v)return;
   S.shape=v.shape;S.octs=v.octs;S.randomShape=v.randomShape;S.bpm=v.bpm;S.grav=v.grav;
   S.scale=v.scale;S.root=v.root;
@@ -3147,6 +3288,7 @@ LAB.give=function(){
   S.slimeMode=v.slime;
   balls.length=0;rebuild();
   try{updateScaleNote();updateWheel();}catch(e){}
+  if(window._labKeysBuild)window._labKeysBuild(); // clears it: no lesson, no keybed
 };
 // which wall owns a given scale degree, in the current shape
 LAB.wallFor=function(deg){
@@ -3171,7 +3313,93 @@ LAB.drop=function(deg,speed){
   balls.push({x:CX,y:CY,vx:dx*sp,vy:dy*sp,hue:((hueIdx++)%12)/12,trail:[],lab:1});
 };
 LAB.clear=function(){balls.length=0;};
+// distance from a point to a wall segment, in canvas units
+function _segDist(px,py,e){
+  const ex=e.bx-e.ax,ey=e.by-e.ay,L2=ex*ex+ey*ey||1;
+  let t=((px-e.ax)*ex+(py-e.ay)*ey)/L2; t=Math.max(0,Math.min(1,t));
+  return Math.hypot(px-(e.ax+ex*t),py-(e.ay+ey*t));
+}
+LAB.nearestWall=function(x,y){
+  if(!edges||!edges.length)return -1;
+  let best=-1,bd=1e9;
+  for(let i=0;i<edges.length;i++){const d=_segDist(x,y,edges[i]);if(d<bd){bd=d;best=i;}}
+  return best;
+};
+// ring a wall as if a ball had struck it: same sound, same flash, same report to the lesson.
+LAB.strike=function(i,vel){
+  const e=edges[i];if(!e)return null;
+  e.flash=1;
+  try{trigger(e.cents,vel==null?0.85:vel);}catch(err){}
+  try{splash((e.ax+e.bx)/2,(e.ay+e.by)/2,e.nx,e.ny,e.hue);}catch(err){}
+  if(LAB._hit){try{LAB._hit(e.deg,e.cents);}catch(err){}}
+  return e;
+};
+LAB.strikeDeg=function(deg,vel){return LAB.strike(LAB.wallFor(deg),vel);};
 window.LAB=LAB;
+
+// ================= LEARN KEYBED =================
+// One key per wall of the current shape. Tapping a key rings that wall (same code path as touching the
+// tank), and when the TANK plays a note the matching key lights -- which is what makes "listen, then play
+// it back" possible at all: the child sees which keys, then presses them.
+// Placed under the tank from the tank's MEASURED rect, so it inherits every responsive fix already made
+// rather than needing its own breakpoints.
+(function(){
+  const kb=document.createElement('div');kb.id='labKeys';
+  kb.setAttribute('role','group');kb.setAttribute('aria-label','note keys');
+  document.body.appendChild(kb);
+  let map=[]; // key index -> wall index
+  function build(){
+    if(!LAB._on||!edges||!edges.length){kb.innerHTML='';map=[];return;}
+    // one key per wall, ordered low to high by pitch so the keybed reads left-to-right like a piano
+    const byDeg={};
+    edges.forEach((e,i)=>{const d=e.deg==null?0:e.deg;if(byDeg[d]==null)byDeg[d]=i;}); // first wall wins
+    const order=Object.keys(byDeg).map(d=>{const i=byDeg[d];
+      return {i,deg:+d,cents:edges[i].cents,hue:edges[i].hue};}).sort((a,b)=>a.cents-b.cents);
+    map=order.map(o=>o.i);
+    LAB._playable=order.map(o=>o.deg);   // the degrees a child can ACTUALLY reach on this shape
+    const lbl=(window.LEARN2&&LEARN2._labels)?LEARN2._labels():null;
+    kb.innerHTML=order.map((o,k)=>{
+      const name=lbl?(lbl[o.deg]||''):'';
+      return '<button class="lk" type="button" data-k="'+k+'" aria-label="note '+(name||(k+1))+'">'+
+             '<span class="lkHue" style="background:'+aurora(o.hue,66)+'"></span>'+name+'</button>';
+    }).join('');
+    place();
+  }
+  function place(){
+    const r=cv.getBoundingClientRect();
+    if(r.width<10)return;
+    kb.style.top=Math.round(Math.min(innerHeight-kb.offsetHeight-8, r.bottom+8))+'px';
+    kb.style.left=Math.round(r.left+r.width/2)+'px';
+  }
+  kb.addEventListener('pointerdown',e=>{
+    const b=e.target.closest('.lk');if(!b)return;
+    e.preventDefault();
+    initAudio();if(AC&&AC.state==='suspended')AC.resume();
+    const w=map[+b.dataset.k];if(w==null)return;
+    LAB.strike(w);
+    b.classList.add('lit');setTimeout(()=>b.classList.remove('lit'),140);
+  });
+  // the tank sounding a note lights its key — the "watch, then copy" half of call-and-response
+  window._labKeyFlash=function(deg,ms){
+    const k=map.findIndex(w=>edges[w]&&edges[w].deg===deg);
+    if(k<0)return;const el=kb.children[k];if(!el)return;
+    el.classList.add('lit');setTimeout(()=>el.classList.remove('lit'),ms||300);
+  };
+  window._labKeyHint=function(deg){ // "play this one next"
+    [...kb.children].forEach(c=>c.classList.remove('nxt'));
+    if(deg==null)return;
+    const k=map.findIndex(w=>edges[w]&&edges[w].deg===deg);
+    if(k>=0&&kb.children[k])kb.children[k].classList.add('nxt');
+  };
+  window._labKeyOK=function(deg){
+    const k=map.findIndex(w=>edges[w]&&edges[w].deg===deg);
+    if(k>=0&&kb.children[k]){const el=kb.children[k];el.classList.add('ok');setTimeout(()=>el.classList.remove('ok'),420);}
+  };
+  window._labKeysBuild=build;
+  addEventListener('resize',()=>{clearTimeout(window._lkT);window._lkT=setTimeout(place,120);});
+  setInterval(()=>{if(LAB._on&&document.body.classList.contains('lab-on'))place();},900); // follows the tank as layouts settle
+})();
+
 function shootBall(cents){ // fire a ball from the center straight at the wall that owns this pitch — the press IS the shot
   const sc=scaleObj().c,len=sc.length,td=totalDegrees();
   const oct=Math.max(0,Math.min(Math.floor(cents/1200),Math.ceil(td/len)-1));
@@ -3452,7 +3680,15 @@ addEventListener('keydown',e=>{
     if(used){e.preventDefault();e.stopPropagation();if(e.key!=='Escape'){show(true);place();}}
   });
 })();
-cv.addEventListener('pointerdown',e=>{initAudio();if(AC.state==="suspended")AC.resume();const r=cv.getBoundingClientRect();const x=(e.clientX-r.left)*(W/r.width),y=(e.clientY-r.top)*(H/r.height);spawn(x,y);if(!S.playing)setPlaying(true);});
+cv.addEventListener('pointerdown',e=>{initAudio();if(AC.state==="suspended")AC.resume();
+  const r=cv.getBoundingClientRect();const x=(e.clientX-r.left)*(W/r.width),y=(e.clientY-r.top)*(H/r.height);
+  // LEARN: the tank is an INSTRUMENT you touch, not a ball dispenser. Nearest wall, so a small finger
+  // anywhere near a wall still gets that note. PLAY/STUDIO keep the original drop-a-ball behaviour.
+  if(LAB&&LAB._on&&LAB._touch){
+    const i=LAB.nearestWall(x,y);
+    if(i>=0){LAB.strike(i);if(window._labKeyFlash)window._labKeyFlash(edges[i].deg);return;}
+  }
+  spawn(x,y);if(!S.playing)setPlaying(true);});
 
 // ---------- moog knobs ----------
 function hashHue(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))%360;return h;}
@@ -4217,7 +4453,47 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
   for(const id in o.seg||{})safe(()=>{const e=$(id),b=e&&e.children[o.seg[id]];if(b)b.click();});
 })();
 
-// ---------- groove selector: foldered feels, applied to the drums (studio panel; Human is the default) ----------
+
+// ---------- STUDIO TRANSPORT STRIP ----------
+// Fills #studioBar by MOVING existing controls into it. Moving, not cloning: two elements with the same
+// id would fork the state and one of them would silently stop matching the engine. Everything here is
+// already wired by its own listener, so relocating the node is all that is needed.
+(function(){try{
+  const bar=document.getElementById('studioBar');if(!bar)return;
+  const grab=(sel)=>document.querySelector(sel);
+  function grp(label,nodes,title){
+    const g=document.createElement('span');g.className='sbGrp';if(title)g.title=title;
+    if(label){const l=document.createElement('span');l.className='sbLbl';l.textContent=label;g.appendChild(l);}
+    nodes.forEach(n=>{if(n)g.appendChild(n);});
+    return g;
+  }
+  function sep(){const d=document.createElement('span');d.className='sbSep';return d;}
+  // TEMPO — the single most-touched control in any DAW, and it was behind a panel in studio.
+  const tap=document.createElement('button');tap.id='sbTap';tap.type='button';tap.textContent='TAP';
+  tap.title='tap four times to set the tempo';
+  let taps=[];
+  tap.addEventListener('click',()=>{const now=performance.now();
+    taps=taps.filter(t=>now-t<2600);taps.push(now);
+    if(taps.length>=3){let sum=0;for(let i=1;i<taps.length;i++)sum+=taps[i]-taps[i-1];
+      const bpm=Math.max(40,Math.min(220,Math.round(60000/(sum/(taps.length-1)))));
+      const n=document.getElementById('bpmNum'),r=document.getElementById('bpmTop');
+      if(n){n.value=bpm;n.dispatchEvent(new Event('change',{bubbles:true}));}
+      if(r){r.value=bpm;r.dispatchEvent(new Event('input',{bubbles:true}));}
+      S.bpm=bpm;}});
+  bar.appendChild(grp('tempo',[grab('#bpmNum'),grab('#bpmTop'),tap],'tempo in beats per minute'));
+  bar.appendChild(sep());
+  // METER + STEP — a DAW never hides the time signature.
+  bar.appendChild(grp('meter',[grab('#drumSig'),grab('#divSel')],'time signature and step size'));
+  bar.appendChild(sep());
+  // KEY — the app is scale-locked, so the key is the single biggest musical decision on screen.
+  bar.appendChild(grp('key',[grab('#keyTop'),grab('#scaleTop')],'key and scale'));
+  bar.appendChild(sep());
+  // KIT — two selects, and switching kit is a constant move while building a beat.
+  bar.appendChild(grp('kit',[grab('#kitStyle'),grab('#drumKit')],'drum kit'));
+  // the drum selects used to be gated behind a dimmed wrapper; in the strip they are always live
+  const dc=document.getElementById('drumCtl');if(dc){dc.style.opacity='';dc.style.pointerEvents='';}
+}catch(e){console.warn('studio strip skipped:',e);}})();
+// ---------- groove selector: flat feels, applied to the drums (studio panel; Human is the default) ----------
 (function(){try{
   const host=document.getElementById('grooveFolders'); if(!host)return;
   function setG(name){curGroove=name; // no name label anymore — the highlighted button IS the indicator

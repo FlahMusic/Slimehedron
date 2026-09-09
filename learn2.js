@@ -178,6 +178,16 @@ function note(cents,vel,dur){
   try{if(typeof freqFromCents==='function'&&typeof playNote==='function'){playNote(freqFromCents(cents),vel||90,dur||0.5);return;}}catch(e){}
   try{trigger(cents,0.7);}catch(e){}
 }
+// Play a scale degree AND light its key + its wall. This is the "call" half of call-and-response: the
+// child watches which keys light, then presses those keys back. Without the lighting, "play it back" is
+// a memory test with no visible target -- which is exactly what the first build got wrong.
+function sing(d,vel,dur){
+  try{note(degCents(d),vel||92,dur||0.5);}catch(e){}
+  try{LAB.flash(d);}catch(e){}
+  try{if(window._labKeyFlash)window._labKeyFlash(d,(dur||0.5)*620);}catch(e){}
+}
+function hint(d){try{if(window._labKeyHint)window._labKeyHint(d);}catch(e){}}
+function praise(d){try{if(window._labKeyOK)window._labKeyOK(d);}catch(e){}}
 function degCents(d){try{return centsForDegree(d);}catch(e){return d*200;}}
 let _timers=[];
 function later(fn,ms){const id=setTimeout(fn,ms);_timers.push(id);return id;}
@@ -185,21 +195,17 @@ function stopAll(){_timers.forEach(clearTimeout);_timers=[];try{LAB.onHit(null);
 
 // ================================================================ UNITS
 // Each unit is HEAR -> DO -> NAME. `run` gets a tiny controller so every unit reads the same way.
+// A unit declares its SCALE and octave span. It never names a shape: LAB.take() sizes the polygon to the
+// scale (7-note scale -> 7 sides, pentatonic -> 5, chromatic -> 12) so every note is reachable on a wall
+// and on the keybed. `exact:false` is the opt-out for a lesson that is not about pitch at all.
 const UNITS=[
-  {id:'pulse', title:'u_pulse', sub:'u_pulseSub', tier:'lesson',
-   cfg:{shape:'4',octs:1}, run:pulseUnit},
-  {id:'high', title:'u_high', sub:'u_highSub', tier:'lesson',
-   cfg:{shape:'6',octs:2}, run:highUnit},
-  {id:'home', title:'u_home', sub:'u_homeSub', tier:'lesson',
-   cfg:{shape:'7',octs:1}, run:homeUnit},
-  {id:'steps', title:'u_steps', sub:'u_stepsSub', tier:'lesson',
-   cfg:{shape:'8',octs:1}, run:stepsUnit},
-  {id:'echo', title:'g_echo', sub:'g_echoSub', tier:'game',
-   cfg:{shape:'5',octs:1,scale:'pentaMaj'}, run:echoGame},
-  {id:'updown', title:'g_updown', sub:'g_updownSub', tier:'game',
-   cfg:{shape:'6',octs:2}, run:upDownGame},
-  {id:'findhome', title:'g_findhome', sub:'g_findhomeSub', tier:'game',
-   cfg:{shape:'7',octs:1}, run:findHomeGame}
+  {id:'pulse', title:'u_pulse', sub:'u_pulseSub', tier:'lesson', run:pulseUnit},
+  {id:'high', title:'u_high', sub:'u_highSub', tier:'lesson', run:highUnit},
+  {id:'home', title:'u_home', sub:'u_homeSub', tier:'lesson', run:homeUnit},
+  {id:'steps', title:'u_steps', sub:'u_stepsSub', tier:'lesson', run:stepsUnit},
+  {id:'echo', title:'g_echo', sub:'g_echoSub', tier:'game', run:echoGame},
+  {id:'updown', title:'g_updown', sub:'g_updownSub', tier:'game', run:upDownGame},
+  {id:'findhome', title:'g_findhome', sub:'g_findhomeSub', tier:'game', run:findHomeGame}
 ];
 
 // ---------- 1. BEAT: the tank drops a ball on every beat; the child taps along ----------
@@ -215,7 +221,7 @@ function pulseUnit(){
       '<p class="labSay" id="lb_name" hidden>'+t('pulse_name')+'</p>');
   }
   _render=paint;paint();
-  LAB.take({shape:'4',octs:1,drums:true,band:false,grav:0});
+  LAB.take({exact:false,shape:'4',octs:1,drums:true,band:false,grav:0}); // a beat lesson wants a plain square, not a scale
   LAB.labels(null);
   const iv=setInterval(()=>{LAB.drop(0,1);last=performance.now();},period());
   _timers.push(iv);
@@ -232,12 +238,12 @@ function pulseUnit(){
 function highUnit(){
   let round=0,got=0;const td=()=>totalDegrees();
   function ask(){
-    const lo=0,hi=td()-1;
+    const lo=0,hi=Math.max(1,td()-1); // lowest and highest note of the shape
     const first=Math.random()<0.5?lo:hi;
-    LAB.take({shape:'6',octs:2,drums:false,band:false});
+    LAB.take({scale:'major',octs:1,drums:false,band:false});
     LAB.labels(null);
-    later(()=>note(degCents(first),90,.6),200);
-    later(()=>note(degCents(first===lo?hi:lo),90,.6),950);
+    later(()=>sing(first,90,.6),200);
+    later(()=>sing(first===lo?hi:lo,90,.6),950);
     dock(bar(t('u_high'),(round+1)+' / 3')+dots(got,3)+
       '<p class="labSay">'+t('high_hear')+'</p>'+
       '<div class="labDo">'+t('high_do')+'</div>'+
@@ -262,7 +268,7 @@ function highUnit(){
 
 // ---------- 3. HOME NOTE (tonic) ----------
 function homeUnit(){
-  LAB.take({shape:'7',octs:1,drums:false,band:true});
+  LAB.take({scale:'major',octs:1,drums:false,band:true});
   LAB.labels(wallLabels());
   let landed=0;
   function paint(){
@@ -274,18 +280,20 @@ function homeUnit(){
       '<p class="labSay" id="lb_name" hidden>'+t('home_name')+'</p>');
   }
   _render=paint;paint();
-  const pulse=setInterval(()=>LAB.flash(0),900);_timers.push(pulse);
-  _cleanup=()=>clearInterval(pulse);
+  hint(0);
+  const pulse=setInterval(()=>{LAB.flash(0);if(window._labKeyFlash)window._labKeyFlash(0,260);},900);
+  _timers.push(pulse);
+  _cleanup=()=>{clearInterval(pulse);hint(null);};
   LAB.onHit((deg)=>{
     const len=scaleObj().c.length;
-    if(((deg%len)+len)%len===0){landed++;feed(t('yes'));
+    if(((deg%len)+len)%len===0){praise(deg);landed++;feed(t('yes'));
       if(landed>=3){const n=$id('lb_name');if(n)n.hidden=false;seen('home');}}
   });
 }
 
 // ---------- 4. STEPS & SKIPS ----------
 function stepsUnit(){
-  LAB.take({shape:'8',octs:1,drums:false,band:false});
+  LAB.take({scale:'major',octs:1,drums:false,band:false});
   LAB.labels(wallLabels());
   let seq=[],want=0;
   function paint(){
@@ -297,35 +305,42 @@ function stepsUnit(){
       '<p class="labSay" id="lb_name" hidden>'+t('steps_name')+'</p>');
   }
   _render=paint;paint();
-  window._lab_stepsDemo=()=>{for(let i=0;i<5;i++)later(()=>note(degCents(i),88,.45),i*330);
-    later(()=>{for(let i=0;i<3;i++)later(()=>note(degCents(i*2),88,.45),i*380);},2100);};
+  window._lab_stepsDemo=()=>{for(let i=0;i<5;i++)later(()=>sing(i,88,.45),i*330);
+    later(()=>{for(let i=0;i<3;i++)later(()=>sing(i*2,88,.45),i*380);},2100);};
   LAB.onHit((deg)=>{
     const len=scaleObj().c.length,d=((deg%len)+len)%len;
-    if(d===want){want++;feed(t('yes'));
+    if(d===want){praise(d);want++;feed(t('yes'));hint(want<4?want:null);
       if(want>=4){const n=$id('lb_name');if(n)n.hidden=false;seen('steps');}}
-    else if(d===0)want=1;
+    else if(d===0){want=1;hint(1);}
   });
 }
 
 // ---------- GAME: ECHO (the flagship — call & response with varied repetition) ----------
 function echoGame(){
-  LAB.take({shape:'5',octs:1,scale:'pentaMaj',drums:false,band:false});
+  LAB.take({scale:'pentaMaj',octs:1,drums:false,band:false}); // 5 notes -> a pentagon, one wall each
   LAB.labels(wallLabels());
   let len=2,phrase=[],idx=0,mine=true,best=0;
+  function playable(){ // the degrees this shape can actually sound, low to high
+    const p=(window.LAB&&LAB._playable&&LAB._playable.length)?LAB._playable.slice():null;
+    if(p&&p.length)return p;
+    const td=(typeof totalDegrees==='function')?totalDegrees():5;
+    return Array.from({length:td},(_,i)=>i);
+  }
   function newPhrase(){
-    const td=totalDegrees();
-    phrase=[];let prev=Math.floor(Math.random()*td);
+    const pool=playable(),n=pool.length;
+    phrase=[];let k=Math.floor(Math.random()*n);      // index INTO the playable set, not a raw degree
     for(let i=0;i<len;i++){
-      // mostly steps, occasional skip — a singable shape, and it VARIES every round (the research point:
+      // mostly steps, occasional skip -- a singable shape, and it VARIES every round (the research point:
       // varied repetition, not the same drill again)
       const move=(Math.random()<0.7?1:2)*(Math.random()<0.5?-1:1);
-      prev=Math.max(0,Math.min(td-1,i===0?prev:prev+move));
-      phrase.push(prev);}
+      k=Math.max(0,Math.min(n-1,i===0?k:k+move));
+      phrase.push(pool[k]);}
   }
   function playPhrase(){
     mine=true;idx=0;paint();
-    phrase.forEach((d,i)=>later(()=>{note(degCents(d),92,.5);LAB.flash(d);
-      if(i===phrase.length-1)later(()=>{mine=false;paint();},520);},i*520));
+    hint(null);
+    phrase.forEach((d,i)=>later(()=>{sing(d,92,.5);
+      if(i===phrase.length-1)later(()=>{mine=false;paint();hint(phrase[0]);},520);},i*520));
   }
   function paint(){
     dock(bar(t('g_echo'),t('echo_len',{n:len}))+dots(Math.max(0,len-2),5)+
@@ -343,26 +358,27 @@ function echoGame(){
   LAB.onHit((deg)=>{
     if(mine)return;
     const td=totalDegrees(),d=((deg%td)+td)%td;
-    if(d===phrase[idx]){idx++;
-      if(idx>=phrase.length){feed(t('yes'));best=Math.max(best,len);
+    if(d===phrase[idx]){praise(d);idx++;
+      if(idx>=phrase.length){feed(t('yes'));best=Math.max(best,len);hint(null);
         seen('echo');
         if(len<6)len++;
         later(()=>{newPhrase();playPhrase();},1200);}
+      else hint(phrase[idx]);                       // always show the next target
     }else{ // NO fail state: just replay it and invite another go
-      feed(t('notYet'));idx=0;later(playPhrase,900);}
+      feed(t('notYet'));idx=0;hint(null);later(playPhrase,900);}
   });
   newPhrase();later(playPhrase,500);
 }
 
 // ---------- GAME: UP OR DOWN ----------
 function upDownGame(){
-  LAB.take({shape:'6',octs:2,drums:false,band:false});LAB.labels(null);
+  LAB.take({scale:'major',octs:1,drums:false,band:false});LAB.labels(null);
   let a=0,b=0,got=0;
   function ask(){
     const td=totalDegrees();
     a=Math.floor(Math.random()*td);
     do{b=Math.floor(Math.random()*td);}while(b===a);
-    later(()=>{note(degCents(a),90,.5);later(()=>note(degCents(b),90,.5),620);},250);
+    later(()=>{sing(a,90,.5);later(()=>sing(b,90,.5),620);},250);
     paint();
   }
   function paint(){
@@ -378,13 +394,13 @@ function upDownGame(){
   window._lab_ud=(g)=>{const up=b>a;
     if((g==='up')===up){got++;feed(t('yes'));LAB.drop(b,1);seen('updown');later(ask,1000);}
     else{feed(t('notYet'));later(()=>{note(degCents(a),90,.5);later(()=>note(degCents(b),90,.5),620);},300);}};
-  window._lab_udReplay=()=>{note(degCents(a),90,.5);later(()=>note(degCents(b),90,.5),620);};
+  window._lab_udReplay=()=>{sing(a,90,.5);later(()=>sing(b,90,.5),620);};
   ask();
 }
 
 // ---------- GAME: FIND HOME ----------
 function findHomeGame(){
-  LAB.take({shape:'7',octs:1,drums:false,band:true});LAB.labels(wallLabels());
+  LAB.take({scale:'major',octs:1,drums:false,band:true});LAB.labels(wallLabels());
   let got=0;
   function paint(){
     dock(bar(t('g_findhome'),'')+dots(got,5)+
@@ -394,11 +410,12 @@ function findHomeGame(){
   }
   _render=paint;paint();
   // a cadence that leans hard toward home, then the child has to land there
+  hint(0);
   function cue(){const len=scaleObj().c.length;
-    note(degCents(4%len),86,.45);later(()=>note(degCents(len-3),86,.45),420);}
+    sing(4%len,86,.45);later(()=>sing(len-3,86,.45),420);}
   cue();const iv=setInterval(cue,5200);_timers.push(iv);_cleanup=()=>clearInterval(iv);
   LAB.onHit((deg)=>{const len=scaleObj().c.length;
-    if(((deg%len)+len)%len===0){got++;feed(t('yes'));seen('findhome');}
+    if(((deg%len)+len)%len===0){praise(deg);got++;feed(t('yes'));seen('findhome');}
     else feed(t('notYet'));});
 }
 
@@ -439,7 +456,9 @@ if(ov)ov.addEventListener('click',(e)=>{
     stopAll();if(_cleanup){_cleanup();_cleanup=null;}
     try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(err){}
     u.run();return;}
-  if(a==='lbl'){labelMode=b.dataset.v;try{LAB.labels(wallLabels());}catch(err){}if(_render)_render();return;}
+  if(a==='lbl'){labelMode=b.dataset.v;try{LAB.labels(wallLabels());}catch(err){}
+    try{if(window._labKeysBuild)window._labKeysBuild();}catch(err){}
+    if(_render)_render();return;}
   if(a==='tap'&&window._lab_tap)return window._lab_tap();
   if(a==='hi_up'&&window._lab_hi)return window._lab_hi('up');
   if(a==='hi_dn'&&window._lab_hi)return window._lab_hi('down');
