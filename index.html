@@ -294,6 +294,54 @@ header h1{margin-left:84px} /* the title steps aside for the back button */
 @media (max-width:820px){#exitMode{top:6px;left:4px;padding:6px 9px;font-size:12px}header h1{margin-left:0}header{padding-left:34px}}
 #learnOverlay{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(230,222,250,.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 #learnOverlay[hidden]{display:none}
+/* ===== LEARN HOME: picture-first unit cards =====
+   A child who cannot read has to be able to tell these apart, so each card is identified three ways
+   at once: its own slime, its own colour, and a drawn glyph of the idea. The words are for the adult
+   reading over their shoulder. Cards are one object repeated -- same edges, same baselines, same inner
+   padding -- and the tick is the only thing that changes when a unit has been explored. */
+.uHead{display:flex;align-items:center;gap:12px;margin:0 0 16px}
+.uHead .uHeadArt{width:46px;height:46px;object-fit:contain;flex:none;filter:drop-shadow(0 3px 7px rgba(140,110,190,.3))}
+.uHead b{display:block;font-size:19px;font-weight:800;color:#4a4170;line-height:1.15}
+.uHead i{display:block;font-style:normal;font-size:12.5px;color:var(--ink-soft);font-weight:600;margin-top:1px}
+.uSec{display:flex;align-items:baseline;gap:9px;margin:16px 0 8px;flex-wrap:wrap}
+.uSecT{font:800 11px system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#8a7fb5}
+.uSecS{font-size:12px;color:var(--ink-soft);font-weight:600}
+.uGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:9px}
+.uCard{position:relative;display:flex;align-items:center;gap:10px;text-align:left;width:100%;
+  padding:11px 12px;border-radius:16px;cursor:pointer;font-family:inherit;min-height:68px;
+  border:2px solid rgba(255,255,255,.9);
+  background:linear-gradient(135deg,color-mix(in srgb,var(--ut) 42%,#fff),color-mix(in srgb,var(--ut) 14%,#fff));
+  box-shadow:0 3px 10px rgba(120,110,160,.16);transition:transform .13s,box-shadow .13s}
+.uCard:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(120,110,160,.26)}
+.uCard:active{transform:translateY(0) scale(.985)}
+.uCard:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.uArt{flex:none;width:44px;height:44px;display:grid;place-items:center;
+  background:rgba(255,255,255,.62);border-radius:13px}
+.uArt img{width:36px;height:36px;object-fit:contain;display:block}
+.uTxt{flex:1;min-width:0}
+.uTxt b{display:block;font-size:15px;font-weight:800;color:#413961;line-height:1.16}
+.uTxt i{display:block;font-style:normal;font-size:11.5px;font-weight:600;color:#5f5687;opacity:.82;
+  line-height:1.28;margin-top:2px}
+.uIco{flex:none;color:#5a4f78;opacity:.5;display:grid;place-items:center}
+.uDone{position:absolute;top:7px;right:9px;width:19px;height:19px;border-radius:50%;
+  background:#2e9e7e;color:#fff;font:800 12px system-ui,sans-serif;display:grid;place-items:center;
+  box-shadow:0 2px 5px rgba(46,158,126,.4)}
+.uCard.got .uArt{background:rgba(255,255,255,.85)}
+.uFoot{font-size:12.5px;color:var(--ink-soft);font-weight:600;margin:16px 0 0;text-align:center}
+@media (max-width:820px){
+  .uGrid{grid-template-columns:1fr 1fr;gap:8px}
+  .uCard{min-height:64px;padding:10px;gap:8px}
+  .uArt{width:38px;height:38px;border-radius:11px}.uArt img{width:31px;height:31px}
+  .uTxt b{font-size:14px}.uTxt i{font-size:11px}
+  .uIco{display:none} /* the slime and the colour already do the identifying; the glyph is the first to go */
+  .uHead .uHeadArt{width:38px;height:38px}.uHead b{font-size:17px}
+}
+@media (max-width:380px){.uGrid{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.uCard{transition:none}.uCard:hover{transform:none}}
+/* no color-mix support (older Safari): fall back to the flat tint, never a transparent card */
+@supports not (background:color-mix(in srgb,red 50%,blue)){
+  .uCard{background:var(--ut)}
+}
 /* ===== LEARN KEYBED =====
    Replaces the "pitch ribbon" I proposed. A keyboard IS spatial pitch encoding -- left to right, low to
    high -- and unlike an invented ribbon it is the format every kids' music app already uses (Prodigies,
@@ -3215,8 +3263,52 @@ function snapToScale(midi){ // Scale lock: nudge any note to the nearest note of
   for(const c of sc){const s=c/100,d=Math.abs(s-semi);if(d<bd){bd=d;best=s;}}
   if(Math.abs(12-semi)<bd){best=12;} // wrapping up to the octave is closer than any degree
   return root+oct*12+best;}
-function noteFlash(midi){const n=edges.length;if(!n)return; // light up the wall that owns this pitch
-  const e=edges[((midi%n)+n)%n];if(e)e.flash=1;}
+// ================================================================================================
+//  WHICH WALL OWNS THIS NOTE?
+//  ----------------------------------------------------------------------------------------------
+//  One answer, used by everything that plays a note by hand: the computer keyboard, a MIDI keyboard,
+//  and the wall flash. Before this existed each of them guessed differently and none of them was right:
+//    * noteFlash() lit `edges[midi % edges.length]` -- the MIDI NUMBER modulo the wall count. Pressing
+//      C then C# lit two unrelated walls. Pure coincidence when it looked correct.
+//    * shootBall() fired at an ANGLE derived from the scale degree and let the ball hit whatever
+//      happened to lie that way. Since walls are snapped onto chord tones in play/studio, walls and
+//      degrees are not 1:1, so the ball routinely struck a wall carrying a different note.
+//  Both are why manual playing looked like random balls hitting random walls.
+//
+//  The rules, in order:
+//    1. same pitch class AND same octave  -> that exact wall
+//    2. same pitch class, any octave      -> so C3, C4 and C5 all strike the "C" wall. Octaves reading
+//                                            as the same note is the whole point of octave equivalence,
+//                                            and it is what makes manual play look deliberate.
+//    3. no match at all                   -> the wall whose PITCH CLASS is closest on the circle of
+//                                            semitones (not the closest in absolute cents). This is the
+//                                            chromatic case: with scale lock OFF, or a shape with fewer
+//                                            walls than the scale has notes, you can play a note no wall
+//                                            owns. It still SOUNDS at its true pitch -- it just borrows a
+//                                            wall for the visual, and because the choice is made by pitch
+//                                            class, every octave of that note borrows the SAME wall
+//                                            instead of scattering. Chromatic play stays fully allowed.
+// ================================================================================================
+function wallForPitch(cents){
+  if(!edges||!edges.length)return -1;
+  const want=((Math.round(cents/100)%12)+12)%12, oct=Math.floor(cents/1200);
+  let exact=-1,samePc=-1,nearest=-1,nd=1e9;
+  for(let i=0;i<edges.length;i++){
+    const e=edges[i];if(e.deg==null)continue;
+    const epc=((Math.round(e.cents/100)%12)+12)%12;
+    if(epc===want){
+      if(samePc<0)samePc=i;
+      if(exact<0&&Math.floor(e.cents/1200)===oct)exact=i;
+    }
+    // distance measured AROUND the circle of semitones, so the fallback is octave-independent
+    const raw=Math.abs(epc-want), d=Math.min(raw,12-raw);
+    if(d<nd){nd=d;nearest=i;}
+  }
+  return exact>=0?exact:(samePc>=0?samePc:nearest);
+}
+function noteFlash(midi){ // light up the wall that really owns this pitch
+  const i=wallForPitch((Math.round(midi)-S.root)*100);
+  if(i>=0&&edges[i])edges[i].flash=1;}
 let manualHold=false; // a human is playing: auto ball-dropping yields the stage
 
 // ================================================================================================
@@ -3400,13 +3492,16 @@ window.LAB=LAB;
   setInterval(()=>{if(LAB._on&&document.body.classList.contains('lab-on'))place();},900); // follows the tank as layouts settle
 })();
 
-function shootBall(cents){ // fire a ball from the center straight at the wall that owns this pitch — the press IS the shot
-  const sc=scaleObj().c,len=sc.length,td=totalDegrees();
-  const oct=Math.max(0,Math.min(Math.floor(cents/1200),Math.ceil(td/len)-1));
-  const deg=Math.min(td-1,oct*len+degOf(cents));
-  // each note fires on its OWN radial angle (by pitch), so notes splay evenly around the tank —
-  // never clumping to one side on a triangle/square. it hits whatever wall lies that way and bounces.
-  const ang=rot-Math.PI/2+((deg+0.5)/td)*2*Math.PI,sp=R/7,dx=Math.cos(ang),dy=Math.sin(ang);
+function shootBall(cents){ // fire a ball AT the wall that owns this pitch — the press IS the shot
+  const i=wallForPitch(cents);
+  if(i<0)return;
+  const e=edges[i];
+  // aim at a random point along the middle 60% of that wall: it always strikes the RIGHT wall (so the
+  // note you pressed is the note that lights), but never on an identical robotic trajectory.
+  const t=0.2+Math.random()*0.6;
+  const tx=e.ax+(e.bx-e.ax)*t, ty=e.ay+(e.by-e.ay)*t;
+  let dx=tx-CX,dy=ty-CY;const L=Math.hypot(dx,dy)||1;dx/=L;dy/=L;
+  const sp=R/7;
   if(balls.length>=MAXBALLS+6)return; // the note already SOUNDED via playNote; if the tank's truly full just skip the visual ball (no vanish-flash — the wall-drain clears room)
   balls.push({x:CX,y:CY,vx:dx*sp,vy:dy*sp,hue:((hueIdx++)%12)/12,trail:[],mute:1});} // mute: the wall hit won't re-trigger — you already heard the press
 // ============ THE VOCALIST: intelligent auto-melody (used by BOTH play & studio) ============

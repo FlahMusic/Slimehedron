@@ -152,6 +152,17 @@ function wallLabels(){
   return m;
 }
 
+
+// ---------------------------------------------------------------- unit icons
+// One glyph per idea, drawn so it says what the lesson is about without a word of text.
+const _sv=(d)=>'<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" '+
+  'stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>';
+function icoBeat(){  return _sv('<circle cx="6" cy="12" r="2.6"/><circle cx="12" cy="12" r="2.6"/><circle cx="18" cy="12" r="2.6"/>');} // three even pulses
+function icoUpDown(){return _sv('<path d="M4 18 L10 8 L14 14 L20 5"/><path d="M17 5h3v3"/>');}                 // a line that climbs
+function icoHome(){  return _sv('<path d="M4 11 L12 4 L20 11"/><path d="M7 10v9h10v-9"/>');}                   // a house
+function icoSteps(){ return _sv('<path d="M3 19h4v-4h4v-4h4V7h6"/>');}                                          // a staircase
+function icoEcho(){  return _sv('<path d="M4 12h3l3-6 3 12 2-6h5"/>');}                                          // a phrase, answered
+
 // ---------------------------------------------------------------- the dock
 const ov=$id('learnOverlay');
 let _render=null, _cleanup=null;
@@ -199,13 +210,20 @@ function stopAll(){_timers.forEach(clearTimeout);_timers=[];try{LAB.onHit(null);
 // scale (7-note scale -> 7 sides, pentatonic -> 5, chromatic -> 12) so every note is reachable on a wall
 // and on the keybed. `exact:false` is the opt-out for a lesson that is not about pitch at all.
 const UNITS=[
-  {id:'pulse', title:'u_pulse', sub:'u_pulseSub', tier:'lesson', run:pulseUnit},
-  {id:'high', title:'u_high', sub:'u_highSub', tier:'lesson', run:highUnit},
-  {id:'home', title:'u_home', sub:'u_homeSub', tier:'lesson', run:homeUnit},
-  {id:'steps', title:'u_steps', sub:'u_stepsSub', tier:'lesson', run:stepsUnit},
-  {id:'echo', title:'g_echo', sub:'g_echoSub', tier:'game', run:echoGame},
-  {id:'updown', title:'g_updown', sub:'g_updownSub', tier:'game', run:upDownGame},
-  {id:'findhome', title:'g_findhome', sub:'g_findhomeSub', tier:'game', run:findHomeGame}
+  {id:'pulse', title:'u_pulse', sub:'u_pulseSub', tier:'lesson', run:pulseUnit,
+   slime:'grn',   tint:'#9fe6cf', ico:icoBeat},
+  {id:'high', title:'u_high', sub:'u_highSub', tier:'lesson', run:highUnit,
+   slime:'blue1', tint:'#a6c8ff', ico:icoUpDown},
+  {id:'home', title:'u_home', sub:'u_homeSub', tier:'lesson', run:homeUnit,
+   slime:'pink1', tint:'#ffb6d6', ico:icoHome},
+  {id:'steps', title:'u_steps', sub:'u_stepsSub', tier:'lesson', run:stepsUnit,
+   slime:'violet',tint:'#c4a9f5', ico:icoSteps},
+  {id:'echo', title:'g_echo', sub:'g_echoSub', tier:'game', run:echoGame,
+   slime:'teal',  tint:'#8fe0d0', ico:icoEcho},
+  {id:'updown', title:'g_updown', sub:'g_updownSub', tier:'game', run:upDownGame,
+   slime:'orange',tint:'#ffd3a8', ico:icoUpDown},
+  {id:'findhome', title:'g_findhome', sub:'g_findhomeSub', tier:'game', run:findHomeGame,
+   slime:'pear1', tint:'#d9e88f', ico:icoHome}
 ];
 
 // ---------- 1. BEAT: the tank drops a ball on every beat; the child taps along ----------
@@ -430,19 +448,25 @@ function labelPicker(){
 function home(){
   stopAll();if(_cleanup){_cleanup();_cleanup=null;}
   try{LAB.give();}catch(e){}
-  const tiers=[['lesson','tierLessons','tierLessonsSub'],['game','tierGames','tierGamesSub']];
-  let h='<h3>'+t('tierLessons')+'</h3>';
   const total=UNITS.length,done=UNITS.filter(u=>prog[u.id]).length;
-  h+='<p class="lSub">'+t('progressOf',{done:done,total:total})+'</p>';
-  for(const [tier,tk,tsk] of tiers){
-    h+='<div class="labStep" style="margin:10px 0 2px">'+t(tk)+'</div>'+
-       '<p class="lSub" style="margin:0 0 6px">'+t(tsk)+'</p><div class="lBtns">';
-    for(const u of UNITS.filter(x=>x.tier===tier))
-      h+='<div class="crsPane" data-a2="unit" data-u="'+u.id+'"><span style="flex:1"><b>'+t(u.title)+'</b>'+
-         '<span class="crsDots">'+(prog[u.id]?'●':'○')+'</span><br><i style="font-size:11px;font-style:normal;opacity:.7">'+t(u.sub)+'</i></span></div>';
-    h+='</div>';
+  const card=(u)=>{
+    const got=!!prog[u.id];
+    return '<button class="uCard'+(got?' got':'')+'" data-a2="unit" data-u="'+u.id+'" '+
+      'style="--ut:'+u.tint+'" aria-label="'+t(u.title)+'">'+
+      '<span class="uArt"><img src="minis/'+u.slime+'.png" alt="" draggable="false"></span>'+
+      '<span class="uTxt"><b>'+t(u.title)+'</b><i>'+t(u.sub)+'</i></span>'+
+      '<span class="uIco">'+u.ico()+'</span>'+
+      (got?'<span class="uDone" aria-hidden="true">\u2713</span>':'')+
+      '</button>';
+  };
+  let h='<div class="uHead">'+
+    '<img class="uHeadArt" src="slimelogo.png" alt="" draggable="false">'+
+    '<span><b>'+t('tierLessons')+'</b><i>'+t('progressOf',{done:done,total:total})+'</i></span></div>';
+  for(const [tier,tk,tsk] of [['lesson','tierLessons','tierLessonsSub'],['game','tierGames','tierGamesSub']]){
+    h+='<div class="uSec"><span class="uSecT">'+t(tk)+'</span><span class="uSecS">'+t(tsk)+'</span></div>'+
+       '<div class="uGrid">'+UNITS.filter(x=>x.tier===tier).map(card).join('')+'</div>';
   }
-  h+='<p class="lSub" style="margin-top:10px">'+t('noRush')+'</p>';
+  h+='<p class="uFoot">'+t('noRush')+'</p>';
   sheet(h);
   _render=home;
 }
