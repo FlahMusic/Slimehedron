@@ -65,10 +65,31 @@ header h1 .dot{-webkit-text-fill-color:var(--accent);color:var(--accent)} /* the
   header h1 .wmText{-webkit-text-fill-color:#6b53b8;color:#6b53b8;background:none}} /* flat fallback, never invisible text */
 header .sub{font-size:12px;color:var(--ink-soft);font-weight:500}
 header .spacer{flex:1}
+/* ---- HEADER CHORD CHIP -----------------------------------------------------------------
+   Every DAW and every kids' music app keeps ONE readout on the transport row: what is playing
+   right now. This is it. It replaces the floating #chordPill (which parked under the studio
+   strip) and the phone circle-of-fifths (which parked on top of the tank). Painted by
+   paintChordChip() from the same source as the wheel hub, so the two can never disagree. */
+#hdrChord{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;
+  min-width:52px;padding:3px 9px;border-radius:11px;background:rgba(255,255,255,.72);
+  border:1.5px solid rgba(160,150,200,.35);box-shadow:0 2px 8px rgba(120,110,160,.14);flex:none}
+#hdrChord b{font:800 17px system-ui,sans-serif;color:var(--ink);letter-spacing:.2px}
+#hdrChord i{font:600 9px system-ui,sans-serif;font-style:normal;color:var(--ink-soft);letter-spacing:.5px;text-transform:uppercase;margin-top:1px}
+.hdrSep{width:1px;height:24px;background:rgba(150,140,185,.28);flex:none;margin:0 2px}
+.mode-learn #hdrChord,.mode-learn .hdrSep,body.lab-on #hdrChord,body.lab-on .hdrSep{display:none}
+/* the auto-play switch, sized against the 30px transport row it now lives in.
+   ID-scoped so it beats the base .slimeswitch rules that appear later in the file. */
+.btngroup #slimeBig{width:62px;height:30px;border-radius:15px;flex:none}
+.btngroup #slimeBig .ss-knob{width:24px;height:24px;top:2px;left:2px}
+.btngroup #slimeBig.on .ss-knob{left:36px}
+.btngroup #slimeBig .sic{width:20px;height:19px}
+.mode-learn #slimeBig,body.lab-on #slimeBig{display:none}
+#autoRow{display:none} /* emptied: its one child moved into the header */
 .btngroup{display:flex;align-items:center;gap:14px;flex-wrap:nowrap;min-width:0} /* transport + instruments: one family, never split across lines */
 header h1{flex-shrink:0}
 /* MID-RANGE (tablet / 125-150% desktop zoom): shrink the top bar + reduce gaps BEFORE the hard mobile switch,
    so the transport row never runs off the edge. This is the "always fits at any zoom" band. */
+@media (max-width:1000px){header h1 .wmText{display:none}} /* the word costs ~200px the transport needs */
 @media (max-width:1080px){
   header{gap:9px;padding:12px 14px}
   .btngroup{gap:9px}
@@ -179,6 +200,7 @@ header h1{flex-shrink:0}
 header #shareApp{position:static;top:auto;right:auto;left:auto;z-index:auto} /* studio/learn: share rides IN the header row, so it can never land on top of clear */
 /* play mode: share + clear share ONE fixed flex row top-right so they lay out side-by-side and can never overlap */
 .mode-play #topRight{position:fixed;top:10px;right:12px;z-index:261;display:flex;gap:8px;align-items:center}
+.mode-play header{padding-right:96px} /* the floating clear button lives here; the transport must not grow into it */
 .mode-play #topRight #shareApp,.mode-play #topRight #clearBtn{position:static;top:auto;right:auto;left:auto;margin:0}
 /* share sits on the splash now, where there is room for the words on any screen */
 /* the computer-keyboard map: white keys on the home row, black keys above, Z/X octave */
@@ -306,7 +328,7 @@ header h1{margin-left:84px} /* the title steps aside for the back button */
 .uSec{display:flex;align-items:baseline;gap:9px;margin:16px 0 8px;flex-wrap:wrap}
 .uSecT{font:800 11px system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#8a7fb5}
 .uSecS{font-size:12px;color:var(--ink-soft);font-weight:600}
-.uGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:9px}
+.uGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:9px}
 .uCard{position:relative;display:flex;align-items:center;gap:10px;text-align:left;width:100%;
   padding:11px 12px;border-radius:16px;cursor:pointer;font-family:inherit;min-height:68px;
   border:2px solid rgba(255,255,255,.9);
@@ -413,6 +435,19 @@ body.lab-on main{padding:64px 424px 126px 16px!important}
   font:800 14px inherit;color:#5a4f78;cursor:pointer;min-height:44px;transition:.12s}
 .labChip:hover{border-color:var(--accent)}
 .labChip.on{background:linear-gradient(135deg,var(--mint),var(--sky));border-color:#fff;color:#2f2a44}
+/* the speaker in the lesson bar: "say it again". Sits at the far right of the row, always reachable. */
+.labSpk{margin-left:auto;border:1.5px solid rgba(160,150,200,.45);background:#fff;border-radius:10px;
+  padding:5px 8px;color:#5a4f78;cursor:pointer;display:flex;align-items:center;min-height:32px;flex:none}
+.labSpk:hover{border-color:var(--accent)}
+.labSpk:active{background:var(--mint)}
+/* THE ENDING. Every lesson lands here: slime, "you did it", the concept named, and a door to the next one. */
+.labDone{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:6px 0 2px}
+.labDone .ldArt{width:82px;height:82px;object-fit:contain;display:block;animation:ldPop .6s cubic-bezier(.2,1.5,.4,1)}
+.labDone .ldTitle{font-size:22px;font-weight:800;color:#4a4170;letter-spacing:.2px}
+.labDone .labSay{margin:2px 0 4px}
+.labDone .labChips{justify-content:center}
+@keyframes ldPop{0%{transform:scale(.4) rotate(-12deg);opacity:0}60%{transform:scale(1.08) rotate(3deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+@media (prefers-reduced-motion:reduce){.labDone .ldArt{animation:none}}
 .labDots{display:flex;gap:5px;margin:0 0 8px}
 .labDots i{width:9px;height:9px;border-radius:50%;background:rgba(150,135,190,.3);font-style:normal}
 .labDots i.got{background:var(--accent)}
@@ -504,7 +539,9 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 @media (max-width:820px){
   /* phone: mixer sits TOP-LEFT, tucked under the volume fader. it used to be bottom-centre at 178px, which
      put it straight on top of the tank — the geometry is the hero, nothing may cover it. */
-  .mode-studio #triMixBar,.mode-play #triMixBar{top:52px;left:4px;bottom:auto;transform:none}
+  /* the tank starts right under the bar now, so top:52px means "on the tank". The empty ground band at
+     the foot of the screen is where this belongs - between the keyboard button and the menu FAB. */
+  .mode-studio #triMixBar,.mode-play #triMixBar{top:auto;bottom:6px;left:50%;transform:translateX(-50%)}
   #triMix svg{width:172px!important;height:auto!important}
   /* SLIMES were huge on phones (base 90px). scale to ~desktop proportion, smart-shrinking with the viewport. */
   .slime{width:clamp(34px,10.5vw,50px)!important;height:auto!important;aspect-ratio:90/84} /* smaller on phone so more can spread without clutter */
@@ -520,7 +557,7 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
   .psBtn svg{width:28px!important;height:28px!important}
   .psBtn.bandBtn img{width:34px!important;height:34px!important}
   .psCol{gap:7px!important}
-  .mode-play main{padding:max(300px,40vh) 16px 8px!important} /* wheel stack up top, then the tank LOW. the vh term is what kills the dead band on tall phones; the px floor keeps the wheel clear on short ones */
+  .mode-play main{padding:10px 16px 8px!important} /* the old max(300px,40vh) reserved room for the three-storey top stack that no longer exists */
 }
 @media (max-width:400px){
   #triMix svg{width:146px!important}         /* still clears the wheel: it lives top-left, the wheel is centred */
@@ -528,7 +565,7 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
   .psBtn svg{width:27px!important;height:27px!important}
   .psBtn.bandBtn img{width:38px!important;height:38px!important}
   .psSub{font-size:13px!important}
-  .mode-play main{padding:max(296px,40vh) 14px 8px!important}
+  .mode-play main{padding:10px 14px 8px!important}
   #menuBtn{width:46px!important;height:46px!important;right:8px!important;bottom:8px!important} /* smaller FAB, tucked in the corner */
 }
 @media (max-height:520px){ /* very SHORT screens (landscape phones): shrink the floating mixer so it can't cover the tank */
@@ -552,7 +589,7 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
   #triMix svg{width:70px!important}
   .mode-play #triMixBar,.mode-studio #triMixBar{top:auto!important;bottom:4px!important;left:4px!important;transform:none!important} /* landscape is wider than 820px so it missed the phone rule and sat on the wheel */
   #autoRow{top:44px!important}
-  .mode-play main{padding:150px 14px 6px!important} /* short/landscape phones: give the height back to the tank */
+  .mode-play main{padding:8px 14px 6px!important} /* short/landscape phones: give the height back to the tank */
 }
 /* PERFORMANCE PAD — GarageBand Drummer's XY, axis words copied verbatim so the skill transfers */
 /* ONE reveal, never a reveal inside a reveal (Nielsen: >2 disclosure levels tanks usability).
@@ -629,7 +666,16 @@ canvas{background:none;border:0;box-shadow:none;border-radius:0;max-width:100%;m
    but still clearly highlights the active key, with a big readable key letter in the middle. never over the play field. */
 /* FLUID: size scales with the smaller viewport dimension, position clamps so it never runs off-screen at high zoom */
 #cofWheel{position:fixed;left:clamp(88px,10vw,128px);top:54px;bottom:auto;transform:none;width:clamp(120px,15vmin,186px);height:clamp(120px,15vmin,186px);pointer-events:none;z-index:30;opacity:.95;filter:drop-shadow(0 3px 12px rgba(120,110,160,.18))} /* right of the Sound button column, shrinks on small/zoomed screens */
-.mode-studio #cofWheel,.mode-play #cofWheel{pointer-events:auto} /* click a key in studio or play */
+.mode-studio #cofWheel{pointer-events:auto} /* click a key to change it */
+/* PLAY = kid mode. The circle of fifths is a theory instrument, not a toy: it belongs in studio.
+   Play keeps the header chord chip, which says the same thing in one glance. */
+.mode-play #cofWheel{display:none!important}
+/* ...and below ~1100px there is no free column for it in studio either: the tank plus the side panel
+   use the whole width, so the wheel could only ever sit ON something. The header chip covers it. */
+@media (max-width:1100px){#cofWheel{display:none!important}}
+.mode-studio #cofWheel{left:14px;top:150px}  /* docked left of the tank, under the transport strip */
+/* the chords button is a primary tool (it is where a progression gets typed in), so on any screen wide
+   enough it lives in the transport row with everything else. Only a phone floats it - see the 820 block. */
 /* keybed open used to hide the circle of fifths — but the wheel is top-left and the keybed is at the
    bottom, so they never crowd. keep it visible so you can watch the key/chords actuate while playing. */
 /* mobile wheel position handled by the top-band block below */
@@ -652,7 +698,7 @@ canvas{background:none;border:0;box-shadow:none;border-radius:0;max-width:100%;m
 /* --- custom chord progression: the "chords" button + translucent editor panel over the wheel --- */
 /* centered UNDER the wheel: wheel spans left→left+width; this sits the button's midpoint on the wheel's midpoint.
    left = wheelLeft + wheelWidth/2 - buttonHalf, tuned via clamp to match the wheel's own clamp at every size. */
-#chordBtn{position:fixed;left:clamp(156px,11vw,209px);top:clamp(196px,27vmin,250px);transform:translateX(-50%);z-index:32;font:800 14px system-ui,sans-serif;min-height:32px;color:#fff;background:linear-gradient(135deg,#c9b3f0,#b388f0);border:1.5px solid #a992e0;border-radius:11px;padding:6px 16px;cursor:pointer;box-shadow:var(--shadow);letter-spacing:.4px;transition:filter .15s} /* lilac so it stands out (was white) */
+#chordBtn{position:static;transform:none;z-index:32;font:800 14px system-ui,sans-serif;min-height:32px;color:#fff;background:linear-gradient(135deg,#c9b3f0,#b388f0);border:1.5px solid #a992e0;border-radius:11px;padding:6px 16px;cursor:pointer;box-shadow:var(--shadow);letter-spacing:.4px;transition:filter .15s} /* lilac so it stands out (was white) */
 #chordBtn:hover{filter:brightness(1.06)}
 #chordBtn.on{background:#c9b3f0;color:#fff;border-color:#b79fe8}
 @media (max-width:820px){#chordBtn{font-size:14px;padding:6px 14px}} /* position handled by the mobile top-band block below */
@@ -757,13 +803,15 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 @media (max-width:820px){
   body{height:100dvh}
   /* MOBILE TOP BAR — transport (vol · tempo · pause · record) is the VERY TOP centered row, tidy + tight. */
-  header{flex-wrap:nowrap;gap:5px;padding:8px 6px 4px;justify-content:center}
-  header h1{display:flex;font-size:0;gap:0;margin:0 2px 0 0;order:-1;flex:none} /* phone: mark only, the word would not fit */
-  header h1 .wmText{display:none}
-  header h1 .wmMark{width:30px;height:30px}
+  /* The bar is a fixed WIDTH BUDGET on a phone: 390px, minus the back arrow (40) and the clear button
+     (36), leaves ~314px for six controls. Every size below is spent against that budget, which is why
+     the mark and the key label are gone - the first attempt simply overflowed off the right edge. */
+  header{flex-wrap:nowrap;gap:4px;padding:8px 44px 4px 40px;justify-content:center}
+  .mode-play header{padding-right:44px}
+  header h1{display:none} /* phone: the back arrow already says where you are; the mark cost 32px we do not have */
   header .spacer{display:none}
-  .btngroup{gap:5px;flex-wrap:nowrap}
-  #volTop{gap:5px;padding:0 2px} #volTop input[type=range]{width:52px} #volTop svg{width:20px;height:20px}
+  .btngroup{gap:4px;flex-wrap:nowrap;min-width:0}
+  #volTop{gap:4px;padding:0} #volTop input[type=range]{width:38px} #volTop svg{width:18px;height:18px}
   /* TEMPO on a phone = the volume fader's twin: icon + 52px slider. the SLOW/knob/FAST widget was three
      times the size of the volume control next to it for no reason. #playBpm carries an inline style, so
      these need !important to win. */
@@ -771,7 +819,7 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   #tempoDial .td-ico,#tempoKnob{display:none!important}
   #tempoDial::before{content:"";width:19px;height:19px;flex:none;background:no-repeat center/contain url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b4f8a' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='M9 3h6l4 18H5L9 3z'/><path d='M12 17V7'/></svg>")} /* metronome */
   #tempoDial input[type=range]{position:static!important;opacity:1!important;pointer-events:auto!important;
-    width:52px!important;height:6px!important;flex:none!important;padding:9px 0!important}
+    width:38px!important;height:6px!important;flex:none!important;padding:9px 0!important}
   /* TRANSPORT: icon-only, and genuinely small. the words doubled every button's width on the tightest screen. */
   .btn.big,.btn.primary{min-height:30px!important;padding:3px 7px!important;font-size:11px!important;border-radius:10px!important}
   .btn.big[data-l]::after{display:none!important}                 /* drop the caption under each icon */
@@ -784,30 +832,56 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   #exitMode{top:7px!important;left:3px!important;padding:6px 7px!important;font-size:0!important;z-index:262;min-height:28px;display:flex;align-items:center} /* hide the word, keep the ← (added via ::before) */
   #exitMode::before{content:"←";font-size:13px;font-weight:800}
   header{padding-left:44px} /* keep the volume speaker clear of the back arrow (arrow ends at x=37 on a 375px screen) */
-  .mode-play #topRight{bottom:auto!important;right:6px!important;top:44px!important;gap:5px} /* share+clear sit on a 2nd row below the transport */
-  .mode-play #topRight #shareApp,.mode-play #topRight #clearBtn{padding:7px 11px!important;font-size:13px!important;min-height:30px!important;display:flex;align-items:center}
-  #autoRow{padding:0;margin:0}
+  .mode-play #topRight{bottom:auto!important;right:6px!important;top:8px!important;gap:5px;z-index:262} /* clear rides at the end of the ONE bar, not on a row of its own */
+  /* studio keeps clear + reset in the header row on a desktop; on a phone that row has no 60px to spare,
+     so they lift out of the flow and sit at the bar's right end instead. */
+  .mode-studio #clearBtn,.mode-studio #resetBtn{position:fixed!important;top:8px!important;z-index:262}
+  .mode-studio #clearBtn{right:42px!important} .mode-studio #resetBtn{right:6px!important;padding:0!important;width:30px!important;min-height:30px!important;display:flex!important;align-items:center;justify-content:center;font-size:14px!important}
+  .mode-studio header{padding-right:80px}
+  .mode-play #topRight #shareApp{padding:7px 11px!important;font-size:13px!important;min-height:30px!important;display:flex;align-items:center}
+  #clearBtn{font-size:0!important;padding:0!important;width:30px!important;min-height:30px!important;display:flex!important;align-items:center;justify-content:center}
+  #clearBtn::before{content:"\2715";font-size:14px;font-weight:800;line-height:1} /* the word "clear" cost 40px the bar does not have */
   #triMixBar{justify-content:center;gap:10px}
   #drumBtn svg,#dropBtn svg{width:22px;height:22px}
   #bandBtn svg{width:34px;height:26px}
   .btn{padding:6px 10px;font-size:12px}
   #stage{min-height:0}
-  /* ---- MOBILE top-band stack: slime toggle → wheel (centered) → chords button, all above the tank ---- */
-  /* tight vertical stack, all centered: toggle → wheel → chords button → tank */
-  #autoRow{position:fixed;top:56px;left:50%;transform:translateX(-50%);z-index:61}
-  /* ID-scoped so these WIN over the base .slimeswitch rules that appear later in the file (equal-specificity order trap) */
-  #autoRow .slimeswitch{width:64px;height:30px;border-radius:15px}   /* sized against the 30px transport row, not against nothing */
-  #autoRow .ss-knob{width:24px;height:24px;top:3px;left:3px} #autoRow .slimeswitch.on .ss-knob{left:37px} #autoRow .ss-knob .sic{width:20px;height:19px}
-  #cofWheel{left:50%!important;top:100px!important;transform:translateX(-50%)!important;width:clamp(132px,37vw,158px)!important;height:clamp(132px,31vw,128px)!important} /* raised + ~15% smaller so it never touches the tank */
-  #chordPill{display:none!important} /* phone: the wheel hub already shows the key — drop the separate readout to save vertical room */
-  #chordBtn{left:50%!important;top:236px!important;transform:translateX(-50%)!important;font-size:14px!important;padding:6px 14px!important} /* raised, clear of the tank */
+  /* ---- MOBILE TOP BAND: there is no band any more. -----------------------------------------
+     It used to be a three-storey stack (toggle at 56, wheel at 100, chords button at 236) that ate
+     268px - a third of a phone screen - before the tank got a single pixel. The toggle now rides in
+     the transport row, the wheel is studio-only, and the chord readout is the header chip. What is
+     left is ONE bar and then the tank. */
+  .btngroup #slimeBig{width:48px;height:28px}
+  .btngroup #slimeBig .ss-knob{width:22px;height:22px;top:2px;left:2px}
+  .btngroup #slimeBig.on .ss-knob{left:24px}
+  .btngroup #slimeBig .sic{width:18px;height:17px}
+  .hdrSep{display:none} /* phone: the gap is the separator */
+  #hdrChord{min-width:30px;padding:1px 3px;background:none;border:0;box-shadow:none}
+  #hdrChord b{font-size:15px} #hdrChord i{display:none} /* the chord is the news; the key label is desktop-only */
+  #chordPill{display:none!important}
+  #chordBtn{position:fixed!important;left:auto!important;right:8px!important;top:50px!important;transform:none!important;font-size:13px!important;padding:5px 12px!important;z-index:262} /* phone: lifted out of the bar, which has no 78px to spare */
+  .mode-studio #chordBtn{top:104px!important} /* studio has the pattern strip between the bar and the tank */
   #chordPanel{left:50%!important;top:64px!important;transform:translateX(-50%)!important;width:min(300px,90vw)}
-  .mode-play main{padding:268px 44px 8px} /* tank sits below the raised wheel stack; tighter side gutters */
+  .mode-play main{padding:10px 40px 8px} /* the header is in flow and reserves itself; this is just breathing room */
   main{padding:0 8px 8px}
   aside{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:74vh;background:rgba(246,240,255,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-radius:22px 22px 0 0;box-shadow:0 -12px 40px rgba(120,100,170,.4);padding:8px 14px 24px;transform:translateY(105%);transition:transform .32s cubic-bezier(.3,1,.3,1);z-index:80;overflow-y:auto}
   aside.open{transform:translateY(0)}
   #dragBar{display:block}
   #menuBtn{display:flex;position:fixed;right:12px;bottom:12px;z-index:81;width:54px;height:54px;border-radius:50%;align-items:center;justify-content:center;font-size:24px;border:1px solid var(--card-brd);background:linear-gradient(135deg,var(--lav),var(--sky));box-shadow:var(--shadow);cursor:pointer}
+}
+/* Between 820px and ~1080px the bar carries the full desktop transport on a screen that cannot pay for
+   it: the SLOW/FAST words and the button captions alone are ~100px, and the group overflowed its own
+   right padding and landed on the clear button. Words go first; the controls all stay. */
+@media (max-width:1080px){
+  #tempoDial .td-ico{display:none}          /* the knob itself still shows which way is faster */
+  .btn.big[data-l]::after{display:none}     /* "record" / "drums" captions */
+}
+/* 375px (iPhone SE / mini): the width budget is 25px short. Trimmed off the two faders and the gaps -
+   measured, not guessed. THIS BLOCK MUST STAY BELOW the 820px one: same specificity, later wins. */
+@media (max-width:400px){
+  header{gap:3px;padding-left:36px}
+  #volTop input[type=range]{width:30px} #tempoDial input[type=range]{width:30px!important}
+  .btngroup{gap:3px}
 }
 .note{font-size:11px;color:var(--ink-soft);line-height:1.4;margin-top:8px}
 .adsr{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
@@ -897,6 +971,11 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <button class="btn big" id="dropBtn" title="drop a ball" aria-label="drop a ball" data-l="ball"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icBall"/></svg></button>
     <button class="btn big" id="newShapeBtn" title="new shape!" aria-label="new shape">🎲</button>
     <button class="btn big" id="recBtn" title="record" aria-label="record" data-l="record"><span id="recDot"></span></button>
+    <!-- the auto-play slime switch is MOVED in here at boot (see hdrDock below). It used to float on its
+         own row and kept landing under the studio strip. One bar, one place to look. -->
+    <span class="hdrSep" aria-hidden="true"></span>
+    <div id="hdrChord" title="the chord playing right now"><b id="hcName">-</b><i id="hcKey"></i></div>
+    <!-- #chordBtn is MOVED in here at boot too (phones lift it back out with position:fixed) -->
   </div>
   <span class="spacer"></span>
   <button class="btn" id="modePill" title="switch mode" hidden>play</button>
@@ -1763,9 +1842,16 @@ function buildWheel(){const svg=document.getElementById('cofSvg');if(!svg||_cofB
 //  So: measure, and if it still overlaps the tank, move it. CSS proposes, this disposes.
 //  Covered by dev-uicheck.js, which asserts wheel-vs-tank separation at 16 viewport/mode pairs.
 // ============================================================================================
-function keepTankClear(){
-  const wheel=document.getElementById('cofWheel'),cv=document.getElementById('cv');
+// keepTankClear places EVERY free-floating top-zone control, not just the wheel. Each one gets the same
+// treatment: measure where CSS put it, and if it lands on the tank or under a bar, take the cheapest
+// escape. Anything else that starts floating later joins the FLOATERS list instead of getting its own hack.
+const FLOATERS=['cofWheel','chordBtn'];
+function keepTankClear(){for(const id of FLOATERS){try{placeFloater(id);}catch(e){}}}
+function placeFloater(id){
+  const wheel=document.getElementById(id),cv=document.getElementById('cv');
   if(!wheel||!cv||wheel.hidden)return;
+  const cs=getComputedStyle(wheel);
+  if(cs.display==='none'||cs.position!=='fixed')return; // in-flow now (it rides in the bar): not ours to move
   wheel.style.removeProperty('margin-left');wheel.style.removeProperty('margin-top'); // measure the CSS position first
   const w=wheel.getBoundingClientRect(),t=cv.getBoundingClientRect();
   if(w.width<2||t.width<2)return;
@@ -1773,9 +1859,17 @@ function keepTankClear(){
   // the wheel must clear the TANK and the studio transport strip. The strip is a fixed bar that appeared
   // after this function was written, and the wheel promptly parked underneath it -- so obstacles are a
   // list now, not a single rect, and anything added later joins the list instead of getting its own hack.
+  // the header is an obstacle too: "above everything" is only an escape if it does not mean
+  // "on top of the transport bar".
   const obstacles=[t];
+  const hd=document.querySelector('header');
+  if(hd){const r=hd.getBoundingClientRect();if(r.width>2)obstacles.push(r);}
   const sb=document.getElementById('studioBar');
   if(sb&&getComputedStyle(sb).display!=='none'){const r=sb.getBoundingClientRect();if(r.width>2)obstacles.push(r);}
+  for(const o of FLOATERS){ // the floaters must clear EACH OTHER too, not just the tank
+    if(o===id)continue;const e=document.getElementById(o);
+    if(!e||e.hidden||getComputedStyle(e).display==='none')continue;
+    const r=e.getBoundingClientRect();if(r.width>2)obstacles.push(r);}
   const hits=r=>obstacles.some(o=>r.left<o.right&&r.right>o.left&&r.top<o.bottom&&r.bottom>o.top);
   if(!hits(w))return;
   // pick the cheapest escape: straight up, or out to whichever side has more free room.
@@ -1840,6 +1934,25 @@ function placeStudioBar(){
 window._placeStudioBar=placeStudioBar;
 addEventListener('resize',()=>{clearTimeout(window._sbT);window._sbT=setTimeout(placeStudioBar,120);});
 addEventListener('resize',()=>{clearTimeout(window._ktcT);window._ktcT=setTimeout(keepTankClear,140);});
+// ONE source of truth for "what chord is playing right now". The wheel hub and the header chip both
+// read it; when they each had their own copy they drifted. Returns e.g. "Em", "C", "Bo".
+function chordShortNow(){
+  try{
+    if(cmActive()&&_cmCur)return (PC_LBL[_cmCur.pc]||'')+((CQUAL_LBL[_cmCur.qual]||_cmCur.qual)==='major'?'':'m');
+    const f=chordFull(curRootDeg);
+    return (f.root||'')+(f.word==='minor'?'m':(f.word==='diminished'?'\u00b0':(f.word==='augmented'?'+':'')));
+  }catch(e){return '';}}
+function keyShortNow(){
+  try{const pc=((Math.round(S.root)%12)+12)%12;
+    return (NOTE_NAMES[pc]||'C').replace('#','\u266f')+(isMinorScale()?'m':'');}catch(e){return '';}}
+// THE HEADER CHORD CHIP. It is the only chord readout play mode has, and the only one that is
+// guaranteed visible in studio (the floating pill kept landing under the transport strip), so it is
+// painted on every bar from paintHarmony() - never nested inside another function's early-return.
+function paintChordChip(){
+  const n=document.getElementById('hcName');if(!n)return;
+  const txt=chordShortNow();
+  n.textContent=txt||'-';
+  const k=document.getElementById('hcKey');if(k)k.textContent='key '+keyShortNow();}
 function updateWheel(){const w=document.getElementById('cofWheel');if(!w||w.hidden)return;
   if(!Number.isFinite(S.root))S.root=60; // guard: a bad/empty saved root must never crash the wheel (was throwing on NaN → killed init)
   buildWheel();
@@ -1851,9 +1964,7 @@ function updateWheel(){const w=document.getElementById('cofWheel');if(!w||w.hidd
   // glowing ring node + the small label under the hub. Showing the key in the hub made the wheel look frozen,
   // because the key only travels every 64 bars.
   const hub=document.getElementById('cofHub');
-  if(hub){let txt;
-    if(cmActive()&&_cmCur)txt=(PC_LBL[_cmCur.pc]||'')+((CQUAL_LBL[_cmCur.qual]||_cmCur.qual)==='major'?'':'m'); // user's own progression, named exactly
-    else{const f=chordFull(curRootDeg);txt=(f.root||'')+(f.word==='minor'?'m':(f.word==='diminished'?'°':(f.word==='augmented'?'+':'')));}
+  if(hub){const txt=chordShortNow(); // same helper the header chip uses
     hub.textContent=txt||(NOTE_NAMES[pc]||'C').replace('#','♯');}
   const keyLbl=document.getElementById('cofKey');
   if(keyLbl)keyLbl.textContent='key '+(NOTE_NAMES[pc]||'C').replace('#','♯')+(isMinorScale()?'m':'');
@@ -2038,7 +2149,7 @@ function advanceHarmony(barI){
 }
 // one place that refreshes every harmony readout. NOTE: updateChordPill() bails when the pill is hidden
 // (play mode hides it; phones hide it outright), so the wheel refresh must NOT be nested inside it.
-function paintHarmony(){try{updateChordPill();}catch(e){} try{updateWheel();}catch(e){}}
+function paintHarmony(){try{updateChordPill();}catch(e){} try{updateWheel();}catch(e){} try{paintChordChip();}catch(e){}}
 function bandBar(t,barI){ // RENDERS the chord the brain picked. Audio only — no musical decisions live here.
   if(!bandOn)return;
   if(++_bassBars%16===0)_bassGroove=(_bassGroove+1)%BASSGROOVES.length; // rotate the bass feel every 16 bars for motion
@@ -2822,8 +2933,12 @@ function draw(){
   ctx.clearRect(0,0,W,H);
   drawParticles();
   drawShape();drawDebris();drawBalls();
-  const cp=document.getElementById('chordPill'); // chord pill: band-only, and NEVER in play mode (kids read the wheel, not chord names)
-  if(cp){cp.hidden=!bandOn||S.mode==='play';if(bandOn&&S.mode!=='play'){const bar=drumBar();document.getElementById('chordProgI').style.width=((drumStep%bar)/bar*100).toFixed(1)+'%';}}
+  // The chord readout is the header chip (#hdrChord) now: it rides in the transport row, so it cannot be
+  // covered by the studio strip and it is the only readout play mode has left. This floating pill is
+  // retired - it is still wired (updateChordPill) but never shown. NOTE: this line used to re-show it on
+  // EVERY FRAME, which quietly undid applyMode's attempt to hide it.
+  const cp=document.getElementById('chordPill');
+  if(cp&&!cp.hidden)cp.hidden=true;
   if(burstFlash>0.01){const g=ctx.createRadialGradient(CX,CY,10,CX,CY,R*1.35);
     g.addColorStop(0,`rgba(255,255,255,${0.45*burstFlash})`);g.addColorStop(0.5,`rgba(255,225,245,${0.28*burstFlash})`);g.addColorStop(1,"rgba(255,255,255,0)");
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(CX,CY,R*1.35,0,7);ctx.fill();}
@@ -3060,9 +3175,20 @@ function applyMode(m){S.mode=m;
   try{localStorage.setItem('slimehedron-mode',m);}catch(e){}
   const p=$("modePill");if(p){p.textContent=m;p.classList.remove('mp-play','mp-learn','mp-studio');p.classList.add('mp-'+m);}
   // play & studio show the circle-of-fifths wheel + the live CHORD READOUT together (top-left cluster); learn clears it.
+  // DOCK the auto-play switch into the transport row. Moving, not cloning - there must stay exactly one
+  // #slimeBig in the document or its on/off state forks. Idempotent, so calling it on every mode switch
+  // is free. It used to live on its own fixed row at top:56px, which is precisely where the studio
+  // transport strip later appeared; the two have been sitting on top of each other ever since.
+  try{const sw=$("slimeBig"),grp=document.querySelector('header .btngroup'),sep=document.querySelector('header .hdrSep');
+    if(sw&&grp&&sw.parentElement!==grp)grp.insertBefore(sw,sep||null);
+    const cb2=$("chordBtn");
+    if(cb2&&grp&&cb2.parentElement!==grp)grp.appendChild(cb2);}catch(e){}
   const wheel=$("cofWheel"),pill=$("chordPill"),sn=$("scaleNote");
   if(wheel)wheel.hidden=(m==='learn');
-  if(pill){pill.hidden=(m==='learn'); if(!pill.hidden)updateChordPill();} // chord movement shows in BOTH play & studio now (was stuck hidden)
+  // The floating chord pill is retired: the header chip says the same thing and cannot be covered by
+  // the studio strip. Kept in the DOM (still wired) so it can be brought back without re-plumbing.
+  if(pill)pill.hidden=true;
+  try{paintChordChip();}catch(e){}
   const cbtn=$("chordBtn"),cpan=$("chordPanel");
   if(cbtn)cbtn.hidden=(m==='learn'); // custom-chord button rides with the wheel (play + studio)
   if(cpan&&m==='learn')cpan.hidden=true; // never leave the editor open in learn
@@ -3478,6 +3604,7 @@ window.LAB=LAB;
     el.classList.add('lit');setTimeout(()=>el.classList.remove('lit'),ms||300);
   };
   window._labKeyHint=function(deg){ // "play this one next"
+    window._labHintDeg=deg;   // the target, readable: dev-lessons.js drives the games through this
     [...kb.children].forEach(c=>c.classList.remove('nxt'));
     if(deg==null)return;
     const k=map.findIndex(w=>edges[w]&&edges[w].deg===deg);

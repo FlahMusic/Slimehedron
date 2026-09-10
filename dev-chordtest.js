@@ -25,6 +25,16 @@ const sample=(p,ms)=>p.evaluate(async n=>{const o=[];for(let i=0;i<n;i++){o.push
   const hubs=await p.evaluate(async()=>{const o=[];for(let i=0;i<26;i++){const e=document.getElementById('cofHub');o.push(e?e.textContent:null);await new Promise(r=>setTimeout(r,500));}return o;});
   ok(new Set(hubs.filter(Boolean)).size>1, 'circle-of-fifths hub text changes with the chord (saw '+new Set(hubs.filter(Boolean)).size+' distinct)');
 
+  // 2b. THE HEADER CHORD CHIP is the only chord readout play mode has left (the wheel is studio-only
+  //     and the floating pill is retired), so it gets the same guard: it must be VISIBLE and it must MOVE.
+  const chipVis=await p.evaluate(()=>{const e=document.getElementById('hdrChord');
+    if(!e)return 'missing';const r=e.getBoundingClientRect();
+    return (getComputedStyle(e).display!=='none'&&r.width>8&&r.top>=0&&r.bottom<=innerHeight)?'ok':'hidden/offscreen';});
+  ok(chipVis==='ok','header chord chip is on screen ('+chipVis+')');
+  const chips=await p.evaluate(async()=>{const o=[];for(let i=0;i<26;i++){const e=document.getElementById('hcName');o.push(e?e.textContent:null);await new Promise(r=>setTimeout(r,500));}return o;});
+  ok(new Set(chips.filter(Boolean)).size>1,'header chord chip text changes with the chord (saw '+new Set(chips.filter(Boolean)).size+' distinct)');
+  ok(chips.filter(x=>x&&x!=='-').length>20,'header chord chip is never stuck on the placeholder');
+
   // 3. a custom progression must be followed, band still muted
   const prog=await p.evaluate(async()=>{
     CHORD_MODE.on=true;CHORD_MODE.idx=0;CHORD_MODE.barsLeft=0;

@@ -25,7 +25,24 @@
       matches the feedback literature: evaluative "wrong" framing reduces a child's willingness to
       attempt hard items, while process-focused encouragement sustains it.
 
-   5. RELATIVE, NOT ABSOLUTE. Degrees and solfège (do re mi) come before letter names, so what is
+   5. NOTHING IMPORTANT IS TEXT-ONLY. Google's own guidance for children's apps is blunt about this:
+      "Most kids under 5 can't read", and it tells you to avoid text-only buttons and to point at the
+      answer with "visual hints like arrows, highlights, or pulses"
+      (developers.google.com/building-for-kids/designing-engaging-apps). Every leading product obeys it a
+      different way - Simply Piano and Prodigies open each lesson with a VIDEO instead of a sentence,
+      Duolingo Music's first screen is a five-key keyboard with the target key highlighted AND labelled.
+      We cannot ship video, so every instruction here is SPOKEN ALOUD (speech(), below - the browser's
+      own voice, no network, no files) while the target wall and key glow. The written line stays for
+      the adult reading over the child's shoulder; it is never the only channel.
+
+   6. EVERY LESSON ENDS, AND THE ENDING IS AN EVENT. Simply Piano sells "5-Min Workouts", Melodics'
+      daily unit is 5 minutes, Prodigies calls its preschool lessons "bite-sized... made for preschool
+      attention spans", and Duolingo fires a fixed multi-part reward the moment a unit closes. An
+      open-ended drill that never says "done" is the one shape none of them ship. So every unit here
+      declares how much is enough, and finish() gives it a fanfare, a slime, the concept's name, and a
+      door to the next lesson.
+
+   7. RELATIVE, NOT ABSOLUTE. Degrees and solfège (do re mi) come before letter names, so what is
       learned transfers to any key — the same reason Hooktheory teaches in scale degrees. Curwen's
       solfège hand-sign tradition dates to the 1840s and is long out of copyright; the syllables
       themselves are centuries older.
@@ -50,7 +67,7 @@ const $id=(x)=>document.getElementById(x);
 // ---------------------------------------------------------------- strings
 const LANG={
   en:{
-    _name:'English', _dir:'ltr',
+    _name:'English', _dir:'ltr', _voice:'en-US',
     back:'back', home:'lessons', next:'next', again:'again', listen:'listen', imReady:"I'm ready",
     tierLessons:'Learn', tierPractice:'Practice', tierGames:'Play games',
     tierLessonsSub:'one idea at a time, on the real instrument',
@@ -105,7 +122,11 @@ const LANG={
     up:'up', down:'down', same:'the same',
     findhome_ask:'Which wall is home?',
     solfege:'do re mi fa sol la ti',
-    labelStyle:'wall labels', labelSolfege:'do re mi', labelNumbers:'1 2 3', labelOff:'off'
+    labelStyle:'wall labels', labelSolfege:'do re mi', labelNumbers:'1 2 3', labelOff:'off',
+    // the ending beat
+    doneTitle:'you did it!', nextLesson:'next lesson', doneAgain:'do it again',
+    // spoken-voice controls
+    voiceReplay:'say it again', voiceOn:'voice on', voiceOff:'voice off'
   }
 };
 let lang='en';
@@ -118,6 +139,42 @@ function t(k,vars){
 }
 function setLang(code){if(LANG[code]){lang=code;try{localStorage.setItem('slimehedron-lang',code);}catch(e){} if(_render)_render();}}
 try{const sv=localStorage.getItem('slimehedron-lang');if(sv&&LANG[sv])lang=sv;}catch(e){}
+
+// ---------------------------------------------------------------- SPOKEN INSTRUCTIONS
+// A five-year-old cannot read the instruction, so the instruction is said out loud. This uses the
+// browser's built-in speechSynthesis: it is offline, it ships no audio files, and it makes no network
+// request - which matters here, because this app is deliberately request-free.
+// The line is DEDUPED: a unit that repaints its screen every round must not read the same sentence at
+// the child ten times. Only a genuinely new line speaks.
+let voiceOn=true;
+try{const v=localStorage.getItem('slimehedron-voice');if(v!=null)voiceOn=(v==='1');}catch(e){}
+let _lastSaid='';
+function speech(txt,force){
+  if(!txt||!voiceOn)return;
+  if(!force&&txt===_lastSaid)return;
+  _lastSaid=txt;
+  try{
+    const synth=window.speechSynthesis; if(!synth)return;   // no voice on this device: the text is still there
+    synth.cancel();
+    const u=new SpeechSynthesisUtterance(String(txt));
+    u.lang=(LANG[lang]&&LANG[lang]._voice)||'en-US';
+    u.rate=0.92; u.pitch=1.06; u.volume=1;
+    synth.speak(u);
+  }catch(e){}
+}
+function speechStop(){try{if(window.speechSynthesis)window.speechSynthesis.cancel();}catch(e){}}
+function setVoice(on){voiceOn=!!on;try{localStorage.setItem('slimehedron-voice',voiceOn?'1':'0');}catch(e){}
+  if(!voiceOn)speechStop(); else {_lastSaid='';sayScreen();}}
+// read whatever the current card is asking for, from the DOM - so no unit has to remember to pass a key
+function sayScreen(force){
+  if(!ov)return;
+  // NOTE: do not filter on offsetParent here. dock() calls this in the same tick it reveals the card,
+  // and the layout box is not settled yet - which made every lesson silent. The `hidden` attribute is
+  // the real signal (it is what hides the not-yet-earned NAME line), and it is reliable immediately.
+  const parts=[...ov.querySelectorAll('.ldTitle,.labSay,.labDo')]
+    .filter(e=>!e.hidden).map(e=>e.textContent.trim().replace(/[.\s]+$/,'')).filter(Boolean);
+  speech(parts.join('. '),force);
+}
 
 // ---------------------------------------------------------------- progress (quiet, no streaks)
 let prog={};
@@ -170,19 +227,29 @@ function dock(html){
   if(!ov)return;
   ov.classList.add('lab');document.body.classList.add('lab-on');
   ov.innerHTML='<div class="lCard">'+html+'</div>';
+  sayScreen();   // deduped inside: a repaint of the same screen is silent
 }
 function sheet(html){ // the old full-screen card, for menus
   if(!ov)return;
   ov.classList.remove('lab');document.body.classList.remove('lab-on');
   ov.innerHTML='<div class="lCard">'+html+'</div>';
 }
+const SPK='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.1" '+
+  'stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5a3.5 3.5 0 0 1 0 5"/></svg>';
 function bar(title,step){
+  // the speaker is a REPLAY button, not a mute: a child who missed the instruction taps it to hear it
+  // again. Muting lives on the lessons screen, where a parent will look for it.
   return '<div class="labBar"><button class="labBack" data-a2="home">‹ '+t('home')+'</button>'+
-    (step?'<span class="labStep">'+step+'</span>':'')+'</div>'+
+    (step?'<span class="labStep">'+step+'</span>':'')+
+    '<button class="labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'" title="'+t('voiceReplay')+'">'+SPK+'</button>'+
+    '</div>'+
     '<div class="labTitle">'+title+'</div>';
 }
 function dots(done,total){let h='<div class="labDots">';for(let i=0;i<total;i++)h+='<i class="'+(i<done?'got':'')+'"></i>';return h+'</div>';}
 function feed(msg){const f=document.querySelector('.labFeed');if(f)f.textContent=msg||'';}
+// feed() is also used for running counters ("3 in a row"), which must NOT be read aloud every tap.
+// cheer() is the spoken kind: the praise and the try-again lines, and only those.
+function cheer(msg){feed(msg);speech(msg,true);}
 
 // ---------------------------------------------------------------- audio helpers (reuse the app's synth)
 function note(cents,vel,dur){
@@ -203,6 +270,29 @@ function degCents(d){try{return centsForDegree(d);}catch(e){return d*200;}}
 let _timers=[];
 function later(fn,ms){const id=setTimeout(fn,ms);_timers.push(id);return id;}
 function stopAll(){_timers.forEach(clearTimeout);_timers=[];try{LAB.onHit(null);}catch(e){}}
+
+// ---------------------------------------------------------------- THE ENDING
+// Every unit finishes here. Not "the name text appears and the drill carries on forever" - an actual
+// event: a rising fanfare on the real synth, a burst of balls in the tank, the child's slime, the
+// concept named out loud, and a door straight into the next lesson. This is the beat every leading
+// product fires at the close of a unit, and it is the one shape an endless drill can never have.
+function finish(id,nameLine){
+  seen(id);
+  stopAll(); if(_cleanup){_cleanup();_cleanup=null;}
+  try{LAB.onHit(null);}catch(e){}
+  const u=UNITS.find(x=>x.id===id)||{},i=UNITS.findIndex(x=>x.id===id),nx=UNITS[i+1];
+  [0,2,4,7].forEach((d,k)=>later(()=>{try{sing(d,96,.5);}catch(e){}},k*165));   // a rising fanfare
+  later(()=>{try{for(let k=0;k<5;k++)later(()=>LAB.drop(k%4,1),k*90);}catch(e){}},760); // and a shower of balls
+  dock('<div class="labDone">'+
+    '<img class="ldArt" src="minis/'+(u.slime||'grn')+'.png" alt="" draggable="false">'+
+    '<b class="ldTitle">'+t('doneTitle')+'</b>'+
+    (nameLine?'<p class="labSay">'+nameLine+'</p>':'')+
+    '<div class="labChips">'+
+      (nx?'<button class="labChip on" data-a2="nextu" data-u="'+nx.id+'">'+t(nx.title)+' \u203a</button>':'')+
+      '<button class="labChip" data-a2="again" data-u="'+id+'">'+t('doneAgain')+'</button>'+
+      '<button class="labChip" data-a2="home">'+t('home')+'</button>'+
+    '</div></div>');
+}
 
 // ================================================================ UNITS
 // Each unit is HEAR -> DO -> NAME. `run` gets a tiny controller so every unit reads the same way.
@@ -228,7 +318,7 @@ const UNITS=[
 
 // ---------- 1. BEAT: the tank drops a ball on every beat; the child taps along ----------
 function pulseUnit(){
-  let taps=0,run=0,last=0;
+  let taps=0,run=0,last=0,done=false;
   const period=()=>60000/(S.bpm||90);
   function paint(){
     dock(bar(t('u_pulse'),'1 / 3')+
@@ -244,11 +334,14 @@ function pulseUnit(){
   const iv=setInterval(()=>{LAB.drop(0,1);last=performance.now();},period());
   _timers.push(iv);
   _cleanup=()=>clearInterval(iv);
+  // TIMING IS THE ONE THING A SMALL CHILD WILL MISS CONSTANTLY, so a miss says nothing at all: the
+  // counter simply does not go up. (Melodics calls this wait-mode; the rule is constrain, never scold.)
   window._lab_tap=()=>{
+    if(done)return;
     const now=performance.now(),off=Math.abs(now-last);
     if(off<period()*0.34){run++;taps++;feed(t('pulse_feed',{n:run}));}
-    else{run=0;feed(t('notYet'));}
-    if(run>=4){const n=$id('lb_name');if(n)n.hidden=false;seen('pulse');}
+    else run=0;
+    if(run>=6){done=true;finish('pulse',t('pulse_name'));}
   };
 }
 
@@ -273,11 +366,11 @@ function highUnit(){
       '<p class="labSay" id="lb_name" hidden>'+t('high_name')+'</p>');
     window._lab_hi=(guess)=>{
       const wentUp=(first===lo);
-      if((guess==='up')===wentUp){got++;round++;feed(t('yes'));
+      if((guess==='up')===wentUp){got++;round++;cheer(t('yes'));
         LAB.drop(wentUp?hi:lo,1);
-        if(got>=3){const n=$id('lb_name');if(n)n.hidden=false;seen('high');}
+        if(got>=3)later(()=>finish('high',t('high_name')),900);
         else later(ask,1100);
-      }else{feed(t('notYet'));later(()=>{note(degCents(first),90,.6);later(()=>note(degCents(first===lo?hi:lo),90,.6),750);},300);}
+      }else{cheer(t('notYet'));later(()=>{note(degCents(first),90,.6);later(()=>note(degCents(first===lo?hi:lo),90,.6),750);},300);}
     };
     window._lab_hiReplay=()=>{note(degCents(first),90,.6);later(()=>note(degCents(first===lo?hi:lo),90,.6),750);};
   }
@@ -304,8 +397,8 @@ function homeUnit(){
   _cleanup=()=>{clearInterval(pulse);hint(null);};
   LAB.onHit((deg)=>{
     const len=scaleObj().c.length;
-    if(((deg%len)+len)%len===0){praise(deg);landed++;feed(t('yes'));
-      if(landed>=3){const n=$id('lb_name');if(n)n.hidden=false;seen('home');}}
+    if(((deg%len)+len)%len===0){praise(deg);landed++;cheer(t('yes'));
+      if(landed>=3)later(()=>finish('home',t('home_name')),800);}
   });
 }
 
@@ -328,7 +421,7 @@ function stepsUnit(){
   LAB.onHit((deg)=>{
     const len=scaleObj().c.length,d=((deg%len)+len)%len;
     if(d===want){praise(d);want++;feed(t('yes'));hint(want<4?want:null);
-      if(want>=4){const n=$id('lb_name');if(n)n.hidden=false;seen('steps');}}
+      if(want>=4)later(()=>finish('steps',t('steps_name')),800);}
     else if(d===0){want=1;hint(1);}
   });
 }
@@ -377,13 +470,14 @@ function echoGame(){
     if(mine)return;
     const td=totalDegrees(),d=((deg%td)+td)%td;
     if(d===phrase[idx]){praise(d);idx++;
-      if(idx>=phrase.length){feed(t('yes'));best=Math.max(best,len);hint(null);
+      if(idx>=phrase.length){cheer(t('yes'));best=Math.max(best,len);hint(null);
         seen('echo');
-        if(len<6)len++;
+        if(len>=5){later(()=>finish('echo',''),900);return;}   // a five-note phrase echoed back: that is the session
+        len++;
         later(()=>{newPhrase();playPhrase();},1200);}
       else hint(phrase[idx]);                       // always show the next target
     }else{ // NO fail state: just replay it and invite another go
-      feed(t('notYet'));idx=0;hint(null);later(playPhrase,900);}
+      cheer(t('notYet'));idx=0;hint(null);later(playPhrase,900);}
   });
   newPhrase();later(playPhrase,500);
 }
@@ -410,8 +504,10 @@ function upDownGame(){
   }
   _render=paint;
   window._lab_ud=(g)=>{const up=b>a;
-    if((g==='up')===up){got++;feed(t('yes'));LAB.drop(b,1);seen('updown');later(ask,1000);}
-    else{feed(t('notYet'));later(()=>{note(degCents(a),90,.5);later(()=>note(degCents(b),90,.5),620);},300);}};
+    if((g==='up')===up){got++;cheer(t('yes'));LAB.drop(b,1);
+      if(got>=5){later(()=>finish('updown',''),900);return;}
+      later(ask,1000);}
+    else{cheer(t('notYet'));later(()=>{note(degCents(a),90,.5);later(()=>note(degCents(b),90,.5),620);},300);}};
   window._lab_udReplay=()=>{sing(a,90,.5);later(()=>sing(b,90,.5),620);};
   ask();
 }
@@ -433,8 +529,9 @@ function findHomeGame(){
     sing(4%len,86,.45);later(()=>sing(len-3,86,.45),420);}
   cue();const iv=setInterval(cue,5200);_timers.push(iv);_cleanup=()=>clearInterval(iv);
   LAB.onHit((deg)=>{const len=scaleObj().c.length;
-    if(((deg%len)+len)%len===0){praise(deg);got++;feed(t('yes'));seen('findhome');}
-    else feed(t('notYet'));});
+    if(((deg%len)+len)%len===0){praise(deg);got++;cheer(t('yes'));paint();
+      if(got>=5)later(()=>finish('findhome',t('home_name')),800);}
+    else feed('');});   // a wrong wall in a scale-locked tank is still music: say nothing, let them hunt
 }
 
 // ---------------------------------------------------------------- wall-label switcher
@@ -466,6 +563,8 @@ function home(){
     h+='<div class="uSec"><span class="uSecT">'+t(tk)+'</span><span class="uSecS">'+t(tsk)+'</span></div>'+
        '<div class="uGrid">'+UNITS.filter(x=>x.tier===tier).map(card).join('')+'</div>';
   }
+  h+='<div class="labChips" style="justify-content:center">'+
+       '<button class="labChip'+(voiceOn?' on':'')+'" data-a2="voice">'+SPK+' '+t(voiceOn?'voiceOn':'voiceOff')+'</button></div>';
   h+='<p class="uFoot">'+t('noRush')+'</p>';
   sheet(h);
   _render=home;
@@ -475,7 +574,12 @@ function home(){
 if(ov)ov.addEventListener('click',(e)=>{
   const b=e.target.closest('[data-a2]');if(!b)return;
   const a=b.dataset.a2;
-  if(a==='home'){home();return;}
+  if(a==='home'){speechStop();home();return;}
+  if(a==='say'){sayScreen(true);return;}                      // "say it again"
+  if(a==='voice'){setVoice(!voiceOn);if(_render)_render();return;}
+  if(a==='nextu'||a==='again'){const u=UNITS.find(x=>x.id===b.dataset.u);if(!u)return;
+    stopAll();if(_cleanup){_cleanup();_cleanup=null;}
+    _lastSaid='';u.run();return;}
   if(a==='unit'){const u=UNITS.find(x=>x.id===b.dataset.u);if(!u)return;
     stopAll();if(_cleanup){_cleanup();_cleanup=null;}
     try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(err){}
