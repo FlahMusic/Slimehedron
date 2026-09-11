@@ -80,10 +80,12 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src),"unit '"+id+"' 
  await home();await open('echo');
  // the phrase grows 2 -> 5 notes and it PLAYS to you between turns, so this has to be patient:
  // while the hint is null the game is still singing, and striking then would count as a wrong answer.
+ // the phrase grows 2 -> 5 notes and PLAYS to you between turns; striking while it is still singing
+ // counts as a wrong answer and restarts the phrase, so this has to wait the game out rather than race it.
  for(let i=0;i<400&&!(await doneUp());i++){
    const d=await p.evaluate(()=>window._labHintDeg);
-   if(d==null){await p.waitForTimeout(300);continue;}
-   await strikeDeg(d);await p.waitForTimeout(320);}
+   if(d==null){await p.waitForTimeout(400);continue;}
+   await strikeDeg(d);await p.waitForTimeout(430);}
  ok(await doneUp(),'ECHO ends with a "you did it" card');
 
  // the ending must offer a way onward, not a dead end

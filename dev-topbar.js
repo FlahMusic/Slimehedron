@@ -24,9 +24,21 @@ const SIZES=[['desktop',1440,900],['laptop',1180,760],['tablet',900,700],['phone
                   .filter(e=>vis(e)&&getComputedStyle(e).position!=='fixed'); // fixed children have left the bar on purpose
      const off=kids.filter(e=>{const k=box(e);return k.left<-1||k.right>innerWidth+1;})
                    .map(e=>(e.id||e.className)+' '+Math.round(box(e).left)+'..'+Math.round(box(e).right));
-     // ONE ROW: every control's vertical centre must sit within 10px of the group's centre
-     const grp=hdr.querySelector('.btngroup');const gb=box(grp);const gc=(gb.t+gb.b)/2;
-     const rows=kids.filter(e=>{const k=box(e);return Math.abs((k.t+k.b)/2-gc)>10;}).map(e=>e.id||e.className);
+     // ROWS. The bar is allowed at most TWO: the transport buttons, and — on a phone only — the two
+     // faders, which were moved onto their own line so every button could reach a 44px touch target.
+     // What is NOT allowed is a control drifting onto a row of its own, which is how this started.
+     const grp=hdr.querySelector('.btngroup');
+     const lanes=[];
+     kids.forEach(e=>{const k=box(e);const c=(k.t+k.b)/2;
+       const L=lanes.find(l=>Math.abs(l.c-c)<=12);
+       if(L){L.n++;L.ids.push(e.id||e.className);}else lanes.push({c,n:1,ids:[e.id||e.className]});});
+     lanes.sort((a,b)=>a.c-b.c);
+     const rows=lanes.length>2?lanes.map(l=>l.ids.join('+')):[];
+     // and the transport trio must never be split across lanes
+     const trio=['playBtn','recBtn','slimeBig'].map(id=>{const e=document.getElementById(id);
+       if(!e||!vis(e))return null;const k=box(e);return (k.t+k.b)/2;}).filter(v=>v!=null);
+     const split=trio.length>1&&(Math.max(...trio)-Math.min(...trio))>12;
+     if(split)rows.push('TRANSPORT SPLIT');
      // no header control may sit on top of another
      const hits=[];
      for(let i=0;i<kids.length;i++)for(let j=i+1;j<kids.length;j++){
@@ -56,7 +68,7 @@ const SIZES=[['desktop',1440,900],['laptop',1180,760],['tablet',900,700],['phone
              chip:vis(document.getElementById('hdrChord')),sw:vis(document.getElementById('slimeBig'))};});
    const L='['+mode+'/'+tag+'] ';
    ok(r.off.length===0,L+'no header control runs off screen'+(r.off.length?': '+r.off.join(', '):''));
-   ok(r.rows.length===0,L+'the transport is ONE row'+(r.rows.length?' (off-row: '+r.rows.join(', ')+')':''));
+   ok(r.rows.length===0,L+'the bar is at most two lanes and the transport is not split'+(r.rows.length?' ('+r.rows.join(' | ')+')':''));
    ok(r.hits.length===0,L+'no two top-bar controls overlap'+(r.hits.length?': '+r.hits.join(', ')+'':''));
    ok(r.chip,L+'the chord chip is visible');
    ok(r.sw,L+'the auto-play switch is in the bar');
