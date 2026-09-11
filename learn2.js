@@ -124,7 +124,7 @@ const LANG={
     solfege:'do re mi fa sol la ti',
     labelStyle:'wall labels', labelSolfege:'do re mi', labelNumbers:'1 2 3', labelOff:'off',
     // the ending beat
-    doneTitle:'you did it!', nextLesson:'next lesson', doneAgain:'do it again',
+    doneTitle:'you did it!', nextLesson:'next lesson', doneAgain:'do it again', startHere:'start here',
     // spoken-voice controls
     voiceReplay:'say it again', voiceOn:'voice on', voiceOff:'voice off'
   }
@@ -546,14 +546,19 @@ function home(){
   stopAll();if(_cleanup){_cleanup();_cleanup=null;}
   try{LAB.give();}catch(e){}
   const total=UNITS.length,done=UNITS.filter(u=>prog[u.id]).length;
+  // WHERE DO I START? Duolingo marks the next node on its path; Simply Piano hard-locks everything after
+  // the current lesson. Locking fights this app's no-fail-state rule, so the sequence is SHOWN, not
+  // enforced: the first lesson not yet finished wears a "start here" flag, every other door stays open.
+  const nextUp=(UNITS.find(u=>!prog[u.id])||{}).id;
   const card=(u)=>{
-    const got=!!prog[u.id];
-    return '<button class="uCard'+(got?' got':'')+'" data-a2="unit" data-u="'+u.id+'" '+
-      'style="--ut:'+u.tint+'" aria-label="'+t(u.title)+'">'+
+    const got=!!prog[u.id], next=(u.id===nextUp);
+    return '<button class="uCard'+(got?' got':'')+(next?' nextUp':'')+'" data-a2="unit" data-u="'+u.id+'" '+
+      'style="--ut:'+u.tint+'" aria-label="'+t(u.title)+(next?' \u2014 '+t('startHere'):'')+'">'+
       '<span class="uArt"><img src="minis/'+u.slime+'.png" alt="" draggable="false"></span>'+
       '<span class="uTxt"><b>'+t(u.title)+'</b><i>'+t(u.sub)+'</i></span>'+
       '<span class="uIco">'+u.ico()+'</span>'+
-      (got?'<span class="uDone" aria-hidden="true">\u2713</span>':'')+
+      (got?'<span class="uDone" aria-hidden="true">\u2713</span>'
+          :(next?'<span class="uNext">'+t('startHere')+'</span>':''))+
       '</button>';
   };
   let h='<div class="uHead">'+

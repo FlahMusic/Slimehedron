@@ -103,6 +103,7 @@ header h1{flex-shrink:0}
 #modeCards{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;align-items:center;padding:0 18px;max-width:760px}
 .modeCard{border:2px solid rgba(255,255,255,.9);border-radius:20px;padding:20px 18px;width:190px;cursor:pointer;box-shadow:var(--shadow);transition:.15s;text-align:center}
 .modeCard:hover{transform:translateY(-3px) scale(1.02)}
+.modeCard .mcIco{display:block;margin:0 auto 6px;width:42px;height:42px;opacity:.85}
 .modeCard b{font-size:26px;display:block;margin-bottom:5px;letter-spacing:.5px;color:#463d66}
 .modeCard span{font-size:13px;color:#5a4f78;font-weight:700;display:block}
 .modeCard.last{outline:3px solid var(--accent)}
@@ -144,7 +145,14 @@ header h1{flex-shrink:0}
 @media (max-width:820px){
   .mode-studio #studioBar{top:calc(env(safe-area-inset-top) + 46px);padding:4px 7px;gap:3px;max-width:98vw;border-radius:12px}
   #studioBar select,#studioBar input[type=number]{font-size:12px;padding:4px 6px;min-height:32px}
-  #studioBar .sbLbl{display:none} /* the icons and the values carry it; labels are the first thing to go */
+  /* The strip scrolls on a phone — nine controls do not fit 374px, and none of them are going in a menu.
+     But the cut used to land dead on the rounded right edge, so the strip read as "that is all there is":
+     seven controls visible, KEY / SCALE / KIT a secret. Two fixes, both about honesty rather than space:
+       1. a fade at the right edge, so the strip visibly CONTINUES past the screen;
+       2. the labels stay. An unlabelled "1/8" beside an unlabelled "4/4" is a guessing game. */
+  #studioBar{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);
+             mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
+  #studioBar .sbLbl{font-size:8.5px;letter-spacing:.3px}
 }
 .mode-studio #studioBar{top:var(--sbTop,60px);left:var(--sbLeft,8px);width:var(--sbW,auto);max-width:none}
 /* drop-ball, dice(new shape), and the drum/band mute buttons are gone from the header in every mode — you drop a
@@ -247,15 +255,16 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 .psBtn.on{transform:scale(1.08);box-shadow:0 8px 22px rgba(130,100,200,.45), inset 0 2px 6px rgba(255,255,255,.7);border-color:#fff}
 .psBtn svg{width:48px;height:48px;position:relative;z-index:1}
 .psBtn.bandBtn img{width:66px;height:66px;object-fit:contain;position:relative;z-index:1;display:block;filter:drop-shadow(0 1px 1px rgba(120,100,160,.18))}
+.psBtn.bandBtn svg{width:46px;height:38px;position:relative;z-index:1;display:block}
 .psBtn .psNum{position:absolute;right:7px;bottom:5px;font-weight:900;font-size:18px;z-index:1;text-shadow:0 1px 2px rgba(255,255,255,.7)}
 .psItem{display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
 .psLbl{font-size:18px;font-weight:800;color:#5a4f78;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 2px rgba(255,255,255,.9);letter-spacing:.2px;white-space:nowrap;pointer-events:none;display:flex;flex-direction:column;align-items:center;line-height:1.15} /* big & readable — text is the anchor */
 .psSub{font-size:16px;font-weight:700;font-style:normal;color:#7a6ea0;text-transform:lowercase} /* the real waveform/genre name — clearly readable now (~3x the old tiny) */
 .psCol{gap:14px}
 /* SHORT screens: 5 big stacked buttons would overflow, so scale them down to fit vertically */
-@media (max-height:760px){.psBtn{width:60px;height:60px}.psBtn svg{width:36px;height:36px}.psBtn.bandBtn img{width:50px;height:50px}.psLbl{font-size:15px}.psSub{font-size:13px}.psCol{gap:9px}}
+@media (max-height:760px){.psBtn{width:60px;height:60px}.psBtn svg{width:36px;height:36px}.psBtn.bandBtn svg{width:40px;height:33px}.psBtn.bandBtn img{width:50px;height:50px}.psLbl{font-size:15px}.psSub{font-size:13px}.psCol{gap:9px}}
 /* phones scale down (screen's small), but still legible */
-@media (max-width:820px){.psBtn{width:52px;height:52px;border-radius:16px}.psBtn svg{width:30px;height:30px}.psBtn.bandBtn img{width:42px;height:42px}.psCol{gap:8px}
+@media (max-width:820px){.psBtn{width:52px;height:52px;border-radius:16px}.psBtn svg{width:30px;height:30px}.psBtn.bandBtn svg{width:36px;height:30px}.psBtn.bandBtn img{width:42px;height:42px}.psCol{gap:8px}
   /* phone: hide the "Rhythm 1"/"Sound 1" number (font-size:0 kills the text node, not the child) and let the
      style name carry the label at a readable size. 9px/7px labels were the worst offender in the audit. */
   .psLbl{font-size:0!important;line-height:0}
@@ -312,6 +321,12 @@ body.kb-open #kbBtn{bottom:calc(140px + env(safe-area-inset-bottom))} /* lift th
   body.kb-open #kbBtn{bottom:calc(195px + env(safe-area-inset-bottom))}
 }
 body:has(#splash:not(.gone)) #exitMode{display:none} /* already at the doors — nothing to go back to */
+/* ...and neither does anything else that is pinned above the splash's z-index. #topRight sits at 261 and
+   was showing a lone pink X over the front door, which reads as "close this" and closes nothing. */
+body:has(#splash:not(.gone)) #topRight,
+body:has(#splash:not(.gone)) #clearBtn,
+body:has(#splash:not(.gone)) #chordBtn,
+body:has(#splash:not(.gone)) #resetBtn{display:none!important}
 header h1{margin-left:84px} /* the title steps aside for the back button */
 @media (max-width:820px){#exitMode{top:6px;left:4px;padding:6px 9px;font-size:12px}header h1{margin-left:0}header{padding-left:34px}}
 #learnOverlay{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:rgba(230,222,250,.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
@@ -348,6 +363,12 @@ header h1{margin-left:84px} /* the title steps aside for the back button */
 .uDone{position:absolute;top:7px;right:9px;width:19px;height:19px;border-radius:50%;
   background:#2e9e7e;color:#fff;font:800 12px system-ui,sans-serif;display:grid;place-items:center;
   box-shadow:0 2px 5px rgba(46,158,126,.4)}
+/* "start here" — the sequence is signposted, never locked. One flag on the first unfinished lesson, so a
+   child (or the adult next to them) knows the order without any door being shut. */
+.uNext{position:absolute;top:6px;right:8px;padding:2px 7px;border-radius:9px;
+  background:#5a4f78;color:#fff;font:800 9.5px system-ui,sans-serif;letter-spacing:.4px;text-transform:uppercase;
+  box-shadow:0 2px 5px rgba(90,79,120,.35)}
+.uCard.nextUp{box-shadow:0 0 0 2.5px var(--accent),0 5px 14px rgba(120,110,160,.22)}
 .uCard.got .uArt{background:rgba(255,255,255,.85)}
 .uFoot{font-size:12.5px;color:var(--ink-soft);font-weight:600;margin:16px 0 0;text-align:center}
 @media (max-width:820px){
@@ -618,11 +639,13 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 #stepGrid .sgCell.past{opacity:.24;background:repeating-linear-gradient(135deg,rgba(150,140,185,.12) 0 3px,transparent 3px 6px)} /* beyond LAST STEP: the loop never reaches these */
 #stepGrid .sgLast{display:flex;align-items:center;gap:7px;margin-top:8px;font:700 11px system-ui,sans-serif;color:#6b6090}
 #stepGrid .sgLast input[type=range]{flex:1;height:6px;padding:9px 0}
-#stepGrid .sgLast b{min-width:56px;text-align:right;font-size:12px;color:#5a4f78}
-#stepGrid .sgCells{display:flex;gap:3px;flex:1;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;padding-bottom:2px}
-#stepGrid .sgCells::-webkit-scrollbar{height:4px}
-#stepGrid .sgCells::-webkit-scrollbar-thumb{background:rgba(150,140,185,.45);border-radius:3px}
-#stepGrid .sgCell{flex:0 0 auto;width:clamp(30px,6.4vw,38px);height:clamp(30px,6.4vw,38px);border-radius:6px;border:1px solid rgba(255,255,255,.7);
+#stepGrid .sgLast b{min-width:58px;text-align:right;font-size:12px;color:#5a4f78;white-space:nowrap}
+/* 16 cells at 38px need 653px; the panel gives 254. It used to scroll, so seven steps were visible and
+   nine were a secret - and the cut landed mid-cell at the panel edge, which reads as "that is the end".
+   Two rows of eight instead: the whole bar is on screen, the split falls on the half-bar, and the cells
+   stay finger-sized. Nothing hidden, nothing to scroll, nothing to discover. */
+#stepGrid .sgCells{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;flex:1;min-width:0;padding-bottom:2px}
+#stepGrid .sgCell{width:auto;height:auto;aspect-ratio:1;min-width:0;max-width:38px;border-radius:6px;border:1px solid rgba(255,255,255,.7);
   background:rgba(150,140,185,.16);cursor:pointer;padding:0}
 #stepGrid .sgCell.beat{background:rgba(150,140,185,.28)}
 #stepGrid .sgCell.on{background:linear-gradient(160deg,var(--accent,#b388f0),#9fe6cf);border-color:#fff;box-shadow:0 1px 3px rgba(90,79,120,.3)}
@@ -3313,8 +3336,33 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
   const DK=[['pop','#e6f2ff','#c4e0ff','#3a6ea8','1','pop'],['rock','#efe6ff','#d4c2f5','#6b4fa8','2','rock'],
             ['disco','#e7e8ff','#c6caf5','#4a4a9e','3','disco'],['bossa','#eef1f6','#d3dbe8','#5a6478','4','bossa'],
             ['jazz','#e4e7ee','#c2c8d6','#4a5568','5','jazz']];
+  // RHYTHM GLYPHS. All five buttons used to carry the SAME band photo, so the column was five identical
+  // squares distinguishable only by reading the caption underneath - the exact text-only failure the wave
+  // column on the other side does not have. Each genre now draws its own beat: bar height = accent, bar
+  // position = where in the bar it lands. It is a picture of the rhythm, not a picture of a band.
+  //   pop    four on the floor - four even, equal
+  //   rock   backbeat - 2 and 4 are the tall ones
+  //   disco  straight eighths - eight ticks, every other one accented
+  //   bossa  syncopation - the off-beats carry it
+  //   jazz   swing - long, short, long, short
+  const RGLYPH={
+    pop:   [[0,1],[1,1],[2,1],[3,1]],
+    rock:  [[0,.55],[1,1],[2,.55],[3,1]],
+    disco: [[0,1],[.5,.5],[1,1],[1.5,.5],[2,1],[2.5,.5],[3,1],[3.5,.5]],
+    bossa: [[0,1],[.75,.7],[1.5,1],[2.5,.7],[3,1]],
+    jazz:  [[0,1],[.66,.5],[1,1],[1.66,.5],[2,1],[2.66,.5],[3,1],[3.66,.5]]
+  };
+  const rIcon=(k,col)=>{const bars=RGLYPH[k]||RGLYPH.pop;
+    // 4 beats wide, drawn on a 48x40 box with a baseline; tall bar = accented hit
+    let d='<svg viewBox="0 0 48 40" width="48" height="40" aria-hidden="true" style="display:block">'+
+      '<line x1="3" y1="35" x2="45" y2="35" stroke="'+col+'" stroke-width="1.6" stroke-linecap="round" opacity=".4"/>';
+    for(const [beat,h] of bars){
+      const x=4+beat*10.4, ht=8+h*22;
+      d+='<rect x="'+x.toFixed(1)+'" y="'+(34-ht).toFixed(1)+'" width="'+(h>.6?5.4:3.4)+'" height="'+ht.toFixed(1)+
+         '" rx="1.7" fill="'+col+'" opacity="'+(h>.6?'1':'.55')+'"/>';}
+    return d+'</svg>';};
   const dl=$("psDrums");if(dl)dl.innerHTML=DK.map(([k,c1,c2,nc,n,nm])=>
-    `<div class="psItem"><button class="psBtn bandBtn" data-kit="${k}" title="Rhythm ${n} · ${nm}" style="background:linear-gradient(160deg,${c1},${c2})"><img src="band.png" alt="" draggable="false"></button><span class="psLbl">Rhythm ${n}<i class="psSub">${nm}</i></span></div>`).join('');
+    `<div class="psItem"><button class="psBtn bandBtn" data-kit="${k}" title="Rhythm ${n} · ${nm}" style="background:linear-gradient(160deg,${c1},${c2})">${rIcon(k,nc)}</button><span class="psLbl">Rhythm ${n}<i class="psSub">${nm}</i></span></div>`).join('');
   dl&&dl.addEventListener('pointerdown',e=>{const b=e.target.closest('.psBtn');if(!b)return;
     initAudio();if(AC&&AC.state==='suspended')AC.resume();
     const wasOn=b.classList.contains('on');
@@ -3825,7 +3873,7 @@ addEventListener('keydown',e=>{
     last.innerHTML='<label for="sgLastR" title="where the drum loop turns around. shorter than 16 and the beat '+
       'slides against the bar - that is the fun part">last step</label>'+
       '<input type="range" id="sgLastR" min="2" max="16" step="1" value="'+KL+'" aria-label="last step">'+
-      '<b id="sgLastV">'+(KL>=16?'16 (full bar)':KL)+'</b>';
+      '<b id="sgLastV">'+(KL>=16?'16 · full':KL)+'</b>';   // "16 (full bar)" wrapped onto the slider
     g.appendChild(last);
     markPast();}
   function markPast(){const KL=kitLen();
@@ -3840,7 +3888,7 @@ addEventListener('keydown',e=>{
   g.addEventListener('input',e=>{if(e.target.id!=='sgLastR')return;
     const v=Math.max(2,Math.min(16,+e.target.value||16));
     KIT_LEN[drumKit]=v;
-    const lbl=document.getElementById('sgLastV');if(lbl)lbl.textContent=(v>=16?'16 (full bar)':v);
+    const lbl=document.getElementById('sgLastV');if(lbl)lbl.textContent=(v>=16?'16 · full':v);
     markPast();});
   const rv=$("stepRevert");if(rv)rv.addEventListener('click',()=>{delete KIT_EDITS[drumKit];delete KIT_LEN[drumKit];build();});
   const dk=$("drumKit");if(dk)dk.addEventListener('change',build);
@@ -4240,6 +4288,14 @@ const chillers=[]; // full-view slimes with cursor physics
       const r=el.getBoundingClientRect();if(r.width<2||r.height<2)return;
       const box={left:r.left-PAD,right:r.right+PAD,top:r.top-PAD,bottom:r.bottom+PAD};
       hot.push(box);solid.push(box);});
+    // THE BAR IS NOT A GARDEN. A peeker behind a side button is charm; a peeker poking out between the
+    // record button and the chord readout just looks like a rendering bug. The transport band is the one
+    // strip that has to read as instrument chrome, so anything decorative that lands in it is binned.
+    const barBox=[];
+    document.querySelectorAll('header .btngroup,#hdrChord,#topRight,#studioBar').forEach(el=>{
+      if(!el||getComputedStyle(el).display==='none')return;
+      const r=el.getBoundingClientRect();if(r.width<2||r.height<2)return;
+      barBox.push({left:r.left-6,right:r.right+6,top:r.top-6,bottom:r.bottom+6});});
     const cvR=cv.getBoundingClientRect();if(cvR.width>2)hot.push(cvR); // tank: click-through only, not a no-go zone
     const hits=(r,list)=>list.some(o=>r.left<o.right-2&&r.right>o.left+2&&r.top<o.bottom-2&&r.bottom>o.top+2);
     layer.querySelectorAll('.slime').forEach(el=>{
@@ -4248,12 +4304,13 @@ const chillers=[]; // full-view slimes with cursor physics
       const clash=hot.some(o=>r.left<o.right-2&&r.right>o.left+2&&r.top<o.bottom-2&&r.bottom>o.top+2);
       // a PEEKER is meant to sit behind the furniture, so it just goes click-through.
       // a margin filler that landed on a control has no business there at all: bin it.
+      if(hits(r,barBox)){el.remove();return;}            // in the transport band: gone, whatever kind it is
       if(clash&&el.classList.contains('mfill')&&hits(r,solid)){el.remove();return;}
       el.style.pointerEvents=clash?'none':'auto';        // behind a button = decoration only
     });
     // same rule for the motes, which are placed on their own grid and can drift onto a late-rendering panel
     layer.querySelectorAll('.mote').forEach(el=>{const r=el.getBoundingClientRect();
-      if(hits(r,solid))el.remove();});
+      if(hits(r,solid)||hits(r,barBox))el.remove();});
   }
   window._guardSlimes=guardSlimes;
   // ---- SIDE PEEKERS: poke out from behind whatever owns that margin, not from the bare screen edge.
@@ -4756,14 +4813,26 @@ let _lastStar=0;
 window.slimeStar=function(){}; // intentionally a no-op — a "win" is its own reward, not a leash
 // ---------- splash: three doors into one instrument (the required audio-unlock tap doubles as the choice) ----------
 (function(){
+  // learn = a note with a question-mark curve? no: keep them literal and childproof.
+  //   learn  -> a hand ringing a bell / a note with sparkles  => a single note + sparkle
+  //   play   -> the tank itself: a hexagon with a ball in it
+  //   studio -> faders
+  const _mc=(d)=>'<svg viewBox="0 0 34 34" width="42" height="42" fill="none" stroke="#5a4f78" stroke-width="2.3" '+
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+d+'</svg>';
+  const MC_ICO={
+    learn:  _mc('<path d="M13 25V9l12-2.4V23"/><circle cx="9.5" cy="25.5" r="3.6"/><circle cx="21.5" cy="23.5" r="3.6"/>'), // two notes
+    play:   _mc('<path d="M17 4 L28 10.5 V23.5 L17 30 L6 23.5 V10.5 Z"/><circle cx="17" cy="17" r="3.2" fill="#5a4f78"/>'), // the tank
+    studio: _mc('<path d="M9 5v10M9 21v8M25 5v6M25 17v12"/><circle cx="9" cy="18" r="3"/><circle cx="25" cy="14" r="3"/>')  // faders
+  };
   const sp=document.createElement('div');sp.id='splash';
   let last='play';try{last=localStorage.getItem('slimehedron-mode')||'play';}catch(e){}
   sp.innerHTML='<div class="bob" style="width:min(180px,46vw);height:min(180px,46vw);position:relative"><img src="slimelogo.png" alt="slimehedron" style="width:100%;height:100%;object-fit:contain;display:block"></div>'+
     '<div class="splashWm">slimehedron<span class="dot">.</span></div>'+
     '<div id="modeCards">'+
-    '<div class="modeCard mc-learn'+(last==='learn'?' last':'')+'" data-m="learn"><b>learn</b><span>the building blocks of music</span></div>'+
-    '<div class="modeCard mc-play'+(last==='play'?' last':'')+'" data-m="play"><b>play</b><span>have fun!</span></div>'+
-    '<div class="modeCard mc-studio'+(last==='studio'?' last':'')+'" data-m="studio"><b>studio</b><span>make anything</span></div>'+
+    // an icon per door: a child who cannot read still has to be able to pick one.
+    '<div class="modeCard mc-learn'+(last==='learn'?' last':'')+'" data-m="learn"><span class="mcIco">'+MC_ICO.learn+'</span><b>learn</b><span>the building blocks of music</span></div>'+
+    '<div class="modeCard mc-play'+(last==='play'?' last':'')+'" data-m="play"><span class="mcIco">'+MC_ICO.play+'</span><b>play</b><span>have fun!</span></div>'+
+    '<div class="modeCard mc-studio'+(last==='studio'?' last':'')+'" data-m="studio"><span class="mcIco">'+MC_ICO.studio+'</span><b>studio</b><span>make anything</span></div>'+
     '</div>'+
     '<div id="spShareRow"><button id="shareApp" title="share slimehedron with a friend"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 L20 5 L15 20 L11 13 Z"/></svg><span>share slimehedron</span></button></div>'+
     '<div class="spCredit">© 2026 FlahMusic · free &amp; open source · <a href="https://github.com/FlahMusic/Slimehedron" target="_blank" rel="noopener">source</a> · <a href="https://github.com/FlahMusic/Slimehedron/blob/main/LICENSE" target="_blank" rel="noopener">license</a> · <a id="spSupport" href="https://ko-fi.com/flahmusic" target="_blank" rel="noopener">☕ support</a></div>'; // credit + license link + tip jar
