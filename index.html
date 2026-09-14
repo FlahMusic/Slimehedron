@@ -102,6 +102,14 @@ header .spacer{flex:1}
 #hdrChord{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;
   min-width:52px;padding:3px 9px;border-radius:11px;background:rgba(255,255,255,.72);
   border:1.5px solid rgba(160,150,200,.35);box-shadow:0 2px 8px rgba(120,110,160,.14);flex:none}
+#hdrChord{cursor:pointer;-webkit-tap-highlight-color:transparent}
+#hdrChord:hover{border-color:var(--accent)}
+#hdrChord:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+/* THE KEY LOCK. Picking a key by hand stops the slime wandering off it — correct, but it used to be a
+   silent one-way latch: the only way back was toggling auto-play off and on, which nobody would guess,
+   and the symptom was "it stays in one scale forever". Now the chip says so, and tapping it releases. */
+body.keyPinned #hdrChord{border-color:var(--accent);background:rgba(179,136,240,.16)}
+body.keyPinned #hcKey::before{content:"\1F512\FE0E";margin-right:3px;font-size:9px}
 #hdrChord b{font:800 17px system-ui,sans-serif;color:var(--ink);letter-spacing:.2px}
 #hdrChord i{font:600 9px system-ui,sans-serif;font-style:normal;color:var(--ink-soft);letter-spacing:.5px;text-transform:uppercase;margin-top:1px}
 .hdrSep{width:1px;height:24px;background:rgba(150,140,185,.28);flex:none;margin:0 2px}
@@ -992,7 +1000,8 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   .btngroup #slimeBig.on .ss-knob{left:28px}
   .btngroup #slimeBig .sic{width:20px;height:19px}
   .hdrSep{display:none} /* phone: the gap is the separator */
-  #hdrChord{min-width:34px;min-height:44px;padding:1px 4px;background:none;border:0;box-shadow:none;justify-content:center}
+  /* it is a BUTTON now (tap to lock/release the key), so it needs 44 on both axes, not just height */
+  #hdrChord{min-width:44px;min-height:44px;padding:1px 4px;background:none;border:0;box-shadow:none;justify-content:center}
   #hdrChord b{font-size:16px} #hdrChord i{display:none} /* the chord is the news; the key label is desktop-only */
   /* FADERS on their own line: full width, centred, and finally long enough to actually aim at.
      A 30px-wide volume slider was not a control, it was a rumour. */
@@ -1156,7 +1165,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <!-- the auto-play slime switch is MOVED in here at boot (see hdrDock below). It used to float on its
          own row and kept landing under the studio strip. One bar, one place to look. -->
     <span class="hdrSep" aria-hidden="true"></span>
-    <div id="hdrChord" title="the chord playing right now"><b id="hcName">-</b><i id="hcKey"></i></div>
+    <button type="button" id="hdrChord" title="the chord playing right now — tap to lock or release the key"><b id="hcName">-</b><i id="hcKey"></i></button>
     <!-- #chordBtn is MOVED in here at boot too (phones lift it back out with position:fixed) -->
   </div>
   <span class="spacer"></span>
@@ -1937,7 +1946,16 @@ function noteFeed(cents,w){const sc=scaleObj().c,n=sc.length,rem=((Math.round(ce
 function pickChord(barI){const n=scaleObj().c.length;
   for(let i=0;i<n;i++)noteHisto[i]*=0.86; // time decay every bar: the brain listens to NOW, not last minute's rain
   let total=0;for(let i=0;i<n;i++)total+=noteHisto[i];
-  if(total<3){const pr=PROGS[progIdx];return pr[barI%pr.length]%n;} // nothing to listen to yet: classic progression
+  // FALLBACK, for the moments the tank is quiet enough that there is no melody to follow.
+  // Two things were wrong with the old version. (1) The threshold sat at 3, which is inside the normal
+  // operating range — studio idles around 2.7, so it kept flickering onto this path mid-song. (2) The
+  // fallback was ONE progression for the life of the session, so whenever it engaged you heard the same
+  // four chords, which is exactly what "it plays one thing forever" sounds like.
+  // Now: the bar is lower, so the melody-following roulette gets the benefit of the doubt; and the
+  // fallback itself rotates every 8 bars, so even a silent tank walks through different changes.
+  if(total<1.2){
+    if(barI>0&&barI%8===0)progIdx=(progIdx+1+Math.floor(Math.random()*(PROGS.length-1)))%PROGS.length;
+    const pr=PROGS[progIdx];return pr[barI%pr.length]%n;}
   const sc=[];for(let r=0;r<n;r++){
     let s=noteHisto[r]*1.6+noteHisto[(r+2)%n]+noteHisto[(r+4)%n]+0.05; // how much of the recent melody lives inside this chord
     if(r===curRootDeg)s*=0.4;else if(r===_prevRootDeg)s*=0.7;          // keep it moving — no camping, no ping-pong
@@ -2134,7 +2152,21 @@ function paintChordChip(){
   const n=document.getElementById('hcName');if(!n)return;
   const txt=chordShortNow();
   n.textContent=txt||'-';
-  const k=document.getElementById('hcKey');if(k)k.textContent='key '+keyShortNow();}
+  const k=document.getElementById('hcKey');if(k)k.textContent='key '+keyShortNow();
+  try{
+    const pinned=(typeof _keyPinned!=='undefined')&&_keyPinned&&S.slimeMode;
+    document.body.classList.toggle('keyPinned',!!pinned);
+    const c=document.getElementById('hdrChord');
+    if(c)c.title=pinned?'key locked to '+keyShortNow()+' — tap to let the slime wander again'
+                       :'the chord playing right now — tap to lock the key';
+  }catch(e){}}
+// tapping the chip toggles the key lock. One control, in the one place that already shows the key.
+document.addEventListener('click',(e)=>{
+  const c=e.target&&e.target.closest&&e.target.closest('#hdrChord');
+  if(!c)return;
+  try{_keyPinned=!_keyPinned;if(!_keyPinned)_slimeBars=0;paintChordChip();
+      toast(_keyPinned?'key locked':'key free — the slime will travel again');}catch(err){}
+});
 function updateWheel(){const w=document.getElementById('cofWheel');if(!w||w.hidden)return;
   if(!Number.isFinite(S.root))S.root=60; // guard: a bad/empty saved root must never crash the wheel (was throwing on NaN → killed init)
   buildWheel();
@@ -2229,6 +2261,21 @@ const KITBASS={
 };
 let _bassGroove=0,_bassBars=0,_lastBassCents=null,_lastBassFreq=null;
 let _slimeBars=0,_wallBars=0,_keyPinned=false; // _keyPinned: user picked a key/scale by hand → slime stops rotating until slime is toggled off/on
+// HOW OFTEN THE KEY TRAVELS.
+// This used to be a flat 64 bars, which sounds reasonable until you do the arithmetic: at the default
+// 80 BPM a 4/4 bar is 3 seconds, so 64 bars is THREE AND A HALF MINUTES. Nobody sits through that, which
+// is why the key journey looked like it was not running at all — the feature was real, it was just
+// scheduled past the end of everyone's attention span.
+// So the count is derived from TEMPO instead: aim for a key move roughly every 90 seconds, rounded to an
+// 8-bar phrase boundary so it still lands musically, and clamped to a sane 16..64 bars. Slow tempo -> fewer
+// bars, fast tempo -> more, wall-clock stays about the same.
+function keyJourneyBars(){
+  let sec=4*60/(S.bpm||80);                       // seconds per bar, 4/4
+  try{sec=drumBar()*drumStepDur();}catch(e){}     // exact, and honours the real meter (3/4, 7/8, ...)
+  if(!(sec>0.05&&sec<30))sec=4*60/(S.bpm||80);    // guard: never let a bad clock freeze or spam the journey
+  const want=Math.round(90/sec/8)*8;              // ~90s, snapped to an 8-bar phrase
+  return Math.max(16,Math.min(64,want||32));}
+window._keyJourneyBars=keyJourneyBars;
 function keyJourney(){ // ear-friendly walk: every 16 bars the root moves exactly ONE step on the circle of fifths
   // (up OR down a fifth) — always a neighbour, never a random/atonal jump.
   const step=Math.random()<0.5?7:-7; // +a fifth (A→E) or −a fifth (A→D)
@@ -2301,7 +2348,7 @@ let _cmCur=null; // the custom chord this bar (set by the brain, voiced by bandB
 function advanceHarmony(barI){
   const man=(S.mode!=='play'&&manualActive())?manualRoot():null; // studio: a human playing OWNS the harmony. play: no chord chasing, kids just jam.
   // CUSTOM CHORD MODE overrides everything: no key-journey transpose, follow the user's progression instead.
-  if(man==null&&!cmActive()&&S.slimeMode&&!_keyPinned&&++_slimeBars>=64){_slimeBars=0;keyJourney();} // auto-mode: move around the circle of fifths every 64 bars (16 was too soon to settle in)
+  if(man==null&&!cmActive()&&S.slimeMode&&!_keyPinned&&++_slimeBars>=keyJourneyBars()){_slimeBars=0;keyJourney();}
   if(S.slimeMode&&fillState==='fill'){_wallBars++;
     if(_wallBars%8===0)breakWall();        // every 8 bars a wall opens up (notes pour out) — frequent enough to SEE it happening
     if(_wallBars%24===0)repairWall();      // every 24 bars an old gap magically fades back into a wall
