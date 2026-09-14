@@ -1,4 +1,4 @@
-// Slimehedron — Copyright © 2026 FlahMusic (Flah). GPL-3.0-or-later. SPDX-License-Identifier: GPL-3.0-or-later. Any distributed/web-hosted
+// Slimehedron — Copyright © 2026 FlahMusic (Flah). AGPL-3.0. Any distributed/web-hosted
 // version must stay open-source under the same license + keep credit. github.com/FlahMusic/Slimehedron
 // ================= slimehedron LEARN MODE =================
 // four courses on colored panes · pixel-art scene generator (7 seeded looks per mode) ·
@@ -1074,7 +1074,10 @@ window.LEARN=(function(){
   function crsProg(c){const T={pulse:[prog.pulse|0,1],pitch:[prog.pitch|0,1],dynamics:[prog.dyn|0,1],melody:[prog.melody|0,1],feeling:[prog.feeling|0,1],rhythm:[prog.r|0,8],piano:[Object.keys(prog.pl||{}).length,8],intervals:[Math.min(prog.iv|0,10),10],chords:[prog.ch|0,12],modes:[M7.filter(m=>(prog.g[m.k]|0)>=3).length,7]}[c];
     const f=Math.round(5*Math.min(1,T[0]/T[1]));
     return `<span class="crsDots">${'\u25cf'.repeat(f)}${'\u25cb'.repeat(5-f)}</span>`;}
-  const ov=document.createElement('div');ov.id='learnOverlay';ov.hidden=true;document.body.appendChild(ov);
+  // The overlay is declared in index.html now, because learn2.js (the Lab) needs it and learn.js is only
+  // a fallback that may never load. Reuse it if it is there; only create one if it is not.
+  const ov=document.getElementById('learnOverlay')||(()=>{const d=document.createElement('div');
+    d.id='learnOverlay';d.hidden=true;document.body.appendChild(d);return d;})();
   function home(){stopJam();onKey=null;let lc='';try{lc=localStorage.getItem('slimehedron-lastcourse')||'';}catch(e){}
     ov.innerHTML=`<div class="lCard">
     <h3>learn</h3>

@@ -1117,6 +1117,10 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 <button id="kbBtn" title="play notes with your computer keyboard or a MIDI keyboard" aria-label="keyboard play" style="min-height:48px">⌨</button>
 <div id="kbMap" hidden></div>
 <!-- play mode: big soft candy buttons in the side space — pick a sound (left), pick a beat (right) -->
+<!-- The lesson overlay. It lives HERE, not in learn.js, because learn2.js (the Lab) is what actually
+     uses it and learn.js is only an on-demand fallback that normally never loads. When learn.js owned
+     it, deferring that download silently emptied every lesson screen — caught by dev-learnmap. -->
+<div id="learnOverlay" hidden></div>
 <div id="playSide"><div class="psCol left" id="psWaves"></div><div class="psCol right" id="psDrums"></div></div>
 <header>
   <h1><img class="wmMark" src="slimelogo.png" alt="" draggable="false"><span class="wmText">slimehedron<span class="dot">.</span></span></h1>
@@ -5162,9 +5166,15 @@ function startCoach(){
 
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
 </script>
-<script src="learn.js"></script>
-<!-- LEARN LAB: the tank-driven curriculum. Loaded AFTER learn.js so it can take over the same overlay;
-     learn.js still owns the older piano/chord/mode courses, which LEARN2 links to. -->
+<!-- LEARN LAB: the tank-driven curriculum. This is the one that runs. -->
 <script src="learn2.js"></script>
+<script>
+/* learn.js is the PRE-LAB curriculum, kept only as a fallback for the case where learn2.js fails to
+   load. It is 104KB — a tenth of this app's mobile payload — and it never executes when the Lab is
+   present (applyMode picks `window.LEARN2 || window.LEARN`, and learn2.js references LEARN nowhere).
+   So it is fetched on demand instead of on every visit. A child on school wifi should not download a
+   file that will not run. */
+if(!window.LEARN2){var _lj=document.createElement('script');_lj.src='learn.js';document.head.appendChild(_lj);}
+</script>
 </body>
 </html>
