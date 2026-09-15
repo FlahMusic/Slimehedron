@@ -13,7 +13,11 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
 const src=fs.readFileSync('learn2.js','utf8');
 const ids=[...src.matchAll(/\{id:'([a-z]+)'/g)].map(m=>m[1]);
 ok(ids.length>=7,'found the unit list ('+ids.length+' units)');
-for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src),"unit '"+id+"' reaches finish()");
+// A unit reaches an ending either by calling finish() itself, or by running on the shared pitchUnit
+// controller, which finishes for it. Checking only for the literal call encoded the OLD architecture and
+// failed the moment the lessons were refactored onto one engine.
+for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)||new RegExp("id:'"+id+"'[\\s\\S]{0,400}?pitchUnit|pitchUnit\\(\\{[\\s\\S]{0,120}?id:'"+id+"'").test(src),
+  "unit '"+id+"' reaches an ending (its own finish() or the shared pitchUnit controller)");
 
 (async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
  const ctx=await b.newContext({viewport:{width:1280,height:860}});const p=await ctx.newPage();
@@ -54,26 +58,38 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src),"unit '"+id+"' 
  ok(await doneUp(),'BEAT ends with a "you did it" card');
 
  // HIGH & LOW / UP OR DOWN: answer both ways each round; one of them is right
+ // These answer by CHIP, not by striking a wall. They are now mastery-gated at 80%, so a driver that
+ // guesses 50/50 will (correctly) loop forever — it has to actually answer right. window._labExpect
+ // carries the expected answer for exactly this purpose.
  for(const [id,fn] of [['high','_lab_hi'],['updown','_lab_ud']]){
    await home();await open(id);
-   for(let i=0;i<60&&!(await doneUp());i++){
-     await p.evaluate(f=>window[f]&&window[f]('up'),fn);
-     await p.waitForTimeout(1300);
-     if(await doneUp())break;
-     await p.evaluate(f=>window[f]&&window[f]('down'),fn);
-     await p.waitForTimeout(1300);}
+   for(let i=0;i<80&&!(await doneUp());i++){
+     const want=await p.evaluate(()=>window._labExpect);
+     await p.evaluate(([f,w])=>window[f]&&window[f](w||'up'),[fn,want]);
+     await p.waitForTimeout(1150);}
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
- // HOME + FIND HOME: land on the tonic
+ // HOME + FIND HOME: land on the tonic (degree 0 in the pentatonic the lessons now use)
  for(const id of ['home','findhome']){
    await home();await open(id);
-   for(let i=0;i<40&&!(await doneUp());i++){await strikeDeg(0);await p.waitForTimeout(220);}
+   for(let i=0;i<60&&!(await doneUp());i++){await strikeDeg(0);await p.waitForTimeout(240);}
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
- // STEPS: walk 0,1,2,3
+ // the new hint-driven pitch lessons: so-mi, +la, all five
+ for(const id of ['somi','addla','five']){
+   await home();await open(id);
+   for(let i=0;i<160&&!(await doneUp());i++){
+     const d=await p.evaluate(()=>window._labHintDeg);
+     if(d==null){await p.waitForTimeout(240);continue;}
+     await strikeDeg(d);await p.waitForTimeout(260);}
+   ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
+
+ // STEPS walks the scale and wraps; follow the hint rather than assuming how far it counts.
  await home();await open('steps');
- for(let round=0;round<8&&!(await doneUp());round++){
-   for(let d=0;d<4;d++){await strikeDeg(d);await p.waitForTimeout(160);}}
+ for(let i=0;i<140&&!(await doneUp());i++){
+   const d=await p.evaluate(()=>window._labHintDeg);
+   if(d==null){await p.waitForTimeout(220);continue;}
+   await strikeDeg(d);await p.waitForTimeout(230);}
  ok(await doneUp(),'STEPS ends with a "you did it" card');
 
  // ECHO: the game names its own next target (window._labHintDeg); follow it
