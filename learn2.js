@@ -89,10 +89,17 @@ const LANG={
     u_high:'High and low', u_highSub:'where a sound sits',
     u_home:'Home note', u_homeSub:'the note that feels finished',
     u_steps:'Steps and skips', u_stepsSub:'how a tune travels',
-    u_somi:'So and mi', u_somiSub:'the two notes every child already sings',
+    u_somi:'Two close notes', u_somiSub:'a small step down — how most tunes move',
     u_addla:'Add la', u_addlaSub:'three notes to play with',
     u_five:'All five', u_fiveSub:'do re mi so la — no wrong notes',
     u_review:'Come back', u_reviewSub:'a quick look at what you learned before',
+    u_sayplay:'Say it, then play it', u_sayplaySub:'the oldest trick in music, on every continent',
+    sp_hear:'Listen. DUM is the low drum. TEK is the high one.',
+    sp_say:'Say it out loud with me, then tap it.',
+    sp_name:'Saying a rhythm before you play it is how drummers learn in India, Japan, Korea and Turkey. It works because your mouth already knows the shape.',
+    // Borrowed honestly from the Arabic/Turkish pair, and they follow the acoustic logic Hughes described:
+    // voiced d + back vowel for the low drum, voiceless t + front vowel for the high one.
+    sp_low:'DUM', sp_high:'TEK',
     u_loud:'Loud and soft', u_loudSub:'how big a sound is',
     u_major:'Bright and dark', u_majorSub:'the note that changes the feeling',
     g_echo:'Echo', g_echoSub:'hear a phrase, play it back',
@@ -112,9 +119,9 @@ const LANG={
     home_do:'Play around, then finish on the glowing wall.',
     home_name:'That resting note is HOME. In solfège it is called DO.',
     // so and mi
-    somi_hear:'Two notes. This is the tune children sing in every playground.',
+    somi_hear:'Two notes, close together. One a little lower than the other.',
     somi_do:'Play back the note that glows.',
-    somi_name:'The high one is SO. The low one is MI.',
+    somi_name:'The higher one is SO. The lower one is MI. Small steps like this are how most tunes move.',
     // add la
     addla_hear:'A new note, above them both.',
     addla_do:'Listen to the little tune, then play it back.',
@@ -281,6 +288,7 @@ function icoTwo(){   return _sv('<circle cx="8" cy="8" r="2.6"/><circle cx="16" 
 function icoThree(){ return _sv('<circle cx="5" cy="16" r="2.2"/><circle cx="12" cy="9" r="2.2"/><circle cx="19" cy="13" r="2.2"/>');}
 function icoFive(){  return _sv('<path d="M3 18h2v-3h2v-4h2V8h2v3h2v4h2v3h2"/>');}                              // five steps
 function icoReview(){return _sv('<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/>');}                // come round again                                          // a phrase, answered
+function icoMouth(){ return _sv('<path d="M4 10c3-4 13-4 16 0"/><path d="M6 13h12"/><path d="M8.5 17h7"/>');}      // say it out loud
 
 // ---------------------------------------------------------------- the dock
 const ov=$id('learnOverlay');
@@ -377,13 +385,25 @@ function finish(id,nameLine){
 // (Kodaly, Orff, Gordon, Dalcroze, Suzuki), which makes it a fact about the field rather than a copy
 // of anyone's expression:
 //   beat and body  ->  high/low  ->  so-mi  ->  +la  ->  +do (home)  ->  +re (all five)  ->  steps/skips
-// so-mi first because the falling minor third is the universal entry point in every sequence found and
-// is the chant children already sing in the playground without being taught.
+// so-mi comes first because it is where the published WESTERN sequences start, and because it has the
+// two properties that ARE cross-culturally evidenced: a narrow range and a small falling step.
+// HONESTY NOTE, because the first version of this file got it wrong: the popular claim that the falling
+// minor third is "the natural interval of childhood all over the world" is NOT established. It traces to
+// a Bernstein anecdote; the best measurement (Day-O'Connell) puts the interjection at 2.72 semitones --
+// smaller than a minor third -- in Southern British English speakers ONLY, and its own author writes that
+// "neither linguists nor musicologists have forwarded any concrete and objective evidence relevant to
+// cross-cultural comparisons." Ethnomusicology has rejected this class of claim since Brailoiu.
+// What IS evidenced across 304 recordings from 9 regions (Savage et al. 2015): small intervals,
+// descending or arched contour, few scale degrees, short phrases. Children's songs specifically show a
+// NARROWER range and FEWER scale degrees than adult songs. So the lesson keeps so-mi as a convenient
+// Western starting point and claims only what the evidence supports.
 // Degrees in major pentatonic: 0=do 1=re 2=mi 3=so 4=la
 const DEG={do:0,re:1,mi:2,so:3,la:4};
 const UNITS=[
   {id:'pulse', title:'u_pulse', sub:'u_pulseSub', tier:'lesson', run:pulseUnit,
    slime:'grn',   tint:'#9fe6cf', ico:icoBeat},
+  {id:'sayplay', title:'u_sayplay', sub:'u_sayplaySub', tier:'lesson', run:sayPlayUnit,
+   slime:'bo',    tint:'#ffd3a8', ico:icoMouth},
   {id:'high', title:'u_high', sub:'u_highSub', tier:'lesson', run:highUnit,
    slime:'blue1', tint:'#a6c8ff', ico:icoUpDown, use:[DEG.do,DEG.la]},
   {id:'somi', title:'u_somi', sub:'u_somiSub', tier:'lesson', run:somiUnit,
@@ -479,6 +499,67 @@ function pulseUnit(){
   };
 }
 
+// ---------- SAY IT, THEN PLAY IT ----------------------------------------------------------------
+// The one practice that genuinely showed up on every continent I looked at. Vocalise the rhythm BEFORE
+// you play it:
+//   India      konnakol / solkattu (ta ka di mi), and tabla bols (dha dhin na tin ta ge)
+//   Japan      kuchi shoga (don doko tsu ka) -- and rests get their own syllable there
+//   Korea      gu-eum -- students sing the drum patterns before touching the drum
+//   Turkey/Arab world   usul, dum / tek, struck on the knees while spoken
+// Taiko teaching puts it in five words: "if you can say it, you can play it." The tabla sequence is
+// explicitly three stages -- syllables only, drums only, then both together -- and that is exactly the
+// loop below.
+//
+// WHY THESE TWO SYLLABLES. Hughes (2000) showed these systems are not arbitrary: they are
+// "acoustic-iconic". Vowels track pitch by second formant, so the series i-e-a-o-u runs high to low;
+// voiced stops (d, g, b) mark low sounds and voiceless ones (t, k) mark high. DUM and TEK are the real
+// Arabic/Turkish pair and they follow that logic exactly -- voiced d + back vowel for the low drum,
+// voiceless t + front vowel for the high one. A five-year-old hears that DUM is lower than TEK without
+// being told, which is the whole point.
+// These are borrowed honestly, named as what they are, and no tradition is claimed as ours.
+const SP_PATTERNS=[
+  [1,0,1,0],        // DUM . TEK .
+  [1,0,0,1],        // DUM . . DUM
+  [1,1,0,1],
+  [1,0,1,1],
+  [1,1,0,0]
+];
+function sayPlayUnit(){
+  let pat=SP_PATTERNS[0], idx=0, stage='listen';
+  const LOW=0, HIGH=2;                       // two walls, far enough apart to hear as low vs high
+  function sylRow(active){
+    return '<div class="spRow">'+pat.map((v,i)=>
+      '<b class="spSyl'+(v?' lo':' hi')+(i===active?' on':'')+'">'+(v?t('sp_low'):t('sp_high'))+'</b>'
+    ).join('')+'</div>';}
+  const u=pitchUnit({id:'sayplay',title:'u_sayplay',hear:'sp_hear',doIt:'sp_say',name:'sp_name',
+    use:[LOW,HIGH],need:10,labels:false,
+    chips:()=>sylRow(stage==='play'?idx:-1)+
+      '<div class="labChips"><button class="labChip" data-a2="sp_again">'+t('listen')+'</button></div>',
+    ask(api){
+      pat=SP_PATTERNS[(Math.random()*SP_PATTERNS.length)|0];idx=0;stage='listen';
+      // STAGE ONE: the app says it out loud AND plays it, syllable by syllable, lighting each one.
+      pat.forEach((v,i)=>later(()=>{
+        idx=i;stage='listen';
+        speech(v?t('sp_low'):t('sp_high'),true);   // said aloud — the vocalising is the lesson
+        sing(v?LOW:HIGH,90,.4);
+        if(_render)_render();
+      },i*620));
+      // STAGE TWO: the child's turn
+      later(()=>{stage='play';idx=0;hint(pat[0]?LOW:HIGH);if(_render)_render();},pat.length*620+320);
+    }});
+  window._lab_spAgain=()=>{pat.forEach((v,i)=>later(()=>{speech(v?t('sp_low'):t('sp_high'),true);sing(v?LOW:HIGH,90,.4);},i*620));};
+  LAB.onHit((deg)=>{
+    if(stage!=='play')return;
+    const len=scaleObj().c.length,d=((deg%len)+len)%len;
+    if(d!==LOW&&d!==HIGH)return;
+    const want=pat[idx]?LOW:HIGH;
+    if(d===want){idx++;
+      if(idx>=pat.length){u.answer(true,d);}
+      else{hint(pat[idx]?LOW:HIGH);if(_render)_render();}}
+    else{idx=0;u.answer(false,d);}
+  });
+}
+
 // ---------- 2. HIGH & LOW — pitch exploration, the first thing Kodaly Level I does ----------
 // Two notes as far apart as this scale goes, so the contrast is unmissable. No naming yet: Gordon puts
 // Verbal Association at level 2 of 8, AFTER aural/oral. The child hears and answers before anything
@@ -498,10 +579,10 @@ function highUnit(){
   window._lab_hiReplay=()=>{note(degCents(first),90,.6);later(()=>note(degCents(first===lo?hi:lo),90,.6),780);};
 }
 
-// ---------- 3. SO AND MI — the falling minor third ----------
-// The universal entry point. Kodaly Grade 1 opens on so-mi; Orff's singing progression opens on
-// "falling minor thirds". It is the two-note chant children already sing at each other in playgrounds
-// in many cultures, which is why every sequence starts there: it is already in the ear.
+// ---------- 3. TWO CLOSE NOTES (so and mi) ----------
+// Kodaly Grade 1 opens on so-mi and Orff's singing progression opens on falling thirds, so this is the
+// standard Western entry point. What is claimed to the CHILD, though, is only the evidenced part: two
+// notes close together, the second a little lower. See the honesty note above the UNITS table.
 function somiUnit(){
   let target=DEG.so;
   const u=pitchUnit({id:'somi',title:'u_somi',hear:'somi_hear',doIt:'somi_do',name:'somi_name',
@@ -790,6 +871,7 @@ if(ov)ov.addEventListener('click',(e)=>{
   if(a==='hi_dn'&&window._lab_hi)return window._lab_hi('down');
   if(a==='hi_replay'&&window._lab_hiReplay)return window._lab_hiReplay();
   if(a==='st_demo'&&window._lab_stepsDemo)return window._lab_stepsDemo();
+  if(a==='sp_again'&&window._lab_spAgain)return window._lab_spAgain();
   if(a==='ec_replay'&&window._lab_ecReplay)return window._lab_ecReplay();
   if(a==='ec_next'&&window._lab_ecNext)return window._lab_ecNext();
   if(a==='ud_up'&&window._lab_ud)return window._lab_ud('up');

@@ -76,12 +76,16 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)||new RegExp("id
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
  // the new hint-driven pitch lessons: so-mi, +la, all five
- for(const id of ['somi','addla','five']){
+ // sayplay plays a pattern then wants it back, one syllable at a time, following the hint.
+ // sayplay is the long one: each rep plays a whole four-syllable pattern AT you before asking for it
+ // back, so it needs a bigger budget than a single-note lesson. That is the repetition, not a stall.
+ for(const id of ['somi','addla','five','sayplay']){
    await home();await open(id);
-   for(let i=0;i<160&&!(await doneUp());i++){
+   const budget=(id==='sayplay')?420:160;
+   for(let i=0;i<budget&&!(await doneUp());i++){
      const d=await p.evaluate(()=>window._labHintDeg);
      if(d==null){await p.waitForTimeout(240);continue;}
-     await strikeDeg(d);await p.waitForTimeout(260);}
+     await strikeDeg(d);await p.waitForTimeout(240);}
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
  // STEPS walks the scale and wraps; follow the hint rather than assuming how far it counts.

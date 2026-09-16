@@ -99,6 +99,46 @@ const src=fs.readFileSync('learn2.js','utf8');
    +(personPraise.length?': "'+personPraise.join('", "')+'"':''));
  ok(praise.every(x=>x&&x.length>0),'every feedback slot has words in it');
 
+ // ---- 7. SAY IT BEFORE YOU PLAY IT — the one practice found on every continent ----
+ const say=await p.evaluate(()=>{
+   const U=window.LEARN2.UNITS.find(u=>u.id==='sayplay');
+   const L=window.LEARN2.LANG.en;
+   return {exists:!!U,first:window.LEARN2.UNITS.filter(u=>u.tier==='lesson').indexOf(U),
+           low:L.sp_low,high:L.sp_high};});
+ ok(say.exists,'there is a say-it-then-play-it lesson — konnakol, bols, kuchi shoga, gu-eum and usul all do this');
+ ok(say.first>=0&&say.first<=2,'and it comes early, where the oral traditions put it (position '+say.first+')');
+ // Hughes 2000: vowels track pitch by second formant (i-e-a-o-u runs high to low), voiced stops mark low
+ // sounds and voiceless ones mark high. The syllables must obey that or they are just noises.
+ ok(/^[dbg]/i.test(say.low||''),'the LOW syllable opens on a voiced stop, as every one of those systems does ("'+say.low+'")');
+ ok(/^[tkp]/i.test(say.high||''),'the HIGH syllable opens on a voiceless stop ("'+say.high+'")');
+ const BACK=/[ou]/i, FRONT=/[ie]/i;
+ ok(BACK.test(say.low||''),'the low syllable carries a back vowel (lower second formant)');
+ ok(FRONT.test(say.high||''),'the high syllable carries a front vowel (higher second formant)');
+
+ // ---- 8. claims we must NOT make ----
+ // The falling minor third being "the natural interval of childhood all over the world" traces to a
+ // Bernstein anecdote. Best measurement: 2.72 semitones, Southern British English speakers only, and its
+ // own author says no cross-cultural evidence exists. This test exists because we shipped that claim.
+ // Scan the CHILD-FACING COPY only, not the source. The source deliberately contains these phrases
+ // inside the comment that explains why they are NOT supported — scanning it flagged the debunking as
+ // the offence. What matters is what a child is told, which is LANG.
+ const txt=(await p.evaluate(()=>JSON.stringify(window.LEARN2.LANG))).toLowerCase();
+ const FOLKLORE=[
+   ['every child already sings','claims a specific interval is sung by every child'],
+   ['in every playground','claims a playground universal'],
+   ['all over the world','claims a musical universal that is not established'],
+   ['natural interval of childhood','repeats the uncited Kodaly-site claim']];
+ const claimed=FOLKLORE.filter(([needle])=>txt.includes(needle));
+ ok(claimed.length===0,'no unsupported universality claim in the copy'
+   +(claimed.length?': '+claimed.map(x=>'"'+x[0]+'" — '+x[1]).join('; '):''));
+
+ // ---- 9. no extrinsic-reward mechanics ----
+ // Self-determination theory in music (Evans 2015) advises avoiding gold stars and monetary rewards;
+ // Faulkner et al. found NOT ONE child whose parents used monetary rewards continued past a year.
+ const rewards=['streak','badge','gold star','coins','gems','lives','hearts'];
+ const found=rewards.filter(w=>txt.includes(w));
+ ok(found.length===0,'no streaks, badges or point economies'+(found.length?': '+found.join(', '):''));
+
  ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
  await ctx.close();await b.close();
  console.log('\n'+(FAIL.length?FAIL.length+' FAILURE(S)':'the curriculum matches the published sequences'));

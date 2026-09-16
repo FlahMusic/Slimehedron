@@ -278,7 +278,7 @@ header #shareApp{position:static;top:auto;right:auto;left:auto;z-index:auto} /* 
    IN the header row, play carries them out of flow, and that asymmetry slid the transport 32px sideways
    between the two modes. Reserving the same room on both sides puts play/record at the same x in every
    mode - which is the one layout rule every DAW surveyed actually enforces. */
-.mode-play header{padding-right:160px}
+.mode-play header{padding-right:184px}
 .mode-play #topRight #shareApp,.mode-play #topRight #clearBtn{position:static;top:auto;right:auto;left:auto;margin:0}
 /* share sits on the splash now, where there is room for the words on any screen */
 /* the computer-keyboard map: white keys on the home row, black keys above, Z/X octave */
@@ -328,7 +328,9 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 .psBtn.bandBtn svg{width:46px;height:38px;position:relative;z-index:1;display:block}
 .psBtn .psNum{position:absolute;right:7px;bottom:5px;font-weight:900;font-size:18px;z-index:1;text-shadow:0 1px 2px rgba(255,255,255,.7)}
 .psItem{display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
-.psLbl{font-size:18px;font-weight:800;color:#5a4f78;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 2px rgba(255,255,255,.9);letter-spacing:.2px;white-space:nowrap;pointer-events:none;display:flex;flex-direction:column;align-items:center;line-height:1.15} /* big & readable — text is the anchor */
+/* ONE line, not two. The label used to stack a number ("Sound 3") over the real name ("saw"); the name is
+   the only half that meant anything to either audience, so the stack is gone and the name got the size. */
+.psLbl{font-size:18px;font-weight:800;color:#5a4f78;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 2px rgba(255,255,255,.9);letter-spacing:.2px;white-space:nowrap;pointer-events:none;text-align:center;line-height:1.15;text-transform:lowercase}
 .psSub{font-size:16px;font-weight:700;font-style:normal;color:#7a6ea0;text-transform:lowercase} /* the real waveform/genre name — clearly readable now (~3x the old tiny) */
 .psCol{gap:14px}
 /* SHORT screens: 5 big stacked buttons would overflow, so scale them down to fit vertically */
@@ -539,6 +541,16 @@ body.lab-on main{padding:64px 424px 126px 16px!important}
 .labDone .labChips{justify-content:center}
 @keyframes ldPop{0%{transform:scale(.4) rotate(-12deg);opacity:0}60%{transform:scale(1.08) rotate(3deg);opacity:1}100%{transform:scale(1) rotate(0)}}
 @media (prefers-reduced-motion:reduce){.labDone .ldArt{animation:none}}
+/* SAY IT, THEN PLAY IT — the syllable strip. Low sounds sit low and dark, high ones high and light, so
+   the row is a picture of the rhythm as well as a set of words. (Acoustic-iconic: the syllables already
+   encode pitch in their vowels; this just makes it visible too.) */
+.spRow{display:flex;gap:6px;margin:2px 0 10px;justify-content:center;flex-wrap:wrap}
+.spSyl{font:800 15px system-ui,sans-serif;letter-spacing:.6px;padding:8px 11px;border-radius:10px;
+  border:2px solid transparent;transition:.12s;min-width:52px;text-align:center}
+.spSyl.lo{background:rgba(90,79,120,.16);color:#3d3560;align-self:flex-end;padding-top:14px}
+.spSyl.hi{background:rgba(159,230,207,.3);color:#2f6b4f;align-self:flex-start;padding-bottom:14px}
+.spSyl.on{border-color:var(--accent);transform:scale(1.12);box-shadow:0 3px 10px rgba(120,110,160,.3)}
+@media (prefers-reduced-motion:reduce){.spSyl{transition:none}.spSyl.on{transform:none}}
 .labDots{display:flex;gap:5px;margin:0 0 8px}
 .labDots i{width:9px;height:9px;border-radius:50%;background:rgba(150,135,190,.3);font-style:normal}
 .labDots i.got{background:var(--accent)}
@@ -800,6 +812,9 @@ canvas{background:none;border:0;box-shadow:none;border-radius:0;max-width:100%;m
    left = wheelLeft + wheelWidth/2 - buttonHalf, tuned via clamp to match the wheel's own clamp at every size. */
 #chordBtn{position:static;transform:none;z-index:32;font:800 14px system-ui,sans-serif;min-height:32px;color:#fff;background:linear-gradient(135deg,#c9b3f0,#b388f0);border:1.5px solid #a992e0;border-radius:11px;padding:6px 16px;cursor:pointer;box-shadow:var(--shadow);letter-spacing:.4px;transition:filter .15s} /* lilac so it stands out (was white) */
 #chordBtn:hover{filter:brightness(1.06)}
+/* glyph + word: the picture is for the child, the word is for the adult. Neither alone serves both. */
+#chordBtn,#clearBtn{display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.bIco{flex:none}
 #chordBtn.on{background:#c9b3f0;color:#fff;border-color:#b79fe8}
 @media (max-width:820px){#chordBtn{font-size:14px;padding:6px 14px}} /* position handled by the mobile top-band block below */
 /* lime→lilac candy panel — playful, matches the meadow palette instead of a plain white box */
@@ -851,6 +866,12 @@ aside::-webkit-scrollbar-thumb{background:rgba(180,170,210,.5);border-radius:8px
 .card.collapsed h2::after{content:"▸";transform:none} /* collapsed = a clear right-pointing arrow (click to open) */
 .card.collapsed>*:not(h2){display:none!important}
 .card.collapsed{background:rgba(255,255,255,.42)} /* a folded tab reads as a quiet pill */
+/* A row marked .dupStrip is ALSO on the studio transport strip. Showing one parameter in two places at
+   once is how a user comes to believe there are two parameters — so in studio the strip wins and the
+   panel copy steps aside. Play mode has no strip, so there it stays: it is the only way to pick a key.
+   (They stay wired either way; this is about what is on screen, not what exists.) */
+.mode-studio .row.dupStrip{display:none}
+.row[hidden]{display:none!important}
 .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:9px 0}
 .row label{font-size:13px;font-weight:600}
 .row .val{font-size:12px;color:var(--ink-soft);font-weight:600;min-width:46px;text-align:right}
@@ -1038,6 +1059,10 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
      the button captions — at 1180 the chords button was landing on top of clear. The controls all stay. */
   #tempoDial .td-ico{display:none}          /* the knob itself still shows which way is faster */
   .btn.big[data-l]::after{display:none}     /* "record" / "drums" captions */
+  /* chords + clear keep their GLYPH and drop their word — the same trade GarageBand makes on its control
+     bar, and the reason both buttons got a glyph in the first place. */
+  #chordBtn span,#clearBtn span{display:none}
+  #chordBtn,#clearBtn{padding-left:11px;padding-right:11px;gap:0}
 }
 /* 375px (iPhone SE / mini): the width budget is 25px short. Trimmed off the two faders and the gaps -
    measured, not guessed. THIS BLOCK MUST STAY BELOW the 820px one: same specificity, later wins. */
@@ -1170,7 +1195,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   </div>
   <span class="spacer"></span>
   <button class="btn" id="modePill" title="switch mode" hidden>play</button>
-  <button class="btn warn" id="clearBtn" title="clear all balls &amp; liquid">clear</button>
+  <button class="btn warn" id="clearBtn" title="clear all balls &amp; liquid"><svg class="bIco" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 7h14M9 7V5h6v2M7 7l1 13h8l1-13"/></svg><span>clear</span></button>
   <button class="btn" id="resetBtn" title="start fresh">↺</button>
 </header>
 <!-- STUDIO TRANSPORT STRIP: the four things you actually reach for constantly, never behind a menu.
@@ -1285,7 +1310,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
       <div id="chordProg"><i id="chordProgI"></i></div>
     </div>
     <div id="cofWheel" hidden><svg viewBox="0 0 132 132" id="cofSvg" aria-label="circle of fifths — current key"></svg></div>
-    <button id="chordBtn" hidden title="build a custom chord progression">chords</button>
+    <button id="chordBtn" hidden title="build a custom chord progression"><svg class="bIco" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="18" r="2.6"/><circle cx="17" cy="15.5" r="2.6"/><path d="M9.6 18V6.5l10-2v11"/></svg><span>chords</span></button>
     <!-- CUSTOM CHORD PROGRESSION editor — translucent panel that sits OVER the wheel/pill to save space -->
     <div id="chordPanel" hidden>
       <div class="cpHead"><span class="cpTitle">chord progression</span>
@@ -1323,7 +1348,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </div>
     <div class="card">
       <h2>Timing</h2>
-      <div class="row"><label title="how many notes fit in each beat">subdivision</label>
+      <div class="row"><label title="how the bar is divided — the step size the sequencer moves on">grid</label>
         <div class="seg" id="divSeg">
           <button data-d="0.25">1/4</button>
           <button data-d="0.125" class="active">1/8</button>
@@ -1339,9 +1364,9 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 
     <div class="card">
       <h2>Key &amp; Scale</h2>
-      <div class="row"><label>root</label><select id="root"></select></div>
-      <div class="row"><label>scale</label><select id="scale"></select></div>
-      <div class="row"><label>octave span</label><input type="range" id="octs" min="1" max="4" value="2"><span class="val" id="octsV">2</span></div>
+      <div class="row dupStrip"><label>key</label><select id="root"></select></div>
+      <div class="row dupStrip"><label>scale</label><select id="scale"></select></div>
+      <div class="row"><label title="how many octaves the tank spans">range</label><input type="range" id="octs" min="1" max="4" value="2"><span class="val" id="octsV">2</span></div>
       <div class="note" id="scaleNote"></div>
     </div>
 
@@ -1383,8 +1408,8 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     </div>
 
     <div class="card">
-      <h2>Mixer <span class="pwr on" id="fxPwr" title="delay fx on/off">!</span></h2>
-      <div class="row"><label>volume</label><input type="range" id="vol" min="0" max="100" value="55"><span class="val" id="volV">55</span></div>
+      <h2>Mixer <span class="pwr on" id="fxPwr" title="delay — bypass on / off" aria-label="delay bypass">⏻</span></h2>
+      <div class="row" hidden><label>volume</label><input type="range" id="vol" min="0" max="100" value="55"><span class="val" id="volV">55</span></div><!-- the master fader lives on the transport bar in every mode now; this mirror stays wired but is not a second control to hunt for -->
       
       <div class="row"><label title="echoes that repeat in time with the tempo">delay</label><input type="range" id="dly" min="0" max="100" value="0"><span class="val" id="dlyV">0</span></div>
       <hr>
@@ -1867,7 +1892,7 @@ function drumSPB(){return drumTriplet()?3:4;}             // steps per beat: tri
 function drumBar(){return drumTriplet()?12:SIGS[drumSig].n;}
 function drumStepDur(){let d=60/S.bpm/drumSPB();if(drumFeel==='2')d*=0.5;else if(drumFeel==='h')d*=2;return d;}
 // ---------- band: gameboy bass + snes pads, degree-based so ANY scale works (even microtonal) ----------
-let bandOn=false,progIdx=0;
+let bandOn=false,progIdx=0,_following=false; // _following: is the chord picker listening to the melody, or on the canned progression
 const PROGS=[[0,4,5,3],[0,5,3,4],[5,3,0,4],[0,3,4,3]]; // I-V-vi-IV, 50s doo-wop, axis, plagal rock — fallback until the melody has spoken
 // ============================================================================
 //  CUSTOM CHORD PROGRESSION MODE — user-built progressions that OVERRIDE the auto
@@ -1953,9 +1978,16 @@ function pickChord(barI){const n=scaleObj().c.length;
   // four chords, which is exactly what "it plays one thing forever" sounds like.
   // Now: the bar is lower, so the melody-following roulette gets the benefit of the doubt; and the
   // fallback itself rotates every 8 bars, so even a silent tank walks through different changes.
-  if(total<1.2){
+  // HYSTERESIS, not a bare threshold. A single number here makes the engine FLICKER: studio idles right
+  // around the line, so some bars followed the melody and some played the canned progression, and
+  // alternating two strategies mid-song sounds worse than committing to either. So: it takes 1.2 to
+  // start following, but only drops back when the tank has gone properly quiet (0.4). Same idea as a
+  // noise gate having separate open and close thresholds.
+  if(_following ? total<0.4 : total<1.2){
+    _following=false;
     if(barI>0&&barI%8===0)progIdx=(progIdx+1+Math.floor(Math.random()*(PROGS.length-1)))%PROGS.length;
     const pr=PROGS[progIdx];return pr[barI%pr.length]%n;}
+  _following=true;
   const sc=[];for(let r=0;r<n;r++){
     let s=noteHisto[r]*1.6+noteHisto[(r+2)%n]+noteHisto[(r+4)%n]+0.05; // how much of the recent melody lives inside this chord
     if(r===curRootDeg)s*=0.4;else if(r===_prevRootDeg)s*=0.7;          // keep it moving — no camping, no ping-pong
@@ -3573,7 +3605,7 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
   const DIE='<rect x="4" y="4" width="16" height="16" rx="3.4" fill="none" stroke="'+'STK'+'" stroke-width="2"/><g fill="STK" stroke="none"><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="8.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="8.5" cy="15.5" r="1.5"/><circle cx="15.5" cy="15.5" r="1.5"/></g>';
   const wl=$("psWaves");if(wl)wl.innerHTML=WV.map(([w,c1,c2,st,d,nm],i)=>{
     const icon=(d==='DICE')?`<svg viewBox="0 0 24 24">${DIE.replace(/STK/g,st)}</svg>`:`<svg viewBox="0 0 24 24" fill="none" stroke="${st}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
-    return `<div class="psItem"><button class="psBtn${w==='triangle'?' on':''}" data-w="${w}" title="Sound ${i+1} · ${nm}" style="background:linear-gradient(160deg,${c1},${c2})">${icon}</button><span class="psLbl">Sound ${i+1}<i class="psSub">${nm}</i></span></div>`;}).join('');
+    return `<div class="psItem"><button class="psBtn${w==='triangle'?' on':''}" data-w="${w}" title="${nm} wave" style="background:linear-gradient(160deg,${c1},${c2})">${icon}</button><span class="psLbl">${nm}</span></div>`;}).join('');
   wl&&wl.addEventListener('pointerdown',e=>{const b=e.target.closest('.psBtn');if(!b)return;
     wl.querySelectorAll('.psBtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');
     const wb=$("waveSeg").querySelector(`button[data-w="${b.dataset.w}"]`);if(wb)wb.click();
@@ -3610,7 +3642,7 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
          '" rx="1.7" fill="'+col+'" opacity="'+(h>.6?'1':'.55')+'"/>';}
     return d+'</svg>';};
   const dl=$("psDrums");if(dl)dl.innerHTML=DK.map(([k,c1,c2,nc,n,nm])=>
-    `<div class="psItem"><button class="psBtn bandBtn" data-kit="${k}" title="Rhythm ${n} · ${nm}" style="background:linear-gradient(160deg,${c1},${c2})">${rIcon(k,nc)}</button><span class="psLbl">Rhythm ${n}<i class="psSub">${nm}</i></span></div>`).join('');
+    `<div class="psItem"><button class="psBtn bandBtn" data-kit="${k}" title="${nm} beat" style="background:linear-gradient(160deg,${c1},${c2})">${rIcon(k,nc)}</button><span class="psLbl">${nm}</span></div>`).join('');
   dl&&dl.addEventListener('pointerdown',e=>{const b=e.target.closest('.psBtn');if(!b)return;
     initAudio();if(AC&&AC.state==='suspended')AC.resume();
     const wasOn=b.classList.contains('on');
@@ -5010,7 +5042,7 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
   bar.appendChild(grp('tempo',[grab('#bpmNum'),grab('#bpmTop'),tap],'tempo in beats per minute'));
   bar.appendChild(sep());
   // METER + STEP — a DAW never hides the time signature.
-  bar.appendChild(grp('meter',[grab('#drumSig'),grab('#divSel')],'time signature and step size'));
+  bar.appendChild(grp('time sig',[grab('#drumSig'),grab('#divSel')],'time signature and grid (step size)'));
   bar.appendChild(sep());
   // KEY — the app is scale-locked, so the key is the single biggest musical decision on screen.
   bar.appendChild(grp('key',[grab('#keyTop'),grab('#scaleTop')],'key and scale'));
