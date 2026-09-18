@@ -69,87 +69,133 @@ const LANG={
   en:{
     _name:'English', _dir:'ltr', _voice:'en-US',
     back:'back', home:'lessons', next:'next', again:'again', listen:'listen', imReady:"I'm ready",
-    tierLessons:'Learn', tierPractice:'Practice', tierGames:'Play games',
-    tierLessonsSub:'one idea at a time, on the real instrument',
-    tierPracticeSub:'comes back the day after you learn something — that is when it sticks',
-    tierGamesSub:'echo games — listen, then answer',
-    progressOf:'{done} of {total} explored',
+    tierLessons:'Lessons', tierPractice:'Practice', tierGames:'Games',
+    progressOf:'{done} of {total} done',
     // encouragement — process, never talent, and never a scolding
     // PROCESS PRAISE ONLY. Kamins & Dweck (Dev. Psych. 1999) tested five-year-olds and found that
     // PERSON-directed feedback — even positive person praise like "you're so musical" — produced more
     // helpless responses, lower persistence and more negative affect than process feedback, because it
     // makes self-worth contingent on the last result. So every line here describes what the child DID.
     // Nothing in this file may ever tell a child what they ARE.
-    yes:['you matched it','you heard that one','that is the note you wanted','you found it'],
-    notYet:['that was a different note — here it is again','listen once more, then try','not that one yet — have another go'],
-    onceMore:'good work. let us go round once more',
-    noRush:'no rush. come back whenever you like.',
+    yes:['got it','that is the one','you found it','yes'],
+    notYet:['not that one. here it is again','listen again, then try','close. one more go'],
+    onceMore:'one more round',
+    noRush:'take your time',
     // units
-    u_pulse:'Beat', u_pulseSub:'the steady pulse under everything',
-    u_high:'High and low', u_highSub:'where a sound sits',
-    u_home:'Home note', u_homeSub:'the note that feels finished',
-    u_steps:'Steps and skips', u_stepsSub:'how a tune travels',
-    u_somi:'Two close notes', u_somiSub:'a small step down — how most tunes move',
-    u_addla:'Add la', u_addlaSub:'three notes to play with',
-    u_five:'All five', u_fiveSub:'do re mi so la — no wrong notes',
-    u_review:'Come back', u_reviewSub:'a quick look at what you learned before',
-    u_sayplay:'Say it, then play it', u_sayplaySub:'the oldest trick in music, on every continent',
-    sp_hear:'Listen. DUM is the low drum. TEK is the high one.',
-    sp_say:'Say it out loud with me, then tap it.',
-    sp_name:'Saying a rhythm before you play it is how drummers learn in India, Japan, Korea and Turkey. It works because your mouth already knows the shape.',
-    // Borrowed honestly from the Arabic/Turkish pair, and they follow the acoustic logic Hughes described:
-    // voiced d + back vowel for the low drum, voiceless t + front vowel for the high one.
-    sp_low:'DUM', sp_high:'TEK',
-    u_loud:'Loud and soft', u_loudSub:'how big a sound is',
-    u_major:'Bright and dark', u_majorSub:'the note that changes the feeling',
-    g_echo:'Echo', g_echoSub:'hear a phrase, play it back',
-    g_updown:'Up or down', g_updownSub:'which way did it move?',
-    g_findhome:'Find home', g_findhomeSub:'land on the note that rests',
+    u_pulse:'Beat', u_pulseSub:'tap in time',
+    u_high:'High and low', u_highSub:'which note is higher',
+    u_home:'Home note', u_homeSub:'the note a tune ends on',
+    u_steps:'Steps and skips', u_stepsSub:'next door, or jump',
+    u_somi:'So and mi', u_somiSub:'two notes, close together',
+    u_addla:'Add la', u_addlaSub:'so, mi, la',
+    u_five:'All five', u_fiveSub:'do re mi so la',
+    u_review:'Review', u_reviewSub:'notes from other days',
+    u_sayplay:'Say it first', u_sayplaySub:'say the rhythm, then play it',
+    sp_hear:'BOOM is the low drum. TAP is the high one.',
+    sp_say:'Say it out loud, then tap it.',
+    sp_name:'Say a rhythm before you play it. It makes it easier.',
+    // The METHOD is borrowed (konnakol, bols, kuchi shoga, gu-eum, usul all do this); the SYLLABLES are
+    // English so the child is saying words they already own. They still follow Hughes 2000's acoustic
+    // logic: voiced stop + back vowel for the low drum (B + oo), voiceless stop + front vowel for the
+    // high one (T + the front vowel in "tap"), so the sound of the word matches the sound of the drum.
+    sp_low:'BOOM', sp_high:'TAP',
+    u_loud:'Loud and soft', u_loudSub:'how hard you hit it',
+    u_major:'Bright and dark', u_majorSub:'one note changes the mood',
+    g_echo:'Echo', g_echoSub:'play back what you hear',
+    g_updown:'Up or down', g_updownSub:'which way did it go',
+    g_findhome:'Find home', g_findhomeSub:'find do',
+    // ---- the four lesson blocks, in order ----
+    blockA:'First notes', blockB:'More notes', blockC:'Minor keys', blockD:'Modes',
+    bright:'bright', dark:'dark',
+    u_sadfive:'Sad five', u_sadfiveSub:'same notes, new home',
+    sad_hear:'The same five notes. A different one is home.',
+    sad_do:'Find the note you hear.',
+    sad_name:'Same notes, new home. That is the MINOR PENTATONIC.',
+    u_movehome:'Move the home', u_movehomeSub:'so is home now',
+    mv_hear:'Same five notes. Now SO is home.',
+    mv_do:'Play, then end on the glowing wall.',
+    mv_name:'Move the home note and the mood moves with it.',
+    u_addfa:'Add fa', u_addfaSub:'six notes now',
+    fa_hear:'A new note between mi and so.',
+    fa_do:'Find the note you hear.',
+    fa_name:'That one is FA. Six notes: DO RE MI FA SO LA.',
+    u_addti:'Add ti', u_addtiSub:'the major scale',
+    ti_hear:'One more note, just under do.',
+    ti_do:'Find the note you hear.',
+    ti_name:'That one is TI. Seven notes. This is the MAJOR SCALE.',
+    u_brightdark:'Bright and dark', u_brightdarkSub:'major and minor',
+    bd_hear:'Three notes. Only the middle one moves.',
+    bd_do:'Bright, or dark?',
+    bd_name:'Middle note high is MAJOR. Middle note low is MINOR.',
+    u_minorscale:'Minor scale', u_minorscaleSub:'the dark seven',
+    mn_hear:'Seven notes, starting from la.',
+    mn_do:'Find the note you hear.',
+    mn_name:'This is the MINOR SCALE.',
+    u_harmminor:'Harmonic minor', u_harmminorSub:'lift the last note',
+    hm_hear:'Minor, with the last note lifted.',
+    hm_do:'Find the note you hear.',
+    hm_name:'Lift the seventh and you get HARMONIC MINOR.',
+    u_melminor:'Melodic minor', u_melminorSub:'two notes lift',
+    ml_hear:'Minor, with two notes lifted near the top.',
+    ml_do:'Find the note you hear.',
+    ml_name:'Two lifted notes: MELODIC MINOR.',
+    u_aeolian:'Aeolian', u_aeolianSub:'minor, other name',
+    ae_hear:'You know this one already.',
+    ae_do:'Find the note you hear.',
+    ae_name:'The minor scale has another name: AEOLIAN. It is a MODE.',
+    u_dorian:'Dorian', u_dorianSub:'minor, one bright note',
+    dor_hear:'Minor, but the sixth note is brighter.',
+    dor_do:'Find the note you hear.',
+    dor_name:'Minor with a bright sixth is DORIAN.',
+    u_mixo:'Mixolydian', u_mixoSub:'major, one soft note',
+    mix_hear:'Major, but the seventh note is softer.',
+    mix_do:'Find the note you hear.',
+    mix_name:'Major with a soft seventh is MIXOLYDIAN.',
     // pulse
-    pulse_hear:'Listen. A ball is bouncing on every beat.',
-    pulse_do:'Tap anywhere in time with it.',
-    pulse_name:'That steady pulse is the BEAT. Every piece of music has one.',
+    pulse_hear:'A ball bounces on every beat.',
+    pulse_do:'Tap along.',
+    pulse_name:'That is the BEAT.',
     pulse_feed:'{n} in a row',
     // high / low
-    high_hear:'Two notes. One sits high, one sits low.',
-    high_do:'Tap the wall you think is the HIGH one.',
-    high_name:'How high or low a note sits is its PITCH.',
+    high_hear:'Two notes. One high, one low.',
+    high_do:'Tap the HIGH one.',
+    high_name:'High or low is called PITCH.',
     // home
-    home_hear:'Listen to this note. Everything else leans towards it.',
-    home_do:'Play around, then finish on the glowing wall.',
-    home_name:'That resting note is HOME. In solfège it is called DO.',
+    home_hear:'This note sounds finished.',
+    home_do:'Play, then end on the glowing wall.',
+    home_name:'That note is HOME. Its name is DO.',
     // so and mi
-    somi_hear:'Two notes, close together. One a little lower than the other.',
-    somi_do:'Play back the note that glows.',
-    somi_name:'The higher one is SO. The lower one is MI. Small steps like this are how most tunes move.',
+    somi_hear:'Two notes, close together.',
+    somi_do:'Play the note that glows.',
+    somi_name:'The high one is SO. The low one is MI.',
     // add la
-    addla_hear:'A new note, above them both.',
-    addla_do:'Listen to the little tune, then play it back.',
-    addla_name:'That new one is LA. Now you have SO, MI and LA.',
+    addla_hear:'A new note on top.',
+    addla_do:'Listen, then play it back.',
+    addla_name:'That one is LA. Now you have SO, MI and LA.',
     // all five
-    five_hear:'One more note joins, and now there are five.',
+    five_hear:'One more note. Now there are five.',
     five_do:'Find the note you hear.',
-    five_name:'DO RE MI SO LA. On these five, nothing you play can sound wrong.',
+    five_name:'DO RE MI SO LA. That is a PENTATONIC SCALE.',
     // review
-    rev_hear:'A note you met on another day.',
+    rev_hear:'A note from another day.',
     rev_do:'Find it again.',
-    rev_name:'You still had it. That is the part that lasts.',
+    rev_name:'You still had it.',
     rev_none:'nothing to review yet',
-    rev_noneSub:'Finish a lesson, then come back tomorrow — things stick better when you leave a day between.',
+    rev_noneSub:'Finish a lesson. Come back tomorrow.',
     // steps
-    steps_hear:'First a line that walks to the next-door note. Now one that jumps.',
-    steps_do:'Walk up the walls one at a time.',
-    steps_name:'Next-door is a STEP. Jumping over notes is a SKIP.',
+    steps_hear:'One tune walks. One jumps.',
+    steps_do:'Walk up the walls, one at a time.',
+    steps_name:'Next door is a STEP. Jumping is a SKIP.',
     // loud
     loud_hear:'The same note, soft, then loud.',
-    loud_do:'Drop a ball gently, then hard.',
-    loud_name:'How loud or soft a note is played is its DYNAMICS.',
+    loud_do:'Drop a ball softly, then hard.',
+    loud_name:'Soft or loud is called DYNAMICS.',
     // major/minor
-    maj_hear:'The same three notes. One note moves down a little.',
+    maj_hear:'The same three notes. One moves down.',
     maj_do:'Switch between them and listen.',
-    maj_name:'One small move changes the whole feeling. That note is the THIRD.',
+    maj_name:'The note that moved is the THIRD. It sets the mood.',
     // echo game
-    echo_intro:'I will play a short phrase. Play it back on the walls.',
+    echo_intro:'Listen, then play it back on the walls.',
     echo_your:'your turn',
     echo_mine:'listen…',
     echo_len:'{n} notes',
@@ -398,7 +444,101 @@ function finish(id,nameLine){
 // NARROWER range and FEWER scale degrees than adult songs. So the lesson keeps so-mi as a convenient
 // Western starting point and claims only what the evidence supports.
 // Degrees in major pentatonic: 0=do 1=re 2=mi 3=so 4=la
-const DEG={do:0,re:1,mi:2,so:3,la:4};
+const DEG={do:0,re:1,mi:2,so:3,la:4};                      // major pentatonic: do re mi so la
+const DEG7={do:0,re:1,mi:2,fa:3,so:4,la:5,ti:6};           // full diatonic: fa slots in at index 3
+const SEVEN=[0,1,2,3,4,5,6];
+// ---- the ramp above the pentatonic ------------------------------------------------------------
+// Ordered from the Kodaly sequence (Holy Names University Kodaly Center, "Sequence of Introducing
+// Music Concepts"), cross-checked against Trinity College London Theory and the DfE Model Music
+// Curriculum. The order is NOT the one adults assume: the next step after the major pentatonic is
+// the la-pentatonic -- the same five notes with a new home -- not the major scale. fa arrives a full
+// grade before ti, and the major scale is built up rather than handed over whole.
+//   Kodaly G2  la pentatonic          -> 9  sadfive
+//   Kodaly G3  so/re pentatonic       -> 10 movehome
+//   Kodaly G3  fa, do hexachord       -> 11 addfa
+//   Kodaly G4  ti, diatonic major     -> 12 addti
+//   Kodaly G4  diatonic minor (la)    -> 13 brightdark / 14 minorscale
+//   Kodaly G5  harmonic minor         -> 15 harmminor
+//   Kodaly G6  melodic minor          -> 16 melminor
+//   Trinity G6 Aeolian (renaming)     -> 17 aeolian
+//   Kodaly G6 / Trinity G7-8          -> 18 dorian, 19 mixo
+// Phrygian, Lydian and Locrian are deliberately absent: neither Kodaly's chart nor Trinity's syllabus
+// lists them at any grade, and RCM only reaches them at diploma level.
+function sadFiveUnit(){
+  let target=0;
+  // The la-pentatonic is the SAME FIVE PITCHES as the major pentatonic the child already has, re-homed
+  // nine semitones up (C D E G A -> A C D E G). rootShift is relative to the pinned lesson key, so it
+  // transposes the key the lessons are already in and cannot stack on a re-entry.
+  const u=pitchUnit({id:'sadfive',title:'u_sadfive',hear:'sad_hear',doIt:'sad_do',name:'sad_name',
+    scale:'pentaMin',rootShift:9,use:[0,1,2,3,4],need:10,band:true,
+    ask(){target=(Math.random()*5)|0;later(()=>{sing(target,94,.55);hint(target);},220);}});
+  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;u.answer(d===target,d);});
+}
+function moveHomeUnit(){
+  // so-pentatonic, taught the way a child can hear it: the same tank, a phrase that leans on SO, and
+  // SO is the note that finishes. No new pitch, no new scale object.
+  const u=pitchUnit({id:'movehome',title:'u_movehome',hear:'mv_hear',doIt:'mv_do',name:'mv_name',
+    use:[DEG.do,DEG.re,DEG.mi,DEG.so,DEG.la],need:10,band:true,
+    setup(){hint(DEG.so);},
+    ask(){sing(DEG.la,86,.45);later(()=>sing(DEG.mi,86,.45),470);later(()=>hint(DEG.so),960);}});
+  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;u.answer(d===DEG.so,d);});
+}
+function addFaUnit(){
+  const POOL=[DEG7.do,DEG7.re,DEG7.mi,DEG7.fa,DEG7.so,DEG7.la];  // the do-hexachord: fa, no ti yet
+  let target=DEG7.fa;
+  const u=pitchUnit({id:'addfa',title:'u_addfa',hear:'fa_hear',doIt:'fa_do',name:'fa_name',
+    scale:'major',use:POOL,need:10,
+    ask(){target=Math.random()<0.45?DEG7.fa:POOL[(Math.random()*POOL.length)|0];
+      later(()=>{sing(target,94,.55);hint(target);},220);}});
+  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;
+    if(POOL.indexOf(d)<0)return;u.answer(d===target,d);});
+}
+function addTiUnit(){
+  let target=DEG7.ti;
+  const u=pitchUnit({id:'addti',title:'u_addti',hear:'ti_hear',doIt:'ti_do',name:'ti_name',
+    scale:'major',use:SEVEN,need:10,band:true,
+    chips:()=>'<div class="labChips"><button class="labChip" data-a2="sc_demo">'+t('listen')+'</button></div>',
+    ask(){target=Math.random()<0.4?DEG7.ti:(Math.random()*7)|0;
+      later(()=>{sing(target,94,.55);hint(target);},220);}});
+  window._lab_scaleDemo=()=>{for(let i=0;i<8;i++)later(()=>sing(i%7+(i===7?7:0),88,.4),i*300);};
+  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;u.answer(d===target,d);});
+}
+function brightDarkUnit(){
+  // Major and minor differ by ONE note, so this plays the same three-note chord twice and moves only
+  // the middle one. Raw cents rather than a scale swap: no rebuild between rounds, no wall changes.
+  // Dalla Bella et al. (2001, Cognition) put reliable major/minor discrimination at about 6-8 years,
+  // which is why this sits at lesson 13 and not lesson 2.
+  let bright=true;
+  const u=pitchUnit({id:'brightdark',title:'u_brightdark',hear:'bd_hear',doIt:'bd_do',name:'bd_name',
+    scale:'major',use:SEVEN,need:10,labels:false,
+    chips:()=>'<div class="labChips">'+
+        '<button class="labChip" data-a2="bd_br">'+t('bright')+'</button>'+
+        '<button class="labChip" data-a2="bd_dk">'+t('dark')+'</button>'+
+        '<button class="labChip" data-a2="bd_replay">'+t('listen')+'</button></div>',
+    ask(){bright=Math.random()<0.5;window._labExpect=bright?'bright':'dark';play();}});
+  function play(){const third=bright?400:300;
+    note(0,92,.5);later(()=>note(third,92,.5),420);later(()=>note(700,92,.6),840);}
+  window._lab_bd=(g)=>u.answer((g==='bright')===bright,null);
+  window._lab_bdReplay=play;
+}
+function scaleUnit(id,titleK,scale,hearK,doK,nameK,star,extra){
+  // every seven-note scale lesson is this: find the note you hear, with the note that MAKES this
+  // scale what it is coming up more often than the rest.
+  let target=0;
+  const u=pitchUnit({id:id,title:titleK,hear:hearK,doIt:doK,name:nameK,
+    scale:scale,use:SEVEN,need:extra&&extra.need||10,band:true,
+    chips:()=>'<div class="labChips"><button class="labChip" data-a2="sc_demo">'+t('listen')+'</button></div>',
+    ask(){target=(star!=null&&Math.random()<0.4)?star:((Math.random()*7)|0);
+      later(()=>{sing(target,94,.55);hint(target);},220);}});
+  window._lab_scaleDemo=()=>{for(let i=0;i<8;i++)later(()=>sing(i%7,88,.4),i*300);};
+  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;u.answer(d===target,d);});
+}
+function minorScaleUnit(){scaleUnit('minorscale','u_minorscale','minor','mn_hear','mn_do','mn_name',2);}
+function harmMinorUnit(){scaleUnit('harmminor','u_harmminor','harmMin','hm_hear','hm_do','hm_name',6);}
+function melMinorUnit(){scaleUnit('melminor','u_melminor','melMin','ml_hear','ml_do','ml_name',5);}
+function aeolianUnit(){scaleUnit('aeolian','u_aeolian','minor','ae_hear','ae_do','ae_name',null);}
+function dorianUnit(){scaleUnit('dorian','u_dorian','dorian','dor_hear','dor_do','dor_name',5);}
+function mixoUnit(){scaleUnit('mixo','u_mixo','mixolydian','mix_hear','mix_do','mix_name',6);}
 const UNITS=[
   {id:'pulse', title:'u_pulse', sub:'u_pulseSub', tier:'lesson', run:pulseUnit,
    slime:'grn',   tint:'#9fe6cf', ico:icoBeat},
@@ -416,6 +556,31 @@ const UNITS=[
    slime:'teal',  tint:'#8fe0d0', ico:icoFive,  use:[0,1,2,3,4]},
   {id:'steps', title:'u_steps', sub:'u_stepsSub', tier:'lesson', run:stepsUnit,
    slime:'violet',tint:'#c4a9f5', ico:icoSteps, use:[0,1,2,3,4]},
+  // ---- block B: more notes ----
+  {id:'sadfive', title:'u_sadfive', sub:'u_sadfiveSub', tier:'lesson', block:'b', run:sadFiveUnit,
+   slime:'blue3', tint:'#a6c8ff', ico:icoFive,  use:[0,1,2,3,4]},
+  {id:'movehome', title:'u_movehome', sub:'u_movehomeSub', tier:'lesson', block:'b', run:moveHomeUnit,
+   slime:'pink2', tint:'#ffb6d6', ico:icoHome,  use:[0,1,2,3,4]},
+  {id:'addfa', title:'u_addfa', sub:'u_addfaSub', tier:'lesson', block:'b', run:addFaUnit,
+   slime:'orange',tint:'#ffd3a8', ico:icoSteps, use:[0,1,2,3,4,5]},
+  {id:'addti', title:'u_addti', sub:'u_addtiSub', tier:'lesson', block:'b', run:addTiUnit,
+   slime:'teal2', tint:'#8fe0d0', ico:icoFive,  use:[0,1,2,3,4,5,6]},
+  {id:'brightdark', title:'u_brightdark', sub:'u_brightdarkSub', tier:'lesson', block:'b', run:brightDarkUnit,
+   slime:'pear3', tint:'#d9e88f', ico:icoTwo,   use:[0,1,2,3,4,5,6]},
+  // ---- block C: minor keys ----
+  {id:'minorscale', title:'u_minorscale', sub:'u_minorscaleSub', tier:'lesson', block:'c', run:minorScaleUnit,
+   slime:'violet2',tint:'#c4a9f5', ico:icoFive,  use:[0,1,2,3,4,5,6]},
+  {id:'harmminor', title:'u_harmminor', sub:'u_harmminorSub', tier:'lesson', block:'c', run:harmMinorUnit,
+   slime:'pink3', tint:'#ffb6d6', ico:icoSteps, use:[0,1,2,3,4,5,6]},
+  {id:'melminor', title:'u_melminor', sub:'u_melminorSub', tier:'lesson', block:'c', run:melMinorUnit,
+   slime:'blue2', tint:'#a6c8ff', ico:icoUpDown,use:[0,1,2,3,4,5,6]},
+  // ---- block D: modes ----
+  {id:'aeolian', title:'u_aeolian', sub:'u_aeolianSub', tier:'lesson', block:'d', run:aeolianUnit,
+   slime:'teal3', tint:'#8fe0d0', ico:icoHome,  use:[0,1,2,3,4,5,6]},
+  {id:'dorian', title:'u_dorian', sub:'u_dorianSub', tier:'lesson', block:'d', run:dorianUnit,
+   slime:'grn3',  tint:'#9fe6cf', ico:icoSteps, use:[0,1,2,3,4,5,6]},
+  {id:'mixo', title:'u_mixo', sub:'u_mixoSub', tier:'lesson', block:'d', run:mixoUnit,
+   slime:'bo2',   tint:'#ffd3a8', ico:icoUpDown,use:[0,1,2,3,4,5,6]},
   {id:'echo', title:'g_echo', sub:'g_echoSub', tier:'game', run:echoGame,
    slime:'blue2', tint:'#a6c8ff', ico:icoEcho},
   {id:'updown', title:'g_updown', sub:'g_updownSub', tier:'game', run:upDownGame,
@@ -433,7 +598,14 @@ const UNITS=[
 function pitchUnit(cfg){
   const id=cfg.id, use=cfg.use, need=cfg.need||10;
   let n=0,right=0,busy=false;
-  LAB.take({scale:'pentaMaj',octs:1,drums:false,band:!!cfg.band});
+  // The scale is a parameter now. Everything above lesson 8 is the same controller pointed at a
+  // different set of walls -- one tested engine, not eleven new ones.
+  // Every lesson also PINS the key. Lessons that did not name a root simply inherited whatever the
+  // last one left in S.root, so after the la-pentatonic lesson (which transposes) every later lesson
+  // sat a minor third higher for the rest of the session and "the same five notes" stopped being true.
+  // The anchor is LAB._saved.root - captured once, on entering learn mode - so shifts never stack.
+  const HOME=(LAB._saved&&LAB._saved.root!=null)?LAB._saved.root:S.root;
+  LAB.take({scale:cfg.scale||'pentaMaj',root:HOME+(cfg.rootShift||0),octs:1,drums:false,band:!!cfg.band});
   LAB.labels(cfg.labels===false?null:wallLabels());
   LAB._playable=use.slice();          // the lesson only ever asks for notes it has taught
   function paint(extra){
@@ -815,20 +987,28 @@ function home(){
   stopAll();if(_cleanup){_cleanup();_cleanup=null;}
   try{LAB.give();}catch(e){}
   const lessons=UNITS.filter(u=>u.tier!=='practice');
-  const total=lessons.length,done=lessons.filter(u=>got(u.id)).length;
+  // the counter counts LESSONS. It used to include the three games, so the header read "0 of 11" while
+  // the numbered list went 1..8 - two different totals for the same thing on the same screen.
+  const numbered=UNITS.filter(u=>u.tier==='lesson');
+  const total=numbered.length,done=numbered.filter(u=>got(u.id)).length;
   // WHERE DO I START? Duolingo marks the next node on its path; Simply Piano hard-locks everything after
   // the current lesson. Locking fights this app's no-fail-state rule, so the sequence is SHOWN, not
   // enforced: the first lesson not yet finished wears a "start here" flag, every other door stays open.
   // "start here" follows MASTERY, so a lesson you half-finished is still the one waiting for you
   const nextUp=(UNITS.find(u=>u.tier==='lesson'&&!got(u.id))||{}).id;
   const readyToReview=due().length;
+  // LESSONS ARE NUMBERED. A two-column grid of eight cards has no reading order a child (or a parent)
+  // can guess - "start here" told you where to begin and nothing told you what came next. The number
+  // IS the order, and it replaces the grey line glyph that used to sit in this corner: that glyph was
+  // flat vector clipart in an app drawn entirely in crayon, and none of the eight meant anything.
+  const lessonNo={};lessons.filter(u=>u.tier==='lesson').forEach((u,i)=>{lessonNo[u.id]=i+1;});
   const card=(u)=>{
     const done=got(u.id), next=(u.id===nextUp&&!readyToReview)||(u.tier==='practice'&&readyToReview>0);
+    const no=lessonNo[u.id];
     return '<button class="uCard'+(done?' got':'')+(next?' nextUp':'')+'" data-a2="unit" data-u="'+u.id+'" '+
-      'style="--ut:'+u.tint+'" aria-label="'+t(u.title)+(next?' \u2014 '+t('startHere'):'')+'">'+
+      'style="--ut:'+u.tint+'" aria-label="'+(no?no+'. ':'')+t(u.title)+(next?' \u2014 '+t('startHere'):'')+'">'+
       '<span class="uArt"><img src="minis/'+u.slime+'.png" alt="" draggable="false"></span>'+
-      '<span class="uTxt"><b>'+t(u.title)+'</b><i>'+t(u.sub)+'</i></span>'+
-      '<span class="uIco">'+u.ico()+'</span>'+
+      '<span class="uTxt"><b>'+(no?'<em class="uNum">'+no+'</em>':'')+t(u.title)+'</b><i>'+t(u.sub)+'</i></span>'+
       (done?'<span class="uDone" aria-hidden="true">\u2713</span>'
            :(next?'<span class="uNext">'+t(u.tier==='practice'?'revReady':'startHere')+'</span>':''))+
       '</button>';
@@ -836,10 +1016,21 @@ function home(){
   let h='<div class="uHead">'+
     '<img class="uHeadArt" src="slimelogo.png" alt="" draggable="false">'+
     '<span><b>'+t('tierLessons')+'</b><i>'+t('progressOf',{done:done,total:total})+'</i></span></div>';
-  for(const [tier,tk,tsk] of [['lesson','tierLessons','tierLessonsSub'],
-                              ['practice','tierPractice','tierPracticeSub'],
-                              ['game','tierGames','tierGamesSub']]){
-    h+='<div class="uSec"><span class="uSecT">'+t(tk)+'</span><span class="uSecS">'+t(tsk)+'</span></div>'+
+  // the three section subtitles are gone: they explained spaced repetition and the word "practice" to
+  // a child who cannot read them and does not need them. The heading is the whole label.
+  // Nineteen numbered cards in one list is a wall. They are dealt into four named blocks instead --
+  // first notes, more notes, minor keys, modes -- with the NUMBERING running straight through, so the
+  // blocks say roughly how hard and the numbers still say exactly what order. Nothing is locked: the
+  // sequence is shown, never enforced.
+  const BLOCKS=[['a','blockA'],['b','blockB'],['c','blockC'],['d','blockD']];
+  // no "LESSONS" heading above "FIRST NOTES" - two headings stacked saying the same thing
+  for(const [bk,lbl] of BLOCKS){
+    const inBlock=UNITS.filter(x=>x.tier==='lesson'&&(x.block||'a')===bk);
+    if(!inBlock.length)continue;
+    h+='<div class="uSec"><span class="uSecT">'+t(lbl)+'</span></div><div class="uGrid">'+inBlock.map(card).join('')+'</div>';
+  }
+  for(const [tier,tk] of [['practice','tierPractice'],['game','tierGames']]){
+    h+='<div class="uSec"><span class="uSecT">'+t(tk)+'</span></div>'+
        '<div class="uGrid">'+UNITS.filter(x=>x.tier===tier).map(card).join('')+'</div>';
   }
   h+='<div class="labChips" style="justify-content:center">'+
@@ -871,6 +1062,10 @@ if(ov)ov.addEventListener('click',(e)=>{
   if(a==='hi_dn'&&window._lab_hi)return window._lab_hi('down');
   if(a==='hi_replay'&&window._lab_hiReplay)return window._lab_hiReplay();
   if(a==='st_demo'&&window._lab_stepsDemo)return window._lab_stepsDemo();
+  if(a==='sc_demo'&&window._lab_scaleDemo)return window._lab_scaleDemo();
+  if(a==='bd_br'&&window._lab_bd)return window._lab_bd('bright');
+  if(a==='bd_dk'&&window._lab_bd)return window._lab_bd('dark');
+  if(a==='bd_replay'&&window._lab_bdReplay)return window._lab_bdReplay();
   if(a==='sp_again'&&window._lab_spAgain)return window._lab_spAgain();
   if(a==='ec_replay'&&window._lab_ecReplay)return window._lab_ecReplay();
   if(a==='ec_next'&&window._lab_ecNext)return window._lab_ecNext();

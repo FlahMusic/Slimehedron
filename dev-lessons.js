@@ -16,8 +16,17 @@ ok(ids.length>=7,'found the unit list ('+ids.length+' units)');
 // A unit reaches an ending either by calling finish() itself, or by running on the shared pitchUnit
 // controller, which finishes for it. Checking only for the literal call encoded the OLD architecture and
 // failed the moment the lessons were refactored onto one engine.
-for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)||new RegExp("id:'"+id+"'[\\s\\S]{0,400}?pitchUnit|pitchUnit\\(\\{[\\s\\S]{0,120}?id:'"+id+"'").test(src),
-  "unit '"+id+"' reaches an ending (its own finish() or the shared pitchUnit controller)");
+// A THIRD route exists now: the seven-note scale lessons all delegate to scaleUnit(), which passes the
+// id straight into pitchUnit. So first prove scaleUnit really does finish, then accept its callers.
+const HELPERS=['scaleUnit'];
+for(const h of HELPERS)
+  ok(new RegExp("function "+h+"\\([\\s\\S]{0,900}?pitchUnit\\(").test(src),
+     "the shared helper "+h+"() runs on pitchUnit, so everything it wraps reaches an ending");
+const viaHelper=(id)=>HELPERS.some(h=>new RegExp(h+"\\('"+id+"'").test(src));
+for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
+    ||new RegExp("id:'"+id+"'[\\s\\S]{0,400}?pitchUnit|pitchUnit\\(\\{[\\s\\S]{0,120}?id:'"+id+"'").test(src)
+    ||viaHelper(id),
+  "unit '"+id+"' reaches an ending (its own finish(), the shared pitchUnit controller, or a helper that uses it)");
 
 (async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
  const ctx=await b.newContext({viewport:{width:1280,height:860}});const p=await ctx.newPage();

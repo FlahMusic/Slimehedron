@@ -228,6 +228,10 @@ header h1{flex-shrink:0}
 #volMute[aria-pressed="true"] .vmSlash{opacity:1}
 #volTop input[type=range]{width:70px;flex:none;height:6px}
 @media (max-width:820px){#volTop input[type=range]{width:52px}#volTop{gap:5px;padding:0 6px 0 2px}}
+@media (max-width:360px){ /* 320px phones: make the row FIT rather than let it hang off the left edge */
+  #volTop input[type=range],#tempoDial input[type=range]{width:min(22vw,74px)!important}
+  #volTop{gap:4px;padding:0}
+}
 #tempoKnob{width:34px;height:34px} /* a touch bigger than the mixer knobs since it's a headline control */
 #tempoKnob .kdot{width:3.5px;height:14px}
 /* DAW-style editable tempo box (Ableton/Logic convention: type or drag the number) — soft to match the UI */
@@ -324,8 +328,8 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 .psBtn:active{transform:scale(.92)}
 .psBtn.on{transform:scale(1.08);box-shadow:0 8px 22px rgba(130,100,200,.45), inset 0 2px 6px rgba(255,255,255,.7);border-color:#fff}
 .psBtn svg{width:48px;height:48px;position:relative;z-index:1}
-.psBtn.bandBtn img{width:66px;height:66px;object-fit:contain;position:relative;z-index:1;display:block;filter:drop-shadow(0 1px 1px rgba(120,100,160,.18))}
-.psBtn.bandBtn svg{width:46px;height:38px;position:relative;z-index:1;display:block}
+.psBtn.bandBtn img{width:100%;height:100%;object-fit:contain;position:relative;z-index:1;display:block;filter:drop-shadow(0 1px 1px rgba(120,100,160,.18))}
+.psBtn.bandBtn{padding:2px} /* a hair of the tile's own hue shows around the drawing */
 .psBtn .psNum{position:absolute;right:7px;bottom:5px;font-weight:900;font-size:18px;z-index:1;text-shadow:0 1px 2px rgba(255,255,255,.7)}
 .psItem{display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none}
 /* ONE line, not two. The label used to stack a number ("Sound 3") over the real name ("saw"); the name is
@@ -334,13 +338,12 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 .psSub{font-size:16px;font-weight:700;font-style:normal;color:#7a6ea0;text-transform:lowercase} /* the real waveform/genre name — clearly readable now (~3x the old tiny) */
 .psCol{gap:14px}
 /* SHORT screens: 5 big stacked buttons would overflow, so scale them down to fit vertically */
-@media (max-height:760px){.psBtn{width:60px;height:60px}.psBtn svg{width:36px;height:36px}.psBtn.bandBtn svg{width:40px;height:33px}.psBtn.bandBtn img{width:50px;height:50px}.psLbl{font-size:15px}.psSub{font-size:13px}.psCol{gap:9px}}
+@media (max-height:760px){.psBtn{width:60px;height:60px}.psBtn svg{width:36px;height:36px}.psLbl{font-size:15px}.psSub{font-size:13px}.psCol{gap:9px}}
 /* phones scale down (screen's small), but still legible */
-@media (max-width:820px){.psBtn{width:52px;height:52px;border-radius:16px}.psBtn svg{width:30px;height:30px}.psBtn.bandBtn svg{width:36px;height:30px}.psBtn.bandBtn img{width:42px;height:42px}.psCol{gap:8px}
+@media (max-width:820px){.psBtn{width:52px;height:52px;border-radius:16px}.psBtn svg{width:30px;height:30px}.psCol{gap:8px}
   /* phone: hide the "Rhythm 1"/"Sound 1" number (font-size:0 kills the text node, not the child) and let the
      style name carry the label at a readable size. 9px/7px labels were the worst offender in the audit. */
-  .psLbl{font-size:0!important;line-height:0}
-  .psSub{font-size:14px!important;line-height:1.25;display:block;font-weight:800;color:#5a4f78}
+  .psLbl{font-size:12.5px!important;line-height:1.15;font-weight:800;color:#5a4f78}
 }
 /* groove selector (studio): tidy folders of feels */
 #grooveCard .gcur{font-size:12px;font-weight:700;color:var(--accent);float:right}
@@ -415,6 +418,11 @@ header h1{margin-left:84px} /* the title steps aside for the back button */
 .uSec{display:flex;align-items:baseline;gap:9px;margin:16px 0 8px;flex-wrap:wrap}
 .uSecT{font:800 11px system-ui,sans-serif;letter-spacing:.13em;text-transform:uppercase;color:#8a7fb5}
 .uSecS{font-size:12px;color:var(--ink-soft);font-weight:600}
+/* the lesson number: the order, stated. Sits inside the title so it wraps with it and needs no column. */
+.uBlk{font:800 11px system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#a397c9;margin:12px 0 6px 2px}
+.uNum{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;margin-right:7px;
+  border-radius:50%;background:rgba(255,255,255,.85);border:1.5px solid rgba(120,105,175,.35);
+  font:800 11.5px system-ui,sans-serif;font-style:normal;color:#5a4f78;vertical-align:1px}
 .uGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:9px}
 .uCard{position:relative;display:flex;align-items:center;gap:10px;text-align:left;width:100%;
   padding:11px 12px;border-radius:16px;cursor:pointer;font-family:inherit;min-height:68px;
@@ -451,7 +459,10 @@ header h1{margin-left:84px} /* the title steps aside for the back button */
   .uIco{display:none} /* the slime and the colour already do the identifying; the glyph is the first to go */
   .uHead .uHeadArt{width:38px;height:38px}.uHead b{font-size:17px}
 }
-@media (max-width:380px){.uGrid{grid-template-columns:1fr}}
+/* ONE card per row on a phone. Two 165px columns were fine for "Add la" and became three wrapped
+   lines for "Harmonic minor" once the ramp went past the pentatonic. 480px keeps every common phone
+   (and a landscape phone's narrow dock) on a single column; tablets and desktop still get two. */
+@media (max-width:480px){.uGrid{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.uCard{transition:none}.uCard:hover{transform:none}}
 /* no color-mix support (older Safari): fall back to the flat tint, never a transparent card */
 @supports not (background:color-mix(in srgb,red 50%,blue)){
@@ -502,8 +513,21 @@ body.lab-on #labKeys{display:flex}
   #labKeys{padding:5px 6px;gap:3px}
   .lk{width:clamp(34px,9vw,46px);height:clamp(50px,8dvh,64px);font-size:11.5px}
 }
+@media (max-width:820px) and (max-height:520px){ /* landscape phone: side dock, not a bottom sheet */
+  #learnOverlay.lab{align-items:stretch;justify-content:flex-end}
+  #learnOverlay.lab .lCard{width:min(52vw,330px);height:100%;max-height:none;border-radius:20px 0 0 20px;
+    box-shadow:-10px 0 30px rgba(120,110,160,.24);padding:12px 14px 14px}
+  #labKeys{padding:4px 5px;gap:3px}
+  .lk{width:clamp(28px,5.2vw,38px);height:clamp(40px,13dvh,52px);font-size:11px}
+}
 /* while a lesson is driving the tank, the play-mode furniture steps aside so the geometry is the whole show */
 body.lab-on #playSide,body.lab-on #triMixBar,body.lab-on #autoRow,body.lab-on #kbBtn,body.lab-on #chordBtn{display:none!important}
+/* learn HOME is a modal menu: the bar behind it is visible-but-dead, so it goes away entirely.
+   In a lesson the overlay stops catching pointers, so the bar comes back and volume works. */
+body.mode-learn:not(.lab-on) header{display:none}
+/* and in a lesson, the two buttons that would wipe the child's tank mid-question have no business there */
+body.mode-learn #clearBtn,body.mode-learn #resetBtn,body.mode-learn #chordBtn{display:none!important}
+body.mode-learn #menuBtn{display:none!important}
 /* RESERVE the dock's space instead of letting it float over the tank. The tank is square and centred in
    `main`, so shrinking main is what actually keeps the geometry fully visible -- exactly the same lesson
    as the circle-of-fifths: don't overlap and hope, take the room out of the layout. */
@@ -515,6 +539,8 @@ body.lab-on main{padding:64px 424px 126px 16px!important}
 @media (max-width:820px){.mode-studio main{padding-top:92px}}
 @media (max-width:1180px){body.lab-on main{padding-right:400px!important}}
 @media (max-width:820px){body.lab-on main{padding:52px 10px calc(44dvh + 92px) 10px!important}} /* dock + keybed */
+@media (max-width:820px) and (max-height:520px){body.lab-on main{padding:46px calc(min(52vw,330px) + 8px) 8px 8px!important}} /* landscape: the dock takes WIDTH, so the tank keeps its height */
+@media (max-height:520px){body.mode-learn.lab-on header{max-width:calc(100% - min(52vw,330px) - 8px)}} /* ...and the bar stops where the dock starts, instead of running under it */
 .labBar{display:flex;align-items:center;gap:8px;margin:0 0 6px}
 .labBar .labBack{border:0;background:rgba(180,170,220,.2);border-radius:10px;padding:6px 10px;font:800 12px inherit;color:#5a4f78;cursor:pointer}
 .labStep{font:700 11px system-ui,sans-serif;color:var(--ink-soft);letter-spacing:.5px;text-transform:uppercase}
@@ -605,8 +631,9 @@ body.lab-on main{padding:64px 424px 126px 16px!important}
 #rhPad{width:118px;height:118px;margin:14px auto 6px;cursor:pointer;border-radius:26px;background:rgba(255,255,255,.65);box-shadow:var(--shadow);padding:14px;transition:transform .1s;user-select:none;touch-action:manipulation}
 #rhPad:active{transform:scale(.93)}
 #rhPad.pulse{transform:scale(1.07)} /* the pad breathes with the metronome — see the beat, then feel it */
-#coach{position:fixed;z-index:220;width:250px;background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:10px 12px;font-size:13px;font-weight:700;color:var(--ink);display:flex;gap:8px;align-items:center}
+#coach{pointer-events:none;position:fixed;z-index:220;width:250px;background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:10px 12px;font-size:13px;font-weight:700;color:var(--ink);display:flex;gap:8px;align-items:center}
 #coach .coachTxt{flex:1;line-height:1.35}
+#coach .btn{pointer-events:auto} /* the hint never blocks a tap; only its own Skip button does */
 @media (max-width:430px){.pxPiano{transform:scale(.8);transform-origin:top center;margin:24px 0 -8px}} /* small phones: shrink the block, keep key geometry exact */
 .pxW.nxt{background:#e8fff5;animation:chg 1s ease-in-out infinite} /* scale lessons: the NEXT key glows */
 .pxB.nxt{background:#4c6b5e;animation:chg 1s ease-in-out infinite}
@@ -658,7 +685,6 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
   #triMix svg{width:158px!important}
   .psBtn{width:50px!important;height:50px!important}
   .psBtn svg{width:28px!important;height:28px!important}
-  .psBtn.bandBtn img{width:34px!important;height:34px!important}
   .psCol{gap:7px!important}
   .mode-play main{padding:10px 16px 8px!important} /* the old max(300px,40vh) reserved room for the three-storey top stack that no longer exists */
 }
@@ -666,8 +692,7 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
   #triMix svg{width:146px!important}         /* still clears the wheel: it lives top-left, the wheel is centred */
   .psBtn{width:48px!important;height:48px!important}   /* Material 48dp minimum — was 38 */
   .psBtn svg{width:27px!important;height:27px!important}
-  .psBtn.bandBtn img{width:38px!important;height:38px!important}
-  .psSub{font-size:13px!important}
+  .psLbl{font-size:12px!important}
   .mode-play main{padding:10px 14px 8px!important}
   #menuBtn{width:46px!important;height:46px!important;right:8px!important;bottom:8px!important} /* smaller FAB, tucked in the corner */
 }
@@ -693,6 +718,15 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
   .mode-play #triMixBar,.mode-studio #triMixBar{top:auto!important;bottom:4px!important;left:4px!important;transform:none!important} /* landscape is wider than 820px so it missed the phone rule and sat on the wheel */
   #autoRow{top:44px!important}
   .mode-play main{padding:8px 14px 6px!important} /* short/landscape phones: give the height back to the tank */
+  .psCol{gap:5px!important}
+  .psBtn{width:46px!important;height:46px!important;border-radius:14px!important}
+  .psBtn svg{width:27px!important;height:27px!important}
+  /* SHORT screens only: a 2-lane header on a 667x375 landscape phone leaves 247px, and five
+     labelled buttons need 320. Portrait phones -- the orientation this is actually used in -- keep
+     their labels; here the glyphs and the title attribute carry it. */
+  .psLbl{font-size:0!important;line-height:0!important}
+  .psBtn{width:44px!important;height:44px!important}
+  .psCol{gap:4px!important}
 }
 /* PERFORMANCE PAD — GarageBand Drummer's XY, axis words copied verbatim so the skill transfers */
 /* ONE reveal, never a reveal inside a reveal (Nielsen: >2 disclosure levels tanks usability).
@@ -1043,6 +1077,12 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
     font-size:14px!important;padding:0 16px!important;min-height:44px!important;display:flex!important;align-items:center;z-index:262}
   .mode-studio #chordBtn{top:162px!important}
   .mode-studio #chordBtn{top:104px!important} /* studio has the pattern strip between the bar and the tank */
+  /* PLAY on a phone has no home for this chip. The tank spans nearly the full width and the two
+     rails flank it, so every escape placeFloater can try is either off-screen or on a Rhythm button,
+     and the fallback parks it on the rail. It is also the wrong control for the room: play mode is
+     the child's mode and this opens the custom chord-progression editor. Phones drop it from PLAY;
+     STUDIO keeps it at every size, and desktop play keeps it too. */
+  .mode-play #chordBtn{display:none!important}
   #chordPanel{left:50%!important;top:64px!important;transform:translateX(-50%)!important;width:min(300px,90vw)}
   .mode-play main{padding:10px 40px 8px} /* the header is in flow and reserves itself; this is just breathing room */
   main{padding:0 8px 8px}
@@ -1083,6 +1123,11 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   .coachTxt+.btn,.coach .btn{min-height:44px;padding:8px 16px;font-size:14px}
   #resetBtn,#clearBtn,#exitMode,#menuBtn,#kbBtn,#volMute{min-width:44px;min-height:44px}
   input[type=range]{height:6px;padding:19px 0;box-sizing:content-box}
+}
+@media (pointer:coarse) and (min-height:521px){
+  #studioBar select,#studioBar input[type=number],#studioBar button,#studioBar #sbTap,
+  #chordBtn,.labSpk,.labChip,#sgLastR,.grooveToggle{min-height:44px}
+  #chordBtn,.labSpk,.labChip{min-width:44px}
 }
 .note{font-size:11px;color:var(--ink-soft);line-height:1.4;margin-top:8px}
 .adsr{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
@@ -2098,6 +2143,8 @@ function placeFloater(id){
   if(hd){const r=hd.getBoundingClientRect();if(r.width>2)obstacles.push(r);}
   const sb=document.getElementById('studioBar');
   if(sb&&getComputedStyle(sb).display!=='none'){const r=sb.getBoundingClientRect();if(r.width>2)obstacles.push(r);}
+  document.querySelectorAll('.psCol').forEach(c=>{ // the Sound/Rhythm rails are furniture, not empty space
+    if(getComputedStyle(c).display==='none')return;const r=c.getBoundingClientRect();if(r.width>2)obstacles.push(r);});
   for(const o of FLOATERS){ // the floaters must clear EACH OTHER too, not just the tank
     if(o===id)continue;const e=document.getElementById(o);
     if(!e||e.hidden||getComputedStyle(e).display==='none')continue;
@@ -2115,7 +2162,7 @@ function placeFloater(id){
   for(const sel of ['#studioBar','header']){const el=document.querySelector(sel);
     if(!el||getComputedStyle(el).display==='none')continue;
     const r=el.getBoundingClientRect();
-    if(r.width>2&&r.top<innerHeight*0.35)barBot=Math.max(barBot,r.bottom);}
+    if(r.width>2&&r.top<innerHeight*0.5&&r.height<innerHeight*0.45)barBot=Math.max(barBot,r.bottom);}
   const asideEl=document.querySelector('aside');
   if(asideEl&&getComputedStyle(asideEl).display!=='none'){const r=asideEl.getBoundingClientRect();if(r.width>2)obstacles.push(r);}
   const topMost=Math.min.apply(null,obstacles.map(o=>o.top));
@@ -3613,9 +3660,12 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
   // four buttons spread around the colour wheel so none clash with each other OR with the pale-yellow cymbal in the
   // kit icon: peach (warm), lavender (violet), sky (blue — was yellow, which hid the cymbal), mint (green).
   // COOL pastel backgrounds so the warm/green crayon band icon stays clearly visible (warm bgs like peach/mint would blend into it)
-  const DK=[['pop','#e6f2ff','#c4e0ff','#3a6ea8','1','pop'],['rock','#efe6ff','#d4c2f5','#6b4fa8','2','rock'],
-            ['disco','#e7e8ff','#c6caf5','#4a4a9e','3','disco'],['bossa','#eef1f6','#d3dbe8','#5a6478','4','bossa'],
-            ['jazz','#e4e7ee','#c2c8d6','#4a5568','5','jazz']];
+  // Tile = a faint wash of that kit's own slime. Five pale blue-greys told you nothing; now colour,
+  // picture and word all say the same thing, so no single cue has to carry it (and none of them is
+  // colour alone, which is the point of WCAG 1.4.1).
+  const DK=[['pop','#fdfbe8','#f8f2c9','#8a7a1e','1','pop'],['rock','#fff0f1','#ffdcde','#a3343a','2','rock'],
+            ['disco','#f8f2fb','#eee0f6','#6b4a7a','3','disco'],['bossa','#ecfaf6','#d7f1ea','#1f6b5c','4','bossa'],
+            ['jazz','#eef3fa','#d8e4f4','#274963','5','jazz']];
   // RHYTHM GLYPHS. All five buttons used to carry the SAME band photo, so the column was five identical
   // squares distinguishable only by reading the caption underneath - the exact text-only failure the wave
   // column on the other side does not have. Each genre now draws its own beat: bar height = accent, bar
@@ -3625,24 +3675,13 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
   //   disco  straight eighths - eight ticks, every other one accented
   //   bossa  syncopation - the off-beats carry it
   //   jazz   swing - long, short, long, short
-  const RGLYPH={
-    pop:   [[0,1],[1,1],[2,1],[3,1]],
-    rock:  [[0,.55],[1,1],[2,.55],[3,1]],
-    disco: [[0,1],[.5,.5],[1,1],[1.5,.5],[2,1],[2.5,.5],[3,1],[3.5,.5]],
-    bossa: [[0,1],[.75,.7],[1.5,1],[2.5,.7],[3,1]],
-    jazz:  [[0,1],[.66,.5],[1,1],[1.66,.5],[2,1],[2.66,.5],[3,1],[3.66,.5]]
-  };
-  const rIcon=(k,col)=>{const bars=RGLYPH[k]||RGLYPH.pop;
-    // 4 beats wide, drawn on a 48x40 box with a baseline; tall bar = accented hit
-    let d='<svg viewBox="0 0 48 40" width="48" height="40" aria-hidden="true" style="display:block">'+
-      '<line x1="3" y1="35" x2="45" y2="35" stroke="'+col+'" stroke-width="1.6" stroke-linecap="round" opacity=".4"/>';
-    for(const [beat,h] of bars){
-      const x=4+beat*10.4, ht=8+h*22;
-      d+='<rect x="'+x.toFixed(1)+'" y="'+(34-ht).toFixed(1)+'" width="'+(h>.6?5.4:3.4)+'" height="'+ht.toFixed(1)+
-         '" rx="1.7" fill="'+col+'" opacity="'+(h>.6?'1':'.55')+'"/>';}
-    return d+'</svg>';};
+  // Each kit is its own hand-drawn slime, cut out of the band picture it came from. The previous
+  // version drew the beat as a bar chart (tall bar = accent, position = where in the bar it lands):
+  // a notation abstraction, in flat vector, in an app drawn entirely in crayon, on a button a
+  // six-year-old is meant to read at 46px. Five of them looked identical. Children read objects.
   const dl=$("psDrums");if(dl)dl.innerHTML=DK.map(([k,c1,c2,nc,n,nm])=>
-    `<div class="psItem"><button class="psBtn bandBtn" data-kit="${k}" title="${nm} beat" style="background:linear-gradient(160deg,${c1},${c2})">${rIcon(k,nc)}</button><span class="psLbl">${nm}</span></div>`).join('');
+    `<div class="psItem"><button class="psBtn bandBtn" data-kit="${k}" title="${nm} beat" style="background:linear-gradient(160deg,${c1},${c2});border-color:${c2}">`+
+      `<img src="kits/kit-${k}.png" alt="" draggable="false" loading="lazy"></button><span class="psLbl">${nm}</span></div>`).join('');
   dl&&dl.addEventListener('pointerdown',e=>{const b=e.target.closest('.psBtn');if(!b)return;
     initAudio();if(AC&&AC.state==='suspended')AC.resume();
     const wasOn=b.classList.contains('on');
@@ -5187,7 +5226,12 @@ function startCoach(){
     const r=el.getBoundingClientRect();
     b.innerHTML=`<div class="coachTxt">${st[1]}</div><button class="btn" data-cs="1">skip</button>`;
     b.style.left=Math.max(8,Math.min(innerWidth-262,r.left+r.width/2-125))+'px';
-    b.style.top=(st[2]?r.top+16:Math.min(innerHeight-70,r.bottom+10))+'px';}
+    // the anchor now lives INSIDE the header, so "just below it" used to mean "on top of the fader
+    // row". Clear the whole bar, not just the button we are pointing at.
+    const hdr=document.querySelector('header');
+    let ty=st[2]?r.top+16:r.bottom+10;
+    if(hdr&&hdr.contains(el))ty=Math.max(ty,hdr.getBoundingClientRect().bottom+10);
+    b.style.top=Math.min(innerHeight-70,ty)+'px';}
   function end(){b.remove();removeEventListener('pointerdown',adv,true);
     try{localStorage.setItem('slimehedron-coach','1');}catch(e){}}
   function adv(e){if(e.target.dataset&&e.target.dataset.cs){end();return;}
