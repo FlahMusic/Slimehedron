@@ -26,22 +26,49 @@ const src=fs.readFileSync('learn2.js','utf8');
  await p.goto('http://127.0.0.1:8765/index.html');await p.waitForTimeout(500);
  await p.click('.modeCard[data-m="learn"]');await p.waitForTimeout(1400);
 
- // ---- 1. no pitch lesson may use a scale containing fa or ti ----
- const scales=[...src.matchAll(/LAB\.take\(\{[^}]*scale:'([a-zA-Z]+)'/g)].map(m=>m[1]);
- const SEVEN=['major','minor','ionian','aeolian','dorian','mixolydian','lydian','phrygian','locrian'];
- const bad=scales.filter(x=>SEVEN.includes(x));
- ok(bad.length===0,'no lesson puts a child on a scale containing fa or ti ('+[...new Set(scales)].join(', ')+')'
-   +(bad.length?' — FOUND: '+bad.join(', '):''));
+ // ---- 1. fa and ti may not appear before the lesson that TEACHES them ----
+ // The ramp now goes past the pentatonic on purpose, so a blanket "no seven-note scale anywhere" is
+ // the wrong rule. The rule that still matters: nothing in the first block may hand a child fa or ti
+ // before "The major scale" introduces them — that is the Kodaly ordering this whole file rests on.
+ const SEVEN=['major','minor','ionian','aeolian','dorian','mixolydian','lydian','phrygian','locrian','harmMin','melMin'];
+ const early=await p.evaluate((SEVEN)=>{
+   const L=window.LEARN2, les=L.UNITS.filter(u=>u.tier==='lesson');
+   const gate=les.findIndex(u=>u.id==='majorscale');
+   return les.slice(0,gate<0?les.length:gate).map(u=>u.id);},SEVEN);
+ const firstBlockScales=[];
+ for(const id of early){
+   const sc=await p.evaluate(async(id)=>{const L=window.LEARN2;
+     L.UNITS.find(u=>u.id===id).run(); await new Promise(r=>setTimeout(r,500));
+     const s=S.scale; L.home(); await new Promise(r=>setTimeout(r,200)); return s;},id);
+   firstBlockScales.push(id+':'+sc);
+   ok(!SEVEN.includes(sc),'"'+id+'" stays off fa and ti (scale='+sc+')');
+ }
 
  // ---- 2. the sequence opens where every published sequence opens ----
  const order=await p.evaluate(()=>window.LEARN2.UNITS.filter(u=>u.tier==='lesson').map(u=>u.id));
  ok(order[0]==='pulse','the sequence opens on beat and body, not on pitch ('+order[0]+')');
- const somi=order.indexOf('somi');
- ok(somi>=0,'there is a so-mi lesson at all — the universal entry point');
- ok(somi<order.indexOf('home'),'so-mi comes before do/home, as in both published Kodaly sequences');
- ok(order.indexOf('addla')>somi&&order.indexOf('addla')<order.indexOf('home'),
-    'la is added after so-mi and before do — the published order is so-mi, la, do');
- ok(order.indexOf('five')>order.indexOf('home'),'the full pentatonic comes last of the note lessons');
+ // so-mi, then la, then the full pentatonic used to be three separate lessons; they are three PHASES
+ // of one lesson now. The published order is unchanged, so assert it where it actually lives — on the
+ // note sets themselves, which is a stronger check than the old one on lesson ordering.
+ const notes=order.indexOf('notes');
+ ok(notes>=0,'there is a find-the-note lesson');
+ ok(notes<order.indexOf('home'),'it comes before do/home, as in both published Kodaly sequences');
+ const phases=await p.evaluate(()=>{
+   const m=/const SETS=(\[\[[^;]*?\]\]);/.exec(window.__learnSrc||'');
+   return null;});
+ const SETS=(/const SETS=(\[\[[\s\S]*?\]\]);/.exec(src)||[])[1];
+ ok(!!SETS,'the note lesson declares its phases');
+ if(SETS){
+   const ph=SETS.replace(/DEG\.do/g,'0').replace(/DEG\.re/g,'1').replace(/DEG\.mi/g,'2')
+                .replace(/DEG\.so/g,'3').replace(/DEG\.la/g,'4');
+   let sets=[];try{sets=JSON.parse(ph);}catch(e){}
+   ok(sets.length===4,'four phases ('+JSON.stringify(sets)+')');
+   ok(JSON.stringify(sets[0])==='[2,3]','phase 1 is so and mi — the universal entry point');
+   for(let i=1;i<sets.length;i++)
+     ok(sets[i].length===sets[i-1].length+1&&sets[i-1].every(d=>sets[i].includes(d)),
+        'phase '+(i+1)+' adds exactly ONE new note and keeps the old ones ('+JSON.stringify(sets[i])+')');
+   ok(sets[sets.length-1].length===5,'it ends on the full pentatonic');
+ }
 
  // ---- 3. each lesson only asks for notes it has taught ----
  const taught=await p.evaluate(()=>{
@@ -51,7 +78,15 @@ const src=fs.readFileSync('learn2.js','utf8');
      u.use.forEach(d=>known.add(d));
      out.push({id:u.id,use:u.use,novel:novel.length});}
    return out;});
- const leaps=taught.filter(x=>x.novel>1&&x.id!=='high'&&x.id!=='somi');
+ // The UNITS `use` field is the widest note set a lesson ever shows, for the review engine to draw
+ // from -- it is not the set the child meets on arrival. Lessons that GROW (find-the-note, the major
+ // scale) add one note at a time internally, and their phase lists are checked above; the seven-note
+ // scale lessons are past the point where "one new note" is the rule at all. So this counts the
+ // lessons that present a fixed set, which is where the rule applies.
+ const GROWS=['notes','majorscale'];
+ const PAST_PENTATONIC=['minorscale','minorshapes','modes','brightdark','newhome'];
+ const leaps=taught.filter(x=>x.novel>1&&x.id!=='high'
+   &&GROWS.indexOf(x.id)<0&&PAST_PENTATONIC.indexOf(x.id)<0);
  ok(leaps.length===0,'no lesson introduces more than one new note at a time'
    +(leaps.length?': '+leaps.map(x=>x.id+' (+'+x.novel+')').join(', '):''));
 
@@ -78,7 +113,7 @@ const src=fs.readFileSync('learn2.js','utf8');
  const today=await p.evaluate(()=>window.LEARN2._due().length);
  ok(today===0,'a lesson learned TODAY is not offered for review — spacing works at the day boundary ('+today+' due)');
  const yesterday=await p.evaluate(async()=>{
-   localStorage.setItem('slimehedron-learn2',JSON.stringify({somi:{hits:10,tries:10,at:Date.now()-25*3600e3}}));
+   localStorage.setItem('slimehedron-learn2',JSON.stringify({notes:{hits:12,tries:12,at:Date.now()-25*3600e3}}));
    location.reload();return null;});
  await p.waitForTimeout(1200);
  await p.click('.modeCard[data-m="learn"]');await p.waitForTimeout(1300);
@@ -111,7 +146,11 @@ const src=fs.readFileSync('learn2.js','utf8');
  // sounds and voiceless ones mark high. The syllables must obey that or they are just noises.
  ok(/^[dbg]/i.test(say.low||''),'the LOW syllable opens on a voiced stop, as every one of those systems does ("'+say.low+'")');
  ok(/^[tkp]/i.test(say.high||''),'the HIGH syllable opens on a voiceless stop ("'+say.high+'")');
- const BACK=/[ou]/i, FRONT=/[ie]/i;
+ // The letters are a PROXY for the phoneme, and the proxy was too tight: /ae/ -- the vowel in "tap" --
+ // is a near-open FRONT vowel with a high second formant (~1700-2000 Hz, against ~800-1200 for /u/), so
+ // it satisfies Hughes' rule exactly as /e/ and /i/ do. The low-syllable check still demands a back
+ // vowel, so nothing can pass both.
+ const BACK=/[ou]/i, FRONT=/[iea]/i;
  ok(BACK.test(say.low||''),'the low syllable carries a back vowel (lower second formant)');
  ok(FRONT.test(say.high||''),'the high syllable carries a front vowel (higher second formant)');
 

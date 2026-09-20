@@ -18,13 +18,13 @@ ok(ids.length>=7,'found the unit list ('+ids.length+' units)');
 // failed the moment the lessons were refactored onto one engine.
 // A THIRD route exists now: the seven-note scale lessons all delegate to scaleUnit(), which passes the
 // id straight into pitchUnit. So first prove scaleUnit really does finish, then accept its callers.
-const HELPERS=['scaleUnit'];
+const HELPERS=['scaleLadder'];
 for(const h of HELPERS)
-  ok(new RegExp("function "+h+"\\([\\s\\S]{0,900}?pitchUnit\\(").test(src),
-     "the shared helper "+h+"() runs on pitchUnit, so everything it wraps reaches an ending");
+  ok(new RegExp("function "+h+"\\([\\s\\S]{0,900}?(pitchUnit|ladderUnit)\\(").test(src),
+     "the shared helper "+h+"() runs on a controller that finishes, so everything it wraps reaches an ending");
 const viaHelper=(id)=>HELPERS.some(h=>new RegExp(h+"\\('"+id+"'").test(src));
 for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
-    ||new RegExp("id:'"+id+"'[\\s\\S]{0,400}?pitchUnit|pitchUnit\\(\\{[\\s\\S]{0,120}?id:'"+id+"'").test(src)
+    ||new RegExp("id:'"+id+"'[\\s\\S]{0,400}?(pitchUnit|ladderUnit)|(pitchUnit|ladderUnit)\\(\\{[\\s\\S]{0,160}?id:'"+id+"'").test(src)
     ||viaHelper(id),
   "unit '"+id+"' reaches an ending (its own finish(), the shared pitchUnit controller, or a helper that uses it)");
 
@@ -63,14 +63,21 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
 
  // BEAT: tap fast; a tap inside the window counts, one outside just resets the run (no scolding)
  await home();await open('pulse');
- for(let i=0;i<420&&!(await doneUp());i++){await p.evaluate(()=>window._lab_tap&&window._lab_tap());await p.waitForTimeout(22);}
+ // BEAT is a TIMED lesson now: it wants eight taps in a row inside a window of +/-30% of a beat,
+ // so hammering the hook cannot pass it any more — and must not be able to. The lesson publishes the
+ // audio-clock time of the next beat; this taps ON it, the way a child would.
+ for(let i=0;i<120&&!(await doneUp());i++){
+   const wait=await p.evaluate(()=>{ if(typeof AC==='undefined'||!AC||window._labNextBeat==null)return 120;
+     return Math.max(4,(window._labNextBeat-AC.currentTime)*1000);});
+   await p.waitForTimeout(Math.min(1200,wait));
+   await p.evaluate(()=>window._lab_tap&&window._lab_tap());}
  ok(await doneUp(),'BEAT ends with a "you did it" card');
 
  // HIGH & LOW / UP OR DOWN: answer both ways each round; one of them is right
  // These answer by CHIP, not by striking a wall. They are now mastery-gated at 80%, so a driver that
  // guesses 50/50 will (correctly) loop forever — it has to actually answer right. window._labExpect
  // carries the expected answer for exactly this purpose.
- for(const [id,fn] of [['high','_lab_hi'],['updown','_lab_ud']]){
+ for(const [id,fn] of [['updown','_lab_ud']]){
    await home();await open(id);
    for(let i=0;i<80&&!(await doneUp());i++){
      const want=await p.evaluate(()=>window._labExpect);
@@ -81,16 +88,40 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
  // HOME + FIND HOME: land on the tonic (degree 0 in the pentatonic the lessons now use)
  for(const id of ['home','findhome']){
    await home();await open(id);
-   for(let i=0;i<60&&!(await doneUp());i++){await strikeDeg(0);await p.waitForTimeout(240);}
+   for(let i=0;i<90&&!(await doneUp());i++){
+     const onLadder=await p.evaluate(()=>{const r=document.querySelector('.lgRung[data-deg="0"]');
+       if(!r)return false; r.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));return true;});
+     if(!onLadder)await strikeDeg(0);
+     await p.waitForTimeout(260);}
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
  // the new hint-driven pitch lessons: so-mi, +la, all five
  // sayplay plays a pattern then wants it back, one syllable at a time, following the hint.
  // sayplay is the long one: each rep plays a whole four-syllable pattern AT you before asking for it
  // back, so it needs a bigger budget than a single-note lesson. That is the repetition, not a stall.
- for(const id of ['somi','addla','five','sayplay']){
+ // the LADDER lessons answer by tapping a rung, and the lesson publishes which one it wants.
+ for(const id of ['high','notes','newhome','majorscale','minorscale','minorshapes','modes']){
    await home();await open(id);
-   const budget=(id==='sayplay')?420:160;
+   for(let i=0;i<200&&!(await doneUp());i++){
+     const d=await p.evaluate(()=>window._labHintDeg);
+     if(d==null){await p.waitForTimeout(200);continue;}
+     const hit=await p.evaluate(dd=>{const r=document.querySelector('.lgRung[data-deg="'+dd+'"]');
+       if(!r)return false; r.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));return true;},d);
+     await p.waitForTimeout(hit?260:200);}
+   ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
+
+ // BRIGHT AND DARK answers with two big buttons; the lesson publishes which one is right.
+ {await home();await open('brightdark');
+  for(let i=0;i<120&&!(await doneUp());i++){
+    const w=await p.evaluate(()=>window._labExpect);
+    await p.evaluate(ww=>{const b=document.querySelector('[data-bd="'+(ww||'bright')+'"]');
+      if(b)b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));},w);
+    await p.waitForTimeout(300);}
+  ok(await doneUp(),'BRIGHTDARK ends with a "you did it" card');}
+
+ for(const id of ['sayplay']){
+   await home();await open(id);
+   const budget=420;
    for(let i=0;i<budget&&!(await doneUp());i++){
      const d=await p.evaluate(()=>window._labHintDeg);
      if(d==null){await p.waitForTimeout(240);continue;}
@@ -99,10 +130,12 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
 
  // STEPS walks the scale and wraps; follow the hint rather than assuming how far it counts.
  await home();await open('steps');
- for(let i=0;i<140&&!(await doneUp());i++){
+ for(let i=0;i<220&&!(await doneUp());i++){
    const d=await p.evaluate(()=>window._labHintDeg);
-   if(d==null){await p.waitForTimeout(220);continue;}
-   await strikeDeg(d);await p.waitForTimeout(230);}
+   if(d==null){await p.waitForTimeout(200);continue;}
+   await p.evaluate(dd=>{const r=document.querySelector('.lgRung[data-deg="'+dd+'"]');
+     if(r)r.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));},d);
+   await p.waitForTimeout(240);}
  ok(await doneUp(),'STEPS ends with a "you did it" card');
 
  // ECHO: the game names its own next target (window._labHintDeg); follow it

@@ -83,24 +83,58 @@ const LANG={
     noRush:'take your time',
     // units
     u_pulse:'Beat', u_pulseSub:'tap in time',
-    u_high:'High and low', u_highSub:'which note is higher',
-    u_home:'Home note', u_homeSub:'the note a tune ends on',
-    u_steps:'Steps and skips', u_stepsSub:'next door, or jump',
-    u_somi:'So and mi', u_somiSub:'two notes, close together',
-    u_addla:'Add la', u_addlaSub:'so, mi, la',
-    u_five:'All five', u_fiveSub:'do re mi so la',
-    u_review:'Review', u_reviewSub:'notes from other days',
     u_sayplay:'Say it first', u_sayplaySub:'say the rhythm, then play it',
+    u_high:'High and low', u_highSub:'which note is higher',
+    u_notes:'Find the note', u_notesSub:'two notes, then three, then five',
+    u_home:'Home note', u_homeSub:'the note a tune ends on',
+    u_steps:'Steps and skips', u_stepsSub:'walk up, one at a time',
+    u_newhome:'New home', u_newhomeSub:'same five notes, different home',
+    u_majorscale:'The major scale', u_majorscaleSub:'add fa, then ti',
+    u_brightdark:'Bright and dark', u_brightdarkSub:'major and minor',
+    u_minorscale:'Minor scale', u_minorscaleSub:'the dark seven',
+    u_minorshapes:'Minor shapes', u_minorshapesSub:'harmonic, then melodic',
+    u_modes:'Modes', u_modesSub:'dorian, then mixolydian',
+    u_review:'Review', u_reviewSub:'notes from other days',
+    // say-it-first: the METHOD is borrowed (konnakol, bols, kuchi shoga, gu-eum, usul all vocalise a
+    // rhythm before playing it); the SYLLABLES are English so the child is saying words they own.
+    // They still follow Hughes 2000's acoustic logic: voiced stop + back vowel for the low drum,
+    // voiceless stop + front vowel for the high one, so the word sounds like the drum.
+    sp_low:'BOOM', sp_high:'TAP',
     sp_hear:'BOOM is the low drum. TAP is the high one.',
     sp_say:'Say it out loud, then tap it.',
     sp_name:'Say a rhythm before you play it. It makes it easier.',
-    // The METHOD is borrowed (konnakol, bols, kuchi shoga, gu-eum, usul all do this); the SYLLABLES are
-    // English so the child is saying words they already own. They still follow Hughes 2000's acoustic
-    // logic: voiced stop + back vowel for the low drum (B + oo), voiceless stop + front vowel for the
-    // high one (T + the front vowel in "tap"), so the sound of the word matches the sound of the drum.
-    sp_low:'BOOM', sp_high:'TAP',
-    u_loud:'Loud and soft', u_loudSub:'how hard you hit it',
-    u_major:'Bright and dark', u_majorSub:'one note changes the mood',
+    // --- what each lesson says, one short line, the thing to DO at the end of it ---
+    high_do:'Tap the note you hear.',
+    high_name:'How high a note sits is its PITCH.',
+    nt_do:'Tap the note you hear.',
+    nt_p1:'a new note on top', nt_p2:'a new note at the bottom', nt_p3:'one more, and that is all five',
+    nt_name:'DO RE MI SO LA. That is a PENTATONIC SCALE.',
+    home_do:'Tap the note that finishes it.',
+    home_name:'That note is HOME. Its name is DO.',
+    steps_do:'Walk up the ladder, one rung at a time.',
+    steps_name:'Next rung is a STEP. Jumping one is a SKIP.',
+    sad_do:'Tap the note you hear.',
+    sad_name:'Same five notes, new home. That is the MINOR PENTATONIC.',
+    ms_do:'Tap the note you hear.',
+    ms_p1:'one more note, under do',
+    ms_name:'Seven notes. That is the MAJOR SCALE.',
+    bd_hear:'Three notes. Only the middle one moves.',
+    bd_do:'Bright, or dark?',
+    bd_name:'Middle note high is MAJOR. Middle note low is MINOR.',
+    bright:'bright', dark:'dark',
+    mn_do:'Tap the note you hear.',
+    mn_name:'This is the MINOR SCALE. Its other name is AEOLIAN.',
+    sh_do:'Tap the note you hear.',
+    sh_p1:'now the melodic one',
+    sh_name:'Lift the seventh: HARMONIC MINOR. Lift two: MELODIC MINOR.',
+    md_do:'Tap the note you hear.',
+    md_p1:'now mixolydian',
+    md_name:'DORIAN is minor with a bright sixth. MIXOLYDIAN is major with a soft seventh.',
+    rev_hear:'A note from another day.',
+    rev_do:'Find it again.',
+    rev_name:'You still had it.',
+    rev_none:'nothing to review yet',
+    rev_noneSub:'Finish a lesson. Come back tomorrow.',
     g_echo:'Echo', g_echoSub:'play back what you hear',
     g_updown:'Up or down', g_updownSub:'which way did it go',
     g_findhome:'Find home', g_findhomeSub:'find do',
@@ -152,10 +186,14 @@ const LANG={
     mix_do:'Find the note you hear.',
     mix_name:'Major with a soft seventh is MIXOLYDIAN.',
     // pulse
-    pulse_hear:'A ball bounces on every beat.',
-    pulse_do:'Tap along.',
-    pulse_name:'That is the BEAT.',
+    // instruction copy: ONE short sentence, and the thing to DO goes at the end of it (Sesame
+    // Workshop's tablet guidance for pre-readers). Narrated as well as shown -- narration beats
+    // on-screen text by a wide margin in the multimedia literature (modality effect, g=0.82).
+    pulse_hear:'A ball drops on every beat.',
+    pulse_do:'When the ball lands, tap the slime.',
+    pulse_name:'That steady drop is the BEAT.',
     pulse_feed:'{n} in a row',
+    pulse_good:'yes', pulse_great:'right on it',
     // high / low
     high_hear:'Two notes. One high, one low.',
     high_do:'Tap the HIGH one.',
@@ -231,6 +269,24 @@ try{const sv=localStorage.getItem('slimehedron-lang');if(sv&&LANG[sv])lang=sv;}c
 let voiceOn=true;
 try{const v=localStorage.getItem('slimehedron-voice');if(v!=null)voiceOn=(v==='1');}catch(e){}
 let _lastSaid='';
+// The default voice an OS hands back first is usually its worst one. Prefer a named natural voice,
+// then any LOCAL voice in the right language (local ones are the higher-quality installed set on
+// every platform I can check), and only fall back to the default if there is nothing better.
+let _voice=null,_voiceTried=false;
+const GOOD_VOICES=[/natural/i,/google uk english female/i,/google us english/i,/samantha/i,/karen/i,
+                   /moira/i,/serena/i,/zira/i,/aria/i,/libby/i,/sonia/i,/jenny/i];
+function pickVoice(synth){
+  if(_voice||_voiceTried&&!synth.getVoices().length)return _voice;
+  const all=synth.getVoices()||[]; if(!all.length)return null;
+  _voiceTried=true;
+  const want=((LANG[lang]&&LANG[lang]._voice)||'en-US').slice(0,2).toLowerCase();
+  const inLang=all.filter(v=>(v.lang||'').slice(0,2).toLowerCase()===want);
+  const pool=inLang.length?inLang:all;
+  for(const re of GOOD_VOICES){const hit=pool.find(v=>re.test(v.name||''));if(hit){_voice=hit;return _voice;}}
+  _voice=pool.find(v=>v.localService)||pool[0]||null;
+  return _voice;
+}
+try{if(window.speechSynthesis)speechSynthesis.addEventListener('voiceschanged',()=>{_voice=null;_voiceTried=false;});}catch(e){}
 function speech(txt,force){
   if(!txt||!voiceOn)return;
   if(!force&&txt===_lastSaid)return;
@@ -240,7 +296,8 @@ function speech(txt,force){
     synth.cancel();
     const u=new SpeechSynthesisUtterance(String(txt));
     u.lang=(LANG[lang]&&LANG[lang]._voice)||'en-US';
-    u.rate=0.92; u.pitch=1.06; u.volume=1;
+    const v=pickVoice(synth); if(v)u.voice=v;
+    u.rate=0.86; u.pitch=1.0; u.volume=1;
     synth.speak(u);
   }catch(e){}
 }
@@ -253,7 +310,9 @@ function sayScreen(force){
   // NOTE: do not filter on offsetParent here. dock() calls this in the same tick it reveals the card,
   // and the layout box is not settled yet - which made every lesson silent. The `hidden` attribute is
   // the real signal (it is what hides the not-yet-earned NAME line), and it is reliable immediately.
-  const parts=[...ov.querySelectorAll('.ldTitle,.labSay,.labDo')]
+  // .lgSay is the stage lessons' instruction line; without it every lesson that owns its own screen
+  // was silent, which is the whole point of the feature for a child who cannot read yet.
+  const parts=[...ov.querySelectorAll('.ldTitle,.labSay,.labDo,.lgSay')]
     .filter(e=>!e.hidden).map(e=>e.textContent.trim().replace(/[.\s]+$/,'')).filter(Boolean);
   speech(parts.join('. '),force);
 }
@@ -341,12 +400,32 @@ const ov=$id('learnOverlay');
 let _render=null, _cleanup=null;
 function dock(html){
   if(!ov)return;
+  stageOff();
   ov.classList.add('lab');document.body.classList.add('lab-on');
   ov.innerHTML='<div class="lCard">'+html+'</div>';
   sayScreen();   // deduped inside: a repaint of the same screen is silent
 }
+// A lesson that needs its own interface renders here instead of into the shared card. Nothing from
+// the tank rig comes with it -- see the lab-stage rules in index.html for why.
+let _lastTitle='';
+function stage(html){
+  if(!ov)return;
+  ov.classList.remove('lab');ov.classList.add('stage');
+  document.body.classList.add('lab-on','lab-stage');
+  ov.innerHTML='<div class="lgStage">'+html+'</div>';
+  // Several lessons share an instruction line ("Tap the note you hear."), and the speech dedupe
+  // then swallowed it on entry to the next one. A change of TITLE means a new lesson, so it speaks.
+  const ttl=(ov.querySelector('.lgTop h3')||{}).textContent||'';
+  if(ttl!==_lastTitle){_lastTitle=ttl;_lastSaid='';}
+  sayScreen();
+}
+function stageOff(){
+  if(ov)ov.classList.remove('stage');
+  document.body.classList.remove('lab-stage');
+}
 function sheet(html){ // the old full-screen card, for menus
   if(!ov)return;
+  stageOff();
   ov.classList.remove('lab');document.body.classList.remove('lab-on');
   ov.innerHTML='<div class="lCard">'+html+'</div>';
 }
@@ -447,155 +526,123 @@ function finish(id,nameLine){
 const DEG={do:0,re:1,mi:2,so:3,la:4};                      // major pentatonic: do re mi so la
 const DEG7={do:0,re:1,mi:2,fa:3,so:4,la:5,ti:6};           // full diatonic: fa slots in at index 3
 const SEVEN=[0,1,2,3,4,5,6];
-// ---- the ramp above the pentatonic ------------------------------------------------------------
-// Ordered from the Kodaly sequence (Holy Names University Kodaly Center, "Sequence of Introducing
-// Music Concepts"), cross-checked against Trinity College London Theory and the DfE Model Music
-// Curriculum. The order is NOT the one adults assume: the next step after the major pentatonic is
-// the la-pentatonic -- the same five notes with a new home -- not the major scale. fa arrives a full
-// grade before ti, and the major scale is built up rather than handed over whole.
-//   Kodaly G2  la pentatonic          -> 9  sadfive
-//   Kodaly G3  so/re pentatonic       -> 10 movehome
-//   Kodaly G3  fa, do hexachord       -> 11 addfa
-//   Kodaly G4  ti, diatonic major     -> 12 addti
-//   Kodaly G4  diatonic minor (la)    -> 13 brightdark / 14 minorscale
-//   Kodaly G5  harmonic minor         -> 15 harmminor
-//   Kodaly G6  melodic minor          -> 16 melminor
-//   Trinity G6 Aeolian (renaming)     -> 17 aeolian
-//   Kodaly G6 / Trinity G7-8          -> 18 dorian, 19 mixo
-// Phrygian, Lydian and Locrian are deliberately absent: neither Kodaly's chart nor Trinity's syllabus
-// lists them at any grade, and RCM only reaches them at diploma level.
-function sadFiveUnit(){
-  let target=0;
-  // The la-pentatonic is the SAME FIVE PITCHES as the major pentatonic the child already has, re-homed
-  // nine semitones up (C D E G A -> A C D E G). rootShift is relative to the pinned lesson key, so it
-  // transposes the key the lessons are already in and cannot stack on a re-entry.
-  const u=pitchUnit({id:'sadfive',title:'u_sadfive',hear:'sad_hear',doIt:'sad_do',name:'sad_name',
-    scale:'pentaMin',rootShift:9,use:[0,1,2,3,4],need:10,band:true,
-    ask(){target=(Math.random()*5)|0;later(()=>{sing(target,94,.55);hint(target);},220);}});
-  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;u.answer(d===target,d);});
-}
-function moveHomeUnit(){
-  // so-pentatonic, taught the way a child can hear it: the same tank, a phrase that leans on SO, and
-  // SO is the note that finishes. No new pitch, no new scale object.
-  const u=pitchUnit({id:'movehome',title:'u_movehome',hear:'mv_hear',doIt:'mv_do',name:'mv_name',
-    use:[DEG.do,DEG.re,DEG.mi,DEG.so,DEG.la],need:10,band:true,
-    setup(){hint(DEG.so);},
-    ask(){sing(DEG.la,86,.45);later(()=>sing(DEG.mi,86,.45),470);later(()=>hint(DEG.so),960);}});
-  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;u.answer(d===DEG.so,d);});
-}
-function addFaUnit(){
-  const POOL=[DEG7.do,DEG7.re,DEG7.mi,DEG7.fa,DEG7.so,DEG7.la];  // the do-hexachord: fa, no ti yet
-  let target=DEG7.fa;
-  const u=pitchUnit({id:'addfa',title:'u_addfa',hear:'fa_hear',doIt:'fa_do',name:'fa_name',
-    scale:'major',use:POOL,need:10,
-    ask(){target=Math.random()<0.45?DEG7.fa:POOL[(Math.random()*POOL.length)|0];
-      later(()=>{sing(target,94,.55);hint(target);},220);}});
-  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;
-    if(POOL.indexOf(d)<0)return;u.answer(d===target,d);});
-}
-function addTiUnit(){
-  let target=DEG7.ti;
-  const u=pitchUnit({id:'addti',title:'u_addti',hear:'ti_hear',doIt:'ti_do',name:'ti_name',
-    scale:'major',use:SEVEN,need:10,band:true,
-    chips:()=>'<div class="labChips"><button class="labChip" data-a2="sc_demo">'+t('listen')+'</button></div>',
-    ask(){target=Math.random()<0.4?DEG7.ti:(Math.random()*7)|0;
-      later(()=>{sing(target,94,.55);hint(target);},220);}});
-  window._lab_scaleDemo=()=>{for(let i=0;i<8;i++)later(()=>sing(i%7+(i===7?7:0),88,.4),i*300);};
-  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;u.answer(d===target,d);});
-}
-function brightDarkUnit(){
-  // Major and minor differ by ONE note, so this plays the same three-note chord twice and moves only
-  // the middle one. Raw cents rather than a scale swap: no rebuild between rounds, no wall changes.
-  // Dalla Bella et al. (2001, Cognition) put reliable major/minor discrimination at about 6-8 years,
-  // which is why this sits at lesson 13 and not lesson 2.
-  let bright=true;
-  const u=pitchUnit({id:'brightdark',title:'u_brightdark',hear:'bd_hear',doIt:'bd_do',name:'bd_name',
-    scale:'major',use:SEVEN,need:10,labels:false,
-    chips:()=>'<div class="labChips">'+
-        '<button class="labChip" data-a2="bd_br">'+t('bright')+'</button>'+
-        '<button class="labChip" data-a2="bd_dk">'+t('dark')+'</button>'+
-        '<button class="labChip" data-a2="bd_replay">'+t('listen')+'</button></div>',
-    ask(){bright=Math.random()<0.5;window._labExpect=bright?'bright':'dark';play();}});
-  function play(){const third=bright?400:300;
-    note(0,92,.5);later(()=>note(third,92,.5),420);later(()=>note(700,92,.6),840);}
-  window._lab_bd=(g)=>u.answer((g==='bright')===bright,null);
-  window._lab_bdReplay=play;
-}
-function scaleUnit(id,titleK,scale,hearK,doK,nameK,star,extra){
-  // every seven-note scale lesson is this: find the note you hear, with the note that MAKES this
-  // scale what it is coming up more often than the rest.
-  let target=0;
-  const u=pitchUnit({id:id,title:titleK,hear:hearK,doIt:doK,name:nameK,
-    scale:scale,use:SEVEN,need:extra&&extra.need||10,band:true,
-    chips:()=>'<div class="labChips"><button class="labChip" data-a2="sc_demo">'+t('listen')+'</button></div>',
-    ask(){target=(star!=null&&Math.random()<0.4)?star:((Math.random()*7)|0);
-      later(()=>{sing(target,94,.55);hint(target);},220);}});
-  window._lab_scaleDemo=()=>{for(let i=0;i<8;i++)later(()=>sing(i%7,88,.4),i*300);};
-  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;u.answer(d===target,d);});
-}
-function minorScaleUnit(){scaleUnit('minorscale','u_minorscale','minor','mn_hear','mn_do','mn_name',2);}
-function harmMinorUnit(){scaleUnit('harmminor','u_harmminor','harmMin','hm_hear','hm_do','hm_name',6);}
-function melMinorUnit(){scaleUnit('melminor','u_melminor','melMin','ml_hear','ml_do','ml_name',5);}
-function aeolianUnit(){scaleUnit('aeolian','u_aeolian','minor','ae_hear','ae_do','ae_name',null);}
-function dorianUnit(){scaleUnit('dorian','u_dorian','dorian','dor_hear','dor_do','dor_name',5);}
-function mixoUnit(){scaleUnit('mixo','u_mixo','mixolydian','mix_hear','mix_do','mix_name',6);}
 const UNITS=[
-  {id:'pulse', title:'u_pulse', sub:'u_pulseSub', tier:'lesson', run:pulseUnit,
-   slime:'grn',   tint:'#9fe6cf', ico:icoBeat},
-  {id:'sayplay', title:'u_sayplay', sub:'u_sayplaySub', tier:'lesson', run:sayPlayUnit,
-   slime:'bo',    tint:'#ffd3a8', ico:icoMouth},
-  {id:'high', title:'u_high', sub:'u_highSub', tier:'lesson', run:highUnit,
-   slime:'blue1', tint:'#a6c8ff', ico:icoUpDown, use:[DEG.do,DEG.la]},
-  {id:'somi', title:'u_somi', sub:'u_somiSub', tier:'lesson', run:somiUnit,
-   slime:'pear1', tint:'#d9e88f', ico:icoTwo,   use:[DEG.mi,DEG.so]},
-  {id:'addla', title:'u_addla', sub:'u_addlaSub', tier:'lesson', run:addlaUnit,
-   slime:'orange',tint:'#ffd3a8', ico:icoThree, use:[DEG.mi,DEG.so,DEG.la]},
-  {id:'home', title:'u_home', sub:'u_homeSub', tier:'lesson', run:homeUnit,
-   slime:'pink1', tint:'#ffb6d6', ico:icoHome,  use:[DEG.do,DEG.mi,DEG.so]},
-  {id:'five', title:'u_five', sub:'u_fiveSub', tier:'lesson', run:fiveUnit,
-   slime:'teal',  tint:'#8fe0d0', ico:icoFive,  use:[0,1,2,3,4]},
-  {id:'steps', title:'u_steps', sub:'u_stepsSub', tier:'lesson', run:stepsUnit,
-   slime:'violet',tint:'#c4a9f5', ico:icoSteps, use:[0,1,2,3,4]},
+  // ---- block A: first notes ----
+  {id:'pulse',      title:'u_pulse',      sub:'u_pulseSub',      tier:'lesson', run:pulseUnit,      tint:'#9fe6cf'},
+  {id:'sayplay',    title:'u_sayplay',    sub:'u_sayplaySub',    tier:'lesson', run:sayPlayUnit,    tint:'#ffd3a8'},
+  {id:'high',       title:'u_high',       sub:'u_highSub',       tier:'lesson', run:highUnit,       tint:'#a6c8ff', use:[DEG.do,DEG.la]},
+  {id:'notes',      title:'u_notes',      sub:'u_notesSub',      tier:'lesson', run:findNoteUnit,   tint:'#d9e88f', use:[0,1,2,3,4]},
+  {id:'home',       title:'u_home',       sub:'u_homeSub',       tier:'lesson', run:homeUnit,       tint:'#ffb6d6', use:[DEG.do,DEG.mi,DEG.so]},
+  {id:'steps',      title:'u_steps',      sub:'u_stepsSub',      tier:'lesson', run:stepsUnit,      tint:'#c4a9f5', use:[0,1,2,3,4]},
   // ---- block B: more notes ----
-  {id:'sadfive', title:'u_sadfive', sub:'u_sadfiveSub', tier:'lesson', block:'b', run:sadFiveUnit,
-   slime:'blue3', tint:'#a6c8ff', ico:icoFive,  use:[0,1,2,3,4]},
-  {id:'movehome', title:'u_movehome', sub:'u_movehomeSub', tier:'lesson', block:'b', run:moveHomeUnit,
-   slime:'pink2', tint:'#ffb6d6', ico:icoHome,  use:[0,1,2,3,4]},
-  {id:'addfa', title:'u_addfa', sub:'u_addfaSub', tier:'lesson', block:'b', run:addFaUnit,
-   slime:'orange',tint:'#ffd3a8', ico:icoSteps, use:[0,1,2,3,4,5]},
-  {id:'addti', title:'u_addti', sub:'u_addtiSub', tier:'lesson', block:'b', run:addTiUnit,
-   slime:'teal2', tint:'#8fe0d0', ico:icoFive,  use:[0,1,2,3,4,5,6]},
-  {id:'brightdark', title:'u_brightdark', sub:'u_brightdarkSub', tier:'lesson', block:'b', run:brightDarkUnit,
-   slime:'pear3', tint:'#d9e88f', ico:icoTwo,   use:[0,1,2,3,4,5,6]},
-  // ---- block C: minor keys ----
-  {id:'minorscale', title:'u_minorscale', sub:'u_minorscaleSub', tier:'lesson', block:'c', run:minorScaleUnit,
-   slime:'violet2',tint:'#c4a9f5', ico:icoFive,  use:[0,1,2,3,4,5,6]},
-  {id:'harmminor', title:'u_harmminor', sub:'u_harmminorSub', tier:'lesson', block:'c', run:harmMinorUnit,
-   slime:'pink3', tint:'#ffb6d6', ico:icoSteps, use:[0,1,2,3,4,5,6]},
-  {id:'melminor', title:'u_melminor', sub:'u_melminorSub', tier:'lesson', block:'c', run:melMinorUnit,
-   slime:'blue2', tint:'#a6c8ff', ico:icoUpDown,use:[0,1,2,3,4,5,6]},
-  // ---- block D: modes ----
-  {id:'aeolian', title:'u_aeolian', sub:'u_aeolianSub', tier:'lesson', block:'d', run:aeolianUnit,
-   slime:'teal3', tint:'#8fe0d0', ico:icoHome,  use:[0,1,2,3,4,5,6]},
-  {id:'dorian', title:'u_dorian', sub:'u_dorianSub', tier:'lesson', block:'d', run:dorianUnit,
-   slime:'grn3',  tint:'#9fe6cf', ico:icoSteps, use:[0,1,2,3,4,5,6]},
-  {id:'mixo', title:'u_mixo', sub:'u_mixoSub', tier:'lesson', block:'d', run:mixoUnit,
-   slime:'bo2',   tint:'#ffd3a8', ico:icoUpDown,use:[0,1,2,3,4,5,6]},
-  {id:'echo', title:'g_echo', sub:'g_echoSub', tier:'game', run:echoGame,
-   slime:'blue2', tint:'#a6c8ff', ico:icoEcho},
-  {id:'updown', title:'g_updown', sub:'g_updownSub', tier:'game', run:upDownGame,
-   slime:'violet2',tint:'#c4a9f5', ico:icoUpDown},
-  {id:'findhome', title:'g_findhome', sub:'g_findhomeSub', tier:'game', run:findHomeGame,
-   slime:'pear2', tint:'#d9e88f', ico:icoHome},
-  {id:'review', title:'u_review', sub:'u_reviewSub', tier:'practice', run:reviewUnit,
-   slime:'grn2',  tint:'#9fe6cf', ico:icoReview}
+  {id:'newhome',    title:'u_newhome',    sub:'u_newhomeSub',    tier:'lesson', block:'b', run:sadFiveUnit,    tint:'#8fe0d0', use:[0,1,2,3,4]},
+  {id:'majorscale', title:'u_majorscale', sub:'u_majorscaleSub', tier:'lesson', block:'b', run:majorScaleUnit, tint:'#ffe0a8', use:[0,1,2,3,4,5,6]},
+  {id:'brightdark', title:'u_brightdark', sub:'u_brightdarkSub', tier:'lesson', block:'b', run:brightDarkUnit, tint:'#f5b8c8', use:[0,1,2,3,4,5,6]},
+  // ---- block C: minor and modes ----
+  {id:'minorscale', title:'u_minorscale', sub:'u_minorscaleSub', tier:'lesson', block:'c', run:minorScaleUnit, tint:'#b5a9f5', use:[0,1,2,3,4,5,6]},
+  {id:'minorshapes',title:'u_minorshapes',sub:'u_minorshapesSub',tier:'lesson', block:'c', run:minorShapesUnit,tint:'#a9c4f5', use:[0,1,2,3,4,5,6]},
+  {id:'modes',      title:'u_modes',      sub:'u_modesSub',      tier:'lesson', block:'c', run:modesUnit,      tint:'#9fe0c4', use:[0,1,2,3,4,5,6]},
+  // ---- games and practice ----
+  {id:'echo',     title:'g_echo',     sub:'g_echoSub',     tier:'game', run:echoGame,     tint:'#a6c8ff'},
+  {id:'updown',   title:'g_updown',   sub:'g_updownSub',   tier:'game', run:upDownGame,   tint:'#c4a9f5'},
+  {id:'findhome', title:'g_findhome', sub:'g_findhomeSub', tier:'game', run:findHomeGame, tint:'#d9e88f'},
+  {id:'review',   title:'u_review',   sub:'u_reviewSub',   tier:'practice', run:reviewUnit, tint:'#9fe6cf'}
 ];
+
+// ================================================================================================
+//  THE PITCH LADDER - the melodic lessons' own screen, given the same treatment as the beat.
+//  What they used before: the note tank (pitch encoded as the ANGLE of a polygon wall) plus a flat
+//  keybed (pitch encoded as horizontal position). Neither shows a child what high and low mean, and
+//  the keybed arrived with no indication of what it was for. High and low are SPATIAL words, so the
+//  control is spatial: a ladder, low at the bottom, high at the top, one fat rung per note.
+//  Fixed targets (a moving target is tapped correctly 37% of the time at ages 4-6; a still one 57%),
+//  nothing on screen that is not the job, and the instruction is narrated as well as written.
+// ================================================================================================
+const RUNG_TINT=['#9fe6cf','#a6c8ff','#c4a9f5','#ffb6d6','#ffd3a8','#d9e88f','#8fe0d0'];
+const EAR='<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5a3.5 3.5 0 0 1 0 5"/><path d="M19.5 7a7 7 0 0 1 0 10"/></svg>';
+function ladderUnit(cfg){
+  stageOff();
+  const id=cfg.id, need=cfg.need||10;
+  let rungs=[], right=0, busy=false, target=null, phase=0;
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  const HOME=()=>((LAB._saved&&LAB._saved.root!=null)?LAB._saved.root:S.root)+(cfg.rootShift||0);
+  // the tank still SOUNDS the notes - it is the app's instrument - but it is not on screen.
+  LAB.take({scale:(cfg.scales?cfg.scales[0]:cfg.scale)||'pentaMaj',root:HOME(),
+            octs:1,drums:false,band:false,touch:false});
+  LAB.labels(null);LAB.clear();
+  function setOf(){ return (typeof cfg.use==='function')?cfg.use(phase):cfg.use; }
+  function retake(){ // a lesson that changes scale between phases (harmonic -> melodic minor)
+    if(!cfg.scales)return;
+    LAB.take({scale:cfg.scales[Math.min(phase,cfg.scales.length-1)],root:HOME(),
+              octs:1,drums:false,band:false,touch:false});
+    LAB.labels(null);LAB.clear(); }
+  function name(d){
+    if(cfg.names&&cfg.names[d]!=null)return cfg.names[d];
+    let c=0;try{c=degCents(d);}catch(e){c=d*200;}
+    return solfegeFor(c)||String(d+1);
+  }
+  function paint(){
+    const use=setOf();
+    // built LOW FIRST; the container is column-reverse, so the highest note ends up at the top.
+    const ladder=use.map((d,i)=>
+      '<button class="lgRung" data-deg="'+d+'" style="--rc:'+RUNG_TINT[i%RUNG_TINT.length]+'">'+
+        '<span class="rgName">'+name(d)+'</span>'+
+        '<span class="rgDeg">'+(i===0?'LOW':(i===use.length-1?'HIGH':''))+'</span></button>').join('');
+    stage(
+      '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t(cfg.title)+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
+      '<div class="lgLadder" id="lgLadder">'+ladder+'</div>'+
+      '<p class="lgSay">'+t(cfg.doIt)+'</p>'+
+      '<div class="lgFeed" id="lgFeed"></div>'+
+      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>');
+    rungs=[...document.querySelectorAll('.lgRung')];
+    if(target!=null)markTarget();
+  }
+  function markTarget(){ rungs.forEach(r=>r.classList.toggle('target', cfg.showTarget===true && +r.dataset.deg===target));
+    window._labHintDeg=target; }   // readable target: dev-lessons drives the lesson through this
+  function ask(){ if(busy)return; target=cfg.pick(setOf(),phase); markTarget(); cfg.play(target,setOf()); }
+  window._lab_lgAgain=()=>{ if(!busy&&target!=null)cfg.play(target,setOf()); };
+  function answer(ok,deg){
+    if(busy)return;
+    const el=rungs.find(r=>+r.dataset.deg===deg);
+    if(el){el.classList.remove('right','wrong');void el.offsetWidth;el.classList.add(ok?'right':'wrong');
+           later(()=>el.classList.remove('right','wrong'),380);}
+    score(id,ok);
+    if(ok)right++;
+    const fd=document.getElementById('lgFeed'); if(fd)fd.textContent=t(ok?'yes':'notYet');
+    const c=document.querySelector('.lgCount'); if(c)c.textContent=right+' / '+need;
+    document.querySelectorAll('.lgDots i').forEach((x,i)=>x.classList.toggle('got',i<right));
+    rungs.forEach(r=>r.classList.remove('target'));
+    if(right>=need){busy=true;later(()=>{stageOff();finish(id,t(cfg.name));},760);return;}
+    // a lesson that grows (two notes, then three, then five) steps up as the child gets them
+    if(cfg.phases&&right>0&&right%cfg.phases===0&&phase<(cfg.maxPhase||0)){
+      phase++;retake();paint();
+      if(cfg.phaseSay&&cfg.phaseSay[phase]){const f2=document.getElementById('lgFeed');
+        if(f2)f2.textContent=t(cfg.phaseSay[phase]); speech(t(cfg.phaseSay[phase]),true);}}
+    later(ask,ok?780:1020);
+  }
+  // pointerdown, not click: a young child's tap can rest on the glass for seconds
+  const onDown=(e)=>{const r=e.target.closest&&e.target.closest('.lgRung');if(!r)return;
+    e.preventDefault();
+    r.classList.add('press');setTimeout(()=>r.classList.remove('press'),90);
+    const d=+r.dataset.deg; sing(d,94,.5);
+    answer(cfg.correct?cfg.correct(d,target):(d===target), d);};
+  ov.addEventListener('pointerdown',onDown,true);
+  _render=paint;paint();
+  later(ask,700);
+  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._lab_lgAgain=null;stageOff();LAB.clear();};
+}
 
 // ---- the shared engine every pitch lesson runs on --------------------------------------------------
 // One controller instead of six near-copies. A unit says which degrees it owns and how to ask; this
 // handles the tank, the reps, the scoring and the ending. More reps than the old three: mastery needs
 // attempts to be measured over, and repetition is the point of practice.
 function pitchUnit(cfg){
+  stageOff();                                      // leaving a stage lesson: give the tank rig back
+  document.body.classList.remove('lab-nokeys');   // pitch lessons always want the keys back
   const id=cfg.id, use=cfg.use, need=cfg.need||10;
   let n=0,right=0,busy=false;
   // The scale is a parameter now. Everything above lesson 8 is the same controller pointed at a
@@ -643,32 +690,145 @@ function pitchUnit(cfg){
 }
 
 // ---------- 1. BEAT: the tank drops a ball on every beat; the child taps along ----------
+// ================================================================================================
+//  LESSON 1 - BEAT.  Its own screen, built from the entrainment research rather than from whatever
+//  the shared lesson rig happened to provide.
+//
+//  120 BPM, NOT 88.  A child's spontaneous motor tempo is 400-500ms between taps -- roughly 120-150
+//  BPM, FASTER than an adult's ~100. Under-4s need a tempo within about 20% of their own to lock on
+//  at all (Provasi et al. 2014), and Kirschner & Tomasello (2009) found 2.5-year-olds simply refused
+//  600ms (100 BPM) and held their own faster rate. Untrained synchronisation also degrades once the
+//  gap passes 1 second (Repp 2005). "Slow it down so it's easier" is backwards for this age.
+//
+//  A FALLING BALL, NOT A PULSE.  Synchronising to a stationary flash needs ~460ms between flashes to
+//  work at all -- about four times worse than audio (Repp 2005). A ball on a realistic GRAVITY
+//  trajectory matches an auditory metronome for tapping stability (R=0.946 vs 0.934 for constant
+//  acceleration-free motion; Sci Rep 2015), because a falling object's arrival time is extrapolated
+//  natively. That is what makes the beat predictable instead of reactive.
+//
+//  TWO BEATS OF LEAD.  Reacting to a beat is physically too late: visual reaction time is ~200-250ms,
+//  a third of a beat at 120 BPM, and synchronised tapping actually lands slightly BEFORE the beat
+//  (negative mean asynchrony). Commercial rhythm games give their easiest tier ~1-1.5s of approach.
+//  Two beats at 120 BPM is 1000ms, and two balls are in the air at once.
+//
+//  FIXED PAD, MOVING CUE.  Tapping a moving target succeeds 37% of the time at ages 4-6; a stationary
+//  one, 57% (Ahn et al.). So the target never moves.
+//
+//  TOUCH-DOWN, NOT TOUCH-UP.  A 4-year-old's "tap" can rest on the glass for 5.1 seconds
+//  (Vatavu et al. 2015). Timing on release would make this unplayable for half the audience.
+// ================================================================================================
+const PULSE_BPM=120, PULSE_NEED=8, PULSE_LEAD=2;   // lead is in beats
+const PULSE_GOOD=0.30, PULSE_GREAT=0.12;           // tap windows, as a fraction of one beat
 function pulseUnit(){
-  let taps=0,run=0,last=0,done=false;
-  const period=()=>60000/(S.bpm||90);
+  const P=60/PULSE_BPM;                 // one beat, in seconds
+  let run=0, done=false, raf=0, sched=0, nextBeat=0, t0=0, lastJudged=-1;
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  LAB.take({exact:false,shape:'4',scale:'pentaMaj',octs:1,drums:false,band:false,grav:0,bpm:PULSE_BPM,touch:false});
+  LAB.labels(null);LAB.clear();
+
+  const SLIME='minis/grn.png';
   function paint(){
-    dock(bar(t('u_pulse'),'1 / 3')+
-      '<p class="labSay">'+t('pulse_hear')+'</p>'+
-      '<div class="labDo">'+t('pulse_do')+'</div>'+
-      '<div class="labFeed"></div>'+
-      '<div class="labChips"><button class="labChip" data-a2="tap">tap</button></div>'+
-      '<p class="labSay" id="lb_name" hidden>'+t('pulse_name')+'</p>');
+    stage(
+      '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t('u_pulse')+'</h3><span class="lgCount">'+run+' / '+PULSE_NEED+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="lgDots">'+Array.from({length:PULSE_NEED},(_,i)=>'<i class="'+(i<run?'got':'')+'"></i>').join('')+'</div>'+
+      '<div class="lgLane" id="lgLane"><div class="lgFloor" id="lgFloor"></div></div>'+
+      '<p class="lgSay">'+t('pulse_do')+'</p>'+
+      '<div class="lgFeed" id="lgFeed"></div>'+
+      '<div class="lgPad" id="lgPad" role="button" tabindex="0" aria-label="tap"><img src="'+SLIME+'" alt="" draggable="false"></div>');
+    layout();
   }
-  _render=paint;paint();
-  LAB.take({exact:false,shape:'4',octs:1,drums:true,band:false,grav:0}); // a beat lesson wants a plain square, not a scale
-  LAB.labels(null);
-  const iv=setInterval(()=>{LAB.drop(0,1);last=performance.now();},period());
-  _timers.push(iv);
-  _cleanup=()=>clearInterval(iv);
-  // TIMING IS THE ONE THING A SMALL CHILD WILL MISS CONSTANTLY, so a miss says nothing at all: the
-  // counter simply does not go up. (Melodics calls this wait-mode; the rule is constrain, never scold.)
-  window._lab_tap=()=>{
+  // the floor sits just above the pad; the ball falls the height of the lane onto it
+  function layout(){
+    const lane=document.getElementById('lgLane'),floor=document.getElementById('lgFloor');
+    if(!lane||!floor)return;
+    floor.style.top=Math.max(40,lane.clientHeight-10)+'px';
+  }
+  addEventListener('resize',layout);
+
+  // ---- the clock is the audio clock, so what is seen and what is heard cannot drift apart ----
+  function tick(){
     if(done)return;
-    const now=performance.now(),off=Math.abs(now-last);
-    if(off<period()*0.34){run++;taps++;feed(t('pulse_feed',{n:run}));}
-    else run=0;
-    if(run>=6){done=true;finish('pulse',t('pulse_name'));}
-  };
+    const now=AC.currentTime;
+    window._labNextBeat=nextBeat; window._labBeatP=P;   // readable clock: the tests tap in time from this
+    while(nextBeat<now+0.25){                     // schedule a quarter-second ahead, sample-accurate
+      try{dHit('K',Math.max(now,nextBeat),1.15,true);}catch(e){}
+      nextBeat+=P; sched++;
+    }
+    draw(now);
+    raf=requestAnimationFrame(tick);
+  }
+  function draw(now){
+    const lane=document.getElementById('lgLane'); if(!lane)return;
+    const H=Math.max(40,lane.clientHeight-10), lead=PULSE_LEAD*P;
+    // every beat still in the air gets a ball; y = H*(progress^2) is constant acceleration from rest,
+    // so it arrives at the floor exactly on the beat with the velocity profile of a real drop.
+    const first=Math.ceil((now-t0)/P), last=first+PULSE_LEAD;
+    const want=[];
+    for(let n=first;n<=last;n++){
+      const bt=t0+n*P, dt=bt-now;
+      if(dt>lead||dt<-0.18)continue;
+      const prog=Math.min(1.12,1-dt/lead);
+      if(prog<0)continue;
+      want.push({n,prog});
+    }
+    const have={};
+    lane.querySelectorAll('.lgBall').forEach(b=>{have[b.dataset.n]=b;});
+    want.forEach(({n,prog})=>{
+      let b=have[n];
+      if(!b){b=document.createElement('div');b.className='lgBall';b.dataset.n=n;
+        b.innerHTML='<img src="'+SLIME+'" alt="" draggable="false">';lane.appendChild(b);}
+      delete have[n];
+      const p=Math.min(1,prog);
+      const y=H*p*p;                              // gravity: distance goes as the square of the time
+      const sq=prog>1?(1-(prog-1)*2.2):1;         // squash on contact, the collision cue
+      b.style.transform='translateY('+y.toFixed(1)+'px) scale('+Math.max(.55,sq).toFixed(2)+','+Math.min(1.3,2-Math.max(.55,sq)).toFixed(2)+')';
+      b.style.opacity=prog>1?String(Math.max(0,1-(prog-1)*3)):'1';
+    });
+    Object.values(have).forEach(b=>b.remove());
+  }
+
+  // ---- the tap ----
+  function judge(){
+    if(done||!AC)return;
+    const now=AC.currentTime;
+    const n=Math.round((now-t0)/P);
+    if(n===lastJudged)return;                      // one judgement per beat, however fast they tap
+    const err=Math.abs(now-(t0+n*P))/P;            // error as a fraction of a beat
+    const pad=document.getElementById('lgPad'),fl=document.getElementById('lgFloor'),fd=document.getElementById('lgFeed');
+    if(pad){pad.classList.remove('hit');void pad.offsetWidth;pad.classList.add('hit');}
+    if(err<=PULSE_GOOD){
+      lastJudged=n; run++;
+      if(pad)pad.classList.add('good');
+      if(fl){fl.classList.remove('flash');void fl.offsetWidth;fl.classList.add('flash');}
+      if(fd)fd.textContent=(err<=PULSE_GREAT?t('pulse_great'):t('pulse_good'));
+      const d=document.querySelectorAll('.lgDots i');
+      if(d[run-1])d[run-1].classList.add('got');
+      const c=document.querySelector('.lgCount'); if(c)c.textContent=run+' / '+PULSE_NEED;
+      if(run>=PULSE_NEED){done=true;cancelAnimationFrame(raf);
+        later(()=>{stageOff();finish('pulse',t('pulse_name'));},700);}
+      later(()=>{if(pad)pad.classList.remove('good');},260);
+    }else{
+      // a miss says nothing. The run resets and the beat carries on -- constrain, never scold.
+      run=0;
+      if(fd)fd.textContent='';
+      document.querySelectorAll('.lgDots i').forEach(i=>i.classList.remove('got'));
+      const c=document.querySelector('.lgCount'); if(c)c.textContent='0 / '+PULSE_NEED;
+    }
+  }
+  // TOUCH-DOWN. pointerdown, not click, not pointerup.
+  const onDown=(e)=>{const p=e.target.closest&&e.target.closest('#lgPad');if(!p)return;
+    e.preventDefault();judge();};
+  ov.addEventListener('pointerdown',onDown,true);
+  window._lab_tap=judge;                           // keyboard / test hook
+
+  _render=paint;paint();
+  t0=AC.currentTime+0.6; nextBeat=t0;
+  raf=requestAnimationFrame(tick);
+  _cleanup=()=>{done=true;cancelAnimationFrame(raf);
+    try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    removeEventListener('resize',layout);stageOff();LAB.clear();window._lab_tap=null;};
 }
 
 // ---------- SAY IT, THEN PLAY IT ----------------------------------------------------------------
@@ -732,95 +892,112 @@ function sayPlayUnit(){
   });
 }
 
-// ---------- 2. HIGH & LOW — pitch exploration, the first thing Kodaly Level I does ----------
-// Two notes as far apart as this scale goes, so the contrast is unmissable. No naming yet: Gordon puts
-// Verbal Association at level 2 of 8, AFTER aural/oral. The child hears and answers before anything
-// is called anything.
+// ---------- 3. HIGH AND LOW -- two notes, as far apart as the ladder goes ----------
+// No solfege yet. Gordon puts verbal association at level 2 of 8, AFTER aural/oral: the child hears
+// and answers before anything is given a name. So the rungs just say low and high.
 function highUnit(){
-  let lo=DEG.do,hi=DEG.la,first=lo;
-  const u=pitchUnit({id:'high',title:'u_high',hear:'high_hear',doIt:'high_do',name:'high_name',
-    use:[DEG.do,DEG.la],need:10,labels:false,
-    chips:()=>'<div class="labChips">'+
-        '<button class="labChip" data-a2="hi_up">'+t('up')+'</button>'+
-        '<button class="labChip" data-a2="hi_dn">'+t('down')+'</button>'+
-        '<button class="labChip" data-a2="hi_replay">'+t('listen')+'</button></div>',
-    ask(api){first=Math.random()<0.5?lo:hi;
-      window._labExpect=(first===lo)?'up':'down';   // readable target: dev-lessons drives from this
-      sing(first,90,.6);later(()=>sing(first===lo?hi:lo,90,.6),780);}});
-  window._lab_hi=(guess)=>u.answer((guess==='up')===(first===lo),first===lo?hi:lo);
-  window._lab_hiReplay=()=>{note(degCents(first),90,.6);later(()=>note(degCents(first===lo?hi:lo),90,.6),780);};
+  ladderUnit({id:'high',title:'u_high',doIt:'high_do',name:'high_name',
+    use:[DEG.do,DEG.la],need:10,names:{0:'low',4:'high'},showTarget:false,
+    pick:(u)=>u[(Math.random()*u.length)|0],
+    play:(d)=>sing(d,94,.6)});
 }
-
-// ---------- 3. TWO CLOSE NOTES (so and mi) ----------
-// Kodaly Grade 1 opens on so-mi and Orff's singing progression opens on falling thirds, so this is the
-// standard Western entry point. What is claimed to the CHILD, though, is only the evidenced part: two
-// notes close together, the second a little lower. See the honesty note above the UNITS table.
-function somiUnit(){
-  let target=DEG.so;
-  const u=pitchUnit({id:'somi',title:'u_somi',hear:'somi_hear',doIt:'somi_do',name:'somi_name',
-    use:[DEG.mi,DEG.so],need:10,band:false,
-    setup(){hint(DEG.so);},
-    ask(api){target=Math.random()<0.5?DEG.so:DEG.mi;
-      sing(DEG.so,90,.5);later(()=>sing(DEG.mi,90,.5),620);      // sing the chant, then ask for one
-      later(()=>{sing(target,94,.55);hint(target);},1500);}});
-  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;
-    if(d===DEG.so||d===DEG.mi)u.answer(d===target,d);});
+// ---------- 4. FIND THE NOTE -- two notes, then three, then five ----------
+// This was three separate lessons (so-mi, add la, all five) that were the SAME screen with one more
+// rung each time. One lesson that grows as the child gets them right: the ladder adds a rung every
+// four, so the difficulty moves and the screen never repeats itself.
+function findNoteUnit(){
+  const SETS=[[DEG.mi,DEG.so],
+              [DEG.mi,DEG.so,DEG.la],
+              [DEG.do,DEG.mi,DEG.so,DEG.la],
+              [DEG.do,DEG.re,DEG.mi,DEG.so,DEG.la]];
+  ladderUnit({id:'notes',title:'u_notes',doIt:'nt_do',name:'nt_name',
+    use:(ph)=>SETS[Math.min(ph,3)],need:12,phases:3,maxPhase:3,showTarget:false,
+    phaseSay:[null,'nt_p1','nt_p2','nt_p3'],
+    pick:(u)=>u[(Math.random()*u.length)|0],
+    play:(d)=>sing(d,94,.55)});
 }
-
-// ---------- 4. ADD LA — so-mi-la, the next note in every published sequence ----------
-function addlaUnit(){
-  let phrase=[],idx=0;
-  const POOL=[DEG.mi,DEG.so,DEG.la];
-  const u=pitchUnit({id:'addla',title:'u_addla',hear:'addla_hear',doIt:'addla_do',name:'addla_name',
-    use:POOL,need:10,
-    ask(api){ // a two-note phrase from the three notes it knows: imitation, Orff's second stage
-      phrase=[POOL[(Math.random()*3)|0],POOL[(Math.random()*3)|0]];idx=0;
-      phrase.forEach((d,i)=>later(()=>{sing(d,92,.5);if(i===phrase.length-1)hint(phrase[0]);},i*620));}});
-  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;
-    if(POOL.indexOf(d)<0)return;
-    if(d===phrase[idx]){idx++;if(idx>=phrase.length)u.answer(true,d);else hint(phrase[idx]);}
-    else{idx=0;u.answer(false,d);}});
-}
-
-// ---------- 5. HOME NOTE (do) — the note that finishes ----------
-// do arrives AFTER la in both published Kodaly sequences. It is introduced as the resting note rather
-// than as "the first note", because that is what a child can actually hear it doing.
+// ---------- 5. HOME NOTE -- the one that finishes ----------
 function homeUnit(){
-  const u=pitchUnit({id:'home',title:'u_home',hear:'home_hear',doIt:'home_do',name:'home_name',
-    use:[DEG.do,DEG.mi,DEG.so],need:10,band:true,
-    setup(){hint(DEG.do);},
-    ask(){ // a little phrase that leans home, then the child lands it
-      sing(DEG.so,86,.45);later(()=>sing(DEG.mi,86,.45),480);later(()=>hint(DEG.do),980);}});
-  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;
-    u.answer(d===DEG.do,d);});
+  ladderUnit({id:'home',title:'u_home',doIt:'home_do',name:'home_name',
+    use:[DEG.do,DEG.mi,DEG.so],need:10,showTarget:false,
+    pick:()=>DEG.do,
+    play:()=>{sing(DEG.so,88,.42);later(()=>sing(DEG.mi,88,.42),460);}});
 }
-
-// ---------- 6. ALL FIVE — re completes the pentatonic ----------
-// With re the child owns do re mi so la: the full no-wrong-notes set. This unit is deliberately the
-// least directive one -- Orff's cycle ends at improvisation and creation, and so does this.
-function fiveUnit(){
-  let target=0;
-  const u=pitchUnit({id:'five',title:'u_five',hear:'five_hear',doIt:'five_do',name:'five_name',
-    use:[0,1,2,3,4],need:10,band:true,
-    ask(){target=(Math.random()*5)|0;later(()=>{sing(target,94,.55);hint(target);},200);}});
-  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;u.answer(d===target,d);});
-}
-
-// ---------- 7. STEPS & SKIPS — how a tune travels ----------
+// ---------- 6. STEPS AND SKIPS -- walk up the ladder one rung at a time ----------
 function stepsUnit(){
   let want=0;
-  const u=pitchUnit({id:'steps',title:'u_steps',hear:'steps_hear',doIt:'steps_do',name:'steps_name',
-    use:[0,1,2,3,4],need:10,
-    chips:()=>'<div class="labChips"><button class="labChip" data-a2="st_demo">'+t('listen')+'</button></div>',
-    setup(){want=0;hint(0);},
-    ask(){hint(want);}});
-  window._lab_stepsDemo=()=>{for(let i=0;i<5;i++)later(()=>sing(i,88,.45),i*330);
-    later(()=>{for(let i=0;i<3;i++)later(()=>sing(i*2,88,.45),i*380);},2100);};
-  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;
-    const ok=(d===want);
-    if(ok){want=(want+1)%5;hint(want);}else{want=0;hint(0);}
-    u.answer(ok,d);});
+  ladderUnit({id:'steps',title:'u_steps',doIt:'steps_do',name:'steps_name',
+    use:[0,1,2,3,4],need:10,showTarget:true,
+    pick:()=>{want=(want)%5;return want;},
+    correct:(d,tg)=>{const ok=(d===tg);want=ok?(tg+1)%5:0;return ok;},
+    play:(d)=>sing(d,90,.45)});
 }
+// ---------- 7. SAME NOTES, NEW HOME -- the la-pentatonic ----------
+// Kodaly Grade 2: the step after the major pentatonic is not the major scale, it is these same five
+// notes with a different one in charge. Nothing new to learn; everything sounds different.
+function sadFiveUnit(){
+  ladderUnit({id:'newhome',title:'u_newhome',doIt:'sad_do',name:'sad_name',
+    scale:'pentaMin',rootShift:9,use:[0,1,2,3,4],need:10,showTarget:false,
+    pick:(u)=>u[(Math.random()*u.length)|0],
+    play:(d)=>sing(d,94,.55)});
+}
+// ---------- 8. THE MAJOR SCALE -- fa, then ti ----------
+// Two lessons before ("add fa", "add ti"), which were one arc split in half. fa arrives a whole grade
+// before ti in the Kodaly sequence, so it still arrives first -- as phase one of the same lesson.
+function majorScaleUnit(){
+  ladderUnit({id:'majorscale',title:'u_majorscale',doIt:'ms_do',name:'ms_name',
+    scale:'major',use:(ph)=>ph?[0,1,2,3,4,5,6]:[0,1,2,3,4,5],need:12,phases:6,maxPhase:1,showTarget:false,
+    phaseSay:[null,'ms_p1'],
+    pick:(u)=>u[(Math.random()*u.length)|0],
+    play:(d)=>sing(d,94,.55)});
+}
+// ---------- 9. BRIGHT AND DARK -- major and minor, one note apart ----------
+// Two buttons, no ladder: the answer is a judgement about a sound, not a note to find. Plays the same
+// three notes twice and moves only the middle one, in raw cents, so no scale swap is needed.
+function brightDarkUnit(){
+  stageOff();
+  let bright=true,n=0,right=0,busy=false;const need=10;
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  LAB.take({scale:'major',octs:1,drums:false,band:false,touch:false});LAB.labels(null);LAB.clear();
+  function play(){const third=bright?400:300;
+    note(0,92,.5);later(()=>note(third,92,.5),420);later(()=>note(700,92,.62),840);}
+  function paint(){
+    stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t('u_brightdark')+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
+      '<div class="lgLadder" style="justify-content:center;flex:1"><p class="lgSay" style="font-size:18px">'+t('bd_hear')+'</p></div>'+
+      '<p class="lgSay">'+t('bd_do')+'</p><div class="lgFeed" id="lgFeed"></div>'+
+      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>'+
+      '<div class="lgChoice">'+
+        '<button data-bd="bright" style="--rc:#ffe08a">'+t('bright')+'</button>'+
+        '<button data-bd="dark" style="--rc:#a9b6f0">'+t('dark')+'</button></div>');
+  }
+  window._lab_lgAgain=play;
+  function ask(){bright=Math.random()<0.5;window._labExpect=bright?'bright':'dark';play();}
+  const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-bd]');if(!b||busy)return;
+    e.preventDefault();
+    const ok=(b.dataset.bd==='bright')===bright; score('brightdark',ok);n++;if(ok)right++;
+    const fd=document.getElementById('lgFeed');if(fd)fd.textContent=t(ok?'yes':'notYet');
+    const c=document.querySelector('.lgCount');if(c)c.textContent=right+' / '+need;
+    document.querySelectorAll('.lgDots i').forEach((x,i)=>x.classList.toggle('got',i<right));
+    if(right>=need){busy=true;later(()=>{stageOff();finish('brightdark',t('bd_name'));},760);return;}
+    later(ask,ok?820:1050);};
+  ov.addEventListener('pointerdown',onDown,true);
+  _render=paint;paint();later(ask,650);
+  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._lab_lgAgain=null;stageOff();LAB.clear();};
+}
+// ---------- 10-12. THE SEVEN-NOTE SCALES ----------
+function scaleLadder(id,title,scales,doIt,nameK,need,phases,maxPhase,phaseSay){
+  ladderUnit({id:id,title:title,doIt:doIt,name:nameK,scales:scales,
+    use:[0,1,2,3,4,5,6],need:need||10,phases:phases,maxPhase:maxPhase||0,phaseSay:phaseSay,showTarget:false,
+    pick:(u)=>u[(Math.random()*u.length)|0],
+    play:(d)=>sing(d,94,.55)});
+}
+function minorScaleUnit(){scaleLadder('minorscale','u_minorscale',['minor'],'mn_do','mn_name',10);}
+function minorShapesUnit(){scaleLadder('minorshapes','u_minorshapes',['harmMin','melMin'],'sh_do','sh_name',12,6,1,[null,'sh_p1']);}
+function modesUnit(){scaleLadder('modes','u_modes',['dorian','mixolydian'],'md_do','md_name',12,6,1,[null,'md_p1']);}
 
 // ---------- PRACTICE: COME BACK TOMORROW ----------
 // The one activity built directly on the spacing evidence. Simmons (2012) found accuracy gains only at
@@ -985,6 +1162,8 @@ function labelPicker(){
 // ---------------------------------------------------------------- home screen (3 tiers)
 function home(){
   stopAll();if(_cleanup){_cleanup();_cleanup=null;}
+  stageOff();
+  document.body.classList.remove('lab-nokeys');
   try{LAB.give();}catch(e){}
   const lessons=UNITS.filter(u=>u.tier!=='practice');
   // the counter counts LESSONS. It used to include the three games, so the header read "0 of 11" while
@@ -1007,7 +1186,6 @@ function home(){
     const no=lessonNo[u.id];
     return '<button class="uCard'+(done?' got':'')+(next?' nextUp':'')+'" data-a2="unit" data-u="'+u.id+'" '+
       'style="--ut:'+u.tint+'" aria-label="'+(no?no+'. ':'')+t(u.title)+(next?' \u2014 '+t('startHere'):'')+'">'+
-      '<span class="uArt"><img src="minis/'+u.slime+'.png" alt="" draggable="false"></span>'+
       '<span class="uTxt"><b>'+(no?'<em class="uNum">'+no+'</em>':'')+t(u.title)+'</b><i>'+t(u.sub)+'</i></span>'+
       (done?'<span class="uDone" aria-hidden="true">\u2713</span>'
            :(next?'<span class="uNext">'+t(u.tier==='practice'?'revReady':'startHere')+'</span>':''))+
@@ -1061,6 +1239,7 @@ if(ov)ov.addEventListener('click',(e)=>{
   if(a==='hi_up'&&window._lab_hi)return window._lab_hi('up');
   if(a==='hi_dn'&&window._lab_hi)return window._lab_hi('down');
   if(a==='hi_replay'&&window._lab_hiReplay)return window._lab_hiReplay();
+  if(a==='lg_again'&&window._lab_lgAgain)return window._lab_lgAgain();
   if(a==='st_demo'&&window._lab_stepsDemo)return window._lab_stepsDemo();
   if(a==='sc_demo'&&window._lab_scaleDemo)return window._lab_scaleDemo();
   if(a==='bd_br'&&window._lab_bd)return window._lab_bd('bright');
@@ -1076,7 +1255,14 @@ if(ov)ov.addEventListener('click',(e)=>{
 // tapping the tank itself counts as a tap in the beat unit
 if(typeof cv!=='undefined'&&cv)cv.addEventListener('pointerdown',()=>{if(window._lab_tap&&document.body.classList.contains('lab-on'))window._lab_tap();});
 
-function enter(){ if(ov){ov.hidden=false;} home(); }
+function enter(){
+  if(ov){ov.hidden=false;}
+  home();
+  // a deep link (?l=addti) or the splash's carry-on chip names a lesson to open straight away
+  const want=window.__deepLesson; window.__deepLesson=null;
+  if(want){const u=UNITS.find(x=>x.id===want);
+    if(u)setTimeout(()=>{try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){} u.run();},80);}
+}
 function exit(){ stopAll(); if(_cleanup){_cleanup();_cleanup=null;}
   try{LAB.give();}catch(e){}
   if(ov){ov.hidden=true;ov.classList.remove('lab');}

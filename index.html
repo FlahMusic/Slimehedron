@@ -425,10 +425,11 @@ header h1{margin-left:84px} /* the title steps aside for the back button */
   font:800 11.5px system-ui,sans-serif;font-style:normal;color:#5a4f78;vertical-align:1px}
 .uGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:9px}
 .uCard{position:relative;display:flex;align-items:center;gap:10px;text-align:left;width:100%;
-  padding:11px 12px;border-radius:16px;cursor:pointer;font-family:inherit;min-height:68px;
-  border:2px solid rgba(255,255,255,.9);
-  background:linear-gradient(135deg,color-mix(in srgb,var(--ut) 42%,#fff),color-mix(in srgb,var(--ut) 14%,#fff));
-  box-shadow:0 3px 10px rgba(120,110,160,.16);transition:transform .13s,box-shadow .13s}
+  padding:14px 16px;border-radius:18px;cursor:pointer;font-family:inherit;min-height:66px;border:none;
+  background:linear-gradient(175deg,color-mix(in srgb,var(--ut) 30%,#fff),color-mix(in srgb,var(--ut) 72%,#fff) 100%);
+  box-shadow:0 5px 0 0 color-mix(in srgb,var(--ut) 55%,#4a4170), 0 8px 16px rgba(80,66,130,.2),
+             inset 0 2px 0 rgba(255,255,255,.85), inset 0 -2px 5px rgba(70,55,120,.09);
+  transition:transform .08s ease-out, box-shadow .08s ease-out}
 .uCard:hover{transform:translateY(-2px);box-shadow:0 7px 18px rgba(120,110,160,.26)}
 .uCard:active{transform:translateY(0) scale(.985)}
 .uCard:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
@@ -448,6 +449,15 @@ header h1{margin-left:84px} /* the title steps aside for the back button */
 .uNext{position:absolute;top:6px;right:8px;padding:2px 7px;border-radius:9px;
   background:#5a4f78;color:#fff;font:800 9.5px system-ui,sans-serif;letter-spacing:.4px;text-transform:uppercase;
   box-shadow:0 2px 5px rgba(90,79,120,.35)}
+.uCard:active{transform:translateY(5px);
+  box-shadow:0 0 0 0 color-mix(in srgb,var(--ut) 55%,#4a4170), 0 3px 8px rgba(80,66,130,.2),
+             inset 0 2px 0 rgba(255,255,255,.7), inset 0 -2px 4px rgba(70,55,120,.12)}
+.uCard .uArt{display:none}                     /* the per-lesson slime is gone: it read as cheap and said nothing */
+.uCard .uTxt{flex:1;min-width:0}
+.uCard .uTxt b{display:block;font-size:16px;font-weight:800;color:#2f2a44;line-height:1.2}
+.uCard .uTxt i{display:block;font-style:normal;font-size:12.5px;color:#5b5180;font-weight:700;margin-top:2px}
+.uNum{background:rgba(255,255,255,.9);border-color:rgba(90,79,120,.3);color:#3c3458}
+.uCard.got{filter:saturate(.7)}
 .uCard.nextUp{box-shadow:0 0 0 2.5px var(--accent),0 5px 14px rgba(120,110,160,.22)}
 .uCard.got .uArt{background:rgba(255,255,255,.85)}
 .uFoot{font-size:12.5px;color:var(--ink-soft);font-weight:600;margin:16px 0 0;text-align:center}
@@ -481,6 +491,7 @@ header h1{margin-left:84px} /* the title steps aside for the back button */
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);max-width:96vw;overflow-x:auto;
   touch-action:manipulation;scrollbar-width:thin}
 body.lab-on #labKeys{display:flex}
+body.lab-nokeys #labKeys{display:none!important} /* the beat lesson is not about pitch */
 #labKeys::-webkit-scrollbar{height:4px}
 #labKeys::-webkit-scrollbar-thumb{background:rgba(150,140,185,.4);border-radius:3px}
 .lk{flex:none;width:clamp(38px,7.2vw,68px);height:clamp(56px,11vh,88px);border-radius:0 0 9px 9px;
@@ -511,14 +522,14 @@ body.lab-on #labKeys{display:flex}
   #learnOverlay.lab .lCard{width:100%;height:auto;max-height:44dvh;border-radius:22px 22px 0 0;
     box-shadow:0 -10px 30px rgba(120,110,160,.24);padding:14px 16px calc(16px + env(safe-area-inset-bottom))}
   #labKeys{padding:5px 6px;gap:3px}
-  .lk{width:clamp(34px,9vw,46px);height:clamp(50px,8dvh,64px);font-size:11.5px}
+  .lk{width:clamp(40px,calc((100vw - 34px) / var(--lkN,7)),56px);height:clamp(50px,8dvh,64px);font-size:11.5px}
 }
 @media (max-width:820px) and (max-height:520px){ /* landscape phone: side dock, not a bottom sheet */
   #learnOverlay.lab{align-items:stretch;justify-content:flex-end}
   #learnOverlay.lab .lCard{width:min(52vw,330px);height:100%;max-height:none;border-radius:20px 0 0 20px;
     box-shadow:-10px 0 30px rgba(120,110,160,.24);padding:12px 14px 14px}
   #labKeys{padding:4px 5px;gap:3px}
-  .lk{width:clamp(28px,5.2vw,38px);height:clamp(40px,13dvh,52px);font-size:11px}
+  .lk{width:clamp(30px,calc((52vw - 30px) / var(--lkN,7)),44px);height:clamp(40px,13dvh,52px);font-size:11px}
 }
 /* while a lesson is driving the tank, the play-mode furniture steps aside so the geometry is the whole show */
 body.lab-on #playSide,body.lab-on #triMixBar,body.lab-on #autoRow,body.lab-on #kbBtn,body.lab-on #chordBtn{display:none!important}
@@ -580,6 +591,105 @@ body.lab-on main{padding:64px 424px 126px 16px!important}
 .labDots{display:flex;gap:5px;margin:0 0 8px}
 .labDots i{width:9px;height:9px;border-radius:50%;background:rgba(150,135,190,.3);font-style:normal}
 .labDots i.got{background:var(--accent)}
+/* ===== LESSON STAGE =====================================================================
+   A lesson that needs its own interface gets the WHOLE screen and nothing it did not ask for.
+   The old arrangement piped every lesson through one shared rig -- the note tank, the solfege
+   keybed and a side card -- so a lesson about the BEAT arrived with a keyboard full of note names
+   on it. Removing extraneous material is the best-evidenced thing in the multimedia-learning
+   literature (Mayer meta-analysis 2025: removing seductive detail g=1.00, against g=0.13 for
+   arranging things well), so a stage lesson hides the lot. */
+body.lab-stage #stage,body.lab-stage #labKeys,body.lab-stage header,body.lab-stage #playSide,
+body.lab-stage #triMixBar,body.lab-stage #autoRow,body.lab-stage #kbBtn,body.lab-stage #menuBtn,
+body.lab-stage #chordBtn,body.lab-stage #topRight,body.lab-stage aside,
+body.lab-stage #exitMode,body.lab-stage #cofWheel,body.lab-stage #toast{display:none!important}
+#learnOverlay.stage{background:linear-gradient(180deg,#eaf7ff 0%,#f4f0ff 62%,#fdf6ef 100%);
+  -webkit-backdrop-filter:none;backdrop-filter:none;pointer-events:auto;align-items:stretch;justify-content:stretch;padding:0}
+#learnOverlay.stage .lgStage{flex:1;display:flex;flex-direction:column;min-height:0;width:100%}
+.lgTop{flex:none;display:flex;align-items:center;gap:10px;padding:10px 12px}
+.lgTop .lgBack{border:0;background:rgba(255,255,255,.8);border-radius:12px;min-height:44px;padding:0 14px;
+  font:800 14px inherit;color:#5a4f78;cursor:pointer;font-family:inherit}
+.lgTop h3{flex:1;margin:0;font-size:19px;color:#463d66;text-align:center;letter-spacing:.2px}
+.lgCount{font:900 17px system-ui,sans-serif;color:#6b5f92;min-width:62px;text-align:right}
+.lgSpk,.labSpk{flex:none;width:44px;height:44px;min-width:44px;border-radius:12px;border:1.5px solid rgba(160,150,200,.45);
+  background:#fff;color:#5a4f78;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* the drop lane: a ball falls under gravity and lands ON the beat.
+   A flashing/pulsing cue is the WRONG cue -- visual synchronisation to a stationary flash needs about
+   a 460ms gap to work at all, roughly four times worse than audio (Repp 2005). A ball moving under
+   REALISTIC GRAVITY matches an auditory metronome for tapping stability (R=0.946 vs 0.934 for a
+   sinusoid, Sci Rep 2015), because the visual system extrapolates a ballistic path natively -- which
+   is what lets a child ANTICIPATE the beat instead of reacting to it 200ms late. */
+/* the drop is capped: under gravity the first half of the fall covers only a quarter of the
+   distance, so a full-screen lane spends most of the beat almost motionless at the top. Around
+   40% of the screen makes the acceleration readable. */
+.lgLane{flex:1;position:relative;min-height:110px;max-height:42dvh;overflow:hidden}
+.lgBall{position:absolute;left:50%;width:var(--bs,54px);height:var(--bs,54px);margin-left:calc(var(--bs,54px) / -2);
+  top:0;will-change:transform;pointer-events:none}
+.lgBall img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 3px 6px rgba(120,100,160,.3))}
+.lgFloor{position:absolute;left:0;right:0;height:0;border-top:5px dashed rgba(120,105,175,.45);pointer-events:none}
+.lgFloor::after{content:"";position:absolute;left:0;right:0;top:0;height:64px;
+  background:linear-gradient(180deg,rgba(150,120,220,.14),transparent)}
+.lgFloor.flash{border-top-color:var(--accent);animation:lgF .2s ease-out}
+@keyframes lgF{0%{border-top-color:#ff7fb0}100%{border-top-color:rgba(120,105,175,.45)}}
+
+/* THE HIT ZONE IS FIXED AND ENORMOUS. Tapping a MOVING target succeeds 37% of the time at ages 4-6
+   (Ahn et al.); tapping a stationary one, 57%. So the cue moves and the target never does. */
+.lgPad{flex:none;margin:0 auto 16px;width:min(230px,60vw);height:min(140px,20dvh);border-radius:30px;cursor:pointer;
+  background:linear-gradient(160deg,#ffffff,#e8f8f1);border:4px solid rgba(255,255,255,.95);
+  box-shadow:0 8px 24px rgba(120,110,160,.3), inset 0 3px 8px rgba(255,255,255,.9);
+  display:flex;align-items:center;justify-content:center;padding:10px;
+  user-select:none;-webkit-user-select:none;touch-action:manipulation;transition:transform .07s}
+.lgPad img{width:auto;height:100%;object-fit:contain;pointer-events:none}
+.lgPad.hit{animation:lgHit .17s ease-out}
+.lgPad.good{box-shadow:0 0 0 6px var(--mint),0 8px 24px rgba(120,110,160,.3)}
+@keyframes lgHit{0%{transform:scale(.9)}100%{transform:scale(1)}}
+.lgSay{flex:none;text-align:center;font:800 16px system-ui,sans-serif;color:#463d66;padding:0 18px 4px;font-family:inherit}
+.lgFeed{flex:none;text-align:center;min-height:26px;font:800 15px system-ui,sans-serif;color:var(--accent);padding-bottom:10px;font-family:inherit}
+.lgDots{flex:none;display:flex;gap:7px;justify-content:center;padding:2px 0 8px}
+.lgDots i{width:13px;height:13px;border-radius:50%;background:rgba(170,160,200,.32)}
+.lgDots i.got{background:var(--accent)}
+@media (prefers-reduced-motion:reduce){.lgPad.hit,.lgFloor.flash{animation:none}}
+/* ===== PITCH LADDER =====================================================================
+   The melodic lessons used to borrow the note tank and a flat keybed. Neither teaches pitch: a
+   polygon of walls encodes it as ANGLE, a keyboard encodes it as horizontal position, and both are
+   arbitrary to a child. High and low are spatial words, so the control is spatial -- a ladder, high
+   note at the top, low note at the bottom. Fixed rungs, nothing moves, everything is a target. */
+.lgLadder{flex:1;display:flex;flex-direction:column-reverse;justify-content:center;gap:10px;
+  padding:10px 16px 6px;min-height:0;align-items:stretch;max-width:560px;margin:0 auto;width:100%}
+.lgRung{position:relative;flex:1 1 0;min-height:58px;max-height:140px;border-radius:18px;cursor:pointer;
+  border:none;padding:0 18px;display:flex;align-items:center;gap:14px;font-family:inherit;
+  color:#2f2a44;font:800 19px system-ui,sans-serif;text-align:left;
+  background:linear-gradient(175deg,color-mix(in srgb,var(--rc,#9fe6cf) 78%,#fff),color-mix(in srgb,var(--rc,#9fe6cf) 96%,#000) 100%);
+  box-shadow:0 5px 0 0 color-mix(in srgb,var(--rc,#9fe6cf) 62%,#3a3358), 0 9px 18px rgba(80,66,130,.28),
+             inset 0 2px 0 rgba(255,255,255,.75), inset 0 -3px 6px rgba(70,55,120,.2);
+  transition:transform .07s ease-out, box-shadow .07s ease-out}
+.lgRung:active,.lgRung.press{transform:translateY(5px);
+  box-shadow:0 0 0 0 color-mix(in srgb,var(--rc,#9fe6cf) 62%,#3a3358), 0 3px 8px rgba(80,66,130,.26),
+             inset 0 2px 0 rgba(255,255,255,.6), inset 0 -2px 5px rgba(70,55,120,.24)}
+.lgRung .rgName{flex:1}
+.lgRung .rgDeg{font:900 13px system-ui,sans-serif;opacity:.5;letter-spacing:.08em}
+.lgRung.target{animation:rgWant 1.05s ease-in-out infinite}
+.lgRung.target::after{content:"";position:absolute;inset:-4px;border-radius:22px;border:4px solid #fff;pointer-events:none}
+@keyframes rgWant{0%,100%{filter:brightness(1)}50%{filter:brightness(1.22)}}
+.lgRung.right{filter:brightness(1.3) saturate(1.2)}
+.lgRung.wrong{animation:rgNo .3s}
+@keyframes rgNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.lgHint{flex:none;display:flex;align-items:center;justify-content:center;gap:10px;padding:4px 0 10px}
+.lgListen{min-height:56px;padding:0 26px;border-radius:18px;border:none;cursor:pointer;font-family:inherit;
+  font:800 17px system-ui,sans-serif;color:#2f2a44;display:flex;align-items:center;gap:10px;
+  background:linear-gradient(175deg,#ffffff,#e7e2f7);
+  box-shadow:0 5px 0 0 #b7addb, 0 9px 18px rgba(80,66,130,.26), inset 0 2px 0 rgba(255,255,255,.9)}
+.lgListen:active{transform:translateY(5px);box-shadow:0 0 0 0 #b7addb,0 3px 8px rgba(80,66,130,.24),inset 0 2px 0 rgba(255,255,255,.8)}
+.lgListen svg{width:22px;height:22px;stroke:#2f2a44;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.lgChoice{flex:none;display:flex;gap:14px;justify-content:center;padding:0 16px 14px}
+.lgChoice button{flex:1;max-width:220px;min-height:84px;border-radius:22px;border:none;cursor:pointer;font-family:inherit;
+  font:900 24px system-ui,sans-serif;color:#2f2a44;
+  background:linear-gradient(175deg,color-mix(in srgb,var(--rc,#c4a9f5) 76%,#fff),var(--rc,#c4a9f5));
+  box-shadow:0 6px 0 0 color-mix(in srgb,var(--rc,#c4a9f5) 60%,#3a3358), 0 10px 20px rgba(80,66,130,.28),
+             inset 0 2px 0 rgba(255,255,255,.8)}
+.lgChoice button:active{transform:translateY(6px);box-shadow:0 0 0 0 color-mix(in srgb,var(--rc,#c4a9f5) 60%,#3a3358),0 3px 9px rgba(80,66,130,.26)}
+@media (max-width:420px){.lgRung{font-size:17px;padding:0 14px}.lgChoice button{font-size:20px;min-height:74px}}
+@media (prefers-reduced-motion:reduce){.lgRung.target,.lgRung.wrong{animation:none}}
 .lCard{background:rgba(252,249,255,.96);border:1px solid var(--card-brd);border-radius:22px;box-shadow:var(--shadow);padding:20px 24px;width:min(92vw,620px);max-height:88vh;overflow-y:auto;text-align:center}
 .lCard h3{margin:0 0 6px;font-size:15px;letter-spacing:.8px;text-transform:uppercase;color:var(--ink-soft)}
 .lSub{font-size:13px;color:var(--ink-soft);font-weight:600;margin:0 0 14px;line-height:1.5}
@@ -628,9 +738,23 @@ body.lab-on main{padding:64px 424px 126px 16px!important}
 .crsIco{width:44px;height:34px;flex:none}
 .crsSl{flex:none;display:block}
 .crsDots{display:block;font-size:10px;color:var(--accent);letter-spacing:2px;margin-top:2px} /* goal-gradient dots: progress you can see, never a grade */
-#rhPad{width:118px;height:118px;margin:14px auto 6px;cursor:pointer;border-radius:26px;background:rgba(255,255,255,.65);box-shadow:var(--shadow);padding:14px;transition:transform .1s;user-select:none;touch-action:manipulation}
+/* THE BEAT PAD. Lesson 1's tap target used to be a chip the size of a word. It is the only thing a
+   child does for the whole lesson, so it is the biggest thing on the card, it breathes on every kick
+   so the beat is visible before it is felt, and the tank behind it takes a tap as well. */
+/* sized against the CARD's room, not just the viewport width: on a phone the lesson card is a
+   44dvh bottom sheet, and a pad sized off vw alone ran off the bottom of it. */
+#rhPad{flex:none;box-sizing:border-box;aspect-ratio:1;width:min(172px,42vw,17dvh);height:auto;margin:8px auto 4px;cursor:pointer;border-radius:30px;
+  background:linear-gradient(160deg,#ffffff,#eafaf3);box-shadow:0 6px 20px rgba(120,110,160,.28), inset 0 2px 6px rgba(255,255,255,.9);
+  border:3px solid rgba(255,255,255,.95);padding:10px;transition:transform .09s ease-out;
+  user-select:none;touch-action:manipulation;display:flex;align-items:center;justify-content:center}
+#rhPad img{width:100%;height:100%;object-fit:contain;pointer-events:none;display:block}
 #rhPad:active{transform:scale(.93)}
-#rhPad.pulse{transform:scale(1.07)} /* the pad breathes with the metronome — see the beat, then feel it */
+#rhPad.pulse{animation:rhBreath .34s ease-out} /* the pad breathes with the kick — see the beat, then feel it */
+#rhPad.hit{animation:rhHit .18s ease-out}
+@keyframes rhBreath{0%{transform:scale(1)}28%{transform:scale(1.09)}100%{transform:scale(1)}}
+@keyframes rhHit{0%{transform:scale(.9)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){#rhPad.pulse,#rhPad.hit{animation:none}}
+@media (max-height:520px){#rhPad{width:min(104px,20vh);height:min(104px,20vh);margin:6px auto 2px;border-radius:22px}}
 #coach{pointer-events:none;position:fixed;z-index:220;width:250px;background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:10px 12px;font-size:13px;font-weight:700;color:var(--ink);display:flex;gap:8px;align-items:center}
 #coach .coachTxt{flex:1;line-height:1.35}
 #coach .btn{pointer-events:auto} /* the hint never blocks a tap; only its own Skip button does */
@@ -888,6 +1012,71 @@ aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;pa
 .slime.cheer .bob{animation:slimeCheer .7s ease-out}
 /* fade during a colour morph so the swap isn't a hard pop */
 .slime.morphing{transition:opacity .35s ease}
+/* the front-door pitch line and the carry-on chip. Both sit under the three doors, both are quiet:
+   the pitch line is for the adult, the chip is the only thing on this screen that remembers you. */
+#spPitch{pointer-events:none;margin-top:10px;font:700 12.5px system-ui,sans-serif;color:#4b4270;letter-spacing:.2px;
+  text-align:center;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 3px rgba(255,255,255,.85)}
+#spResume{display:flex;justify-content:center;margin-top:12px;min-height:0}
+#spCarry{font:800 14px system-ui,sans-serif;color:#463d66;background:rgba(255,255,255,.92);
+  border:2px solid rgba(255,255,255,.95);border-radius:14px;padding:0 18px;min-height:48px;cursor:pointer;
+  box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;font-family:inherit}
+#spCarry:hover{transform:translateY(-1px)}
+#spCarry:active{transform:scale(.96)}
+.spAllDone{font:800 13px system-ui,sans-serif;color:#463d66;background:rgba(255,255,255,.85);
+  border-radius:12px;padding:8px 14px;box-shadow:var(--shadow)}
+@media (max-width:560px){#spPitch{font-size:11.5px;padding:0 14px;line-height:1.5}}
+@media (max-height:620px){#spPitch{display:none}} /* short screens: the doors come first */
+/* ===== TOOLS ===== a shelf of four standalone instruments. They reuse the panels studio already
+   has by BORROWING the live DOM node and handing it back on close, so there is one implementation of
+   the circle of fifths, one chord editor and one step sequencer -- not a second copy that drifts. */
+#toolsCard{border:2px solid rgba(255,255,255,.9);border-radius:20px;padding:14px 18px;cursor:pointer;
+  box-shadow:var(--shadow);transition:.15s;text-align:center;background:linear-gradient(135deg,#fff3d6,#ffe6f2);
+  display:flex;align-items:center;justify-content:center;gap:12px;width:min(614px,92vw);margin-top:2px}
+#toolsCard:hover{transform:translateY(-2px)}
+#toolsCard b{font-size:22px;color:#463d66;letter-spacing:.4px}
+#toolsCard i{font-style:normal;font-size:13px;color:#6b5f92;font-weight:700}
+@media (max-width:560px){#toolsCard{flex-direction:column;gap:2px;padding:12px 14px}#toolsCard b{font-size:20px}}
+#toolsOv{position:fixed;inset:0;z-index:150;display:none;align-items:center;justify-content:center;
+  background:rgba(230,222,250,.55);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px)}
+#toolsOv.on{display:flex}
+/* while a tool is open it is the only thing on screen: the mode's own chrome would otherwise float
+   over the scrim (the back arrow, the keybed toggle, the menu FAB all sit above z150). */
+body.tools-on header,body.tools-on #kbBtn,body.tools-on #menuBtn,body.tools-on #exitMode,
+body.tools-on #topRight,body.tools-on #triMixBar,body.tools-on #autoRow,body.tools-on #chordBtn{display:none!important}
+.twCard{background:rgba(252,249,255,.97);border:1px solid var(--card-brd);border-radius:22px;box-shadow:var(--shadow);
+  width:min(96vw,980px);max-height:92dvh;overflow:auto;padding:18px 20px 22px;display:flex;flex-direction:column;gap:12px}
+.twHead{display:flex;align-items:center;gap:12px}
+.twHead b{font-size:22px;color:#463d66;flex:1;text-align:left}
+.twX{flex:none;width:48px;height:48px;min-width:48px;min-height:48px;border-radius:14px;border:1.5px solid rgba(160,150,200,.45);
+  background:#fff;color:#5a4f78;font:800 20px system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.twX:hover{border-color:var(--accent)}
+.twGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.twPick{display:flex;flex-direction:column;align-items:center;gap:8px;padding:20px 14px;border-radius:18px;cursor:pointer;
+  border:2px solid rgba(255,255,255,.9);box-shadow:0 3px 10px rgba(120,110,160,.16);font-family:inherit;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--tt) 44%,#fff),color-mix(in srgb,var(--tt) 14%,#fff));
+  min-height:132px;transition:transform .12s}
+.twPick:hover{transform:translateY(-2px)}
+.twPick b{font-size:18px;color:#463d66}
+.twPick i{font-style:normal;font-size:12.5px;color:#6b5f92;font-weight:700;text-align:center;line-height:1.3}
+.twPick svg{width:40px;height:40px;stroke:#5a4f78;fill:none;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.twBody{min-height:120px;display:flex;flex-direction:column;gap:12px;align-items:stretch}
+.twRow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:center}
+.twRow label{font:800 12px system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft)}
+.twRow input[type=range]{flex:1;min-width:160px;height:6px;padding:19px 0;box-sizing:content-box}
+.twBig{font:900 46px system-ui,sans-serif;color:#463d66;line-height:1;min-width:110px;text-align:center}
+.twBtn{min-height:48px;padding:0 20px;border-radius:14px;border:2px solid rgba(160,150,200,.45);background:#fff;
+  font:800 15px system-ui,sans-serif;color:#5a4f78;cursor:pointer;font-family:inherit}
+.twBtn.on{background:linear-gradient(135deg,var(--mint),var(--sky));border-color:#fff;color:#2f2a44}
+#twBeats{display:flex;gap:10px;justify-content:center}
+#twBeats i{width:26px;height:26px;border-radius:50%;background:rgba(170,160,200,.3);display:block;transition:transform .07s}
+#twBeats i.on{background:var(--accent);transform:scale(1.28)}
+#twBeats i.acc.on{background:#ff7fb0}
+.twHost{display:flex;justify-content:center;align-items:flex-start;min-height:120px}
+.twHost #cofWheel{position:static!important;transform:none!important;margin:0!important;display:block!important}
+.twHost #cofWheel svg{width:min(420px,78vw);height:min(420px,78vw)}
+.twHost #chordPanel{position:static!important;transform:none!important;left:auto!important;top:auto!important;width:100%!important;max-width:none!important;display:block!important}
+.twHost #stepGrid{width:100%}
+.twNote{font-size:12.5px;color:var(--ink-soft);font-weight:600;text-align:center;line-height:1.45}
 .spCredit{position:fixed;bottom:12px;left:0;right:0;text-align:center;font-size:11.5px;font-weight:700;color:#463d66;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 3px rgba(255,255,255,.85)} /* legible on the bright crayon sky: darker ink + soft white halo that pierces without shouting */
 .spCredit a{color:#332c52;text-decoration:none;font-weight:800} .spCredit a:hover{text-decoration:underline}
 .streakBadge b{color:#e0863f;font-size:17px}
@@ -952,7 +1141,14 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 /* the colour-blind switch lives on the front door, bottom-left, where a parent or teacher sets it once
    for the whole app. 44px tall, and the tick is a SHAPE so the on-state never depends on colour. */
 #splash{padding-bottom:74px}                 /* desktop reserve for the switch band, same idea */
-.spCredit{left:210px;right:210px}  /* the credit line lives BETWEEN the corners, not across them */
+#splash{overflow-y:auto;gap:12px}            /* four doors + a chip + a line: let it scroll, never stack on itself */
+@media (max-height:760px){#splash{gap:8px}#modeCards{gap:8px}.modeCard{padding:12px 16px}}
+/* The credit line is inset so it sits BETWEEN the two bottom corners (colour-blind switch, support).
+   Unconditional, those 210px insets left a 393px phone with a NEGATIVE content width and the line
+   stacked one word per line down the middle of the splash. The corners only exist side-by-side when
+   there is room for them, so the inset only applies when there is. */
+@media (min-width:760px){.spCredit{left:210px;right:210px}}
+@media (max-width:759px){.spCredit{left:10px;right:10px;font-size:10.5px;line-height:1.6}}
 #cbdBox{position:fixed;left:14px;bottom:14px;z-index:205;display:flex;align-items:center;gap:9px;
   min-height:44px;padding:6px 14px 6px 10px;border-radius:14px;cursor:pointer;
   background:rgba(255,255,255,.82);border:1.5px solid var(--card-brd);box-shadow:var(--shadow);
@@ -1359,7 +1555,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <!-- CUSTOM CHORD PROGRESSION editor — translucent panel that sits OVER the wheel/pill to save space -->
     <div id="chordPanel" hidden>
       <div class="cpHead"><span class="cpTitle">chord progression</span>
-        <button id="cpDice" title="roll a famous progression in this key">🎲</button>
+        <button id="cpDice" title="roll a new progression in this key">🎲</button>
         <button id="cpClose" title="close">✕</button></div>
       <div id="cpChips"></div>
       <div class="cpFoot"><label class="cpFollow"><input type="checkbox" id="cpFollow"> follow this progression</label>
@@ -3943,6 +4139,7 @@ window.LAB=LAB;
     map=order.map(o=>o.i);
     LAB._playable=order.map(o=>o.deg);   // the degrees a child can ACTUALLY reach on this shape
     const lbl=(window.LEARN2&&LEARN2._labels)?LEARN2._labels():null;
+    kb.style.setProperty('--lkN',String(Math.max(3,order.length)));   // key width divides the room by the REAL key count
     kb.innerHTML=order.map((o,k)=>{
       const name=lbl?(lbl[o.deg]||''):'';
       return '<button class="lk" type="button" data-k="'+k+'" aria-label="note '+(name||(k+1))+'">'+
@@ -4685,8 +4882,16 @@ const chillers=[]; // full-view slimes with cursor physics
   window._anchorPeekers=anchorPeekers;
   requestAnimationFrame(placeMotes);
   requestAnimationFrame(()=>{anchorPeekers();guardSlimes();});
-  let _mtT;const replaceMotes=()=>{clearTimeout(_mtT);_mtT=setTimeout(()=>{keepTankClear();anchorPeekers();fillMargins();placeMotes();guardSlimes();},260);};
-  addEventListener('resize',replaceMotes);
+  const LAYOUT_CLASSES=['mode-play','mode-studio','mode-learn','lab-on','kb-open','hasTakes'];
+  const layoutSig=()=>LAYOUT_CLASSES.filter(c=>document.body.classList.contains(c)).join('|')
+                      +'|'+innerWidth+'x'+innerHeight;
+  let _mtSig=null,_mtT;
+  const replaceMotes=(force)=>{
+    const sig=layoutSig();
+    if(!force&&sig===_mtSig)return;   // nothing that can move a slime has changed: leave them alone
+    _mtSig=sig;
+    clearTimeout(_mtT);_mtT=setTimeout(()=>{keepTankClear();anchorPeekers();fillMargins();placeMotes();guardSlimes();},260);};
+  addEventListener('resize',()=>replaceMotes(true));
   // the splash boot and every mode switch re-flow the whole room AFTER the first placement, so re-place then too
   try{new MutationObserver(replaceMotes).observe(document.body,{attributes:true,attributeFilter:['class']});}catch(e){}
   setTimeout(()=>{keepTankClear();anchorPeekers();fillMargins();placeMotes();guardSlimes();},1400); // one late pass once the room has settled
@@ -5165,15 +5370,21 @@ window.slimeStar=function(){}; // intentionally a no-op — a "win" is its own r
     '<div class="splashWm">slimehedron<span class="dot">.</span></div>'+
     '<div id="modeCards">'+
     // an icon per door: a child who cannot read still has to be able to pick one.
-    '<div class="modeCard mc-learn'+(last==='learn'?' last':'')+'" data-m="learn"><span class="mcIco">'+MC_ICO.learn+'</span><b>learn</b><span>the building blocks of music</span></div>'+
-    '<div class="modeCard mc-play'+(last==='play'?' last':'')+'" data-m="play"><span class="mcIco">'+MC_ICO.play+'</span><b>play</b><span>have fun!</span></div>'+
-    '<div class="modeCard mc-studio'+(last==='studio'?' last':'')+'" data-m="studio"><span class="mcIco">'+MC_ICO.studio+'</span><b>studio</b><span>make anything</span></div>'+
+    '<div class="modeCard mc-learn'+(last==='learn'?' last':'')+'" data-m="learn"><span class="mcIco">'+MC_ICO.learn+'</span><b>learn</b><span>lessons, in order</span></div>'+
+    '<div class="modeCard mc-play'+(last==='play'?' last':'')+'" data-m="play"><span class="mcIco">'+MC_ICO.play+'</span><b>play</b><span>just press things</span></div>'+
+    '<div class="modeCard mc-studio'+(last==='studio'?' last':'')+'" data-m="studio"><span class="mcIco">'+MC_ICO.studio+'</span><b>studio</b><span>build a track</span></div>'+
     '</div>'+
+    '<div id="toolsCard" role="button" tabindex="0"><b>tools</b><i>metronome &middot; chords &middot; circle of fifths &middot; drums</i></div>'+
+    '<div id="spResume"></div>'+
+    // The adult standing behind the child decides whether this ever gets opened again, and nothing on
+    // the front door told them what it is. One line, every word of it checkable, no marketing.
+    '<div id="spPitch">free &middot; no account &middot; no ads &middot; nothing is tracked &middot; works offline</div>'+
     '<div id="spShareRow"><button id="shareApp" title="share slimehedron with a friend"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 L20 5 L15 20 L11 13 Z"/></svg><span>share slimehedron</span></button></div>'+
     '<label id="cbdBox" title="colour-blind friendly palette"><input type="checkbox" id="cbdChk"><span class="cbdMark" aria-hidden="true"></span><span class="cbdTxt">colour-blind mode</span></label>'+
     '<div class="spCredit">© 2026 FlahMusic · free &amp; open source · <a href="https://github.com/FlahMusic/Slimehedron" target="_blank" rel="noopener">source</a> · <a href="https://github.com/FlahMusic/Slimehedron/blob/main/LICENSE" target="_blank" rel="noopener">license</a> · <a id="spSupport" href="https://ko-fi.com/flahmusic" target="_blank" rel="noopener">☕ support</a></div>'; // credit + license link + tip jar
   document.body.appendChild(sp);
   function boot(m){sp.classList.add('gone');setTimeout(()=>sp.remove(),600);
+    if(window.__openTools){window.__openTools=0;setTimeout(()=>{try{window._toolsMenu();}catch(e){}},700);}
     enableMotion();initAudio();if(AC.state==="suspended")AC.resume();
     applyMode(m);
     _keyProgrammatic=true; // boot-time key setup is automatic, must NOT pin (so slime can rotate from the start)
@@ -5211,11 +5422,165 @@ window.slimeStar=function(){}; // intentionally a no-op — a "win" is its own r
     const box=sp.querySelector('#cbdBox');
     if(box)box.addEventListener('pointerdown',e=>e.stopPropagation());
   }
+  // CARRY ON. A returning learner gets the same three doors as a first-timer and has to remember
+  // which lesson they were on. The only ethical shape for this is additive: it appears when there is
+  // something to carry on with, there is no streak to lose, and ignoring it costs nothing.
+  // learn2.js is a separate <script> lower down the page, so LEARN2 does not exist yet when this
+  // block runs. Poll briefly rather than reorder the scripts: the chip is the only thing that needs
+  // it, and a splash that renders 40ms earlier is worth more than one that waits on a lesson file.
+  (function resumeChip(tries){
+    tries=tries||0;
+    if(!window.LEARN2||!window.LEARN2._got){ if(tries<40)return setTimeout(()=>resumeChip(tries+1),25); return; }
+    try{
+      const L=window.LEARN2; if(!L||!L.UNITS||!L._got)return;
+      const lessons=L.UNITS.filter(u=>u.tier==='lesson');
+      if(!lessons.filter(u=>L._got(u.id)).length)return;   // nothing finished: "start here" says it already
+      const next=lessons.find(u=>!L._got(u.id));
+      const host=sp.querySelector('#spResume'); if(!host)return;
+      host.innerHTML=next
+        ? '<button id="spCarry" data-u="'+next.id+'">carry on &middot; '+(lessons.indexOf(next)+1)+'. '+L.t(next.title)+'</button>'
+        : '<div class="spAllDone">all '+lessons.length+' lessons done</div>';
+    }catch(e){}
+  })();
   sp.addEventListener('pointerdown',e=>{
     if(e.target.closest('#cbdBox'))return;           // the checkbox is not a door
+    if(e.target.closest('#toolsCard')){window.__openTools=1;boot('studio');return;} // tools ride on a live studio
+    const carry=e.target.closest('#spCarry');        // ...and neither is the carry-on chip: it is a lesson
+    if(carry){window.__deepLesson=carry.dataset.u;boot('learn');return;}
     const card=e.target.closest('.modeCard[data-m]');
     boot(card?card.dataset.m:last);}); // tap a door to choose — tap anywhere else to resume where you left off
+  // ?m=learn&l=addti  — a teacher puts one URL on the board and every child lands on the same screen,
+  // with no account, no class code and no setup. Cheapest line in the file; the only route to a class.
+  try{
+    const q=new URLSearchParams(location.search);
+    const m=(q.get('m')||q.get('mode')||'').toLowerCase();
+    const l=q.get('l')||q.get('lesson');
+    if(l)window.__deepLesson=l;
+    if(m==='learn'||m==='play'||m==='studio')setTimeout(()=>boot(m),60);
+    else if(l)setTimeout(()=>boot('learn'),60);
+  }catch(e){}
 })();
+
+// ================================================================================================
+//  TOOLS — four standalone instruments, each in its own big window.
+//  The circle of fifths, the chord editor and the step sequencer are BORROWED from studio: the live
+//  DOM node is moved into the window and handed back on close. One implementation, not a second copy
+//  that drifts out of sync. The metronome is the only new instrument here, because there wasn't one.
+//  Tools open on top of a live studio, so the audio engine, the transport and the scheduler are all
+//  already running -- nothing here has to re-plumb the app.
+// ================================================================================================
+(function(){
+  const ic=(d)=>'<svg viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
+  const TOOLS={
+    metro: {name:'Metronome', sub:'a steady click to play along to', tint:'#9fe6cf',
+            ico:ic('<path d="M9 3h6l4 18H5L9 3z"/><path d="M12 17V7"/>')},
+    cof:   {name:'Circle of fifths', sub:'how the keys sit next to each other', tint:'#c4a9f5',
+            ico:ic('<circle cx="12" cy="12" r="9"/><path d="M12 3v4M19.8 8.5l-3.8 1.3M16.7 19.4l-2.3-3.3M7.3 19.4l2.3-3.3M4.2 8.5l3.8 1.3"/>')},
+    chord: {name:'Chords', sub:'build a progression and hear it', tint:'#ffb6d6',
+            ico:ic('<circle cx="6" cy="17" r="2.6"/><circle cx="12" cy="14" r="2.6"/><circle cx="18" cy="11" r="2.6"/><path d="M6 14.4V6l12-2.5v8"/>')},
+    drums: {name:'Drum machine', sub:'tap out a beat, step by step', tint:'#ffd3a8',
+            ico:ic('<path d="M3 9h18v6a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z"/><ellipse cx="12" cy="9" rx="9" ry="3"/><path d="M7 12v3M12 12v3M17 12v3"/>')}
+  };
+  const ov=document.createElement('div');ov.id='toolsOv';document.body.appendChild(ov);
+  let borrowed=null;            // {node, home, next} so the node goes back exactly where it was
+
+  const giveBack=()=>{ if(!borrowed)return;
+    try{ borrowed.home.insertBefore(borrowed.node, borrowed.next); if(borrowed.wasHidden)borrowed.node.hidden=true; }catch(e){}
+    borrowed=null; };
+  const borrow=(sel,host)=>{ const n=document.querySelector(sel); if(!n)return false;
+    borrowed={node:n, home:n.parentNode, next:n.nextSibling, wasHidden:n.hidden};
+    n.hidden=false; host.appendChild(n); return true; };
+
+  const close=()=>{ stopMetro(); giveBack(); ov.classList.remove('on'); ov.innerHTML='';
+    document.body.classList.remove('tools-on'); };
+  window._toolsClose=close;
+
+  function shell(title,bodyHTML){
+    ov.innerHTML='<div class="twCard"><div class="twHead"><button class="twX" data-tw="back" aria-label="back">&#8592;</button>'+
+      '<b>'+title+'</b><button class="twX" data-tw="exit" aria-label="close tools">&#10005;</button></div>'+
+      '<div class="twBody">'+bodyHTML+'</div></div>';
+  }
+  function menu(){
+    stopMetro(); giveBack();
+    ov.innerHTML='<div class="twCard"><div class="twHead"><b>Tools</b>'+
+      '<button class="twX" data-tw="exit" aria-label="close tools">&#10005;</button></div>'+
+      '<div class="twGrid">'+Object.keys(TOOLS).map(k=>{const T=TOOLS[k];
+        return '<button class="twPick" data-tool="'+k+'" style="--tt:'+T.tint+'">'+T.ico+
+               '<b>'+T.name+'</b><i>'+T.sub+'</i></button>';}).join('')+'</div></div>';
+  }
+  window._toolsMenu=()=>{document.body.classList.add('tools-on');ov.classList.add('on');menu();};
+
+  // ---------- METRONOME (the one genuinely new instrument) ----------
+  let mTimer=null,mBeat=0,mSig=4;
+  function click(acc){ try{ if(!AC)return;
+      const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime;
+      o.type='square'; o.frequency.setValueAtTime(acc?1600:1050,t);
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(acc?0.28:0.16,t+0.002);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.055);
+      o.connect(g);g.connect(master||AC.destination);o.start(t);o.stop(t+0.07);
+    }catch(e){} }
+  function paintBeats(){ const w=document.getElementById('twBeats'); if(!w)return;
+    w.innerHTML=Array.from({length:mSig},(_,i)=>'<i class="'+(i===0?'acc':'')+'"></i>').join(''); }
+  function stopMetro(){ if(mTimer){clearInterval(mTimer);mTimer=null;}
+    const b=document.querySelector('[data-tw="mstart"]'); if(b){b.classList.remove('on');b.textContent='start';} }
+  function startMetro(){ stopMetro(); mBeat=0;
+    const tick=()=>{ const w=document.getElementById('twBeats'); if(w){[...w.children].forEach((e,i)=>e.classList.toggle('on',i===mBeat));}
+      click(mBeat===0); mBeat=(mBeat+1)%mSig; };
+    tick(); mTimer=setInterval(tick,60000/(S.bpm||90));
+    const b=document.querySelector('[data-tw="mstart"]'); if(b){b.classList.add('on');b.textContent='stop';} }
+  function metroUI(){
+    shell(TOOLS.metro.name,
+      '<div class="twRow"><div class="twBig" id="twBpm">'+Math.round(S.bpm||90)+'</div>'+
+      '<label for="twTempo">tempo</label><input type="range" id="twTempo" min="40" max="200" step="1" value="'+Math.round(S.bpm||90)+'" aria-label="tempo"></div>'+
+      '<div id="twBeats"></div>'+
+      '<div class="twRow"><button class="twBtn" data-tw="mstart">start</button>'+
+      [2,3,4,6].map(n=>'<button class="twBtn'+(n===mSig?' on':'')+'" data-tw="msig" data-n="'+n+'">'+n+'/4</button>').join('')+
+      '</div><p class="twNote">The first beat of every bar is the loud one. Count along with it out loud.</p>');
+    paintBeats();
+  }
+  // ---------- the three borrowed panels ----------
+  function hostUI(title,sel,extra,note){
+    shell(title,(extra||'')+'<div class="twHost"></div>'+(note?'<p class="twNote">'+note+'</p>':''));
+    const host=ov.querySelector('.twHost');
+    if(!borrow(sel,host))host.innerHTML='<p class="twNote">that panel is not available on this build</p>';
+  }
+  const tempoRow=()=>'<div class="twRow"><div class="twBig" id="twBpm">'+Math.round(S.bpm||90)+'</div>'+
+      '<label for="twTempo">tempo</label><input type="range" id="twTempo" min="40" max="200" step="1" value="'+Math.round(S.bpm||90)+'" aria-label="tempo"></div>';
+
+  function open(k){
+    stopMetro(); giveBack();
+    if(k==='metro')return metroUI();
+    if(k==='cof'){ hostUI(TOOLS.cof.name,'#cofWheel','',
+      'The key you are in sits at the top. Its closest neighbours are the two beside it.');
+      try{updateWheel();}catch(e){} return; }
+    if(k==='chord'){ hostUI(TOOLS.chord.name,'#chordPanel',tempoRow(),
+      'Add chords, then press play. The dice rolls a new progression in this key.'); return; }
+    if(k==='drums'){ hostUI(TOOLS.drums.name,'#stepGrid',tempoRow(),
+      'Each row is one drum. Tap a square to turn that hit on.');
+      try{ if(typeof drumOn!=='undefined'&&!drumOn&&$("drumBtn"))$("drumBtn").click(); }catch(e){}
+      return; }
+  }
+
+  ov.addEventListener('click',(e)=>{
+    const pick=e.target.closest('[data-tool]'); if(pick)return open(pick.dataset.tool);
+    const b=e.target.closest('[data-tw]'); if(!b)return;
+    const a=b.dataset.tw;
+    if(a==='exit'){close();try{location.reload();}catch(err){}return;}
+    if(a==='back')return menu();
+    if(a==='mstart')return mTimer?stopMetro():startMetro();
+    if(a==='msig'){mSig=+b.dataset.n;[...ov.querySelectorAll('[data-tw="msig"]')].forEach(x=>x.classList.toggle('on',+x.dataset.n===mSig));
+      paintBeats();if(mTimer)startMetro();return;}
+  });
+  ov.addEventListener('input',(e)=>{
+    if(e.target.id!=='twTempo')return;
+    const v=+e.target.value; try{setBpm(v);}catch(err){S.bpm=v;}
+    const n=document.getElementById('twBpm'); if(n)n.textContent=v;
+    if(mTimer)startMetro();                       // the click follows the slider immediately
+  });
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&ov.classList.contains('on'))close();});
+})();
+
 // ---------- first-run coach: signal the three essentials, advance on the child's own action ----------
 function startCoach(){
   try{if(localStorage.getItem('slimehedron-coach'))return;}catch(e){}

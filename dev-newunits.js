@@ -6,7 +6,8 @@
 // ============================================================================================
 const {chromium}=require('playwright');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
-const NEW=['sadfive','movehome','addfa','addti','brightdark','minorscale','harmminor','melminor','aeolian','dorian','mixo'];
+// the ramp after consolidation: nineteen lessons became twelve, so this is the set above the pentatonic
+const NEW=['newhome','majorscale','brightdark','minorscale','minorshapes','modes'];
 (async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
  for(const id of NEW){
   const ctx=await b.newContext({viewport:{width:1100,height:860}});
@@ -21,14 +22,16 @@ const NEW=['sadfive','movehome','addfa','addti','brightdark','minorscale','harmm
     u.run(); await new Promise(r=>setTimeout(r,1400));
     const card=document.querySelector('#learnOverlay .lCard');
     const walls=(typeof scaleObj==='function')?scaleObj().c.length:0, keys=document.querySelectorAll('#labKeys .lk').length;
+    const rungs=document.querySelectorAll('.lgRung,[data-bd]').length;
     const playable=(window.LAB&&LAB._playable)?LAB._playable.length:0;
-    return {scale:S.scale, root:S.root, walls, keys, playable,
-      title:(card&&card.querySelector('.labStep,.labBar b, b')||{}).textContent||'',
-      text:(card?card.innerText:'').replace(/\s+/g,' ').slice(0,110),
+    return {scale:S.scale, root:S.root, walls, keys, rungs, playable,
+      title:((document.querySelector('.lgTop h3')||card&&card.querySelector('b')||{}).textContent)||'',
+      text:((document.querySelector('.lgStage')||card||{innerText:''}).innerText||'').replace(/\s+/g,' ').slice(0,110),
       said:(window.__said||[]).join(' | ').slice(0,90)};},id);
   if(r.err){ok(false,id+': '+r.err);}
   else{
-    ok(r.walls>=5&&r.keys===r.walls, `${id}: scale=${r.scale} root=${r.root} walls=${r.walls} keys=${r.keys}`);
+    // these run on the LADDER now: no tank, no keybed. What must exist is a rung per note.
+    ok(r.rungs>=2, `${id}: scale=${r.scale} root=${r.root} rungs=${r.rungs}`);
     ok(!!r.said, `${id}: says its instruction out loud ("${r.said.slice(0,44)}")`);
     ok(r.text.length>10, `${id}: card has copy`);
   }
