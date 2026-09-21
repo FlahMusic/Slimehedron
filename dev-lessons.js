@@ -119,6 +119,29 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
      await p.waitForTimeout(hit?260:200);}
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
+ // INTERVALS is the other two-choice lesson: same screen, same hook
+ {await home();await open('intervals');
+  for(let i=0;i<120&&!(await doneUp());i++){
+    const w=await p.evaluate(()=>window._labExpect);
+    await p.evaluate(ww=>{const bb=document.querySelector('[data-ch="'+(ww||'near')+'"]');
+      if(bb)bb.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));},w);
+    await p.waitForTimeout(320);}
+  ok(await doneUp(),'INTERVALS ends with a "you did it" card');}
+
+ // REST DURATION: play the notes, stay silent on the rests. dev-rest.js proves the silence MATTERS;
+ // this just proves the lesson terminates like every other one.
+ {await home();await open('rest');
+  for(let i=0;i<700&&!(await doneUp());i++){
+    const r=await p.evaluate(()=>{
+      if(typeof AC==='undefined'||!AC||window._labReadAt==null)return null;
+      const c=[...document.querySelectorAll('.lgCell')][window._labReadIdx];
+      return {wait:(window._labReadAt-AC.currentTime)*1000,rest:!!(c&&c.classList.contains('rest'))};});
+    if(!r){await p.waitForTimeout(80);continue;}
+    if(r.wait>0)await p.waitForTimeout(Math.min(700,r.wait));
+    if(!r.rest)await p.evaluate(()=>window._lab_tap&&window._lab_tap());
+    await p.waitForTimeout(90);}
+  ok(await doneUp(),'REST ends with a "you did it" card');}
+
  // BRIGHT AND DARK answers with two big buttons; the lesson publishes which one is right.
  {await home();await open('brightdark');
   for(let i=0;i<120&&!(await doneUp());i++){

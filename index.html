@@ -703,6 +703,15 @@ body.lab-stage #exitMode,body.lab-stage #cofWheel,body.lab-stage #toast{display:
 .lgWords b.on{transform:scale(1.16);box-shadow:0 6px 18px rgba(120,110,160,.34)}
 .lgWords b.done{opacity:.42}
 @media (prefers-reduced-motion:reduce){.lgWords b{transition:none}.lgWords b.on{transform:none}}
+/* the interval ruler: one octave, thirteen rungs, lit where the notes were. Shown only after the
+   answer, so the child hears the gap, decides, and then sees the gap they decided about. */
+.lgRuler{display:flex;flex-direction:column;gap:3px;align-items:center;margin:14px auto 0;width:min(210px,58vw)}
+.lgRuler i{width:100%;height:11px;border-radius:5px;background:rgba(150,135,190,.16);
+  transition:background .18s ease,transform .18s ease}
+.lgRuler i.on{background:var(--rc,#9fe6cf);transform:scaleX(1.14);
+  box-shadow:0 2px 7px rgba(80,66,130,.22)}
+@media (prefers-reduced-motion:reduce){.lgRuler i{transition:none}.lgRuler i.on{transform:none}}
+@media (max-height:540px){.lgRuler{margin-top:6px;width:min(150px,34vw)}.lgRuler i{height:7px;gap:2px}}
 .lgChoice{flex:none;display:flex;gap:14px;justify-content:center;
   padding:0 16px calc(16px + env(safe-area-inset-bottom))}
 .lgChoice button{flex:1;max-width:220px;min-height:84px;border-radius:22px;border:none;cursor:pointer;font-family:inherit;
@@ -729,6 +738,10 @@ body.lab-stage #exitMode,body.lab-stage #cofWheel,body.lab-stage #toast{display:
   transition:background .12s,border-color .12s,transform .12s}
 .lgCounts i.on{background:var(--accent);border-color:#fff;transform:scale(1.12)}
 .lgCounts i.beat{border-color:var(--accent)}
+/* a rest cell: the glyph is smaller and lighter than a note head, and the cell is tinted so silence
+   reads as a DIFFERENT KIND of thing on the line rather than as a note you missed */
+.lgCell.rest{background:rgba(120,105,175,.07);border-radius:10px}
+.lgCell.rest svg{opacity:.85}   /* a rest is as present on the line as a note, not a faded one */
 
 /* a bar of notes, read left to right. One row, no staff yet: the staff arrives once the child
    already knows what the shapes mean, which is the order both books use. */

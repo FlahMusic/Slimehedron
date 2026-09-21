@@ -80,33 +80,48 @@ const LANG={
     notYet:['not that one. here it is again','listen again, then try','close. one more go'],
     onceMore:'one more round',
     noRush:'take your time',
-    // units
-    u_pulse:'Beat', u_pulseSub:'tap in time',
-    u_sayplay:'Say it first', u_sayplaySub:'say the rhythm, then play it',
-    // ---- reading and counting, the half the books are made of ----
-    u_howlong:'How long?', u_howlongSub:'notes last different amounts',
+    // ---- LESSON TITLES ----
+    // A title is the CONCEPT'S REAL NAME. Checked against how musictheory.net names its lessons ("Note
+    // Duration", "Rest Duration", "Measures and Time Signature", "The Major Scale", "Steps and
+    // Accidentals") and against Hoffman Academy, which is aimed squarely at six-year-olds and still
+    // says "Half Notes", "Musical Alphabet" and "D Major Pentascale" to them. Children are not damaged
+    // by the correct word; they are damaged by never being told it. So: the TITLE is the term, and the
+    // SUBTITLE is the plain sentence. "How long?" and "Bright and dark" told a child nothing they could
+    // carry to a piano teacher, a band room, or the next app.
+    u_pulse:'Steady Beat', u_pulseSub:'find the pulse and tap with it',
+    u_sayplay:'Rhythm Syllables', u_sayplaySub:'say a rhythm before you play it',
+    u_howlong:'Note Duration', u_howlongSub:'quarter, half, dotted half, whole',
     hl_do:'How many counts was that note?',
-    hl_name:'A note tells you HOW LONG to hold it.',
-    note_q:'a QUARTER note — 1 count', note_h:'a HALF note — 2 counts',
-    note_dh:'a DOTTED HALF note — 3 counts', note_w:'a WHOLE note — 4 counts',
-    u_countbar:'Count the bar', u_countbarSub:'four counts, play the big ones',
+    hl_name:'A note\u2019s shape tells you how long to hold it. That is its DURATION.',
+    note_q:'a QUARTER note \u2014 1 count', note_h:'a HALF note \u2014 2 counts',
+    note_dh:'a DOTTED HALF note \u2014 3 counts', note_w:'a WHOLE note \u2014 4 counts',
+    note_r:'a QUARTER REST \u2014 1 count of silence',
+    u_rest:'Rest Duration', u_restSub:'silence is written down too',
+    rs_do:'Play on the notes. Stay silent on the rests.',
+    rs_name:'A REST is silence you count. This one lasts 1 beat.',
+    u_countbar:'Measures and Time', u_countbarSub:'four beats to a measure',
     cb_do:'Tap on the big numbers. Count the small ones.',
-    cb_name:'Four counts in a bar. That is FOUR FOUR TIME.',
-    u_song:'Play a song', u_songSub:'a real tune, start to finish',
+    cb_name:'Four beats in a MEASURE. The 4/4 is the TIME SIGNATURE.',
+    u_song:'Playing from Notation', u_songSub:'read a written tune and play it',
     sg_do:'Tap each note as it lights up.',
-    sg_name:'You read that and played it.',
+    sg_name:'You played a tune straight off the page.',
     song_hotcross:'Hot Cross Buns', song_mary:'Mary Had a Little Lamb',
-    u_high:'High and low', u_highSub:'which note is higher',
-    u_notes:'Find the note', u_notesSub:'two notes, then three, then five',
-    u_home:'Home note', u_homeSub:'the note a tune ends on',
-    u_steps:'Steps and skips', u_stepsSub:'walk up, one at a time',
-    u_newhome:'New home', u_newhomeSub:'same five notes, different home',
-    u_majorscale:'The major scale', u_majorscaleSub:'add fa, then ti',
-    u_brightdark:'Bright and dark', u_brightdarkSub:'major and minor',
-    u_minorscale:'Minor scale', u_minorscaleSub:'the dark seven',
-    u_minorshapes:'Minor shapes', u_minorshapesSub:'harmonic, then melodic',
-    u_modes:'Modes', u_modesSub:'dorian, then mixolydian',
-    u_review:'Review', u_reviewSub:'notes from other days',
+    u_high:'Pitch', u_highSub:'high notes and low notes',
+    u_notes:'The Major Pentatonic', u_notesSub:'five notes: do re mi so la',
+    u_home:'The Tonic', u_homeSub:'the note a melody comes home to',
+    u_steps:'Steps and Skips', u_stepsSub:'how a melody moves',
+    u_newhome:'The Relative Minor', u_newhomeSub:'same five sounds, a new tonic',
+    u_majorscale:'The Major Scale', u_majorscaleSub:'seven notes \u2014 add fa, then ti',
+    u_brightdark:'Major and Minor', u_brightdarkSub:'one note sets the mood',
+    u_intervals:'Intervals', u_intervalsSub:'two notes at the same time',
+    iv_hear:'Two notes, sounded together.',
+    iv_do:'A 2nd is one step wide. A 5th is much wider. Which was it?',
+    iv_name:'The distance between two notes is an INTERVAL.',
+    iv_near:'2nd', iv_far:'5th',
+    u_minorscale:'The Minor Scale', u_minorscaleSub:'seven notes, also called Aeolian',
+    u_minorshapes:'Harmonic and Melodic Minor', u_minorshapesSub:'raise the seventh, then the sixth',
+    u_modes:'Modes', u_modesSub:'Dorian and Mixolydian',
+    u_review:'Review', u_reviewSub:'notes from earlier lessons',
     // say-it-first: the METHOD is borrowed (konnakol, bols, kuchi shoga, gu-eum, usul all vocalise a
     // rhythm before playing it); the SYLLABLES are English so the child is saying words they own.
     // They still follow Hughes 2000's acoustic logic: voiced stop + back vowel for the low drum,
@@ -115,48 +130,48 @@ const LANG={
     sp_hear:'BOOM is the low drum. TAP is the high one.',
     sp_listen:'Listen. Say it with me.',
     sp_say:'Say it out loud, then tap it out.',
-    sp_name:'Say a rhythm before you play it. It makes it easier.',
+    sp_name:'Saying a rhythm first makes it easier to play. Those words are RHYTHM SYLLABLES.',
     // --- what each lesson says, one short line, the thing to DO at the end of it ---
     high_do:'Tap the note you hear.',
-    high_name:'How high a note sits is its PITCH.',
+    high_name:'How high or low a note sounds is its PITCH.',
     nt_do:'Tap the note you hear.',
     nt_p1:'a new note on top', nt_p2:'a new note at the bottom', nt_p3:'one more, and that is all five',
-    nt_name:'DO RE MI SO LA. That is a PENTATONIC SCALE.',
+    nt_name:'DO RE MI SO LA \u2014 five notes. That is the MAJOR PENTATONIC SCALE.',
     home_do:'Tap the note that finishes it.',
-    home_name:'That note is HOME. Its name is DO.',
-    steps_do:'Walk up the ladder, one rung at a time.',
-    steps_name:'Next rung is a STEP. Jumping one is a SKIP.',
+    home_name:'The note a melody rests on is the TONIC. Here it is DO.',
+    steps_do:'Go up one note at a time.',
+    steps_name:'To the next note is a STEP. Jumping over one is a SKIP.',
     sad_do:'Tap the note you hear.',
-    sad_name:'Same five notes, new home. That is the MINOR PENTATONIC.',
+    sad_name:'Same five sounds, a new tonic. That is the MINOR PENTATONIC.',
     ms_do:'Tap the note you hear.',
-    ms_p1:'one more note, under do',
+    ms_p1:'one more note, just under do',
     ms_name:'Seven notes. That is the MAJOR SCALE.',
-    bd_hear:'Three notes. Only the middle one moves.',
-    bd_do:'Bright, or dark?',
-    bd_name:'Middle note high is MAJOR. Middle note low is MINOR.',
-    bright:'bright', dark:'dark',
+    bd_hear:'A chord of three notes. Only the middle one moves.',
+    bd_do:'Major sounds bright. Minor sounds dark. Which was it?',
+    bd_name:'The middle note is the THIRD. High third: MAJOR. Low third: MINOR.',
+    bright:'major', dark:'minor',
     mn_do:'Tap the note you hear.',
-    mn_name:'This is the MINOR SCALE. Its other name is AEOLIAN.',
+    mn_name:'This is the NATURAL MINOR SCALE. Its mode name is AEOLIAN.',
     sh_do:'Tap the note you hear.',
-    sh_p1:'now the melodic one',
-    sh_name:'Lift the seventh: HARMONIC MINOR. Lift two: MELODIC MINOR.',
+    sh_p1:'now raise the sixth as well',
+    sh_name:'Raise the seventh: HARMONIC MINOR. Raise the sixth too: MELODIC MINOR.',
     md_do:'Tap the note you hear.',
-    md_p1:'now mixolydian',
-    md_name:'DORIAN is minor with a bright sixth. MIXOLYDIAN is major with a soft seventh.',
+    md_p1:'now Mixolydian',
+    md_name:'DORIAN is minor with a raised sixth. MIXOLYDIAN is major with a lowered seventh.',
     rev_do:'Find it again.',
     rev_name:'You still had it.',
     rev_none:'nothing to review yet',
     rev_noneSub:'Finish a lesson. Come back tomorrow.',
-    g_echo:'Echo', g_echoSub:'play back what you hear',
-    echo_name:'You can hold a tune in your head. That is your EAR.',
-    g_updown:'Up or down', g_updownSub:'which way did it go',
+    g_echo:'Call and Response', g_echoSub:'play back what you hear',
+    echo_name:'Holding a melody in your head and playing it back is EAR TRAINING.',
+    g_updown:'Melodic Direction', g_updownSub:'did the melody rise or fall',
     updown_hear:'Two notes, one after the other.',
-    updown_name:'A tune that rises goes UP. A tune that falls goes DOWN.',
-    g_findhome:'Find home', g_findhomeSub:'find do',
+    updown_name:'A melody that rises is moving UP. One that falls is moving DOWN.',
+    g_findhome:'Find the Tonic', g_findhomeSub:'land on do',
     fh_do:'Tap the note that finishes it.',
-    fh_name:'Home is DO. Every tune leans towards it.',
+    fh_name:'The TONIC is DO. Every melody leans towards it.',
     // ---- the four lesson blocks, in order ----
-    blockA:'Beat and counting', blockB:'First notes', blockC:'More notes', blockD:'Minor and modes',
+    blockA:'Rhythm and Notation', blockB:'Pitch', blockC:'Scales and Harmony', blockD:'Minor and Modes',
     // pulse
     // instruction copy: ONE short sentence, and the thing to DO goes at the end of it (Sesame
     // Workshop's tablet guidance for pre-readers). Narrated as well as shown -- narration beats
@@ -172,7 +187,7 @@ const LANG={
     echo_mine:'Listen to the little tune.',
     echo_your:'Now tap it back, in order.',
     echo_len:'{n} notes',
-    updown_ask:'Did it go up, or down?',
+    updown_ask:'Did the melody go up, or down?',
     up:'up', down:'down', same:'the same',
     // the ending beat
     doneTitle:'you did it!', nextLesson:'next lesson', doneAgain:'do it again', startHere:'start here',
@@ -456,6 +471,7 @@ const UNITS=[
   {id:'sayplay',    title:'u_sayplay',    sub:'u_sayplaySub',    tier:'lesson', run:sayPlayUnit,    tint:'#ffd3a8'},
   {id:'howlong',    title:'u_howlong',    sub:'u_howlongSub',    tier:'lesson', run:noteValueUnit,  tint:'#ffe0a8'},
   {id:'countbar',   title:'u_countbar',   sub:'u_countbarSub',   tier:'lesson', run:countBarUnit,   tint:'#f5c8a8'},
+  {id:'rest',       title:'u_rest',       sub:'u_restSub',       tier:'lesson', run:restUnit,       tint:'#e8dcc8'},
   {id:'song',       title:'u_song',       sub:'u_songSub',       tier:'lesson', run:songUnit,       tint:'#f5b8c8'},
   {id:'high',       title:'u_high',       sub:'u_highSub',       tier:'lesson', block:'b', run:highUnit,       tint:'#a6c8ff', use:[DEG.do,DEG.la]},
   {id:'notes',      title:'u_notes',      sub:'u_notesSub',      tier:'lesson', block:'b', run:findNoteUnit,   tint:'#d9e88f', use:[0,1,2,3,4]},
@@ -465,6 +481,7 @@ const UNITS=[
   {id:'newhome',    title:'u_newhome',    sub:'u_newhomeSub',    tier:'lesson', block:'c', run:sadFiveUnit,    tint:'#8fe0d0', use:[0,1,2,3,4]},
   {id:'majorscale', title:'u_majorscale', sub:'u_majorscaleSub', tier:'lesson', block:'c', run:majorScaleUnit, tint:'#ffe0a8', use:[0,1,2,3,4,5,6]},
   {id:'brightdark', title:'u_brightdark', sub:'u_brightdarkSub', tier:'lesson', block:'c', run:brightDarkUnit, tint:'#f5b8c8', use:[0,1,2,3,4,5,6]},
+  {id:'intervals',  title:'u_intervals',  sub:'u_intervalsSub',  tier:'lesson', block:'c', run:intervalUnit,   tint:'#bfe0f5', use:[0,1,2,3,4,5,6]},
   // ---- block C: minor and modes ----
   {id:'minorscale', title:'u_minorscale', sub:'u_minorscaleSub', tier:'lesson', block:'d', run:minorScaleUnit, tint:'#b5a9f5', use:[0,1,2,3,4,5,6]},
   {id:'minorshapes',title:'u_minorshapes',sub:'u_minorshapesSub',tier:'lesson', block:'d', run:minorShapesUnit,tint:'#a9c4f5', use:[0,1,2,3,4,5,6]},
@@ -492,10 +509,17 @@ const NOTEG={ // real notation, drawn properly — this is the one place a vecto
   q:'<svg viewBox="0 0 60 96"><ellipse cx="20" cy="76" rx="15" ry="11" transform="rotate(-20 20 76)" fill="#2f2a44"/><rect x="33" y="14" width="5" height="60" fill="#2f2a44"/></svg>',
   h:'<svg viewBox="0 0 60 96"><ellipse cx="20" cy="76" rx="15" ry="11" transform="rotate(-20 20 76)" fill="none" stroke="#2f2a44" stroke-width="6"/><rect x="33" y="14" width="5" height="60" fill="#2f2a44"/></svg>',
   dh:'<svg viewBox="0 0 74 96"><ellipse cx="20" cy="76" rx="15" ry="11" transform="rotate(-20 20 76)" fill="none" stroke="#2f2a44" stroke-width="6"/><rect x="33" y="14" width="5" height="60" fill="#2f2a44"/><circle cx="50" cy="76" r="5.5" fill="#2f2a44"/></svg>',
-  w:'<svg viewBox="0 0 60 96"><ellipse cx="30" cy="60" rx="19" ry="13" transform="rotate(-10 30 60)" fill="none" stroke="#2f2a44" stroke-width="7"/></svg>'
+  w:'<svg viewBox="0 0 60 96"><ellipse cx="30" cy="60" rx="19" ry="13" transform="rotate(-10 30 60)" fill="none" stroke="#2f2a44" stroke-width="7"/></svg>',
+  // THE QUARTER REST. Silence is notated, counted and played -- both books teach it in level one, and
+  // this curriculum had none of it: the word "rest" appeared in the source only inside comments. A
+  // rhythm course with no silence in it is teaching one half of rhythm and calling it the whole thing.
+  r:'<svg viewBox="0 0 60 96"><path d="M19 20 L40 43 L23 58 L42 78" fill="none" stroke="#2f2a44" '+
+    'stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>'+
+    '<path d="M42 78 Q27 73 25 87 Q34 79 43 88" fill="none" stroke="#2f2a44" stroke-width="6" stroke-linecap="round"/></svg>'
 };
-const NOTEV={q:1,h:2,dh:3,w:4};
-const NOTEN={q:'note_q',h:'note_h',dh:'note_dh',w:'note_w'};
+const NOTEV={q:1,h:2,dh:3,w:4,r:1};
+const NOTEN={q:'note_q',h:'note_h',dh:'note_dh',w:'note_w',r:'note_r'};
+const isRest=(k)=>k==='r';
 
 // ---------- 3. HOW LONG IS A NOTE? ----------
 // One note on screen. Its beats fill in, one circle per count, in time with a click. Then four
@@ -562,6 +586,9 @@ function noteValueUnit(){
 // real tune on it, so the lesson ends with a piece rather than a drill.
 const BARS={
   count:[['q','q','q','q'],['h','h'],['q','q','h'],['w'],['h','q','q'],['dh','q']],
+  // a rest is a beat you COUNT but do not PLAY -- which is exactly what the small counting numbers
+  // already mean on this screen, so the notation the books use needs no new machinery here
+  rest:[['q','r','q','r'],['q','q','r','q'],['r','q','q','q'],['h','r','q'],['q','r','h'],['q','q','q','r']],
   song:[ // Hot Cross Buns and Mary Had a Little Lamb: both long out of copyright
     {n:'song_hotcross',bars:[['q','q','h'],['q','q','h']]},
     {n:'song_mary',bars:[['q','q','q','q'],['h','h']]}
@@ -582,11 +609,14 @@ function readUnit(cfg){
   function paint(){
     let b=0;
     const cells=seq.map((k,i)=>{
-      const v=NOTEV[k], nums=[];
-      for(let j=0;j<v;j++)nums.push('<u class="'+(j?'small':'')+'">'+((b+j)%4+1)+'</u>');
+      const v=NOTEV[k], nums=[], rest=isRest(k);
+      // EVERY count under a rest is small. The book's own convention already says it: big means play,
+      // small means count in silence. A rest is simply a beat where nothing is big.
+      for(let j=0;j<v;j++)nums.push('<u class="'+((j||rest)?'small':'')+'">'+((b+j)%4+1)+'</u>');
       const newBar=(b>0&&b%4===0);     // a bar line every four counts, drawn where it belongs
       b+=v;
-      return '<div class="lgCell'+(newBar?' bar2':'')+'" data-i="'+i+'">'+NOTEG[k]+'<div>'+nums.join(' ')+'</div></div>';
+      return '<div class="lgCell'+(newBar?' bar2':'')+(rest?' rest':'')+'" data-i="'+i+'">'+
+        NOTEG[k]+'<div>'+nums.join(' ')+'</div></div>';
     }).join('');
     stage(
       '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
@@ -602,7 +632,8 @@ function readUnit(cfg){
   function run(){
     idx=0; t0=AC.currentTime+0.9;
     const cells=[...document.querySelectorAll('.lgCell')];
-    cells.forEach(c=>c.classList.remove('now','hitok'));
+    cells.forEach(c=>{c.classList.remove('now','hitok');
+      if(c.classList.contains('rest'))c.classList.add('hitok');});   // silence is already correct
     cancelAnimationFrame(raf);
     (function tick(){
       const now=AC.currentTime, beat=(now-t0)/P;
@@ -636,7 +667,9 @@ function readUnit(cfg){
     seq.forEach((k,i)=>{const d=Math.abs(now-(t0+beatOf[i]*P));if(d<bd){bd=d;best=i;}});
     const pad=document.getElementById('lgPad');
     if(pad){pad.classList.remove('hit');void pad.offsetWidth;pad.classList.add('hit');}
-    if(best>=0&&bd<=P*0.34&&cells[best]){cells[best].classList.add('hitok');}
+    if(best>=0&&bd<=P*0.34&&cells[best]){
+      if(cells[best].classList.contains('rest'))cells[best].classList.remove('hitok');
+      else cells[best].classList.add('hitok');}
   }
   const onDown=(e)=>{const p=e.target.closest&&e.target.closest('#lgPad');if(!p)return;e.preventDefault();judge();};
   ov.addEventListener('pointerdown',onDown,true);
@@ -649,6 +682,14 @@ function readUnit(cfg){
 function countBarUnit(){
   readUnit({id:'countbar',title:'u_countbar',doIt:'cb_do',name:'cb_name',need:10,
     pick:()=>({notes:BARS.count[(Math.random()*BARS.count.length)|0]})});
+}
+// ---------- 5. REST DURATION ----------
+// The same reading screen with silence written into the bar. Nothing new to operate: the big/small
+// counting convention the percussion book already uses says it -- you count every number, you play
+// only the big ones, and under a rest none of them are big.
+function restUnit(){
+  readUnit({id:'rest',title:'u_rest',doIt:'rs_do',name:'rs_name',need:10,
+    pick:()=>({notes:BARS.rest[(Math.random()*BARS.rest.length)|0]})});
 }
 function songUnit(){
   readUnit({id:'song',title:'u_song',doIt:'sg_do',name:'sg_name',need:6,
@@ -665,24 +706,64 @@ function songUnit(){
 //  Fixed targets (a moving target is tapped correctly 37% of the time at ages 4-6; a still one 57%),
 //  nothing on screen that is not the job, and the instruction is narrated as well as written.
 // ================================================================================================
+// COLOUR MEANS A NOTE. It used to be indexed by the rung's POSITION on screen, which made it noise:
+// #a6c8ff was measured meaning "high", "so", "mi", "re" AND "me" depending which lesson you opened, so
+// a child who learned "blue is so" was wrong two lessons later. It is indexed by SCALE DEGREE now, so
+// do is one colour in every lesson and every key, and the colour is a second channel that agrees with
+// the sound instead of fighting it. (Moveable-do, so it survives the transposition ramp; a fixed
+// pitch-class scheme like Boomwhackers would break the moment the key moves.)
 const RUNG_TINT=['#9fe6cf','#a6c8ff','#c4a9f5','#ffb6d6','#ffd3a8','#d9e88f','#8fe0d0'];
+// Indexed by the DISTANCE FROM THE TONIC, not by the note's position in the scale. Position fails on
+// the pentatonic, which skips the fourth: its 4th rung is the fifth of the key, so "rung 4" meant fa
+// in one lesson and so in the next. Distance is the thing that actually holds -- and a lowered degree
+// keeps its natural's hue, because me and mi are both the third and should look like it.
+const SEMI_TINT=[0,1,1,2,2,3,3,4,5,5,6,6];   // do  ra re  me mi  fa fi  so  le la  te ti
+function degTint(d){
+  let c=0; try{c=degCents(d);}catch(e){c=d*200;}
+  const semi=((Math.round(c/100)%12)+12)%12;
+  return RUNG_TINT[SEMI_TINT[semi]];
+}
 const EAR='<svg viewBox="0 0 24 24"><path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.6"/><circle cx="17.5" cy="16" r="2.6"/></svg>';
+// THE KEY MOVES. Measured before this went in: "The Major Pentatonic" sounded FIVE distinct pitches
+// across sixty answered rounds, for every session, forever. The root was pinned for the whole visit,
+// so the ladder's pitches, positions and colours never changed and a child could clear every melodic
+// lesson by remembering WHICH SLOT, having never once compared two sounds. The app was using
+// moveable-do names on a fixed-pitch instrument, which is the worst of both.
+// It is ramped, not switched on: lessons 1-9 hold one key so a beginner has something to anchor to,
+// and from the relative-minor lesson onwards the key moves between questions -- by then "the tonic can
+// be anywhere" IS the lesson. The range is kept inside a child's comfortable singing register.
+// The labels and the colours are scale-relative, so neither moves when the key does; only the sound.
+const ROAM=[-5,-4,-3,-2,0,2,3,4,5,7];
+// ...and wherever the roam lands, the tonic is pulled back into one singable octave. Two reasons: a
+// low tone is genuinely harder to pitch-match, and the lesson's starting key was never fixed in the
+// first place -- it inherited whatever the app happened to be left on, so one child got the lesson in
+// F and another in B. MIDI 57-69 is A3-A4, inside a child's comfortable range at either end.
+const SING_LO=57, SING_HI=69;
+const inSingRange=(m)=>{ while(m<SING_LO)m+=12; while(m>SING_HI)m-=12; return m; };
 function ladderUnit(cfg){
   stageOff();
   const id=cfg.id, need=cfg.need||10;
-  let rungs=[], right=0, busy=false, target=null, phase=0;
+  let rungs=[], right=0, busy=false, target=null, phase=0, roamAt=0;
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
   const HOME=()=>((LAB._saved&&LAB._saved.root!=null)?LAB._saved.root:S.root)+(cfg.rootShift||0);
   // the tank still SOUNDS the notes - it is the app's instrument - but it is not on screen.
-  LAB.take({scale:(cfg.scales?cfg.scales[0]:cfg.scale)||'pentaMaj',root:HOME(),
-            octs:1,drums:false,band:false,touch:false});
-  LAB.labels(null);LAB.clear();
-  function setOf(){ return (typeof cfg.use==='function')?cfg.use(phase):cfg.use; }
-  function retake(){ // a lesson that changes scale between phases (harmonic -> melodic minor)
-    if(!cfg.scales)return;
-    LAB.take({scale:cfg.scales[Math.min(phase,cfg.scales.length-1)],root:HOME(),
-              octs:1,drums:false,band:false,touch:false});
+  function take(){
+    LAB.take({scale:(cfg.scales?cfg.scales[Math.min(phase,cfg.scales.length-1)]:cfg.scale)||'pentaMaj',
+              root:inSingRange(HOME()+roamAt),octs:1,drums:false,band:false,touch:false});
     LAB.labels(null);LAB.clear(); }
+  take();
+  function setOf(){ return (typeof cfg.use==='function')?cfg.use(phase):cfg.use; }
+  function retake(){ if(cfg.scales)take(); }   // a lesson that changes scale between phases
+  // A single isolated pitch cannot be named without absolute pitch, so a roaming lesson has to hand
+  // the child the tonic first. That is how ear training is actually done, and it is what makes the
+  // question answerable by ear instead of by memory.
+  function reKey(){ if(!cfg.roam)return;
+    roamAt=ROAM[(Math.random()*ROAM.length)|0]; take(); }
+  function withAnchor(fn){
+    // anchor:false for a lesson whose ANSWER is the tonic -- sounding do first would hand it over.
+    // Those lessons play a cadence that leans home instead, which is its own anchor.
+    if(!cfg.roam||cfg.anchor===false)return fn();
+    sing(0,78,.5); later(fn,820); }
   function name(d){
     if(cfg.names&&cfg.names[d]!=null)return cfg.names[d];
     let c=0;try{c=degCents(d);}catch(e){c=d*200;}
@@ -692,7 +773,7 @@ function ladderUnit(cfg){
     const use=setOf();
     // built LOW FIRST; the container is column-reverse, so the highest note ends up at the top.
     const ladder=use.map((d,i)=>
-      '<button class="lgRung" data-deg="'+d+'" style="--rc:'+RUNG_TINT[i%RUNG_TINT.length]+'">'+
+      '<button class="lgRung" data-deg="'+d+'" style="--rc:'+degTint(d)+'">'+
         '<span class="rgName">'+name(d)+'</span>'+
         '<span class="rgDeg">'+(i===0?'LOW':(i===use.length-1?'HIGH':''))+'</span></button>').join('');
     stage(
@@ -709,8 +790,10 @@ function ladderUnit(cfg){
   }
   function markTarget(){ rungs.forEach(r=>r.classList.toggle('target', cfg.showTarget===true && +r.dataset.deg===target));
     window._labHintDeg=target; }   // readable target: dev-lessons drives the lesson through this
-  function ask(){ if(busy)return; target=cfg.pick(setOf(),phase); markTarget(); cfg.play(target,setOf()); }
-  window._lab_lgAgain=()=>{ if(!busy&&target!=null)cfg.play(target,setOf()); };
+  function ask(){ if(busy)return; reKey(); target=cfg.pick(setOf(),phase); markTarget();
+    withAnchor(()=>cfg.play(target,setOf())); }
+  window._lab_lgAgain=()=>{ if(!busy&&target!=null)withAnchor(()=>cfg.play(target,setOf())); };
+  window._labRoam=()=>roamAt;   // readable: dev-curriculum proves the key actually moves
   function answer(ok,deg){
     if(busy)return;
     const el=rungs.find(r=>+r.dataset.deg===deg);
@@ -1021,7 +1104,7 @@ function stepsUnit(){
 // notes with a different one in charge. Nothing new to learn; everything sounds different.
 function sadFiveUnit(){
   ladderUnit({id:'newhome',title:'u_newhome',doIt:'sad_do',name:'sad_name',
-    scale:'pentaMin',rootShift:9,use:[0,1,2,3,4],need:10,showTarget:false,
+    scale:'pentaMin',rootShift:9,use:[0,1,2,3,4],need:10,showTarget:false,roam:true,
     pick:(u)=>u[(Math.random()*u.length)|0],
     play:(d)=>sing(d,94,.55)});
 }
@@ -1030,7 +1113,7 @@ function sadFiveUnit(){
 // before ti in the Kodaly sequence, so it still arrives first -- as phase one of the same lesson.
 function majorScaleUnit(){
   ladderUnit({id:'majorscale',title:'u_majorscale',doIt:'ms_do',name:'ms_name',
-    scale:'major',use:(ph)=>ph?[0,1,2,3,4,5,6]:[0,1,2,3,4,5],need:12,phases:6,maxPhase:1,showTarget:false,
+    scale:'major',use:(ph)=>ph?[0,1,2,3,4,5,6]:[0,1,2,3,4,5],need:12,phases:6,maxPhase:1,showTarget:false,roam:true,
     phaseSay:[null,'ms_p1'],
     pick:(u)=>u[(Math.random()*u.length)|0],
     play:(d)=>sing(d,94,.55)});
@@ -1044,13 +1127,32 @@ function brightDarkUnit(){
     scale:'major',need:10,
     opts:[{v:'bright',label:'bright',tint:'#ffe08a'},{v:'dark',label:'dark',tint:'#a9b6f0'}],
     pick:()=>Math.random()<0.5?'bright':'dark',
+    art:(v)=>[0,(v==='bright')?4:3,7],
+    // Arpeggio FIRST so the moving note is audible on its own, then the same three notes TOGETHER.
+    // It used to stop after the arpeggio: the one lesson in the course about a chord never played one,
+    // and nowhere in fifteen lessons did two notes sound at the same time.
     play:(v)=>{const third=(v==='bright')?400:300;
-      note(0,92,.5);later(()=>note(third,92,.5),420);later(()=>note(700,92,.62),840);}});
+      note(0,92,.5);later(()=>note(third,92,.5),420);later(()=>note(700,92,.5),840);
+      later(()=>{note(0,86,1.4);note(third,86,1.4);note(700,86,1.4);},1340);}});
+}
+// ---------- INTERVALS -- the first time two notes are ever heard at once ----------
+// It lands right after major/minor because it needs the same ear and because the child already owns
+// the idea from "Steps and Skips": this is that idea heard TOGETHER instead of one after the other.
+// A major 2nd against a perfect 5th is the widest contrast in the whole subject -- one beats and
+// grinds, the other is hollow and open -- so it is the honest place to start naming intervals.
+function intervalUnit(){
+  choiceUnit({id:'intervals',title:'u_intervals',hear:'iv_hear',doIt:'iv_do',name:'iv_name',
+    scale:'major',need:10,
+    opts:[{v:'near',label:'iv_near',tint:'#a6c8ff'},{v:'far',label:'iv_far',tint:'#ffd3a8'}],
+    pick:()=>Math.random()<0.5?'near':'far',
+    art:(v)=>[0,(v==='near')?2:7],
+    play:(v)=>{const gap=(v==='near')?200:700;          // a major 2nd, or a perfect 5th
+      note(0,88,1.5); note(gap,88,1.5);}});             // sounded AT THE SAME TIME
 }
 // ---------- 10-12. THE SEVEN-NOTE SCALES ----------
 function scaleLadder(id,title,scales,doIt,nameK,need,phases,maxPhase,phaseSay){
   ladderUnit({id:id,title:title,doIt:doIt,name:nameK,scales:scales,
-    use:[0,1,2,3,4,5,6],need:need||10,phases:phases,maxPhase:maxPhase||0,phaseSay:phaseSay,showTarget:false,
+    use:[0,1,2,3,4,5,6],need:need||10,phases:phases,maxPhase:maxPhase||0,phaseSay:phaseSay,showTarget:false,roam:true,
     pick:(u)=>u[(Math.random()*u.length)|0],
     play:(d)=>sing(d,94,.55)});
 }
@@ -1103,6 +1205,19 @@ function reviewUnit(){
 // ================================================================================================
 
 // ---------- TWO CHOICES: one screen, used by bright/dark and by up/down ----------
+// THE INTERVAL RULER. A two-choice lesson asks a child to judge a DISTANCE between sounds and then
+// shows them a blank screen, which is the same failure as the old tank: the thing being judged is
+// invisible. This is one octave as thirteen rungs, lit where the notes were. It appears only AFTER
+// the answer, so it teaches instead of giving the game away -- the child hears, decides, and then
+// SEES the gap they just heard. Same widget for both lessons, because it is the same idea both times.
+function ruler(semis){
+  let h='';
+  for(let i=12;i>=0;i--){
+    const on=semis&&semis.indexOf(i)>=0;
+    h+='<i class="'+(on?'on':'')+'"'+(on?' style="--rc:'+RUNG_TINT[SEMI_TINT[i%12]]+'"':'')+'></i>';
+  }
+  return h;
+}
 function choiceUnit(cfg){
   stageOff();
   const need=cfg.need||10;
@@ -1119,18 +1234,26 @@ function choiceUnit(cfg){
         '<h3>'+t(cfg.title)+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
         '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
       '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
-      '<div class="lgLadder" style="justify-content:safe center;flex:1">'+
-        '<p class="lgSay" style="font-size:18px">'+t(cfg.hear)+'</p></div>'+
+      // column, not the ladder's column-reverse: here the sentence sets up the question and the
+      // ruler answers it, so they have to read in that order
+      '<div class="lgLadder" style="justify-content:safe center;flex:1;flex-direction:column">'+
+        '<p class="lgSay" style="font-size:18px">'+t(cfg.hear)+'</p>'+
+        (cfg.art?'<div class="lgRuler" id="lgRuler">'+ruler(null)+'</div>':'')+'</div>'+
       '<p class="lgSay">'+t(cfg.doIt)+'</p><div class="lgFeed" id="lgFeed"></div>'+
       '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>'+
       '<div class="lgChoice">'+cfg.opts.map(o=>
         '<button data-ch="'+o.v+'" style="--rc:'+o.tint+'">'+t(o.label)+'</button>').join('')+'</div>');
   }
   window._lab_lgAgain=()=>{if(!busy&&cur!=null)cfg.play(cur);};
-  function ask(){cur=cfg.pick();window._labExpect=cur;cfg.play(cur);}
+  function showArt(v){ const h=document.getElementById('lgRuler');
+    // v==null means "clear it" -- passing null THROUGH to cfg.art lit the ruler before the question
+    // was answered, which handed the child the answer instead of teaching them anything
+    if(h&&cfg.art)h.innerHTML=ruler(v==null?null:cfg.art(v)); }
+  function ask(){cur=cfg.pick();window._labExpect=cur;showArt(null);cfg.play(cur);}
   const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-ch]');if(!b||busy)return;
     e.preventDefault();
     const ok=(b.dataset.ch===String(cur)); score(cfg.id,ok); if(ok)right++;
+    showArt(cur);   // AFTER the answer, never before: show what that actually was
     const fd=document.getElementById('lgFeed');if(fd)fd.textContent=t(ok?'yes':'notYet');
     const c=document.querySelector('.lgCount');if(c)c.textContent=right+' / '+need;
     document.querySelectorAll('.lgDots i').forEach((x,i)=>x.classList.toggle('got',i<right));
@@ -1157,7 +1280,7 @@ function upDownGame(){
 function findHomeGame(){
   // the same job as the home lesson, with all five notes on the ladder instead of three
   ladderUnit({id:'findhome',title:'g_findhome',doIt:'fh_do',name:'fh_name',
-    use:[0,1,2,3,4],need:10,showTarget:false,
+    use:[0,1,2,3,4],need:10,showTarget:false,roam:true,anchor:false,
     pick:()=>DEG.do,
     play:()=>{sing(DEG.so,88,.42);later(()=>sing(DEG.re,88,.42),420);later(()=>sing(DEG.mi,88,.5),840);}});
 }
@@ -1177,7 +1300,7 @@ function echoGame(){
   function name(d){let c=0;try{c=degCents(d);}catch(e){c=d*200;}return solfegeFor(c)||String(d+1);}
   function paint(){
     const ladder=USE.map((d,i)=>
-      '<button class="lgRung" data-deg="'+d+'" style="--rc:'+RUNG_TINT[i%RUNG_TINT.length]+'">'+
+      '<button class="lgRung" data-deg="'+d+'" style="--rc:'+degTint(d)+'">'+
         '<span class="rgName">'+name(d)+'</span>'+
         '<span class="rgDeg">'+(i===0?'LOW':(i===USE.length-1?'HIGH':''))+'</span></button>').join('');
     stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+

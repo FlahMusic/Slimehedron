@@ -37,7 +37,7 @@ Sources: [Prompt engineering best practices 2026](https://claude.com/blog/best-p
 - Lessons are **numbered**. A grid of cards has no reading order.
 
 ## Learn-mode scale ramp — where the order comes from
-15 numbered lessons in four blocks: Beat and counting (1-5), First notes (6-9, pentatonic), More notes (10-12), Minor and modes (13-15). Nothing is locked; the numbers show the order. Counting comes FIRST because both source books are notation and counting from page one, and Kodaly puts pulse and rhythm ahead of any named note.
+17 numbered lessons in four blocks: Rhythm and Notation (1-6), Pitch (7-10), Scales and Harmony (11-14), Minor and Modes (15-17). Nothing is locked; the numbers show the order. Counting comes FIRST because both source books are notation and counting from page one, and Kodaly puts pulse and rhythm ahead of any named note.
 
 The order is from the Kodaly sequence (Holy Names University Kodaly Center, "Sequence of Introducing Music Concepts"), cross-checked against Trinity College London Theory and the DfE Model Music Curriculum. Two things in it are counter-intuitive and must not be "tidied up":
 - **The step after the major pentatonic is the la-pentatonic, not the major scale.** Same five notes, new home. Kodaly Grade 2, two full grades before the major scale.
@@ -45,7 +45,7 @@ The order is from the Kodaly sequence (Holy Names University Kodaly Center, "Seq
 
 Modes are near the ceiling on purpose: ABRSM Piano Initial-G8 contains no modes at all, the Model Music Curriculum never mentions one across Years 1-9, RCM only reaches them at diploma level, and Trinity puts Aeolian at G6, Dorian G7, Mixolydian G8. Aeolian is taught as a second name for the natural minor, which is how Trinity frames it. **Phrygian, Lydian and Locrian are deliberately absent** — no accredited primary source lists them.
 
-Major/minor discrimination is reliable at about 6-8 years (Dalla Bella et al. 2001, Cognition), which is why "Bright and dark" is lesson 12 and not lesson 2.
+Major/minor discrimination is reliable at about 6-8 years (Dalla Bella et al. 2001, Cognition), which is why "Major and Minor" is lesson 13 and not lesson 2.
 
 ## The test failure that let a broken lesson ship
 Lesson 1 shipped unplayable — it dropped a new ball every beat and never removed one, so within ten seconds a dozen balls were ringing walls at random, at whatever tempo the app was last left on, with the only tap target a chip the size of a word. It passed 72 assertions.
@@ -100,3 +100,34 @@ the user concludes there is one control.
 the header and swallowed the back button. Use `justify-content:safe center` on any centred lesson
 column, and give short viewports (`max-height:540px`) their own sizes — and put that media block at the
 END of the stylesheet, after the base rules it has to beat.
+
+
+## Lesson names are the real terms (Sept 2026)
+A title is the concept's NAME; the subtitle is the plain sentence. Checked against musictheory.net
+("Note Duration", "Rest Duration", "The Major Scale", "Steps and Accidentals") and Hoffman Academy,
+which is aimed at six-year-olds and still says "Musical Alphabet", "Half Notes" and "D Major
+Pentascale" to them. Children are not harmed by the correct word; they are harmed by never being told
+it and then arriving at a piano teacher with a private vocabulary. "How long?" -> Note Duration.
+"New home" -> The Relative Minor. "Bright and dark" -> Major and Minor.
+
+RETIRED ON PURPOSE: **la-pentatonic**. Kodaly-internal shorthand (kodalyhub, BKA musicianship levels)
+and essentially nowhere else. The world says MINOR PENTATONIC. So do we. Same rule for any future
+term: if a piano teacher would not recognise it, it is the wrong word.
+
+## Two silent failures worth remembering
+Both looked perfect and behaved perfectly while teaching the WRONG SKILL. Neither would ever have
+shown up in a screenshot or a liveness test. Measure the thing the app claims to teach.
+
+1. THE KEY NEVER MOVED. "The Major Pentatonic" sounded five distinct pitches across sixty answered
+   rounds, every session, forever -- the root was pinned for the whole visit. Pitches, positions and
+   colours were all constant, so a child could clear every melodic lesson on slot memory without ever
+   comparing two sounds. Moveable-do names on a fixed-pitch instrument is the worst of both. Fixed as
+   a RAMP (1-10 hold, 11+ roam), and a roaming lesson must sound the tonic first or the question has
+   no answer.
+2. COLOUR MEANT NOTHING. The rung tint was indexed by POSITION ON SCREEN, so #a6c8ff measured as
+   "high", "so", "mi", "re" AND "me" across lessons. A free information channel wired to noise,
+   teaching an association the child then has to unlearn. Indexed by DISTANCE FROM THE TONIC now, and
+   a lowered degree keeps its natural's hue because me and mi are both the third.
+
+dev-earwork.js exists to stop either returning. If a design choice is carrying information, test that
+it carries the SAME information everywhere.
