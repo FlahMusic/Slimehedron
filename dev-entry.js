@@ -54,7 +54,7 @@ const U='http://127.0.0.1:8765/index.html';
   ok(!!r,'a returner IS offered "carry on"');
   if(r){
     ok(/^carry on/.test(r.txt)&&/3\./.test(r.txt),'and it names the next lesson by number ("'+r.txt+'")');
-    ok(r.u==='high','pointing at the right unit ('+r.u+')');
+    ok(r.u==='howlong','pointing at the right unit ('+r.u+')');  // lesson 3 after the counting block moved first
     ok(r.h>=44,'the chip is a 44px target ('+r.h+'px)');
     // the ethics guard: nothing loss-framed anywhere on the front door
     const bad=await p.evaluate(()=>{const t=(document.getElementById('splash')||document.body).innerText.toLowerCase();

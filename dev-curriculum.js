@@ -100,8 +100,25 @@ const src=fs.readFileSync('learn2.js','utf8');
    return {bar:L._MASTERY,min:L._MIN_TRIES};});
  ok(gate.bar>=0.8,'the mastery bar is at least 80%, the level the EEF evidence attaches its effect to (bar '+Math.round(gate.bar*100)+'%)');
  ok(gate.min>=8,'and it is measured over enough attempts to mean something ('+gate.min+')');
- const reps=[...src.matchAll(/need:(\d+)/g)].map(x=>+x[1]);
- ok(reps.length>0&&Math.min(...reps)>=10,'every lesson asks at least 10 times — repetition is the point ('+[...new Set(reps)].join(', ')+')');
+ // A rep is one SCORED ATTEMPT, not one screen. The reading lessons score every note in the bar, so
+ // five bars of a two-note pattern is ten attempts. Counting screens undercounted them by 4x.
+ const readNeeds={};
+ for(const m of src.matchAll(/readUnit\(\{id:'([a-z]+)'[\s\S]{0,200}?need:(\d+)/g))readNeeds[m[1]]=+m[2];
+ // WORST case, not average: a bar of one whole note is one scored attempt, so a lesson that can draw
+ // that bar every time must still clear the gate.
+ const noteRow=/\[((?:'[a-z]{1,2}',?)+)\]/g;
+ const countBlk=(src.match(/count:\[[\s\S]*?\],\n/)||[''])[0];
+ const countMin=Math.min(...[...countBlk.matchAll(noteRow)].map(m=>m[1].split(',').length));
+ // a song plays bars[0] + bars[1] as one pass, so its attempt count is the SUM of its bars
+ const songMin=Math.min(...[...src.matchAll(/bars:\[([\s\S]*?)\]\}/g)]
+   .map(m=>[...m[1].matchAll(noteRow)].reduce((a,r)=>a+r[1].split(',').length,0)).filter(n=>n>0));
+ const barsOf={countbar:countMin,song:songMin};
+ const readVals=Object.keys(readNeeds).map(k=>readNeeds[k]*(barsOf[k]||1));
+ const plainNeeds=[...src.matchAll(/readUnit\(\{[\s\S]{0,200}?need:\d+|need:(\d+)/g)]
+   .map(x=>x[1]).filter(x=>x!==undefined).map(Number);
+ const attempts=plainNeeds.concat(readVals);
+ ok(attempts.length>0&&Math.min(...attempts)>=10,
+   'every lesson asks at least 10 times — repetition is the point ('+[...new Set(attempts)].sort((a,b)=>a-b).join(', ')+')');
 
  // ---- 5. SPACING: review refuses to run on today's material ----
  const sp=await p.evaluate(async()=>{
@@ -121,7 +138,7 @@ const src=fs.readFileSync('learn2.js','utf8');
  ok(due===1,'a lesson learned YESTERDAY comes back ('+due+' due)');
  // and the review unit actually runs on it
  await p.click('.uCard[data-u="review"]');await p.waitForTimeout(1100);
- const running=await p.evaluate(()=>!!document.querySelector('.labFeed')&&!document.querySelector('.labDone'));
+ const running=await p.evaluate(()=>!!document.querySelector('.lgFeed')&&!document.querySelector('.lgDone'));
  ok(running,'the review session opens with something to ask');
 
  // ---- 6. PROCESS PRAISE: never tell a child what they ARE ----

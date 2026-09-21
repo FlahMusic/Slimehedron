@@ -37,7 +37,7 @@ Sources: [Prompt engineering best practices 2026](https://claude.com/blog/best-p
 - Lessons are **numbered**. A grid of cards has no reading order.
 
 ## Learn-mode scale ramp — where the order comes from
-19 numbered lessons in four blocks: First notes (1-8, pentatonic), More notes (9-13), Minor keys (14-16), Modes (17-19). Nothing is locked; the numbers show the order.
+15 numbered lessons in four blocks: Beat and counting (1-5), First notes (6-9, pentatonic), More notes (10-12), Minor and modes (13-15). Nothing is locked; the numbers show the order. Counting comes FIRST because both source books are notation and counting from page one, and Kodaly puts pulse and rhythm ahead of any named note.
 
 The order is from the Kodaly sequence (Holy Names University Kodaly Center, "Sequence of Introducing Music Concepts"), cross-checked against Trinity College London Theory and the DfE Model Music Curriculum. Two things in it are counter-intuitive and must not be "tidied up":
 - **The step after the major pentatonic is the la-pentatonic, not the major scale.** Same five notes, new home. Kodaly Grade 2, two full grades before the major scale.
@@ -45,4 +45,58 @@ The order is from the Kodaly sequence (Holy Names University Kodaly Center, "Seq
 
 Modes are near the ceiling on purpose: ABRSM Piano Initial-G8 contains no modes at all, the Model Music Curriculum never mentions one across Years 1-9, RCM only reaches them at diploma level, and Trinity puts Aeolian at G6, Dorian G7, Mixolydian G8. Aeolian is taught as a second name for the natural minor, which is how Trinity frames it. **Phrygian, Lydian and Locrian are deliberately absent** — no accredited primary source lists them.
 
-Major/minor discrimination is reliable at about 6-8 years (Dalla Bella et al. 2001, Cognition), which is why "Bright and dark" is lesson 13 and not lesson 2.
+Major/minor discrimination is reliable at about 6-8 years (Dalla Bella et al. 2001, Cognition), which is why "Bright and dark" is lesson 12 and not lesson 2.
+
+## The test failure that let a broken lesson ship
+Lesson 1 shipped unplayable — it dropped a new ball every beat and never removed one, so within ten seconds a dozen balls were ringing walls at random, at whatever tempo the app was last left on, with the only tap target a chip the size of a word. It passed 72 assertions.
+
+**Every assertion I had asked "does it RUN". None asked "is it POSSIBLE TO DO".** "reaches an ending", "speaks its instruction", "builds 5 walls" are liveness checks wearing a quality check's clothes.
+
+`dev-playable.js` is the missing suite. For any interactive thing, test what the user experiences:
+- how many things are happening at once (count the balls, not the code paths)
+- is the tempo/difficulty set by the lesson or inherited from wherever the app happened to be
+- how big is the thing they have to hit, in px, on the smallest phone
+- how many words are on screen
+- does the screen hold still
+
+Write that suite BEFORE claiming something is tested. And open the thing and do it yourself once.
+
+## Two bugs that hid behind green tests (Sept 2026)
+
+**A duplicate key in a dictionary silently wins.** `LANG` in learn2.js had a second copy of ~20 keys left
+over from the 19-lesson tank curriculum, sitting *below* the live ones in the same object literal. Later
+definition wins in JS, so the app had been shipping the OLD copy for months: three live lessons told
+children to "end on the glowing wall" and "walk up the walls" long after the walls were replaced by the
+ladder. Nothing failed, because nothing checked. `dev-naming.js` now fails the build on a duplicate key,
+and on any live string naming a control that has been removed.
+
+**A script-load race made half of all deep links land on nothing.** `index.html` booted learn mode 60ms
+after load, but `applyMode` picks `window.LEARN2 || window.LEARN`, and `learn2.js` is a separate script
+lower down the page. On a cold load it had not run yet, so the whole mode went to the legacy fallback
+curriculum — which knows none of the current lesson ids and never unhides the lesson overlay. Roughly
+half the time, `?l=<lesson>` and `?m=learn` opened a blank screen. It looked like flaky tests; it was a
+flaky product. Both now poll for `window.LEARN2` before booting.
+
+The shared lesson: a test that fails intermittently is reporting an intermittent bug. Chase it before
+touching the assertion.
+
+## One renderer per thing
+Learn mode had two ways to draw a lesson — the tank-and-side-card engine (`pitchUnit`) and the
+full-screen stage. That is what let the dead copy above stay invisible for months: half the screens were
+still drawing from it. `pitchUnit`, `dock()`, `bar()`, `dots()`, `feed()`, `cheer()`, `hint()`,
+`praise()` and `labelPicker()` are deleted, along with their CSS. Every lesson, every game, review and
+the ending all render through `stage()` now. If a second renderer ever comes back, so does this class of
+bug.
+
+## Three buttons that all replay something need three icons
+A lesson screen can carry: the app mute, "say the instruction again", and "play the sound again". All
+three had a speaker glyph. They are now a speaker (mute, in the top-left corner), a speech bubble
+(words), and a music note (sound). Same rule as the rhythm-tile mistake: if two controls look the same,
+the user concludes there is one control.
+
+## Flex centring overflows BOTH ends
+`justify-content:center` on a flex column whose content is taller than the box pushes content off the
+*top* as well as the bottom. On a 375px-tall landscape phone the note-value lesson drew its note up over
+the header and swallowed the back button. Use `justify-content:safe center` on any centred lesson
+column, and give short viewports (`max-height:540px`) their own sizes — and put that media block at the
+END of the stylesheet, after the base rules it has to beat.

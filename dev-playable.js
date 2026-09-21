@@ -29,12 +29,16 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
   // 1. THE SCREEN IS THE LESSON. No note tank, no solfege keybed, no app chrome.
   const clean=await p.evaluate(()=>{const hid=s=>{const e=document.querySelector(s);
       return !e||getComputedStyle(e).display==='none';};
+    // the app bar is unwrapped down to ONE control -- the mute, which a parent has to be able to
+    // reach mid-lesson. Anything else still in it is leftover chrome.
+    const inHdr=[...document.querySelectorAll('header button,header input,header select')]
+      .filter(e=>e.offsetParent!==null).map(e=>e.id||e.className);
     return {stage:!!document.querySelector('.lgStage'),tank:hid('#stage'),keys:hid('#labKeys'),
-            hdr:hid('header'),back:hid('#exitMode'),
+            hdr:inHdr.length===1&&inHdr[0]==='volMute',hdrHas:inHdr.join(','),back:hid('#exitMode'),
             balls:(typeof balls!=='undefined'&&balls)?balls.length:0};});
   ok(clean.stage,'[beat] the lesson owns the whole screen');
   ok(clean.tank&&clean.keys,'[beat] no note tank and no keybed — this lesson has no pitch in it');
-  ok(clean.hdr&&clean.back,'[beat] and no leftover app chrome');
+  ok(clean.hdr&&clean.back,'[beat] the only app control left is the mute ('+(clean.hdrHas||'none')+')');
   ok(clean.balls===0,'[beat] nothing is loose in the tank ('+clean.balls+')');
 
   // 2. TEMPO IN THE CHILD'S OWN BAND. Spontaneous motor tempo at this age is 400-500ms between taps,
@@ -125,6 +129,46 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
    ok(r.small.length===0,'['+id+'] nothing the child must hit is under 44px'+(r.small.length?': '+r.small.slice(0,3).join(', '):''));
    ok(r.words<=45,'['+id+'] the card is short enough to read to a child ('+r.words+' words)');
    await ctx.close();}
+
+ // ---- THE READING LESSONS: the notation has to be legible and the counts have to be right ----
+ {const {ctx,p}=await go(393,852,'howlong');
+  const r=await p.evaluate(()=>{const art=document.querySelector('.lgNoteArt');
+    const circles=[...document.querySelectorAll('.lgCounts i')];
+    const btns=[...document.querySelectorAll('[data-cnt]')].map(b=>{const q=b.getBoundingClientRect();
+      return Math.round(Math.min(q.width,q.height));});
+    const ar=art?art.getBoundingClientRect():null;
+    return {note:ar?Math.round(ar.width):0,circles:circles.length,
+            lit:circles.filter(c=>c.classList.contains('on')).length,btns,
+            hasSvg:!!(art&&art.querySelector('svg'))};});
+  ok(r.hasSvg&&r.note>=80,'[howlong] the note is drawn big enough to read ('+r.note+'px)');
+  ok(r.circles===4,'[howlong] four count circles — one per beat of the bar');
+  ok(r.lit>=1,'[howlong] and they fill in as the note lasts ('+r.lit+' lit)');
+  ok(r.btns.length===4&&r.btns.every(v=>v>=44),'[howlong] four answer buttons, all 44px+ ('+r.btns.join(',')+')');
+  await ctx.close();}
+
+ for(const id of ['countbar','song']){
+  const {ctx,p}=await go(393,852,id);
+  const r=await p.evaluate(()=>{
+    const cells=[...document.querySelectorAll('.lgCell')];
+    const counts=cells.map(c=>({big:c.querySelectorAll('u:not(.small)').length,
+                                small:c.querySelectorAll('u.small').length,
+                                svg:!!c.querySelector('svg')}));
+    const pad=document.getElementById('lgPad');const pr=pad?pad.getBoundingClientRect():null;
+    return {cells:cells.length,counts,sig:!!document.querySelector('.lgSig'),
+            bars:document.querySelectorAll('.lgCell.bar2').length,
+            now:document.querySelectorAll('.lgCell.now').length,
+            pad:pr?Math.round(Math.min(pr.width,pr.height)):0,
+            total:counts.reduce((a,c)=>a+c.big+c.small,0)};});
+  // one whole note IS a legal bar -- it is the last thing the book's level 1 teaches. What matters is
+  // that a bar is on screen and its counts add up, which the next assertions check.
+  ok(r.cells>=1,'['+id+'] there is a bar of notes ('+r.cells+' notes)');
+  ok(r.counts.every(c=>c.svg),'['+id+'] every note is drawn');
+  ok(r.counts.every(c=>c.big===1),'['+id+'] exactly ONE big count per note — the one you play');
+  ok(r.total%4===0,'['+id+'] the counts add up to whole bars ('+r.total+')');
+  ok(r.sig,'['+id+'] the time signature is on screen');
+  ok(r.now===1,'['+id+'] exactly one note is lit at a time ('+r.now+')');
+  ok(r.pad>=96,'['+id+'] the tap pad is big ('+r.pad+'px)');
+  await ctx.close();}
 
  await b.close();
  console.log('\n'+(FAIL.length?FAIL.length+' FAILURE(S)':'the lessons are playable, not just runnable'));

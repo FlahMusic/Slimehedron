@@ -22,7 +22,7 @@ const NEW=['newhome','majorscale','brightdark','minorscale','minorshapes','modes
     u.run(); await new Promise(r=>setTimeout(r,1400));
     const card=document.querySelector('#learnOverlay .lCard');
     const walls=(typeof scaleObj==='function')?scaleObj().c.length:0, keys=document.querySelectorAll('#labKeys .lk').length;
-    const rungs=document.querySelectorAll('.lgRung,[data-bd]').length;
+    const rungs=document.querySelectorAll('.lgRung,[data-ch]').length;  // [data-ch]: the two-choice screen
     const playable=(window.LAB&&LAB._playable)?LAB._playable.length:0;
     return {scale:S.scale, root:S.root, walls, keys, rungs, playable,
       title:((document.querySelector('.lgTop h3')||card&&card.querySelector('b')||{}).textContent)||'',

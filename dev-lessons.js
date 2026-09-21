@@ -13,20 +13,27 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
 const src=fs.readFileSync('learn2.js','utf8');
 const ids=[...src.matchAll(/\{id:'([a-z]+)'/g)].map(m=>m[1]);
 ok(ids.length>=7,'found the unit list ('+ids.length+' units)');
-// A unit reaches an ending either by calling finish() itself, or by running on the shared pitchUnit
-// controller, which finishes for it. Checking only for the literal call encoded the OLD architecture and
-// failed the moment the lessons were refactored onto one engine.
-// A THIRD route exists now: the seven-note scale lessons all delegate to scaleUnit(), which passes the
-// id straight into pitchUnit. So first prove scaleUnit really does finish, then accept its callers.
+// A unit reaches an ending either by calling finish() itself, or by running on one of the three shared
+// controllers, which finish for it. Checking only for the literal call encoded the OLD architecture and
+// failed the moment the lessons were refactored. The controllers are: ladderUnit (find the note),
+// readUnit (read the bar) and choiceUnit (two big buttons). Helpers that wrap one of them count too.
 const HELPERS=['scaleLadder'];
 for(const h of HELPERS)
   ok(new RegExp("function "+h+"\\([\\s\\S]{0,900}?(pitchUnit|ladderUnit)\\(").test(src),
      "the shared helper "+h+"() runs on a controller that finishes, so everything it wraps reaches an ending");
+// readUnit is the FOURTH controller: the reading lessons (count the bar, play a song) are two thin
+// wrappers over it. Prove it finishes before accepting anything that runs on it.
+for(const c of ['readUnit','choiceUnit'])
+  ok(new RegExp('function '+c+'\\([\\s\\S]{0,4200}?finish\\(cfg\\.id').test(src),
+     'the shared controller '+c+'() calls finish(), so the lessons on it reach an ending');
+// and the engine every lesson USED to run on must stay gone -- two renderers means two sets of copy
+ok(!/function pitchUnit\(/.test(src),'the retired tank engine is not still in the file');
+const CTRL='(ladderUnit|readUnit|choiceUnit)';
 const viaHelper=(id)=>HELPERS.some(h=>new RegExp(h+"\\('"+id+"'").test(src));
 for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
-    ||new RegExp("id:'"+id+"'[\\s\\S]{0,400}?(pitchUnit|ladderUnit)|(pitchUnit|ladderUnit)\\(\\{[\\s\\S]{0,160}?id:'"+id+"'").test(src)
+    ||new RegExp("id:'"+id+"'[\\s\\S]{0,400}?"+CTRL+"|"+CTRL+"\\(\\{[\\s\\S]{0,160}?id:'"+id+"'").test(src)
     ||viaHelper(id),
-  "unit '"+id+"' reaches an ending (its own finish(), the shared pitchUnit controller, or a helper that uses it)");
+  "unit '"+id+"' reaches an ending (its own finish(), a shared controller, or a helper that uses one)");
 
 (async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
  const ctx=await b.newContext({viewport:{width:1280,height:860}});const p=await ctx.newPage();
@@ -45,7 +52,7 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
  await p.click('.modeCard[data-m="learn"]');await p.waitForTimeout(1200);
 
  const open=async(id)=>{await p.click(`.uCard[data-u="${id}"]`);await p.waitForTimeout(900);};
- const doneUp=()=>p.evaluate(()=>!!document.querySelector('.labDone'));
+ const doneUp=()=>p.evaluate(()=>!!document.querySelector('.lgDone'));  // the ending is on the lesson's own screen now
  const home=async()=>{await p.evaluate(()=>window.LEARN2.home());await p.waitForTimeout(500);};
 
  for(const id of ids){
@@ -77,12 +84,14 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
  // These answer by CHIP, not by striking a wall. They are now mastery-gated at 80%, so a driver that
  // guesses 50/50 will (correctly) loop forever — it has to actually answer right. window._labExpect
  // carries the expected answer for exactly this purpose.
- for(const [id,fn] of [['updown','_lab_ud']]){
+ // up/down runs on the same two-choice screen as bright/dark now, so it answers the same way
+ for(const id of ['updown']){
    await home();await open(id);
-   for(let i=0;i<80&&!(await doneUp());i++){
-     const want=await p.evaluate(()=>window._labExpect);
-     await p.evaluate(([f,w])=>window[f]&&window[f](w||'up'),[fn,want]);
-     await p.waitForTimeout(1150);}
+   for(let i=0;i<120&&!(await doneUp());i++){
+     const w=await p.evaluate(()=>window._labExpect);
+     await p.evaluate(ww=>{const b=document.querySelector('[data-ch="'+(ww||'up')+'"]');
+       if(b)b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));},w);
+     await p.waitForTimeout(320);}
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
  // HOME + FIND HOME: land on the tonic (degree 0 in the pentatonic the lessons now use)
@@ -114,18 +123,20 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
  {await home();await open('brightdark');
   for(let i=0;i<120&&!(await doneUp());i++){
     const w=await p.evaluate(()=>window._labExpect);
-    await p.evaluate(ww=>{const b=document.querySelector('[data-bd="'+(ww||'bright')+'"]');
+    await p.evaluate(ww=>{const b=document.querySelector('[data-ch="'+(ww||'bright')+'"]');
       if(b)b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));},w);
     await p.waitForTimeout(300);}
   ok(await doneUp(),'BRIGHTDARK ends with a "you did it" card');}
 
+ // SAY IT FIRST has its own screen now: two drum pads, and it publishes which one it wants next.
  for(const id of ['sayplay']){
    await home();await open(id);
-   const budget=420;
-   for(let i=0;i<budget&&!(await doneUp());i++){
-     const d=await p.evaluate(()=>window._labHintDeg);
-     if(d==null){await p.waitForTimeout(240);continue;}
-     await strikeDeg(d);await p.waitForTimeout(240);}
+   for(let i=0;i<420&&!(await doneUp());i++){
+     const w=await p.evaluate(()=>window._labExpect);
+     if(w==null){await p.waitForTimeout(240);continue;}
+     await p.evaluate(ww=>{const b=document.querySelector('[data-sp="'+(ww==='low'?'1':'0')+'"]');
+       if(b)b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));},w);
+     await p.waitForTimeout(220);}
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
  // STEPS walks the scale and wraps; follow the hint rather than assuming how far it counts.
@@ -146,12 +157,14 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
  // counts as a wrong answer and restarts the phrase, so this has to wait the game out rather than race it.
  for(let i=0;i<400&&!(await doneUp());i++){
    const d=await p.evaluate(()=>window._labHintDeg);
-   if(d==null){await p.waitForTimeout(400);continue;}
-   await strikeDeg(d);await p.waitForTimeout(430);}
+   if(d==null){await p.waitForTimeout(300);continue;}
+   const hit=await p.evaluate(dd=>{const r=document.querySelector('.lgRung[data-deg="'+dd+'"]');
+     if(!r)return false; r.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));return true;},d);
+   await p.waitForTimeout(hit?260:300);}
  ok(await doneUp(),'ECHO ends with a "you did it" card');
 
  // the ending must offer a way onward, not a dead end
- const doors=await p.evaluate(()=>[...document.querySelectorAll('.labDone [data-a2]')].map(e=>e.dataset.a2));
+ const doors=await p.evaluate(()=>[...document.querySelectorAll('.lgStage [data-a2]')].map(e=>e.dataset.a2));
  ok(doors.includes('home'),'the ending offers a way back to the lessons list');
  ok(doors.includes('again'),'the ending offers "do it again"');
 

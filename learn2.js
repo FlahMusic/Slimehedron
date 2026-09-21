@@ -55,7 +55,7 @@
    Terminology is deliberately chosen for translation safety:
      - "beat", "high/low", "step/skip", "loud/soft", "home" are concrete and literal, and translate
        cleanly. We avoid English idiom ("nail it", "on fire", "groovy").
-     - do re mi fa sol la ti are international; they are NOT translated.
+     - do re mi fa so la ti are international; they are NOT translated.
      - Numbers (1..7) are offered alongside solfège because several education systems teach numbers.
    To add a language: copy the `en` block, translate the values only, never the keys, and add it to
    LANG. setLang('xx') switches at runtime; the UI re-renders from the current screen.
@@ -67,8 +67,7 @@ const $id=(x)=>document.getElementById(x);
 // ---------------------------------------------------------------- strings
 const LANG={
   en:{
-    _name:'English', _dir:'ltr', _voice:'en-US',
-    back:'back', home:'lessons', next:'next', again:'again', listen:'listen', imReady:"I'm ready",
+    _name:'English', _dir:'ltr', _voice:'en-US', home:'lessons', next:'next', again:'again', listen:'listen', imReady:"I'm ready",
     tierLessons:'Lessons', tierPractice:'Practice', tierGames:'Games',
     progressOf:'{done} of {total} done',
     // encouragement — process, never talent, and never a scolding
@@ -84,6 +83,19 @@ const LANG={
     // units
     u_pulse:'Beat', u_pulseSub:'tap in time',
     u_sayplay:'Say it first', u_sayplaySub:'say the rhythm, then play it',
+    // ---- reading and counting, the half the books are made of ----
+    u_howlong:'How long?', u_howlongSub:'notes last different amounts',
+    hl_do:'How many counts was that note?',
+    hl_name:'A note tells you HOW LONG to hold it.',
+    note_q:'a QUARTER note — 1 count', note_h:'a HALF note — 2 counts',
+    note_dh:'a DOTTED HALF note — 3 counts', note_w:'a WHOLE note — 4 counts',
+    u_countbar:'Count the bar', u_countbarSub:'four counts, play the big ones',
+    cb_do:'Tap on the big numbers. Count the small ones.',
+    cb_name:'Four counts in a bar. That is FOUR FOUR TIME.',
+    u_song:'Play a song', u_songSub:'a real tune, start to finish',
+    sg_do:'Tap each note as it lights up.',
+    sg_name:'You read that and played it.',
+    song_hotcross:'Hot Cross Buns', song_mary:'Mary Had a Little Lamb',
     u_high:'High and low', u_highSub:'which note is higher',
     u_notes:'Find the note', u_notesSub:'two notes, then three, then five',
     u_home:'Home note', u_homeSub:'the note a tune ends on',
@@ -101,7 +113,8 @@ const LANG={
     // voiceless stop + front vowel for the high one, so the word sounds like the drum.
     sp_low:'BOOM', sp_high:'TAP',
     sp_hear:'BOOM is the low drum. TAP is the high one.',
-    sp_say:'Say it out loud, then tap it.',
+    sp_listen:'Listen. Say it with me.',
+    sp_say:'Say it out loud, then tap it out.',
     sp_name:'Say a rhythm before you play it. It makes it easier.',
     // --- what each lesson says, one short line, the thing to DO at the end of it ---
     high_do:'Tap the note you hear.',
@@ -130,118 +143,37 @@ const LANG={
     md_do:'Tap the note you hear.',
     md_p1:'now mixolydian',
     md_name:'DORIAN is minor with a bright sixth. MIXOLYDIAN is major with a soft seventh.',
-    rev_hear:'A note from another day.',
     rev_do:'Find it again.',
     rev_name:'You still had it.',
     rev_none:'nothing to review yet',
     rev_noneSub:'Finish a lesson. Come back tomorrow.',
     g_echo:'Echo', g_echoSub:'play back what you hear',
+    echo_name:'You can hold a tune in your head. That is your EAR.',
     g_updown:'Up or down', g_updownSub:'which way did it go',
+    updown_hear:'Two notes, one after the other.',
+    updown_name:'A tune that rises goes UP. A tune that falls goes DOWN.',
     g_findhome:'Find home', g_findhomeSub:'find do',
+    fh_do:'Tap the note that finishes it.',
+    fh_name:'Home is DO. Every tune leans towards it.',
     // ---- the four lesson blocks, in order ----
-    blockA:'First notes', blockB:'More notes', blockC:'Minor keys', blockD:'Modes',
-    bright:'bright', dark:'dark',
-    u_sadfive:'Sad five', u_sadfiveSub:'same notes, new home',
-    sad_hear:'The same five notes. A different one is home.',
-    sad_do:'Find the note you hear.',
-    sad_name:'Same notes, new home. That is the MINOR PENTATONIC.',
-    u_movehome:'Move the home', u_movehomeSub:'so is home now',
-    mv_hear:'Same five notes. Now SO is home.',
-    mv_do:'Play, then end on the glowing wall.',
-    mv_name:'Move the home note and the mood moves with it.',
-    u_addfa:'Add fa', u_addfaSub:'six notes now',
-    fa_hear:'A new note between mi and so.',
-    fa_do:'Find the note you hear.',
-    fa_name:'That one is FA. Six notes: DO RE MI FA SO LA.',
-    u_addti:'Add ti', u_addtiSub:'the major scale',
-    ti_hear:'One more note, just under do.',
-    ti_do:'Find the note you hear.',
-    ti_name:'That one is TI. Seven notes. This is the MAJOR SCALE.',
-    u_brightdark:'Bright and dark', u_brightdarkSub:'major and minor',
-    bd_hear:'Three notes. Only the middle one moves.',
-    bd_do:'Bright, or dark?',
-    bd_name:'Middle note high is MAJOR. Middle note low is MINOR.',
-    u_minorscale:'Minor scale', u_minorscaleSub:'the dark seven',
-    mn_hear:'Seven notes, starting from la.',
-    mn_do:'Find the note you hear.',
-    mn_name:'This is the MINOR SCALE.',
-    u_harmminor:'Harmonic minor', u_harmminorSub:'lift the last note',
-    hm_hear:'Minor, with the last note lifted.',
-    hm_do:'Find the note you hear.',
-    hm_name:'Lift the seventh and you get HARMONIC MINOR.',
-    u_melminor:'Melodic minor', u_melminorSub:'two notes lift',
-    ml_hear:'Minor, with two notes lifted near the top.',
-    ml_do:'Find the note you hear.',
-    ml_name:'Two lifted notes: MELODIC MINOR.',
-    u_aeolian:'Aeolian', u_aeolianSub:'minor, other name',
-    ae_hear:'You know this one already.',
-    ae_do:'Find the note you hear.',
-    ae_name:'The minor scale has another name: AEOLIAN. It is a MODE.',
-    u_dorian:'Dorian', u_dorianSub:'minor, one bright note',
-    dor_hear:'Minor, but the sixth note is brighter.',
-    dor_do:'Find the note you hear.',
-    dor_name:'Minor with a bright sixth is DORIAN.',
-    u_mixo:'Mixolydian', u_mixoSub:'major, one soft note',
-    mix_hear:'Major, but the seventh note is softer.',
-    mix_do:'Find the note you hear.',
-    mix_name:'Major with a soft seventh is MIXOLYDIAN.',
+    blockA:'Beat and counting', blockB:'First notes', blockC:'More notes', blockD:'Minor and modes',
     // pulse
     // instruction copy: ONE short sentence, and the thing to DO goes at the end of it (Sesame
     // Workshop's tablet guidance for pre-readers). Narrated as well as shown -- narration beats
     // on-screen text by a wide margin in the multimedia literature (modality effect, g=0.82).
-    pulse_hear:'A ball drops on every beat.',
     pulse_do:'When the ball lands, tap the slime.',
     pulse_name:'That steady drop is the BEAT.',
-    pulse_feed:'{n} in a row',
     pulse_good:'yes', pulse_great:'right on it',
-    // high / low
-    high_hear:'Two notes. One high, one low.',
-    high_do:'Tap the HIGH one.',
-    high_name:'High or low is called PITCH.',
-    // home
-    home_hear:'This note sounds finished.',
-    home_do:'Play, then end on the glowing wall.',
-    home_name:'That note is HOME. Its name is DO.',
-    // so and mi
-    somi_hear:'Two notes, close together.',
-    somi_do:'Play the note that glows.',
-    somi_name:'The high one is SO. The low one is MI.',
-    // add la
-    addla_hear:'A new note on top.',
-    addla_do:'Listen, then play it back.',
-    addla_name:'That one is LA. Now you have SO, MI and LA.',
-    // all five
-    five_hear:'One more note. Now there are five.',
-    five_do:'Find the note you hear.',
-    five_name:'DO RE MI SO LA. That is a PENTATONIC SCALE.',
-    // review
-    rev_hear:'A note from another day.',
-    rev_do:'Find it again.',
-    rev_name:'You still had it.',
-    rev_none:'nothing to review yet',
-    rev_noneSub:'Finish a lesson. Come back tomorrow.',
-    // steps
-    steps_hear:'One tune walks. One jumps.',
-    steps_do:'Walk up the walls, one at a time.',
-    steps_name:'Next door is a STEP. Jumping is a SKIP.',
-    // loud
-    loud_hear:'The same note, soft, then loud.',
-    loud_do:'Drop a ball softly, then hard.',
-    loud_name:'Soft or loud is called DYNAMICS.',
-    // major/minor
-    maj_hear:'The same three notes. One moves down.',
-    maj_do:'Switch between them and listen.',
-    maj_name:'The note that moved is the THIRD. It sets the mood.',
+    // NOTE: a second, older copy of these keys used to sit below this point, left over from the
+    // 19-lesson tank curriculum. Being LATER in the object literal, it silently won: three live
+    // lessons were telling children to 'end on the glowing wall' and 'walk up the walls' months
+    // after the walls were replaced by the ladder. One dictionary, one definition per key.
     // echo game
-    echo_intro:'Listen, then play it back on the walls.',
-    echo_your:'your turn',
-    echo_mine:'listen…',
+    echo_mine:'Listen to the little tune.',
+    echo_your:'Now tap it back, in order.',
     echo_len:'{n} notes',
     updown_ask:'Did it go up, or down?',
     up:'up', down:'down', same:'the same',
-    findhome_ask:'Which wall is home?',
-    solfege:'do re mi fa sol la ti',
-    labelStyle:'wall labels', labelSolfege:'do re mi', labelNumbers:'1 2 3', labelOff:'off',
     // the ending beat
     doneTitle:'you did it!', nextLesson:'next lesson', doneAgain:'do it again', startHere:'start here',
     revReady:'ready',
@@ -307,12 +239,12 @@ function setVoice(on){voiceOn=!!on;try{localStorage.setItem('slimehedron-voice',
 // read whatever the current card is asking for, from the DOM - so no unit has to remember to pass a key
 function sayScreen(force){
   if(!ov)return;
-  // NOTE: do not filter on offsetParent here. dock() calls this in the same tick it reveals the card,
+  // NOTE: do not filter on offsetParent here. stage() calls this in the same tick it draws the screen,
   // and the layout box is not settled yet - which made every lesson silent. The `hidden` attribute is
-  // the real signal (it is what hides the not-yet-earned NAME line), and it is reliable immediately.
-  // .lgSay is the stage lessons' instruction line; without it every lesson that owns its own screen
-  // was silent, which is the whole point of the feature for a child who cannot read yet.
-  const parts=[...ov.querySelectorAll('.ldTitle,.labSay,.labDo,.lgSay')]
+  // the real signal, and it is reliable immediately.
+  // .lgSay is the instruction line every lesson writes its one spoken sentence into; .lgDone is the
+  // "you did it" at the end, which is worth hearing as well as seeing.
+  const parts=[...ov.querySelectorAll('.lgDone,.lgSay')]
     .filter(e=>!e.hidden).map(e=>e.textContent.trim().replace(/[.\s]+$/,'')).filter(Boolean);
   speech(parts.join('. '),force);
 }
@@ -358,7 +290,9 @@ const SOLFEGE=['do','re','mi','fa','sol','la','ti'];
 // there, which is simply wrong, and wrong in a way a child would carry into their next instrument.
 // So: read each wall's actual cents and name the interval. Chromatic degrees get the raised/lowered
 // syllable, and anything genuinely microtonal falls back to a number rather than inventing a syllable.
-const SOLF_BY_CENTS={0:'do',100:'ra',200:'re',300:'me',400:'mi',500:'fa',600:'fi',700:'sol',800:'le',900:'la',1000:'te',1100:'ti'};
+// "so", not "sol": every lesson line in this file says SO, and a rung labelled "sol" next to a sentence
+// saying SO is two names for one note on one screen. Kodály's own English sequence uses so.
+const SOLF_BY_CENTS={0:'do',100:'ra',200:'re',300:'me',400:'mi',500:'fa',600:'fi',700:'so',800:'le',900:'la',1000:'te',1100:'ti'};
 let labelMode='solfege';
 function solfegeFor(cents){
   const c=((Math.round(cents)%1200)+1200)%1200;
@@ -395,18 +329,15 @@ function icoFive(){  return _sv('<path d="M3 18h2v-3h2v-4h2V8h2v3h2v4h2v3h2"/>')
 function icoReview(){return _sv('<path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/>');}                // come round again                                          // a phrase, answered
 function icoMouth(){ return _sv('<path d="M4 10c3-4 13-4 16 0"/><path d="M6 13h12"/><path d="M8.5 17h7"/>');}      // say it out loud
 
-// ---------------------------------------------------------------- the dock
+// ---------------------------------------------------------------- the lesson screen
+// dock() used to live here: a side card pinned next to the tank, which every lesson rendered into.
+// Nothing renders into it any more, so it is gone, and with it bar(), dots(), feed(), cheer(), hint()
+// and praise() -- all of them helpers for drawing into a card, or for lighting a wall and a keybed
+// that a lesson no longer puts on screen.
 const ov=$id('learnOverlay');
 let _render=null, _cleanup=null;
-function dock(html){
-  if(!ov)return;
-  stageOff();
-  ov.classList.add('lab');document.body.classList.add('lab-on');
-  ov.innerHTML='<div class="lCard">'+html+'</div>';
-  sayScreen();   // deduped inside: a repaint of the same screen is silent
-}
-// A lesson that needs its own interface renders here instead of into the shared card. Nothing from
-// the tank rig comes with it -- see the lab-stage rules in index.html for why.
+// Every lesson renders here: its own full screen, with nothing from the tank rig on it.
+// See the lab-stage rules in index.html for what that hides and why.
 let _lastTitle='';
 function stage(html){
   if(!ov)return;
@@ -429,22 +360,14 @@ function sheet(html){ // the old full-screen card, for menus
   ov.classList.remove('lab');document.body.classList.remove('lab-on');
   ov.innerHTML='<div class="lCard">'+html+'</div>';
 }
-const SPK='<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.1" '+
-  'stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5a3.5 3.5 0 0 1 0 5"/></svg>';
-function bar(title,step){
-  // the speaker is a REPLAY button, not a mute: a child who missed the instruction taps it to hear it
-  // again. Muting lives on the lessons screen, where a parent will look for it.
-  return '<div class="labBar"><button class="labBack" data-a2="home">‹ '+t('home')+'</button>'+
-    (step?'<span class="labStep">'+step+'</span>':'')+
-    '<button class="labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'" title="'+t('voiceReplay')+'">'+SPK+'</button>'+
-    '</div>'+
-    '<div class="labTitle">'+title+'</div>';
-}
-function dots(done,total){let h='<div class="labDots">';for(let i=0;i<total;i++)h+='<i class="'+(i<done?'got':'')+'"></i>';return h+'</div>';}
-function feed(msg){const f=document.querySelector('.labFeed');if(f)f.textContent=msg||'';}
-// feed() is also used for running counters ("3 in a row"), which must NOT be read aloud every tap.
-// cheer() is the spoken kind: the praise and the try-again lines, and only those.
-function cheer(msg){feed(msg);speech(msg,true);}
+// THREE buttons on a lesson screen can all replay SOMETHING, so none of them may wear the same icon.
+//   SPK  = "say the instruction again" -> a speech bubble. It repeats WORDS.
+//   EAR  = "play the sound again"      -> a note. It repeats MUSIC.
+//   the app's own mute (top-left) keeps the speaker-with-waves, which is the one icon everybody
+//   already reads as volume. Three speakers on one screen is what this had before, and it was unreadable.
+const SPK='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.1" '+
+  'stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 7 0 0 1-8 7 9 9 0 0 1-2.6-.37L5 21l1.2-3.6A6.8 6.8 0 0 1 5 12a8 7 0 0 1 8-7 8 7 0 0 1 8 7z"/>'+
+  '<path d="M10 11.5h.01M13 11.5h.01M16 11.5h.01"/></svg>';
 
 // ---------------------------------------------------------------- audio helpers (reuse the app's synth)
 function note(cents,vel,dur){
@@ -459,8 +382,6 @@ function sing(d,vel,dur){
   try{LAB.flash(d);}catch(e){}
   try{if(window._labKeyFlash)window._labKeyFlash(d,(dur||0.5)*620);}catch(e){}
 }
-function hint(d){try{if(window._labKeyHint)window._labKeyHint(d);}catch(e){}}
-function praise(d){try{if(window._labKeyOK)window._labKeyOK(d);}catch(e){}}
 function degCents(d){try{return centsForDegree(d);}catch(e){return d*200;}}
 let _timers=[];
 function later(fn,ms){const id=setTimeout(fn,ms);_timers.push(id);return id;}
@@ -477,16 +398,19 @@ function finish(id,nameLine){
   try{LAB.onHit(null);}catch(e){}
   const u=UNITS.find(x=>x.id===id)||{},i=UNITS.findIndex(x=>x.id===id),nx=UNITS[i+1];
   [0,2,4,7].forEach((d,k)=>later(()=>{try{sing(d,96,.5);}catch(e){}},k*165));   // a rising fanfare
-  later(()=>{try{for(let k=0;k<5;k++)later(()=>LAB.drop(k%4,1),k*90);}catch(e){}},760); // and a shower of balls
-  dock('<div class="labDone">'+
-    '<img class="ldArt" src="minis/'+(u.slime||'grn')+'.png" alt="" draggable="false">'+
-    '<b class="ldTitle">'+t('doneTitle')+'</b>'+
-    (nameLine?'<p class="labSay">'+nameLine+'</p>':'')+
-    '<div class="labChips">'+
-      (nx?'<button class="labChip on" data-a2="nextu" data-u="'+nx.id+'">'+t(nx.title)+' \u203a</button>':'')+
-      '<button class="labChip" data-a2="again" data-u="'+id+'">'+t('doneAgain')+'</button>'+
-      '<button class="labChip" data-a2="home">'+t('home')+'</button>'+
-    '</div></div>');
+  // The ending used to render in the side card, so a lesson that had filled the screen finished in a
+  // small panel beside a tank the child never touched. Same screen, all the way through.
+  stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+      '<h3>'+t(u.title||'u_review')+'</h3><span class="lgCount"></span></div>'+
+    '<div class="lgLadder" style="justify-content:safe center;flex:1;text-align:center">'+
+      '<div><img src="minis/'+(u.slime||'grn')+'.png" alt="" draggable="false" style="width:min(150px,34vw);height:auto">'+
+      '<p class="lgDone">'+t('doneTitle')+'</p>'+
+      (nameLine?'<p class="lgSay" style="max-width:34ch;margin:6px auto 0">'+nameLine+'</p>':'')+
+      '</div></div>'+
+    '<div class="lgChoice">'+
+      (nx?'<button data-a2="nextu" data-u="'+nx.id+'" style="--rc:#9fe6cf">'+t(nx.title)+' \u203a</button>':'')+
+      '<button data-a2="again" data-u="'+id+'" style="--rc:#ffd3a8">'+t('doneAgain')+'</button>'+
+    '</div>');
 }
 
 // ================================================================ UNITS
@@ -530,24 +454,207 @@ const UNITS=[
   // ---- block A: first notes ----
   {id:'pulse',      title:'u_pulse',      sub:'u_pulseSub',      tier:'lesson', run:pulseUnit,      tint:'#9fe6cf'},
   {id:'sayplay',    title:'u_sayplay',    sub:'u_sayplaySub',    tier:'lesson', run:sayPlayUnit,    tint:'#ffd3a8'},
-  {id:'high',       title:'u_high',       sub:'u_highSub',       tier:'lesson', run:highUnit,       tint:'#a6c8ff', use:[DEG.do,DEG.la]},
-  {id:'notes',      title:'u_notes',      sub:'u_notesSub',      tier:'lesson', run:findNoteUnit,   tint:'#d9e88f', use:[0,1,2,3,4]},
-  {id:'home',       title:'u_home',       sub:'u_homeSub',       tier:'lesson', run:homeUnit,       tint:'#ffb6d6', use:[DEG.do,DEG.mi,DEG.so]},
-  {id:'steps',      title:'u_steps',      sub:'u_stepsSub',      tier:'lesson', run:stepsUnit,      tint:'#c4a9f5', use:[0,1,2,3,4]},
+  {id:'howlong',    title:'u_howlong',    sub:'u_howlongSub',    tier:'lesson', run:noteValueUnit,  tint:'#ffe0a8'},
+  {id:'countbar',   title:'u_countbar',   sub:'u_countbarSub',   tier:'lesson', run:countBarUnit,   tint:'#f5c8a8'},
+  {id:'song',       title:'u_song',       sub:'u_songSub',       tier:'lesson', run:songUnit,       tint:'#f5b8c8'},
+  {id:'high',       title:'u_high',       sub:'u_highSub',       tier:'lesson', block:'b', run:highUnit,       tint:'#a6c8ff', use:[DEG.do,DEG.la]},
+  {id:'notes',      title:'u_notes',      sub:'u_notesSub',      tier:'lesson', block:'b', run:findNoteUnit,   tint:'#d9e88f', use:[0,1,2,3,4]},
+  {id:'home',       title:'u_home',       sub:'u_homeSub',       tier:'lesson', block:'b', run:homeUnit,       tint:'#ffb6d6', use:[DEG.do,DEG.mi,DEG.so]},
+  {id:'steps',      title:'u_steps',      sub:'u_stepsSub',      tier:'lesson', block:'b', run:stepsUnit,      tint:'#c4a9f5', use:[0,1,2,3,4]},
   // ---- block B: more notes ----
-  {id:'newhome',    title:'u_newhome',    sub:'u_newhomeSub',    tier:'lesson', block:'b', run:sadFiveUnit,    tint:'#8fe0d0', use:[0,1,2,3,4]},
-  {id:'majorscale', title:'u_majorscale', sub:'u_majorscaleSub', tier:'lesson', block:'b', run:majorScaleUnit, tint:'#ffe0a8', use:[0,1,2,3,4,5,6]},
-  {id:'brightdark', title:'u_brightdark', sub:'u_brightdarkSub', tier:'lesson', block:'b', run:brightDarkUnit, tint:'#f5b8c8', use:[0,1,2,3,4,5,6]},
+  {id:'newhome',    title:'u_newhome',    sub:'u_newhomeSub',    tier:'lesson', block:'c', run:sadFiveUnit,    tint:'#8fe0d0', use:[0,1,2,3,4]},
+  {id:'majorscale', title:'u_majorscale', sub:'u_majorscaleSub', tier:'lesson', block:'c', run:majorScaleUnit, tint:'#ffe0a8', use:[0,1,2,3,4,5,6]},
+  {id:'brightdark', title:'u_brightdark', sub:'u_brightdarkSub', tier:'lesson', block:'c', run:brightDarkUnit, tint:'#f5b8c8', use:[0,1,2,3,4,5,6]},
   // ---- block C: minor and modes ----
-  {id:'minorscale', title:'u_minorscale', sub:'u_minorscaleSub', tier:'lesson', block:'c', run:minorScaleUnit, tint:'#b5a9f5', use:[0,1,2,3,4,5,6]},
-  {id:'minorshapes',title:'u_minorshapes',sub:'u_minorshapesSub',tier:'lesson', block:'c', run:minorShapesUnit,tint:'#a9c4f5', use:[0,1,2,3,4,5,6]},
-  {id:'modes',      title:'u_modes',      sub:'u_modesSub',      tier:'lesson', block:'c', run:modesUnit,      tint:'#9fe0c4', use:[0,1,2,3,4,5,6]},
+  {id:'minorscale', title:'u_minorscale', sub:'u_minorscaleSub', tier:'lesson', block:'d', run:minorScaleUnit, tint:'#b5a9f5', use:[0,1,2,3,4,5,6]},
+  {id:'minorshapes',title:'u_minorshapes',sub:'u_minorshapesSub',tier:'lesson', block:'d', run:minorShapesUnit,tint:'#a9c4f5', use:[0,1,2,3,4,5,6]},
+  {id:'modes',      title:'u_modes',      sub:'u_modesSub',      tier:'lesson', block:'d', run:modesUnit,      tint:'#9fe0c4', use:[0,1,2,3,4,5,6]},
   // ---- games and practice ----
   {id:'echo',     title:'g_echo',     sub:'g_echoSub',     tier:'game', run:echoGame,     tint:'#a6c8ff'},
   {id:'updown',   title:'g_updown',   sub:'g_updownSub',   tier:'game', run:upDownGame,   tint:'#c4a9f5'},
   {id:'findhome', title:'g_findhome', sub:'g_findhomeSub', tier:'game', run:findHomeGame, tint:'#d9e88f'},
   {id:'review',   title:'u_review',   sub:'u_reviewSub',   tier:'practice', run:reviewUnit, tint:'#9fe6cf'}
 ];
+
+// ================================================================================================
+//  NOTE VALUES AND READING — the half of the subject this curriculum did not have.
+//  Both method books are counting and notation from page one: staff, quarter note, bar lines, a
+//  written song, then 4/4, then the half note, then another song. Twelve lessons of ear training had
+//  not one note head, not one count and not one bar line in them.
+//  The two exercise ideas lifted straight from the books, because they are better than anything I
+//  would have invented:
+//    * "Colour the circles to show the number of counts. 1 circle = 1 count." Duration becomes a
+//      thing you can SEE and COUNT, not a number to remember.
+//    * "Play where you see the big counting numbers; count but don't play on the small ones."
+//      That teaches a half note without ever saying the word duration.
+// ================================================================================================
+const NOTEG={ // real notation, drawn properly — this is the one place a vector glyph IS the subject
+  q:'<svg viewBox="0 0 60 96"><ellipse cx="20" cy="76" rx="15" ry="11" transform="rotate(-20 20 76)" fill="#2f2a44"/><rect x="33" y="14" width="5" height="60" fill="#2f2a44"/></svg>',
+  h:'<svg viewBox="0 0 60 96"><ellipse cx="20" cy="76" rx="15" ry="11" transform="rotate(-20 20 76)" fill="none" stroke="#2f2a44" stroke-width="6"/><rect x="33" y="14" width="5" height="60" fill="#2f2a44"/></svg>',
+  dh:'<svg viewBox="0 0 74 96"><ellipse cx="20" cy="76" rx="15" ry="11" transform="rotate(-20 20 76)" fill="none" stroke="#2f2a44" stroke-width="6"/><rect x="33" y="14" width="5" height="60" fill="#2f2a44"/><circle cx="50" cy="76" r="5.5" fill="#2f2a44"/></svg>',
+  w:'<svg viewBox="0 0 60 96"><ellipse cx="30" cy="60" rx="19" ry="13" transform="rotate(-10 30 60)" fill="none" stroke="#2f2a44" stroke-width="7"/></svg>'
+};
+const NOTEV={q:1,h:2,dh:3,w:4};
+const NOTEN={q:'note_q',h:'note_h',dh:'note_dh',w:'note_w'};
+
+// ---------- 3. HOW LONG IS A NOTE? ----------
+// One note on screen. Its beats fill in, one circle per count, in time with a click. Then four
+// buttons: how many counts was that? Nothing else on the screen at all.
+function noteValueUnit(){
+  stageOff();
+  const need=10, POOL=['q','h','w','dh'];
+  let kind='q', right=0, busy=false, timer=null;
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  LAB.take({exact:false,shape:'4',scale:'pentaMaj',octs:1,drums:false,band:false,grav:0,bpm:100,touch:false});
+  LAB.labels(null);LAB.clear();
+  function paint(){
+    stage(
+      '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t('u_howlong')+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
+      '<div class="lgLadder" style="flex:1;justify-content:safe center;flex-direction:column">'+
+        '<div class="lgNote"><div class="lgNoteArt" id="lgArt">'+NOTEG[kind]+'</div>'+
+        '<div class="lgCounts" id="lgCnt">'+[1,2,3,4].map(()=>'<i></i>').join('')+'</div></div></div>'+
+      '<p class="lgSay">'+t('hl_do')+'</p><div class="lgFeed" id="lgFeed"></div>'+
+      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>'+
+      '<div class="lgChoice">'+[1,2,3,4].map(n=>
+        '<button data-cnt="'+n+'" style="--rc:'+RUNG_TINT[(n-1)%RUNG_TINT.length]+'">'+n+'</button>').join('')+'</div>');
+  }
+  // play the note and fill one circle per beat, so the answer is visible before it is asked for
+  function demo(){
+    if(timer)clearInterval(timer);
+    const cnt=[...document.querySelectorAll('#lgCnt i')];
+    cnt.forEach(c=>c.classList.remove('on','beat'));
+    const n=NOTEV[kind], P=600; let b=0;
+    try{dHit('K',AC.currentTime,1.15,true);}catch(e){}
+    try{note(0,92,n*P/1000*0.95);}catch(e){}         // the note SOUNDS for its full length
+    cnt.forEach((c,i)=>c.classList.toggle('beat',i<n));
+    const step=()=>{ if(b<n){cnt[b].classList.add('on');
+        if(b>0){try{dHit('h',AC.currentTime,0.5,true);}catch(e){}}
+        b++;} else {clearInterval(timer);timer=null;} };
+    step(); timer=setInterval(step,P); _timers.push(timer);
+  }
+  window._lab_lgAgain=demo;
+  function ask(){ kind=POOL[(Math.random()*POOL.length)|0]; paint(); later(demo,260); }
+  const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-cnt]');if(!b||busy)return;
+    e.preventDefault();
+    const ok=(+b.dataset.cnt===NOTEV[kind]);
+    score('howlong',ok); if(ok)right++;
+    const fd=document.getElementById('lgFeed');
+    if(fd)fd.textContent=ok?t(NOTEN[kind]):t('notYet');
+    if(ok)speech(t(NOTEN[kind]),true);
+    const c=document.querySelector('.lgCount'); if(c)c.textContent=right+' / '+need;
+    document.querySelectorAll('.lgDots i').forEach((x,i)=>x.classList.toggle('got',i<right));
+    if(right>=need){busy=true;later(()=>{stageOff();finish('howlong',t('hl_name'));},900);return;}
+    later(ask,ok?1200:1400);};
+  ov.addEventListener('pointerdown',onDown,true);
+  _render=paint;ask();
+  _cleanup=()=>{busy=true;if(timer)clearInterval(timer);
+    try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._lab_lgAgain=null;stageOff();LAB.clear();};
+}
+
+// ---------- 4-5. COUNT THE BAR, AND PLAY A SONG ----------
+// One engine, two lessons. A row of notes, read left to right, a count under each beat -- BIG on the
+// beats you play, small on the ones you only count, exactly as the percussion book prints it. The
+// cell you are on lights up, and the child taps as it arrives. Lesson 5 is the same screen with a
+// real tune on it, so the lesson ends with a piece rather than a drill.
+const BARS={
+  count:[['q','q','q','q'],['h','h'],['q','q','h'],['w'],['h','q','q'],['dh','q']],
+  song:[ // Hot Cross Buns and Mary Had a Little Lamb: both long out of copyright
+    {n:'song_hotcross',bars:[['q','q','h'],['q','q','h']]},
+    {n:'song_mary',bars:[['q','q','q','q'],['h','h']]}
+  ]
+};
+function readUnit(cfg){
+  stageOff();
+  const need=cfg.need||6, P=0.6;
+  let seq=[], right=0, busy=false, idx=0, t0=0, raf=0, beatOf=[], total=0, title='';
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  LAB.take({exact:false,shape:'4',scale:'pentaMaj',octs:1,drums:false,band:false,grav:0,bpm:100,touch:false});
+  LAB.labels(null);LAB.clear();
+  function build(){
+    const pick=cfg.pick(); seq=pick.notes; title=pick.title||'';
+    beatOf=[];total=0;
+    seq.forEach(k=>{beatOf.push(total);total+=NOTEV[k];});
+  }
+  function paint(){
+    let b=0;
+    const cells=seq.map((k,i)=>{
+      const v=NOTEV[k], nums=[];
+      for(let j=0;j<v;j++)nums.push('<u class="'+(j?'small':'')+'">'+((b+j)%4+1)+'</u>');
+      const newBar=(b>0&&b%4===0);     // a bar line every four counts, drawn where it belongs
+      b+=v;
+      return '<div class="lgCell'+(newBar?' bar2':'')+'" data-i="'+i+'">'+NOTEG[k]+'<div>'+nums.join(' ')+'</div></div>';
+    }).join('');
+    stage(
+      '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t(cfg.title)+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
+      (title?'<p class="lgSay" style="font-size:20px;color:#463d66">'+t(title)+'</p>':'')+
+      '<div style="flex:1;display:flex;align-items:center"><div class="lgBar" id="lgBar">'+
+        '<div class="lgSig" aria-label="four four time"><b>4</b><b>4</b></div>'+cells+'</div></div>'+
+      '<p class="lgSay">'+t(cfg.doIt)+'</p><div class="lgFeed" id="lgFeed"></div>'+
+      '<div class="lgPad" id="lgPad" role="button" tabindex="0" aria-label="tap"><img src="minis/grn.png" alt="" draggable="false"></div>');
+  }
+  function run(){
+    idx=0; t0=AC.currentTime+0.9;
+    const cells=[...document.querySelectorAll('.lgCell')];
+    cells.forEach(c=>c.classList.remove('now','hitok'));
+    cancelAnimationFrame(raf);
+    (function tick(){
+      const now=AC.currentTime, beat=(now-t0)/P;
+      window._labReadIdx=idx; window._labReadAt=t0+beatOf[idx]*P;
+      cells.forEach((c,i)=>c.classList.toggle('now', i===idx));
+      if(beat>=total+1){ // the bar finished
+        // Every note is its own attempt. Scoring the BAR instead meant a five-bar lesson offered the
+        // mastery gate five data points when it needs eight, so the lesson could never be marked learned.
+        cells.forEach(c=>score(cfg.id,c.classList.contains('hitok')));
+        const all=cells.length&&cells.every(c=>c.classList.contains('hitok'));
+        if(all){right++;
+          const cc=document.querySelector('.lgCount');if(cc)cc.textContent=right+' / '+need;
+          document.querySelectorAll('.lgDots i').forEach((x,i)=>x.classList.toggle('got',i<right));
+          const fd=document.getElementById('lgFeed');if(fd)fd.textContent=t('yes');
+          if(right>=need){busy=true;later(()=>{stageOff();finish(cfg.id,t(cfg.name));},900);return;}}
+        else{const fd=document.getElementById('lgFeed');if(fd)fd.textContent=t('onceMore');}
+        later(()=>{build();paint();run();},900);return;}
+      // the click track, so there is always a pulse to read against
+      const bi=Math.floor(beat);
+      if(bi>=0&&bi!==window.__lastBi){window.__lastBi=bi;
+        try{dHit(bi%4===0?'K':'h',AC.currentTime,bi%4===0?1.1:0.42,true);}catch(e){}}
+      // advance the cursor when its note's time is past
+      while(idx<seq.length-1&&beat>=beatOf[idx+1]-0.5)idx++;
+      raf=requestAnimationFrame(tick);})();
+  }
+  function judge(){
+    if(busy)return;
+    const cells=[...document.querySelectorAll('.lgCell')];
+    const now=AC.currentTime;
+    let best=-1,bd=1e9;
+    seq.forEach((k,i)=>{const d=Math.abs(now-(t0+beatOf[i]*P));if(d<bd){bd=d;best=i;}});
+    const pad=document.getElementById('lgPad');
+    if(pad){pad.classList.remove('hit');void pad.offsetWidth;pad.classList.add('hit');}
+    if(best>=0&&bd<=P*0.34&&cells[best]){cells[best].classList.add('hitok');}
+  }
+  const onDown=(e)=>{const p=e.target.closest&&e.target.closest('#lgPad');if(!p)return;e.preventDefault();judge();};
+  ov.addEventListener('pointerdown',onDown,true);
+  window._lab_tap=judge;
+  build();_render=paint;paint();later(run,400);
+  _cleanup=()=>{busy=true;cancelAnimationFrame(raf);
+    try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._lab_tap=null;stageOff();LAB.clear();};
+}
+function countBarUnit(){
+  readUnit({id:'countbar',title:'u_countbar',doIt:'cb_do',name:'cb_name',need:10,
+    pick:()=>({notes:BARS.count[(Math.random()*BARS.count.length)|0]})});
+}
+function songUnit(){
+  readUnit({id:'song',title:'u_song',doIt:'sg_do',name:'sg_name',need:6,
+    pick:()=>{const s=BARS.song[(Math.random()*BARS.song.length)|0];
+      return {notes:s.bars[0].concat(s.bars[1]||[]),title:s.n};}});
+}
 
 // ================================================================================================
 //  THE PITCH LADDER - the melodic lessons' own screen, given the same treatment as the beat.
@@ -559,7 +666,7 @@ const UNITS=[
 //  nothing on screen that is not the job, and the instruction is narrated as well as written.
 // ================================================================================================
 const RUNG_TINT=['#9fe6cf','#a6c8ff','#c4a9f5','#ffb6d6','#ffd3a8','#d9e88f','#8fe0d0'];
-const EAR='<svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 9.5a3.5 3.5 0 0 1 0 5"/><path d="M19.5 7a7 7 0 0 1 0 10"/></svg>';
+const EAR='<svg viewBox="0 0 24 24"><path d="M9 18V6l11-2v12"/><circle cx="6.5" cy="18" r="2.6"/><circle cx="17.5" cy="16" r="2.6"/></svg>';
 function ladderUnit(cfg){
   stageOff();
   const id=cfg.id, need=cfg.need||10;
@@ -636,58 +743,9 @@ function ladderUnit(cfg){
     window._lab_lgAgain=null;stageOff();LAB.clear();};
 }
 
-// ---- the shared engine every pitch lesson runs on --------------------------------------------------
-// One controller instead of six near-copies. A unit says which degrees it owns and how to ask; this
-// handles the tank, the reps, the scoring and the ending. More reps than the old three: mastery needs
-// attempts to be measured over, and repetition is the point of practice.
-function pitchUnit(cfg){
-  stageOff();                                      // leaving a stage lesson: give the tank rig back
-  document.body.classList.remove('lab-nokeys');   // pitch lessons always want the keys back
-  const id=cfg.id, use=cfg.use, need=cfg.need||10;
-  let n=0,right=0,busy=false;
-  // The scale is a parameter now. Everything above lesson 8 is the same controller pointed at a
-  // different set of walls -- one tested engine, not eleven new ones.
-  // Every lesson also PINS the key. Lessons that did not name a root simply inherited whatever the
-  // last one left in S.root, so after the la-pentatonic lesson (which transposes) every later lesson
-  // sat a minor third higher for the rest of the session and "the same five notes" stopped being true.
-  // The anchor is LAB._saved.root - captured once, on entering learn mode - so shifts never stack.
-  const HOME=(LAB._saved&&LAB._saved.root!=null)?LAB._saved.root:S.root;
-  LAB.take({scale:cfg.scale||'pentaMaj',root:HOME+(cfg.rootShift||0),octs:1,drums:false,band:!!cfg.band});
-  LAB.labels(cfg.labels===false?null:wallLabels());
-  LAB._playable=use.slice();          // the lesson only ever asks for notes it has taught
-  function paint(extra){
-    dock(bar(t(cfg.title),n+' / '+need)+dots(right,need)+
-      '<p class="labSay">'+t(cfg.hear)+'</p>'+
-      '<div class="labDo">'+t(cfg.doIt)+'</div>'+
-      '<div class="labFeed"></div>'+
-      (extra||'')+
-      (cfg.labels===false?'':labelPicker()));
-  }
-  _render=()=>paint(cfg.chips?cfg.chips():'');
-  paint(cfg.chips?cfg.chips():'');
-  const api={
-    ask:()=>{},
-    answer(ok,deg){
-      if(busy)return;
-      hint(null);               // the old target stops glowing the moment it is answered
-      score(id,ok);
-      if(ok){right++;n++;if(deg!=null)praise(deg);cheer(t('yes'));}
-      else{n++;cheer(t('notYet'));}
-      paint(cfg.chips?cfg.chips():'');
-      // mastery gate: 80% over the full run, the bar the EEF evidence attaches its effect to
-      if(n>=need){
-        busy=true;
-        if(right/n>=MASTERY)later(()=>finish(id,t(cfg.name)),820);
-        else{ // not there yet: no failure, no penalty, just another lap with the same material
-          later(()=>{n=0;right=0;busy=false;cheer(t('onceMore'));paint(cfg.chips?cfg.chips():'');
-                     if(cfg.ask)cfg.ask(api);},1100);}
-        return;}
-      if(cfg.ask)later(()=>cfg.ask(api),900);
-    }};
-  if(cfg.setup)cfg.setup(api);
-  if(cfg.ask)later(()=>cfg.ask(api),600);
-  return api;
-}
+// The tank-and-keybed engine that every lesson used to run on lived here. Every lesson now has a
+// screen built for what it teaches, so it has no callers left. Deleted rather than kept 'just in
+// case': a second way to render a lesson is a second place for lesson copy to rot unnoticed.
 
 // ---------- 1. BEAT: the tank drops a ball on every beat; the child taps along ----------
 // ================================================================================================
@@ -856,40 +914,66 @@ const SP_PATTERNS=[
   [1,0,1,1],
   [1,1,0,0]
 ];
+// ---------- 2. SAY IT FIRST ----------
+// Was the last lesson still running on the tank: a rhythm lesson that arrived with a polygon and a
+// solfege keybed on it. The idea is two drums and the words for them, so the screen is two drums and
+// the words for them. The pattern is SHOWN as the words before it is heard, high words riding high on
+// the line and low words low, so a child who cannot read still sees the shape of it.
 function sayPlayUnit(){
-  let pat=SP_PATTERNS[0], idx=0, stage='listen';
-  const LOW=0, HIGH=2;                       // two walls, far enough apart to hear as low vs high
-  function sylRow(active){
-    return '<div class="spRow">'+pat.map((v,i)=>
-      '<b class="spSyl'+(v?' lo':' hi')+(i===active?' on':'')+'">'+(v?t('sp_low'):t('sp_high'))+'</b>'
-    ).join('')+'</div>';}
-  const u=pitchUnit({id:'sayplay',title:'u_sayplay',hear:'sp_hear',doIt:'sp_say',name:'sp_name',
-    use:[LOW,HIGH],need:10,labels:false,
-    chips:()=>sylRow(stage==='play'?idx:-1)+
-      '<div class="labChips"><button class="labChip" data-a2="sp_again">'+t('listen')+'</button></div>',
-    ask(api){
-      pat=SP_PATTERNS[(Math.random()*SP_PATTERNS.length)|0];idx=0;stage='listen';
-      // STAGE ONE: the app says it out loud AND plays it, syllable by syllable, lighting each one.
-      pat.forEach((v,i)=>later(()=>{
-        idx=i;stage='listen';
-        speech(v?t('sp_low'):t('sp_high'),true);   // said aloud — the vocalising is the lesson
-        sing(v?LOW:HIGH,90,.4);
-        if(_render)_render();
-      },i*620));
-      // STAGE TWO: the child's turn
-      later(()=>{stage='play';idx=0;hint(pat[0]?LOW:HIGH);if(_render)_render();},pat.length*620+320);
-    }});
-  window._lab_spAgain=()=>{pat.forEach((v,i)=>later(()=>{speech(v?t('sp_low'):t('sp_high'),true);sing(v?LOW:HIGH,90,.4);},i*620));};
-  LAB.onHit((deg)=>{
-    if(stage!=='play')return;
-    const len=scaleObj().c.length,d=((deg%len)+len)%len;
-    if(d!==LOW&&d!==HIGH)return;
-    const want=pat[idx]?LOW:HIGH;
-    if(d===want){idx++;
-      if(idx>=pat.length){u.answer(true,d);}
-      else{hint(pat[idx]?LOW:HIGH);if(_render)_render();}}
-    else{idx=0;u.answer(false,d);}
-  });
+  stageOff();
+  const need=10, LOW=0, HIGH=2;
+  let pat=SP_PATTERNS[0], idx=0, mine=true, right=0, busy=false;
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  LAB.take({scale:'pentaMaj',octs:1,drums:false,band:false,touch:false});
+  LAB.labels(null);LAB.clear();
+  function paint(){
+    const words=pat.map((v,i)=>{
+      const cls=(v?'lo':'hi')+(mine? (i===idx?' on':'') : (i<idx?' done':(i===idx?' on':'')));
+      return '<b class="'+cls+'">'+(v?t('sp_low'):t('sp_high'))+'</b>';}).join('');
+    stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t('u_sayplay')+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
+      '<div class="lgLadder" style="justify-content:safe center;flex:1">'+
+        '<p class="lgSay" style="font-size:18px">'+t('sp_hear')+'</p>'+
+        '<div class="lgWords">'+words+'</div></div>'+
+      '<p class="lgSay">'+t(mine?'sp_listen':'sp_say')+'</p><div class="lgFeed" id="lgFeed"></div>'+
+      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>'+
+      '<div class="lgChoice">'+
+        '<button data-sp="1" style="--rc:#b9aee0">'+t('sp_low')+'</button>'+
+        '<button data-sp="0" style="--rc:#9fe6cf">'+t('sp_high')+'</button></div>');
+  }
+  function play(){                    // said out loud AND played, one word at a time
+    mine=true;idx=0;paint();
+    pat.forEach((v,i)=>later(()=>{idx=i;paint();
+      speech(v?t('sp_low'):t('sp_high'),true);       // the vocalising IS the lesson
+      sing(v?LOW:HIGH,90,.4);
+      if(i===pat.length-1)later(()=>{mine=false;idx=0;paint();publish();},620);},i*620));
+  }
+  window._lab_lgAgain=()=>{if(!busy&&!mine)play();};
+  window._labSayPat=()=>pat.slice();               // readable targets for the test drivers
+  const publish=()=>{window._labExpect=(!mine&&!busy)?(pat[idx]?'low':'high'):null;};
+  function ask(){pat=SP_PATTERNS[(Math.random()*SP_PATTERNS.length)|0];later(play,260);}
+  const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-sp]');if(!b||busy||mine)return;
+    e.preventDefault();
+    const low=(b.dataset.sp==='1');
+    sing(low?LOW:HIGH,92,.4);
+    b.classList.remove('right','wrong');void b.offsetWidth;b.classList.add(low===!!pat[idx]?'right':'wrong');
+    later(()=>b.classList.remove('right','wrong'),360);
+    const fd=document.getElementById('lgFeed');
+    if(low!==!!pat[idx]){score('sayplay',false);if(fd)fd.textContent=t('onceMore');
+      busy=true;publish();later(()=>{busy=false;play();},900);return;}
+    idx++;paint();publish();
+    if(idx>=pat.length){score('sayplay',true);right++;
+      const f2=document.getElementById('lgFeed');if(f2)f2.textContent=t('yes');
+      const c=document.querySelector('.lgCount');if(c)c.textContent=right+' / '+need;
+      document.querySelectorAll('.lgDots i').forEach((x,i)=>x.classList.toggle('got',i<right));
+      if(right>=need){busy=true;later(()=>{stageOff();finish('sayplay',t('sp_name'));},800);return;}
+      busy=true;publish();later(()=>{busy=false;ask();},900);}};
+  ov.addEventListener('pointerdown',onDown,true);
+  _render=paint;paint();ask();
+  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._lab_lgAgain=null;window._labSayPat=null;window._labExpect=null;stageOff();LAB.clear();};
 }
 
 // ---------- 3. HIGH AND LOW -- two notes, as far apart as the ladder goes ----------
@@ -955,38 +1039,13 @@ function majorScaleUnit(){
 // Two buttons, no ladder: the answer is a judgement about a sound, not a note to find. Plays the same
 // three notes twice and moves only the middle one, in raw cents, so no scale swap is needed.
 function brightDarkUnit(){
-  stageOff();
-  let bright=true,n=0,right=0,busy=false;const need=10;
-  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
-  LAB.take({scale:'major',octs:1,drums:false,band:false,touch:false});LAB.labels(null);LAB.clear();
-  function play(){const third=bright?400:300;
-    note(0,92,.5);later(()=>note(third,92,.5),420);later(()=>note(700,92,.62),840);}
-  function paint(){
-    stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
-        '<h3>'+t('u_brightdark')+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
-      '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
-      '<div class="lgLadder" style="justify-content:center;flex:1"><p class="lgSay" style="font-size:18px">'+t('bd_hear')+'</p></div>'+
-      '<p class="lgSay">'+t('bd_do')+'</p><div class="lgFeed" id="lgFeed"></div>'+
-      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>'+
-      '<div class="lgChoice">'+
-        '<button data-bd="bright" style="--rc:#ffe08a">'+t('bright')+'</button>'+
-        '<button data-bd="dark" style="--rc:#a9b6f0">'+t('dark')+'</button></div>');
-  }
-  window._lab_lgAgain=play;
-  function ask(){bright=Math.random()<0.5;window._labExpect=bright?'bright':'dark';play();}
-  const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-bd]');if(!b||busy)return;
-    e.preventDefault();
-    const ok=(b.dataset.bd==='bright')===bright; score('brightdark',ok);n++;if(ok)right++;
-    const fd=document.getElementById('lgFeed');if(fd)fd.textContent=t(ok?'yes':'notYet');
-    const c=document.querySelector('.lgCount');if(c)c.textContent=right+' / '+need;
-    document.querySelectorAll('.lgDots i').forEach((x,i)=>x.classList.toggle('got',i<right));
-    if(right>=need){busy=true;later(()=>{stageOff();finish('brightdark',t('bd_name'));},760);return;}
-    later(ask,ok?820:1050);};
-  ov.addEventListener('pointerdown',onDown,true);
-  _render=paint;paint();later(ask,650);
-  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
-    window._lab_lgAgain=null;stageOff();LAB.clear();};
+  // the same two-choice screen as up/down: one sound, two big buttons, nothing else
+  choiceUnit({id:'brightdark',title:'u_brightdark',hear:'bd_hear',doIt:'bd_do',name:'bd_name',
+    scale:'major',need:10,
+    opts:[{v:'bright',label:'bright',tint:'#ffe08a'},{v:'dark',label:'dark',tint:'#a9b6f0'}],
+    pick:()=>Math.random()<0.5?'bright':'dark',
+    play:(v)=>{const third=(v==='bright')?400:300;
+      note(0,92,.5);later(()=>note(third,92,.5),420);later(()=>note(700,92,.62),840);}});
 }
 // ---------- 10-12. THE SEVEN-NOTE SCALES ----------
 function scaleLadder(id,title,scales,doIt,nameK,need,phases,maxPhase,phaseSay){
@@ -1005,158 +1064,168 @@ function modesUnit(){scaleLadder('modes','u_modes',['dorian','mixolydian'],'md_d
 // on material learned today -- it waits for the day boundary, then re-asks the OLDEST thing first.
 // No streak, no nag, no penalty for not coming: it simply has something for you when you return.
 function reviewUnit(){
+  stageOff();
   const list=due();
   if(!list.length){
-    dock(bar(t('u_review'),'')+
-      '<div class="labDone"><img class="ldArt" src="minis/grn2.png" alt="" draggable="false">'+
-      '<b class="ldTitle">'+t('rev_none')+'</b>'+
-      '<p class="labSay">'+t('rev_noneSub')+'</p>'+
-      '<div class="labChips"><button class="labChip" data-a2="home">'+t('home')+'</button></div></div>');
+    stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t('u_review')+'</h3><span class="lgCount"></span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="lgLadder" style="justify-content:safe center;flex:1;text-align:center">'+
+        '<div><img src="minis/grn2.png" alt="" draggable="false" style="width:120px;height:auto">'+
+        '<p class="lgSay" style="font-size:22px;margin-top:10px">'+t('rev_none')+'</p>'+
+        '<p class="lgSay">'+t('rev_noneSub')+'</p></div></div>');
     return;}
-  let i=0,right=0;const need=Math.min(10,list.length*3);
-  let target=0,pool=[];
-  function nextItem(){const u=list[i%list.length];i++;
-    pool=(u.use||[0,1,2,3,4]).slice();
-    target=pool[(Math.random()*pool.length)|0];
-    LAB._playable=pool.slice();
-    later(()=>{sing(target,94,.55);hint(target);},260);}
-  LAB.take({scale:'pentaMaj',octs:1,drums:false,band:false});
-  LAB.labels(wallLabels());
-  function paint(){
-    dock(bar(t('u_review'),right+' / '+need)+dots(right,need)+
-      '<p class="labSay">'+t('rev_hear')+'</p>'+
-      '<div class="labDo">'+t('rev_do')+'</div>'+
-      '<div class="labFeed"></div>'+labelPicker());}
-  _render=paint;paint();
-  LAB.onHit((deg)=>{const len=scaleObj().c.length,d=((deg%len)+len)%len;
-    if(pool.indexOf(d)<0)return;
-    const ok=(d===target);
-    score('review',ok);
-    if(ok){right++;praise(d);cheer(t('yes'));
+  // Review runs on the ladder like every other note lesson. The NOTE SET rotates: one question from
+  // each lesson that is due, so a child meets the notes they learned last week, not a fresh drill.
+  // The RUNGS are the union of every due lesson's notes, so the ladder does not change shape under a
+  // child mid-session. What rotates is where the question comes from: one note from each due lesson
+  // in turn, so review revisits last week's lessons instead of drilling one of them ten times.
+  const rungs=[...new Set(list.reduce((a,u)=>a.concat(u.use||[0,1,2,3,4]),[]))].sort((a,b)=>a-b);
+  let i=0;
+  const need=Math.min(10,list.length*3);
+  ladderUnit({id:'review',title:'u_review',doIt:'rev_do',name:'rev_name',
+    need:need,showTarget:false,
+    use:rungs,
+    pick:()=>{const u=list[i%list.length];i++;
       // touching a unit resets ITS clock too, so review keeps rotating rather than drilling one thing
-      const u=list[(i-1)%list.length];if(prog[u.id]){prog[u.id].at=Date.now();save();}
-      if(right>=need){later(()=>finish('review',t('rev_name')),820);return;}}
-    else cheer(t('notYet'));
-    paint();later(nextItem,900);});
-  nextItem();
+      if(prog[u.id]){prog[u.id].at=Date.now();save();}
+      const p=(u.use||[0,1,2,3,4]).filter(d=>rungs.indexOf(d)>=0);
+      return p[(Math.random()*p.length)|0];},
+    play:(d)=>sing(d,94,.55)});
 }
 
 // ---------- GAME: ECHO (the flagship — call & response with varied repetition) ----------
-function echoGame(){
-  LAB.take({scale:'pentaMaj',octs:1,drums:false,band:false}); // 5 notes -> a pentagon, one wall each
-  LAB.labels(wallLabels());
-  let len=2,phrase=[],idx=0,mine=true,best=0;
-  function playable(){ // the degrees this shape can actually sound, low to high
-    const p=(window.LAB&&LAB._playable&&LAB._playable.length)?LAB._playable.slice():null;
-    if(p&&p.length)return p;
-    const td=(typeof totalDegrees==='function')?totalDegrees():5;
-    return Array.from({length:td},(_,i)=>i);
-  }
-  function newPhrase(){
-    const pool=playable(),n=pool.length;
-    phrase=[];let k=Math.floor(Math.random()*n);      // index INTO the playable set, not a raw degree
-    for(let i=0;i<len;i++){
-      // mostly steps, occasional skip -- a singable shape, and it VARIES every round (the research point:
-      // varied repetition, not the same drill again)
-      const move=(Math.random()<0.7?1:2)*(Math.random()<0.5?-1:1);
-      k=Math.max(0,Math.min(n-1,i===0?k:k+move));
-      phrase.push(pool[k]);}
-  }
-  function playPhrase(){
-    mine=true;idx=0;paint();
-    hint(null);
-    phrase.forEach((d,i)=>later(()=>{sing(d,92,.5);
-      if(i===phrase.length-1)later(()=>{mine=false;paint();hint(phrase[0]);},520);},i*520));
-  }
+// ================================================================================================
+//  THE THREE GAMES - moved off the tank and onto the same screens as the lessons.
+//  They were the last place a child met the polygon wall interface: a game called "up or down" that
+//  asked the question in a side card while the middle of the screen showed a tank nobody had to touch.
+//  A game is practice for a lesson, so it gets the lesson's screen.
+// ================================================================================================
+
+// ---------- TWO CHOICES: one screen, used by bright/dark and by up/down ----------
+function choiceUnit(cfg){
+  stageOff();
+  const need=cfg.need||10;
+  let right=0,busy=false,cur=null;
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  // PIN THE KEY, like ladderUnit does. A lesson that does not name a root inherits whatever the last
+  // one left in S.root, so after the la-pentatonic lesson (which transposes) everything below it sat
+  // a minor third low for the rest of the session. The anchor is captured once, on entering learn mode.
+  const HOME=((LAB._saved&&LAB._saved.root!=null)?LAB._saved.root:S.root)+(cfg.rootShift||0);
+  LAB.take({scale:cfg.scale||'pentaMaj',root:HOME,octs:1,drums:false,band:false,touch:false});
+  LAB.labels(null);LAB.clear();
   function paint(){
-    dock(bar(t('g_echo'),t('echo_len',{n:len}))+dots(Math.max(0,len-2),5)+
-      '<p class="labSay">'+t('echo_intro')+'</p>'+
-      '<div class="labDo">'+(mine?t('echo_mine'):t('echo_your'))+'</div>'+
-      '<div class="labFeed"></div>'+
-      '<div class="labChips">'+
-        '<button class="labChip" data-a2="ec_replay">'+t('listen')+'</button>'+
-        '<button class="labChip" data-a2="ec_next">'+t('again')+'</button></div>'+
-      labelPicker());
+    stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t(cfg.title)+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
+      '<div class="lgLadder" style="justify-content:safe center;flex:1">'+
+        '<p class="lgSay" style="font-size:18px">'+t(cfg.hear)+'</p></div>'+
+      '<p class="lgSay">'+t(cfg.doIt)+'</p><div class="lgFeed" id="lgFeed"></div>'+
+      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>'+
+      '<div class="lgChoice">'+cfg.opts.map(o=>
+        '<button data-ch="'+o.v+'" style="--rc:'+o.tint+'">'+t(o.label)+'</button>').join('')+'</div>');
   }
-  _render=paint;
-  window._lab_ecReplay=()=>playPhrase();
-  window._lab_ecNext=()=>{newPhrase();playPhrase();};
-  LAB.onHit((deg)=>{
-    if(mine)return;
-    const td=totalDegrees(),d=((deg%td)+td)%td;
-    if(d===phrase[idx]){praise(d);idx++;
-      if(idx>=phrase.length){cheer(t('yes'));best=Math.max(best,len);hint(null);
-        seen('echo');
-        if(len>=5){later(()=>finish('echo',''),900);return;}   // a five-note phrase echoed back: that is the session
-        len++;
-        later(()=>{newPhrase();playPhrase();},1200);}
-      else hint(phrase[idx]);                       // always show the next target
-    }else{ // NO fail state: just replay it and invite another go
-      cheer(t('notYet'));idx=0;hint(null);later(playPhrase,900);}
-  });
-  newPhrase();later(playPhrase,500);
+  window._lab_lgAgain=()=>{if(!busy&&cur!=null)cfg.play(cur);};
+  function ask(){cur=cfg.pick();window._labExpect=cur;cfg.play(cur);}
+  const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-ch]');if(!b||busy)return;
+    e.preventDefault();
+    const ok=(b.dataset.ch===String(cur)); score(cfg.id,ok); if(ok)right++;
+    const fd=document.getElementById('lgFeed');if(fd)fd.textContent=t(ok?'yes':'notYet');
+    const c=document.querySelector('.lgCount');if(c)c.textContent=right+' / '+need;
+    document.querySelectorAll('.lgDots i').forEach((x,i)=>x.classList.toggle('got',i<right));
+    if(right>=need){busy=true;later(()=>{stageOff();finish(cfg.id,t(cfg.name));},760);return;}
+    later(ask,ok?820:1050);};
+  ov.addEventListener('pointerdown',onDown,true);
+  _render=paint;paint();later(ask,650);
+  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._lab_lgAgain=null;stageOff();LAB.clear();};
 }
 
-// ---------- GAME: UP OR DOWN ----------
 function upDownGame(){
-  // pentatonic here too: the games are practice for the lessons, and they must not quietly reintroduce
-  // the two notes the lessons deliberately hold back.
-  LAB.take({scale:'pentaMaj',octs:1,drums:false,band:false});LAB.labels(null);
-  let a=0,b=0,got=0;
-  function ask(){
-    const td=totalDegrees();
-    a=Math.floor(Math.random()*td);
-    do{b=Math.floor(Math.random()*td);}while(b===a);
-    window._labExpect=(b>a)?'up':'down';   // readable target, same hook the lessons use
-    later(()=>{sing(a,90,.5);later(()=>sing(b,90,.5),620);},250);
-    paint();
-  }
-  function paint(){
-    dock(bar(t('g_updown'),'')+dots(got,5)+
-      '<p class="labSay">'+t('updown_ask')+'</p>'+
-      '<div class="labFeed"></div>'+
-      '<div class="labChips">'+
-        '<button class="labChip" data-a2="ud_up">'+t('up')+'</button>'+
-        '<button class="labChip" data-a2="ud_dn">'+t('down')+'</button>'+
-        '<button class="labChip" data-a2="ud_replay">'+t('listen')+'</button></div>');
-  }
-  _render=paint;
-  window._lab_ud=(g)=>{const up=b>a;window._labExpect=null;
-    if((g==='up')===up){got++;cheer(t('yes'));LAB.drop(b,1);
-      if(got>=5){later(()=>finish('updown',''),900);return;}
-      later(ask,1000);}
-    else{cheer(t('notYet'));later(()=>{note(degCents(a),90,.5);later(()=>note(degCents(b),90,.5),620);},300);}};
-  window._lab_udReplay=()=>{sing(a,90,.5);later(()=>sing(b,90,.5),620);};
-  ask();
+  // pentatonic here too: a game is practice for the lessons and must not quietly reintroduce the two
+  // notes the lessons deliberately hold back.
+  choiceUnit({id:'updown',title:'g_updown',hear:'updown_hear',doIt:'updown_ask',name:'updown_name',
+    need:10,
+    opts:[{v:'up',label:'up',tint:'#9fe6cf'},{v:'down',label:'down',tint:'#a9b6f0'}],
+    pick:()=>Math.random()<0.5?'up':'down',
+    play:(dir)=>{const lo=1+((Math.random()*2)|0), hi=lo+2;
+      const a=(dir==='up')?lo:hi, b=(dir==='up')?hi:lo;
+      sing(a,90,.5);later(()=>sing(b,90,.5),620);}});
 }
 
-// ---------- GAME: FIND HOME ----------
 function findHomeGame(){
-  LAB.take({scale:'pentaMaj',octs:1,drums:false,band:true});LAB.labels(wallLabels());
-  let got=0;
-  function paint(){
-    dock(bar(t('g_findhome'),'')+dots(got,5)+
-      '<p class="labSay">'+t('findhome_ask')+'</p>'+
-      '<div class="labDo">'+t('home_do')+'</div>'+
-      '<div class="labFeed"></div>'+labelPicker());
-  }
-  _render=paint;paint();
-  // a cadence that leans hard toward home, then the child has to land there
-  hint(0);
-  function cue(){const len=scaleObj().c.length;
-    sing(4%len,86,.45);later(()=>sing(len-3,86,.45),420);}
-  cue();const iv=setInterval(cue,5200);_timers.push(iv);_cleanup=()=>clearInterval(iv);
-  LAB.onHit((deg)=>{const len=scaleObj().c.length;
-    if(((deg%len)+len)%len===0){praise(deg);got++;cheer(t('yes'));paint();
-      if(got>=5)later(()=>finish('findhome',t('home_name')),800);}
-    else feed('');});   // a wrong wall in a scale-locked tank is still music: say nothing, let them hunt
+  // the same job as the home lesson, with all five notes on the ladder instead of three
+  ladderUnit({id:'findhome',title:'g_findhome',doIt:'fh_do',name:'fh_name',
+    use:[0,1,2,3,4],need:10,showTarget:false,
+    pick:()=>DEG.do,
+    play:()=>{sing(DEG.so,88,.42);later(()=>sing(DEG.re,88,.42),420);later(()=>sing(DEG.mi,88,.5),840);}});
 }
 
-// ---------------------------------------------------------------- wall-label switcher
-function labelPicker(){
-  const opt=(v,k)=>'<button class="labChip'+(labelMode===v?' on':'')+'" data-a2="lbl" data-v="'+v+'">'+t(k)+'</button>';
-  return '<div class="labChips" style="margin-top:auto">'+
-    opt('solfege','labelSolfege')+opt('numbers','labelNumbers')+opt('off','labelOff')+'</div>';
+// ---------- ECHO: the ladder, played back in order ----------
+// The one game where the answer is a SEQUENCE, so it cannot ride on ladderUnit. Same screen, same
+// rungs, same rules: fixed targets, nothing on screen that is not the job, and the phrase is shown
+// being played before the child has to repeat it -- a five-year-old cannot hold a tune they never saw.
+function echoGame(){
+  stageOff();
+  const need=5;
+  const USE=[0,1,2,3,4];
+  let len=2,phrase=[],step=0,right=0,busy=false,mine=true;
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  LAB.take({scale:'pentaMaj',octs:1,drums:false,band:false,touch:false});
+  LAB.labels(null);LAB.clear();
+  function name(d){let c=0;try{c=degCents(d);}catch(e){c=d*200;}return solfegeFor(c)||String(d+1);}
+  function paint(){
+    const ladder=USE.map((d,i)=>
+      '<button class="lgRung" data-deg="'+d+'" style="--rc:'+RUNG_TINT[i%RUNG_TINT.length]+'">'+
+        '<span class="rgName">'+name(d)+'</span>'+
+        '<span class="rgDeg">'+(i===0?'LOW':(i===USE.length-1?'HIGH':''))+'</span></button>').join('');
+    stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t('g_echo')+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
+      '<div class="lgLadder" id="lgLadder">'+ladder+'</div>'+
+      '<p class="lgSay">'+t(mine?'echo_mine':'echo_your')+'</p>'+
+      '<div class="lgFeed" id="lgFeed">'+t('echo_len',{n:len})+'</div>'+
+      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>');
+  }
+  function lightUp(d,ms){const r=document.querySelector('.lgRung[data-deg="'+d+'"]');
+    if(!r)return; r.classList.add('target'); later(()=>r.classList.remove('target'),ms||380);}
+  function build(){phrase=[];let k=(Math.random()*USE.length)|0;
+    for(let i=0;i<len;i++){const mv=(Math.random()<0.7?1:2)*(Math.random()<0.5?-1:1);
+      k=Math.max(0,Math.min(USE.length-1,i===0?k:k+mv));phrase.push(USE[k]);}}
+  function play(){ // show AND sound it, one rung at a time
+    mine=true;step=0;paint();
+    phrase.forEach((d,i)=>later(()=>{sing(d,92,.5);lightUp(d,420);
+      if(i===phrase.length-1)later(()=>{mine=false;paint();publish();},560);},i*560));
+  }
+  window._lab_lgAgain=()=>{if(!busy&&!mine)play();};
+  window._labEchoPhrase=()=>phrase.slice();   // readable targets for the test drivers
+  const publish=()=>{window._labHintDeg=(!mine&&!busy)?phrase[step]:null;};
+  function ask(){build();later(play,320);}
+  const onDown=(e)=>{const r=e.target.closest&&e.target.closest('.lgRung');if(!r||busy||mine)return;
+    e.preventDefault();
+    const d=+r.dataset.deg; sing(d,94,.5);
+    r.classList.add('press');setTimeout(()=>r.classList.remove('press'),90);
+    const ok=(d===phrase[step]);
+    r.classList.remove('right','wrong');void r.offsetWidth;r.classList.add(ok?'right':'wrong');
+    later(()=>r.classList.remove('right','wrong'),380);
+    const fd=document.getElementById('lgFeed');
+    if(!ok){score('echo',false);if(fd)fd.textContent=t('onceMore');busy=true;publish();
+      later(()=>{busy=false;play();},900);return;}
+    step++;publish();
+    if(step>=phrase.length){score('echo',true);right++;
+      if(fd)fd.textContent=t('yes');
+      const c=document.querySelector('.lgCount');if(c)c.textContent=right+' / '+need;
+      document.querySelectorAll('.lgDots i').forEach((x,i)=>x.classList.toggle('got',i<right));
+      if(right>=need){busy=true;later(()=>{stageOff();finish('echo',t('echo_name'));},800);return;}
+      if(right%2===0&&len<4)len++;                 // one note longer every two rounds, up to four
+      busy=true;publish();later(()=>{busy=false;ask();},950);}
+  };
+  ov.addEventListener('pointerdown',onDown,true);
+  _render=paint;paint();ask();
+  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._lab_lgAgain=null;window._labEchoPhrase=null;window._labHintDeg=null;stageOff();LAB.clear();};
 }
 
 // ---------------------------------------------------------------- home screen (3 tiers)
@@ -1232,9 +1301,6 @@ if(ov)ov.addEventListener('click',(e)=>{
     stopAll();if(_cleanup){_cleanup();_cleanup=null;}
     try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(err){}
     u.run();return;}
-  if(a==='lbl'){labelMode=b.dataset.v;try{LAB.labels(wallLabels());}catch(err){}
-    try{if(window._labKeysBuild)window._labKeysBuild();}catch(err){}
-    if(_render)_render();return;}
   if(a==='tap'&&window._lab_tap)return window._lab_tap();
   if(a==='hi_up'&&window._lab_hi)return window._lab_hi('up');
   if(a==='hi_dn'&&window._lab_hi)return window._lab_hi('down');
@@ -1246,11 +1312,6 @@ if(ov)ov.addEventListener('click',(e)=>{
   if(a==='bd_dk'&&window._lab_bd)return window._lab_bd('dark');
   if(a==='bd_replay'&&window._lab_bdReplay)return window._lab_bdReplay();
   if(a==='sp_again'&&window._lab_spAgain)return window._lab_spAgain();
-  if(a==='ec_replay'&&window._lab_ecReplay)return window._lab_ecReplay();
-  if(a==='ec_next'&&window._lab_ecNext)return window._lab_ecNext();
-  if(a==='ud_up'&&window._lab_ud)return window._lab_ud('up');
-  if(a==='ud_dn'&&window._lab_ud)return window._lab_ud('down');
-  if(a==='ud_replay'&&window._lab_udReplay)return window._lab_udReplay();
 });
 // tapping the tank itself counts as a tap in the beat unit
 if(typeof cv!=='undefined'&&cv)cv.addEventListener('pointerdown',()=>{if(window._lab_tap&&document.body.classList.contains('lab-on'))window._lab_tap();});
