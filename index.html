@@ -705,6 +705,16 @@ body.lab-stage #exitMode,body.lab-stage #cofWheel,body.lab-stage #toast{display:
 @media (prefers-reduced-motion:reduce){.lgWords b{transition:none}.lgWords b.on{transform:none}}
 /* the interval ruler: one octave, thirteen rungs, lit where the notes were. Shown only after the
    answer, so the child hears the gap, decides, and then sees the gap they decided about. */
+/* set-once settings fold away: two rows get you sound out, the rest is there when you want it */
+.prefsMore{margin:6px 0 2px;border-top:1px solid rgba(160,150,200,.28);padding-top:6px}
+.prefsMore>summary{cursor:pointer;list-style:none;font:800 13px inherit;color:#6b5f92;
+  padding:8px 4px;min-height:34px;display:flex;align-items:center;gap:7px;user-select:none}
+.prefsMore>summary::-webkit-details-marker{display:none}
+.prefsMore>summary::before{content:"›";display:inline-block;transition:transform .15s ease;font-size:17px}
+.prefsMore[open]>summary::before{transform:rotate(90deg)}
+.prefsMore>summary:hover{color:var(--accent)}
+.prefsMore>summary:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px;border-radius:8px}
+@media (prefers-reduced-motion:reduce){.prefsMore>summary::before{transition:none}}
 .lgRuler{display:flex;flex-direction:column;gap:3px;align-items:center;margin:14px auto 0;width:min(210px,58vw)}
 .lgRuler i{width:100%;height:11px;border-radius:5px;background:rgba(150,135,190,.16);
   transition:background .18s ease,transform .18s ease}
@@ -1796,31 +1806,38 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
     <div class="prefsHead"><h2 style="margin:0">Preferences</h2><button class="btn" value="close" title="close">✕</button></div>
     <p class="prefsNote">MIDI setup lives here because you set it once, not per song.</p>
     <div class="prefsBody">
-        <div class="row"><label>port</label><select id="midiPort"><option>— enable above —</option></select></div>
-      
-        <div class="row"><label title="MPE = MIDI Polyphonic Expression. Turn ON to send the true microtonal pitch to synths like Surge XT, Pianoteq, Vital. It uses channels 2–16 for pitch, so it takes over the per-instrument channels below while it's on. Leave OFF for normal 12-tone gear.">MPE microtonal out</label><div class="toggle" id="mpeT"></div></div>
-      <hr>
-      <div class="row"><label title="play slimehedron from a MIDI keyboard or sequencer">MIDI in</label><div class="toggle" id="midiInT"></div></div>
-      
+        <!-- TWO ROWS TO GET SOUND OUT. Everything under them is set once and never touched again, so
+             it does not get to compete for attention: twelve rows of equal weight made wiring up a
+             synth look like configuring a router. The master switch is mirrored here because this
+             dialog is what the copy calls "where MIDI setup lives" and it used to open on a port
+             dropdown pointing at a control that was on a different screen. -->
+        <div class="row"><label title="Send slimehedron's notes to your synth, drum machine or DAW">send MIDI out</label><div class="toggle" id="midiT2"></div></div>
+        <div class="row"><label>port</label><select id="midiPort"><option>— turn on MIDI out above —</option></select></div>
+        <div class="row"><label title="Sends all-notes-off on every channel.">if a note sticks</label><button type="button" class="btn" id="panicBtn">silence the rig</button></div>
+
+      <details class="prefsMore">
+        <summary>play slimehedron from a keyboard</summary>
+        <div class="row"><label>MIDI in</label><div class="toggle" id="midiInT"></div></div>
         <div class="row"><label>device</label><select id="midiIn"><option value="-1">— enable above —</option></select></div>
-      
         <div class="row"><label>channel</label><select id="midiInCh"></select></div>
-      
-        <div class="row"><label title="follow your DAW's tempo and start/stop">clock sync</label><div class="toggle" id="midiClkT"></div></div>
-      
-        <div class="row"><label title="map any MIDI knob to any control on screen — saved in your browser">MIDI learn</label><button class="btn" id="ccLearnBtn" style="padding:5px 13px;font-size:12px">＋ assign CC</button></div>
-      <div id="ccList" class="ccList"></div>
-      
-        
-      <div class="row" style="align-items:flex-start"><label>MIDI ch</label>
-        <div class="chGrid">
-          <div class="chCol"><span class="chLbl">Melody</span><select id="chMel" class="chSel"></select></div>
-          <div class="chCol"><span class="chLbl">Drums</span><select id="chDrum" class="chSel"></select></div>
-          <div class="chCol"><span class="chLbl">Bass</span><select id="chBass" class="chSel"></select></div>
-          <div class="chCol"><span class="chLbl">Chords</span><select id="chPad" class="chSel"></select></div>
+        <div class="row"><label title="Follow your DAW's tempo and start/stop instead of running on its own.">follow their tempo</label><div class="toggle" id="midiClkT"></div></div>
+        <div class="row"><label title="Click a control on screen, then wiggle a knob. Saved in your browser. Standard knobs already work without this.">map a knob</label><button class="btn" id="ccLearnBtn" style="padding:5px 13px;font-size:12px">＋ assign CC</button></div>
+        <div id="ccList" class="ccList"></div>
+      </details>
+
+      <details class="prefsMore">
+        <summary>advanced</summary>
+        <div class="row"><label title="Sends the true microtonal pitch, for synths that support MPE (Surge XT, Pianoteq, Vital). Leave off for normal 12-tone gear.">microtonal (MPE)</label><div class="toggle" id="mpeT"></div></div>
+        <div class="row"><label title="Lets a drum machine or hardware arp run in time with slimehedron. Turn off if slimehedron is the one following.">send clock</label><div class="toggle" id="clkOutT"></div></div>
+        <div class="row" style="align-items:flex-start"><label>channels</label>
+          <div class="chGrid">
+            <div class="chCol"><span class="chLbl">Melody</span><select id="chMel" class="chSel"></select></div>
+            <div class="chCol"><span class="chLbl">Drums</span><select id="chDrum" class="chSel"></select></div>
+            <div class="chCol"><span class="chLbl">Bass</span><select id="chBass" class="chSel"></select></div>
+            <div class="chCol"><span class="chLbl">Chords</span><select id="chPad" class="chSel"></select></div>
+          </div>
         </div>
-      </div>
-    
+      </details>
     </div>
   </form>
 </dialog>
@@ -1879,7 +1896,7 @@ const S={
   synth:true,wave:"triangle",sub:0,
   atk:0.001,dec:0.15,sus:0.18,rel:0.28,
   filt:"lowpass",cut:0.78,res:0,fenv:0.30,
-  vol:0.4675,wM:0.34,wD:0.33,wK:0.33,wMg:1,bpMix:0.5,dly:0,warm:0.3,filtOn:true,fxOn:true,chMel:1,chDrum:2,chBass:3,chPad:4,midi:false,midiOut:null, // vol = slider 55 × 0.85 kid-safe scale (UI shows 55%, actual gain 0.4675)
+  vol:0.4675,wM:0.34,wD:0.33,wK:0.33,wMg:1,bpMix:0.5,dly:0,warm:0.3,filtOn:true,fxOn:true,chMel:1,chDrum:2,chBass:3,chPad:4,chLead:5,clkOut:false,midi:false,midiOut:null, // vol = slider 55 × 0.85 kid-safe scale (UI shows 55%, actual gain 0.4675)
   rainRate:0.5,rainAmt:0.35,slimeMode:false,randomShape:true,mpe:false,groove:true,
   scaleLock:true // note-snap ON by default — defined here so it's NEVER undefined (undefined read as "off" = the snap silently not working)
 };
@@ -2011,35 +2028,66 @@ async function enableMidi(){
 // Normal MIDI only sends whole semitones, so quarter-tones round off to garbage. MPE (MIDI Polyphonic
 // Expression) fixes this: each note gets its OWN channel + a pitch-bend for the leftover cents. This is the
 // standard microtonal synths (Surge XT, Pianoteq, Vital…) understand. Channel 1 = manager, 2–16 = per-note voices.
-const MPE_LO=2, MPE_HI=16, MPE_RANGE=48; // member channels 2–16; ±48 semitones = the MPE default bend range
-let _mpeNext=MPE_LO;                      // round-robin voice channel picker
-function mpeSetup(){ // arm the synth: tell it channel 1 is the MPE manager for 15 member channels + set the bend range
+// MPE zone: manager ch1, members ch2-12. It used to claim 2-16, which is the full lower zone -- and the
+// drum, bass and pad parts are pinned to channels 2, 3 and 4. MEASURED with a stubbed MIDI port: with
+// MPE on, all three fired on channels that an MPE voice had just bent by up to +/-48 semitones, so the
+// bass came out of the rig wildly out of tune. The panel even claimed MPE "takes over" those channels;
+// it did not, it collided with them. Now the zone stops at 12, every PITCHED part rides the zone (they
+// all want true microtonal pitch), and the drums -- which are fixed-pitch and want no bend at all --
+// move to channel 16, outside the zone entirely.
+const MPE_LO=2, MPE_HI=12, MPE_RANGE=48; // member channels 2-12; ±48 semitones = the MPE default bend range
+const MPE_DRUM_CH=16;                    // fixed-pitch part, parked outside the zone
+let _mpeNext=MPE_LO;                     // round-robin voice channel picker
+function mpeSetup(){ // arm the synth: ch1 is the MPE manager for 11 member channels + set the bend range
   if(!S.midiOut)return;
   try{
-    S.midiOut.send([0xB0,0x64,0x06,0x65,0x00,0x06,0x0F]); // RPN 6 (MCM): 15 member channels on the lower zone
-    for(let ch=MPE_LO;ch<=MPE_HI;ch++){                    // set pitch-bend range = 48 semitones on every voice channel
+    const members=MPE_HI-MPE_LO+1;
+    S.midiOut.send([0xB0,0x64,0x06,0x65,0x00,0x06,members]); // RPN 6 (MCM): declare the real member count
+    for(let ch=MPE_LO;ch<=MPE_HI;ch++){                       // bend range = 48 semitones on every voice channel
       S.midiOut.send([0xB0|(ch-1),0x65,0x00,0x64,0x00,0x06,MPE_RANGE,0x26,0x00]);}
   }catch(e){}
 }
 // send ONE microtonal note out over MPE: whole semitone on its own channel + a pitch-bend for the cents remainder.
-function mpeSend(midiFloat,vel,acT,durSec){
+// MPE has THREE per-note dimensions and this sent one. The spec's axes are pitch bend (pitch),
+// CHANNEL PRESSURE (loudness) and CC74 (timbre/slide) -- see the MPE spec and Roger Linn's sender
+// notes -- and all three must be sent BEFORE the note-on, or the note audibly starts wrong and jumps.
+// A sender with no timbre axis of its own is still expected to send the centre value rather than
+// leave whatever the last note left on that channel; this app DOES have a timbre axis, so it uses it:
+// `imp` is the impact geometry already driving the synth's character (head-on splash vs grazing ring).
+function mpeSend(midiFloat,vel,acT,durSec,timbre){
   if(!S.midiOut)return;
   const note=Math.round(midiFloat); if(note<0||note>127)return;
   const semisOff=midiFloat-note;                          // fractional part, in semitones (e.g. +0.5 = a quarter-tone up)
   const bend=Math.max(0,Math.min(16383,8192+Math.round(semisOff/MPE_RANGE*8192))); // 14-bit bend, centered at 8192
+  const tb=Math.max(0,Math.min(127,Math.round(timbre==null?64:timbre)));           // 64 = centre when we have nothing to say
+  const pr=Math.max(0,Math.min(127,Math.round(vel)));                              // pressure tracks how hard it landed
   const ch=_mpeNext; _mpeNext=_mpeNext>=MPE_HI?MPE_LO:_mpeNext+1; // next voice (round-robin so chords tune independently)
   const t0=performance.now()+Math.max(0,acT-AC.currentTime)*1000;
+  midiHold(ch,note);
   try{
-    S.midiOut.send([0xE0|(ch-1),bend&0x7F,(bend>>7)&0x7F],t0); // pitch-bend FIRST, so the note starts already in tune
+    // all three axes BEFORE the note-on, in the spec's order, so the voice is correct at onset
+    S.midiOut.send([0xE0|(ch-1),bend&0x7F,(bend>>7)&0x7F],t0); // pitch
+    S.midiOut.send([0xB0|(ch-1),74,tb],t0);                    // timbre
+    S.midiOut.send([0xD0|(ch-1),pr],t0);                       // channel pressure
     S.midiOut.send([0x90|(ch-1),note,vel],t0);
     S.midiOut.send([0x80|(ch-1),note,0],t0+durSec*1000);
   }catch(e){}
+  midiRelease(ch,note,durSec*1000);
 }
-function sendMidi(cents,vel){const mf=S.root+cents/100;midiCap('melody',Math.round(mf),vel,null,0.18); // the scribe hears everything, MIDI-out or not
+function sendMidi(cents,vel,imp){const mf=S.root+cents/100;midiCap('melody',Math.round(mf),vel,null,0.18); // the scribe hears everything, MIDI-out or not
   if(!S.midi||!S.midiOut)return;
-  if(S.mpe){mpeSend(mf,vel,AC.currentTime,0.18);return;} // microtonal path: true pitch via MPE
+  // imp is the impact geometry (0..1) already shaping this note's timbre in the synth -- the honest
+  // source for MPE's timbre axis. No imp (a scheduled part note) means send the centre value.
+  if(S.mpe){mpeSend(mf,vel,AC.currentTime,0.18,imp==null?64:Math.round(imp*127));return;}
   const note=Math.round(mf);if(note<0||note>127)return;
-  S.midiOut.send([0x90|(S.chMel-1),note,vel]);setTimeout(()=>{try{S.midiOut.send([0x80|(S.chMel-1),note,0]);}catch(e){}},180);}
+  // The note-off is SCHEDULED, not queued in a setTimeout. A timer can be throttled to seconds in a
+  // background tab or under load, and a late note-off on a rig is a stuck note; handing both messages
+  // to the MIDI subsystem with timestamps means the off is already committed the moment the on is.
+  midiHold(S.chMel,note);
+  const ts=performance.now();
+  try{S.midiOut.send([0x90|(S.chMel-1),note,vel],ts);
+      S.midiOut.send([0x80|(S.chMel-1),note,0],ts+180);}catch(e){}
+  midiRelease(S.chMel,note,180);}
 
 // ---------- drums: casio-style synthesized kit, 4-bar loops ----------
 let drumOn=false,drumStep=0,drumTime=0,drumBus=null,drumKit='pop',drumFeel='1',drumSig='16',NB=null;
@@ -2580,14 +2628,75 @@ function liquidColor(){
   const D=(m,al)=>`rgba(${(liqRGB[0]*(1-m))|0},${(liqRGB[1]*(1-m))|0},${(liqRGB[2]*(1-m))|0},${al})`;                                     // toward dark = depth
   return {crest:P(0.55,0.88),mid:P(0.22,0.94),deep:D(0.24,0.97),lip:P(0.78,0.8),blob:P(0.3,0.85)};}
 const DRUMN={K:36,s:38,h:42,r:37,C:63,c:62};
-function sendMidiAt(midiFloat,vel,ch,acT,durSec){ // midiFloat may be fractional (microtonal); rounded for capture + non-MPE out
+// ================================================================================================
+//  PANIC, AND A CLOCK. The two things a rig needs that this did not have.
+//  Measured with a stubbed MIDI port: pressing STOP sent exactly ZERO bytes. Every note-off was
+//  either scheduled far ahead or sitting in a setTimeout, so a long pad note kept ringing out of the
+//  external synth after the app had visibly stopped -- and a backgrounded tab, a reload or a mode
+//  change simply lost the pending offs. A drone you cannot stop is the classic way a live demo dies.
+//  Also measured: zero clock ticks out, ever. The app could FOLLOW a DAW's clock but could not drive
+//  anything, so nothing external could be synced to it.
+// ================================================================================================
+const _held=new Map();                          // ch:note -> count of notes we believe are sounding
+function midiHold(ch,n){const k=ch+':'+n;_held.set(k,(_held.get(k)||0)+1);}
+function midiRelease(ch,n,afterMs){const k=ch+':'+n;
+  setTimeout(()=>{const c=_held.get(k)||0; if(c<=1)_held.delete(k); else _held.set(k,c-1);},Math.max(0,afterMs)+40);}
+function midiPanic(){
+  if(!S.midiOut)return;
+  try{
+    // explicit note-offs first: plenty of gear ignores CC123, and we know what we started
+    for(const k of _held.keys()){const [ch,n]=k.split(':').map(Number);
+      S.midiOut.send([0x80|((ch-1)&0x0F),n&0x7F,0]);}
+    _held.clear();
+    for(let ch=1;ch<=16;ch++){
+      S.midiOut.send([0xB0|(ch-1),120,0]);        // all sound off
+      S.midiOut.send([0xB0|(ch-1),123,0]);        // all notes off
+      S.midiOut.send([0xE0|(ch-1),0x00,0x40]);    // re-centre the bend, or MPE leaves the rig detuned
+    }
+  }catch(e){}
+}
+// ---- CLOCK OUT: 24 ticks per quarter, scheduled off the AUDIO clock so it cannot drift against what
+// you are hearing. Refuses to run while we are SLAVED to an incoming clock, because a device cannot
+// sensibly be its own master and follower at once.
+let _clkNext=0,_clkEpochP=0,_clkEpochA=0;
+function clockRunning(){return S.midi&&S.midiOut&&S.clkOut&&!S.midiClock&&AC;}
+// ONE audio->wall-clock offset, latched, not re-derived every frame. Reading performance.now() and
+// AC.currentTime together once per animation frame and differencing them looked correct and measured
+// 11.5ms of spread across the ticks, because the two clocks wobble against each other frame to frame.
+// The tick SPACING was perfect; the timestamps carrying it were not, and a sequencer only sees the
+// timestamps. Latched once per start, re-latched only if the two clocks genuinely drift apart.
+function clockLatch(){ _clkEpochP=performance.now(); _clkEpochA=AC.currentTime; }
+function clockAt(acT){ return _clkEpochP+(acT-_clkEpochA)*1000; }
+function clockStart(){ if(!clockRunning())return; clockLatch(); _clkNext=AC.currentTime+0.06;
+  try{S.midiOut.send([0xFA]);}catch(e){} }
+function clockStop(){ if(!S.midiOut)return; _clkNext=0; try{S.midiOut.send([0xFC]);}catch(e){} }
+function clockSchedule(){
+  if(!clockRunning()||!S.playing){return;}
+  const tick=60/Math.max(20,Math.min(300,S.bpm))/24;
+  const look=document.hidden?1.2:0.12;
+  if(!_clkNext){clockLatch();_clkNext=AC.currentTime+0.06;}
+  if(_clkNext<AC.currentTime-0.5){clockLatch();_clkNext=AC.currentTime+0.02;} // throttled tab: re-anchor, don't spray
+  // a suspend/resume can slide the two clocks apart; re-latch rather than send everything early
+  if(Math.abs(clockAt(AC.currentTime)-performance.now())>20)clockLatch();
+  let guard=0;
+  while(_clkNext<AC.currentTime+look&&guard++<400){
+    try{S.midiOut.send([0xF8],Math.max(performance.now(),clockAt(_clkNext)));}catch(e){}
+    _clkNext+=tick;
+  }
+}
+function sendMidiAt(midiFloat,vel,ch,acT,durSec,timbre){ // midiFloat may be fractional (microtonal); rounded for capture + non-MPE out
   const note=Math.round(midiFloat);
   midiCap(ch===S.chDrum?'drums':ch===S.chBass?'bass':ch===S.chPad?'chords':'melody',note,vel,acT,durSec); // sort each hit into its own track
   if(!S.midi||!S.midiOut)return;
-  if(S.mpe){mpeSend(midiFloat,vel,acT,durSec);return;} // microtonal path: true pitch via MPE (drums stay 12-TET below)
+  // every PITCHED part goes through the zone (they all want the true pitch); drums are fixed-pitch and
+  // would only be detuned by a leftover bend, so they leave the zone entirely.
+  if(S.mpe&&ch!==S.chDrum){mpeSend(midiFloat,vel,acT,durSec,timbre);return;}
   if(note<0||note>127)return;
+  const outCh=(S.mpe&&ch===S.chDrum)?MPE_DRUM_CH:ch;
   const ts=performance.now()+Math.max(0,acT-AC.currentTime)*1000;
-  try{S.midiOut.send([0x90|(ch-1),note,vel],ts);S.midiOut.send([0x80|(ch-1),note,0],ts+durSec*1000);}catch(e){}}
+  midiHold(outCh,note);
+  try{S.midiOut.send([0x90|(outCh-1),note,vel],ts);S.midiOut.send([0x80|(outCh-1),note,0],ts+durSec*1000);}catch(e){}
+  midiRelease(outCh,note,durSec*1000);}
 let curRootDeg=0;
 // ---- DIRECT chord override: when a human plays, the chord IS what they play — no histogram guessing, no delay ----
 let manualNotes=[]; // {deg,t}
@@ -3128,11 +3237,12 @@ function explodeReform(){ // every 128 bars: burst the WHOLE shape (any remainin
 const balls=[];const BR=9;let hueIdx=0; // 12 chromatic hues like 12 notes, cycling so no two in a row match
 function spawn(x,y){const ang=Math.random()*Math.PI*2, sp=ballSpeed();
   if(balls.length>=MAXBALLS+6)return; // hard safety only; the wall-drain (in step) is what keeps it from piling — no vanish-flash
-  balls.push({x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,hue:((hueIdx++)%12)/12,trail:[]});}
+  // px/py seeded to the spawn point, or the first interpolated frame streaks in from nowhere
+  balls.push({x,y,px:x,py:y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,hue:((hueIdx++)%12)/12,trail:[]});}
 function velForHit(){return S.velRand?Math.round(S.velMin+Math.random()*(S.velMax-S.velMin)):S.velFix;}
 let pendingNotes=[];
 function trigger(cents,imp,goo){noteFeed(cents);goo=goo||0;const vel=Math.round(velForHit()*(1-goo*0.3)); // gooed notes land softer too
-  if(S.quantize)pendingNotes.push({cents,vel,imp,goo});else{playSynth(freqFromCents(cents),vel,imp);sendMidi(cents,vel);}} // every note also teaches the chord brain
+  if(S.quantize)pendingNotes.push({cents,vel,imp,goo});else{playSynth(freqFromCents(cents),vel,imp);sendMidi(cents,vel,imp);}} // every note also teaches the chord brain
 function jitter(b){if(S.chaos<=0)return;const sp=Math.hypot(b.vx,b.vy);const a=Math.atan2(b.vy,b.vx)+(Math.random()-0.5)*S.chaos*2.2; // perturb angle only — speed stays steady
   b.vx=Math.cos(a)*sp;b.vy=Math.sin(a)*sp;}
 
@@ -3305,6 +3415,7 @@ function step(){
   for(let bi=balls.length-1;bi>=0;bi--){
     const b=balls[bi];
     b.r=BR;
+    b.px=b.x; b.py=b.y;   // where it was when this tick began — the draw interpolates from here
     b.vy+=gy; if(b.vy>ts*1.6)b.vy=ts*1.6; // clamp: gravity can't accelerate a ball past a gentle terminal speed → no slamming/spazzing
     // SUBSTEP the move so a fast ball (esp. high-octave shots at sp=R/7) can never leap past a wall in one frame.
     // move at most ~half a radius per micro-step, re-checking geometry each time = zero tunneling, ever.
@@ -3377,14 +3488,15 @@ function rainIntervalMs(){const bars=4-S.rainRate*3.9;return Math.max(200,bars*4
 function transport(now){
   if(!S.playing)return;
   drumSchedule();
+  clockSchedule();
   if(now-lastTick>=tickInterval()){lastTick=(now-lastTick>tickInterval()*3)?now:lastTick+tickInterval();tickCount++; // drift-free grid, stays on beat with drums
     if(S.quantize&&pendingNotes.length){const seen=new Set();
       for(const p of pendingNotes){const k=Math.round(p.cents);if(seen.has(k))continue;seen.add(k);
         // THE GOO SURVIVES THE GRID: dry notes snap to the beat, gooed notes drag behind it — deeper = later, each ball its own lean.
         // this is what un-robots the quantizer: the cluster-on-the-tick becomes a smear that trails off the beat as the tank fills
         const lag=(p.goo&&!document.hidden)?Math.min(120,p.goo*tickInterval()*0.45*(0.75+Math.random()*0.5)):0;
-        if(lag>4)setTimeout(()=>{playSynth(freqFromCents(p.cents),p.vel,p.imp);sendMidi(p.cents,p.vel);},lag);
-        else{playSynth(freqFromCents(p.cents),p.vel,p.imp);sendMidi(p.cents,p.vel);}}
+        if(lag>4)setTimeout(()=>{playSynth(freqFromCents(p.cents),p.vel,p.imp);sendMidi(p.cents,p.vel,p.imp);},lag);
+        else{playSynth(freqFromCents(p.cents),p.vel,p.imp);sendMidi(p.cents,p.vel,p.imp);}}
       pendingNotes.length=0;}
   }
   // SLIME (auto) MODE = SPARSE & floaty, like the original rain that flowed nicely. one gentle note every ~2 beats,
@@ -3535,14 +3647,18 @@ function drawParticles(){ // the goo: floats as a blob while young, settles into
       ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}}}
 function drawBalls(){ // every ball its own vivid hue; in the goo they wade — fat goopy wake, dimmer glow, visibly slower
   for(const b of balls){const tl=b.trail.length,bh=Math.round(b.hue*360),under=fillState==="fill"&&gooAt(b.x,b.y)>0.3;
+    // interpolated draw position. A bounce moves a ball a long way in one tick, so anything that big
+    // is a direction change rather than travel -- snap to the true position instead of smearing across it.
+    let bx=lerpX(b), by=lerpY(b);
+    if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR*2.2){bx=b.x;by=b.y;}
     for(let i=0;i<tl;i++){const [tx,ty]=b.trail[i];const f=i/tl;
       if(under){ctx.fillStyle=`hsla(${bh},65%,58%,${(f*0.4).toFixed(3)})`;ctx.beginPath();ctx.arc(tx,ty,BR*(0.4+0.95*f),0,7);ctx.fill();} // thick wake dragging through the goo
       else{ctx.fillStyle=`hsla(${bh},90%,64%,${(f*0.25).toFixed(3)})`;ctx.beginPath();ctx.arc(tx,ty,BR*(0.2+0.55*f),0,7);ctx.fill();}}
     const gr=under?BR*1.5:BR*2.2; // glow shrinks underwater — light doesn't travel far in slime
-    const g=ctx.createRadialGradient(b.x,b.y,1,b.x,b.y,gr);g.addColorStop(0,under?"rgba(255,255,255,.7)":"#fff");g.addColorStop(1,`hsla(${bh},90%,62%,0)`);
-    ctx.fillStyle=g;ctx.beginPath();ctx.arc(b.x,b.y,gr,0,7);ctx.fill();
-    ctx.fillStyle=under?`hsl(${bh},70%,52%)`:`hsl(${bh},88%,58%)`;ctx.beginPath();ctx.arc(b.x,b.y,BR,0,7);ctx.fill();
-    ctx.fillStyle=under?"rgba(255,255,255,.45)":"rgba(255,255,255,.75)";ctx.beginPath();ctx.arc(b.x-BR*0.3,b.y-BR*0.35,BR*0.32,0,7);ctx.fill();}
+    const g=ctx.createRadialGradient(bx,by,1,bx,by,gr);g.addColorStop(0,under?"rgba(255,255,255,.7)":"#fff");g.addColorStop(1,`hsla(${bh},90%,62%,0)`);
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(bx,by,gr,0,7);ctx.fill();
+    ctx.fillStyle=under?`hsl(${bh},70%,52%)`:`hsl(${bh},88%,58%)`;ctx.beginPath();ctx.arc(bx,by,BR,0,7);ctx.fill();
+    ctx.fillStyle=under?"rgba(255,255,255,.45)":"rgba(255,255,255,.75)";ctx.beginPath();ctx.arc(bx-BR*0.3,by-BR*0.35,BR*0.32,0,7);ctx.fill();}
 }
 function draw(){
   ctx.clearRect(0,0,W,H);
@@ -3586,7 +3702,15 @@ function simTick(now){
 // FIXED TIMESTEP: physics used to run once per drawn frame, so a 30fps phone moved balls half as fast
 // as a 60fps desktop (and a 144Hz monitor ran too fast). Now we run exactly 60 ticks per real second on
 // every device — same ball speed everywhere. Audio (transport) is already time-based, so it stays per-frame.
-let _acc=0,_lastTick=0,_beatIdx=-1;const FIXED=1000/60,MAXTICKS=5;
+let _acc=0,_lastTick=0,_beatIdx=-1,_alpha=0;const FIXED=1000/60,MAXTICKS=5;
+// RENDER INTERPOLATION. The simulation runs on a fixed 60Hz step, which is right -- it is what makes
+// the bounces deterministic and stops a fast ball tunnelling through a wall. But the DRAW was reading
+// the raw simulated position, so on any display that is not exactly in phase with the step, frames
+// repeat. Measured by sampling the drawn position: 19% duplicate frames at 60Hz and 28% at 120Hz,
+// which is the refresh rate of the hardware anyone would actually demo this on. The physics does not
+// change; the renderer just draws each ball _alpha of the way from where it was to where it is.
+const lerpX=(b)=>(b.px==null?b.x:b.px+(b.x-b.px)*_alpha);
+const lerpY=(b)=>(b.py==null?b.y:b.py+(b.y-b.py)*_alpha);
 function update(now){ // shared by the rAF loop (visible) and the worker heartbeat (hidden tab)
   if(!isFinite(now))now=_lastTick||performance.now();
   transport(now);
@@ -3596,6 +3720,7 @@ function update(now){ // shared by the rAF loop (visible) and the worker heartbe
   let n=0;
   while(_acc>=FIXED&&n<MAXTICKS){simTick(now);_acc-=FIXED;n++;}
   if(n>=MAXTICKS)_acc=0; // fell way behind (tab stalled) — drop the backlog instead of spiraling
+  _alpha=Math.max(0,Math.min(1,_acc/FIXED)); // how far into the NEXT tick the next frame will be
 }
 requestAnimationFrame(loop);
 // background groove: rAF freezes in hidden tabs, but worker timers don't — so a worker heartbeat
@@ -3632,6 +3757,10 @@ function wakeAudio(){
 setInterval(()=>{if(AC&&S.playing&&(AC.state==='interrupted'||AC.state==='suspended'))wakeAudio();},2000);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseWake();else wakeAudio();});
 addEventListener('focus',wakeAudio); addEventListener('pageshow',wakeAudio); // extra nets: some phones fire focus/pageshow but not visibilitychange
+// LEAVING THE PAGE MUST NOT LEAVE THE RIG SCREAMING. A reload or a closed tab drops every pending
+// note-off on the floor, so the last thing this page does is silence the gear and stop the clock.
+addEventListener('pagehide',()=>{try{clockStop();midiPanic();}catch(e){}});
+addEventListener('beforeunload',()=>{try{clockStop();midiPanic();}catch(e){}});
 if('mediaSession' in navigator){
   navigator.mediaSession.metadata=new MediaMetadata({title:'slime jam',artist:'slimehedron'});
   navigator.mediaSession.setActionHandler('play',()=>{if(AC&&AC.state==='suspended')AC.resume();setPlaying(true);_keep.play().catch(()=>{});});
@@ -3729,8 +3858,21 @@ bindToggle("dotT","dotted",on=>{if(on&&S.triplet){S.triplet=false;
 bindToggle("rainT","rain",on=>{$("rainCfg").style.display=on?"block":"none";if(on){initAudio();if(AC.state==="suspended")AC.resume();if(!S.playing)setPlaying(true);nextRain=performance.now();}});
 bindToggle("randShapeT","randomShape");
 bindToggle("velRandT","velRand",on=>{$("velFixedRow").style.display=on?"none":"flex";$("velRangeRow").style.display=on?"flex":"none";$("velRangeRow2").style.display=on?"flex":"none";});
-bindToggle("midiT","midi",on=>{if(on)enableMidi();});
-bindToggle("mpeT","mpe",on=>{if(on&&S.midiOut)mpeSetup();}); // MPE microtonal out: sends TRUE pitch via per-note pitch-bend
+bindToggle("midiT","midi",on=>{if(on)enableMidi();else{clockStop();midiPanic();}});
+// the prefs dialog shows the SAME switch; mirror it both ways so neither view can lie about the state
+{const a=$("midiT"),c=$("midiT2");
+ if(a&&c){
+   const sync=()=>c.classList.toggle('on',!!S.midi);
+   c.addEventListener('click',()=>{a.click();sync();});
+   a.addEventListener('click',()=>setTimeout(sync,0));
+   const dlg=$("prefsDlg"); if(dlg)dlg.addEventListener('close',sync);
+   ['click','change'].forEach(ev=>document.addEventListener(ev,()=>setTimeout(sync,0),true));
+   sync();
+ }}
+bindToggle("mpeT","mpe",on=>{if(on&&S.midiOut)mpeSetup();else midiPanic();}); // re-arm, or clear any bend we left behind
+bindToggle("clkOutT","clkOut",on=>{ if(on&&S.playing)clockStart(); else clockStop(); });
+{const pb=$("panicBtn");if(pb)pb.addEventListener('click',e=>{e.preventDefault();midiPanic();
+  try{toast('all notes off sent');}catch(err){}});}
 
 $("shape").addEventListener('change',e=>{const v=e.target.value;S.shape=/^\d+$/.test(v)?parseInt(v):v;rebuild();particles=[];debris=[];frags=null;fillState="fill";measuredFill=0;});
 $("newShapeBtn").addEventListener('click',()=>{ // kids' dice: always a DIFFERENT shape, instantly
@@ -3760,6 +3902,8 @@ function updateScaleNote(){const sc=scaleObj();const micro=sc.c.some(c=>c%100!==
 updateScaleNote();
 
 function setPlaying(p){S.playing=p;$("playBtn").textContent=p?"⏸ pause":"▶ play";$("playBtn").classList.toggle('on',p);if(p){lastTick=performance.now();if(window._wormReset)window._wormReset();}
+  // the rig follows the transport: start/stop the clock, and silence anything still ringing out there
+  try{ if(p)clockStart(); else {clockStop();midiPanic();} }catch(e){}
   try{if(p)_keep.play().catch(()=>{});else _keep.pause();}catch(e){} // media session mirrors the transport
   if(typeof acquireWake==='function'){if(p)acquireWake();else releaseWake();} // hold the screen awake only while playing
   if(AC&&hissG)hissG.gain.setTargetAtTime(p?S.warm*0.0005:0,AC.currentTime,0.6);} // hiss fades in with the music, gone when paused
@@ -3850,6 +3994,7 @@ function applyMode(m){S.mode=m;
     if(tr)tr.remove();
   }
   // LEARN2 (the Lab) owns learn mode; window.LEARN is kept as the fallback so a failed load still teaches.
+  try{midiPanic();}catch(e){}   // changing mode rebuilds the instrument; do not leave notes hanging on the gear
   const L=window.LEARN2||window.LEARN;
   if(window.LEARN&&window.LEARN!==L&&m!=='learn'){try{LEARN.exit();}catch(e){}}
   if(L){if(m==='learn')L.enter();else L.exit();}}
@@ -4299,40 +4444,103 @@ function shootBall(cents){ // fire a ball AT the wall that owns this pitch — t
 //  • ANTECEDENT/CONSEQUENT: phrase 1 asks (ends up in the air), phrase 2 answers (falls home to the tonic)
 //  • MOTIF MEMORY: it remembers a little shape and echoes it, so the line feels intentional & hummable
 //  • narrow singing range, no wild ±octave jumps.  ← this is the singable engine the user asked for.
+// MEASURED, not assumed. 400 generated notes came back 34.1% IMMEDIATE REPEATS, with runs of NINE
+// identical notes and long 10-11-10-11 trills. Three causes, all of them "repetitive by design":
+//   1. the cadence walked to its target and then SAT on it for the rest of the phrase (8 of every 32
+//      steps were cadence steps, and most of them had already arrived) -> the runs of 7-9.
+//   2. the strong-beat chord-tone snap could pick the note it was ALREADY on, so strong beats pulled
+//      back to the same tone while weak beats stepped one away -> the endless trill.
+//   3. clampDeg only clamped the RETURNED value; _melDeg itself kept drifting out of range, so once
+//      it escaped, every later note came back as the same clamped boundary note.
+// Fixed below, with a hard repeat guard as a floor under all of it.
 let _melDeg=null,_melLastLeap=0,_melStep16=0,_melContour=1,_melMotif=[];
+let _melPrev=null,_melRun=0;
+// clamp AND write back, and turn the line around when it hits the ceiling instead of grinding on it
+function setDeg(d,lo,hi){
+  if(d<lo){d=lo+1;_melContour=+1;}
+  else if(d>hi){d=hi-1;_melContour=-1;}
+  _melDeg=d; return d;
+}
+// A repeated note is musical. A drone is not. Real melodies repeat a pitch maybe one note in ten;
+// this caps any run at two and nudges toward the middle of the range to break the third one.
+// The SECOND guard is for the failure the first fix introduced: killing the drones left the line
+// free to oscillate a-b-a-b-a-b instead, which measured at fifteen notes in dorian. A trill is just
+// a drone with an extra step in it, so it gets the same treatment -- break out with a skip.
+let _melHist=[];
+function noDrone(d,lo,hi,mid){
+  if(d===_melPrev){ if(++_melRun>=2){ d=setDeg(d+(d>mid?-1:1),lo,hi); _melRun=0; } }
+  else _melRun=0;
+  const h=_melHist;
+  if(h.length>=3 && d===h[h.length-2] && h[h.length-1]===h[h.length-3] && d!==h[h.length-1]){
+    d=setDeg(d+(d>mid?-2:2),lo,hi);                     // a-b-a-b caught at the third a: skip out of it
+  }
+  h.push(d); if(h.length>8)h.shift();
+  _melPrev=d; return d;
+}
 function nextMelodyDeg(strong){
   const n=scaleObj().c.length, root=(curRootDeg||0);
   if(_melDeg==null)_melDeg=n+root; // start in the middle octave, on the tonic
   const CENTER=n+root, LO=CENTER-Math.round(n*0.8), HI=CENTER+Math.round(n*0.9); // a comfy ~1.5-octave singing range
   const chord=[root,(root+2)%n,(root+4)%n];
-  // where are we in the 4-bar phrase? (16 eighth-steps per 2 bars ⇒ 32 per 4-bar phrase). drives contour + cadence.
+  // where are we in the 4-bar phrase? (16 eighth-steps per 2 bars => 32 per 4-bar phrase)
   const pos=_melStep16%32, phrase=(_melStep16/32|0)%2; // phrase 0 = question, phrase 1 = answer
   _melStep16++;
-  // ARCH: rise through the first ~⅗ of the phrase to a peak, then fall — the classic memorable shape
-  _melContour=(pos< 20)?+1:-1;
-  // CADENCE: over the last ~2 bars, walk the line to a stable landing tone — the answer phrase resolves HOME to the
-  // tonic (rest), the question phrase settles on the 5th (unfinished, "asks" for the answer). classic antecedent/consequent.
-  if(pos>=24){const target=(phrase===1)?CENTER:(CENTER+ (chord[2]-root)); // answer→tonic · question→the 5th
-    const d=target-_melDeg; _melDeg+= Math.abs(d)>=2?2*Math.sign(d):Math.sign(d); _melLastLeap=0;
-    if(Math.abs(_melDeg-target)<=1)_melDeg=target; return clampDeg(_melDeg,LO,HI);}
-  // resolve a recent leap by stepping back the opposite way (tension→release)
-  if(_melLastLeap){const dir=_melLastLeap>0?-1:1;_melLastLeap=0;return clampDeg(_melDeg+=dir,LO,HI);}
-  // MOTIF: in the answer phrase, sometimes echo the shape we sang in the question (transposed) = a hook the ear recognises
-  if(phrase===1&&_melMotif.length&&Math.random()<0.5){const mv=_melMotif[pos% _melMotif.length];_melDeg=clampDeg(_melDeg+mv,LO,HI);return _melDeg;}
-  let step;const r=Math.random();
-  if(strong){ // strong beat → nearest CHORD TONE, biased in the arch's current direction
-    let best=_melDeg,bd=1e9;for(let o=-1;o<=1;o++)for(const ct of chord){const cand=(Math.round(CENTER/n)*n)+ct+o*n;const d=Math.abs(cand-_melDeg);if(d<=4&&d<bd){bd=d;best=cand;}}
-    _melDeg=best;
-  }else{ // weak beat → a passing STEP (mostly), a 3rd skip sometimes, a rare leap — all leaning WITH the arch
-    const up=_melContour>0?1:-1;
+  // ARCH AS A SHAPE, NOT A SHOVE. Setting a direction and holding it pushed the line into the top of
+  // its range and left it trilling 17-18-17-18 against the ceiling for a dozen notes, because the
+  // clamp bounced it back down and the next step shoved it straight back up. Instead the arch names a
+  // TARGET HEIGHT for this step; direction falls out of where the line is relative to that height, so
+  // once it reaches the peak the aim descends and the contour turns over on its own. The peak sits
+  // comfortably INSIDE the range, so the ceiling is only ever touched by an occasional leap.
+  const PEAK=Math.min(HI-1,CENTER+Math.round(n*0.6));
+  const tArc=(pos<20)?(pos/20):Math.max(0,1-(pos-20)/12);
+  const aim=Math.round(CENTER+(PEAK-CENTER)*tArc);
+  if(_melDeg<aim)_melContour=+1; else if(_melDeg>aim)_melContour=-1;
+  // CADENCE: the answer phrase resolves home to the tonic, the question settles on the 5th. The walk is
+  // PACED to arrive on the last step of the phrase -- if it gets there early it decorates around the
+  // target rather than repeating it, which is what produced the nine-note drones.
+  if(pos>=24){
+    const target=(phrase===1)?CENTER:(CENTER+(chord[2]-root));
+    const left=32-pos, d=target-_melDeg;
+    _melLastLeap=0;
+    if(Math.abs(d)>=left)  setDeg(_melDeg+Math.sign(d)*Math.min(2,Math.abs(d)-left+1),LO,HI); // must move to land
+    else if(d!==0)         setDeg(_melDeg+Math.sign(d),LO,HI);                                // stroll toward it
+    // Arrived with time to spare. Stepping one away and back is a TRILL, which is what the first
+    // version of this did; a wider excursion takes two or three steps to walk back, which fills the
+    // same space with a shape instead of a wobble.
+    else if(left>2)        setDeg(_melDeg+(Math.random()<0.5?-1:1)*(2+(Math.random()<0.5?1:0)),LO,HI);
+    else                   setDeg(_melDeg+(Math.random()<0.5?1:-1),LO,HI);
+    return noDrone(_melDeg,LO,HI,CENTER);
+  }
+  // resolve a recent leap by stepping back the opposite way (tension -> release)
+  if(_melLastLeap){const dir=_melLastLeap>0?-1:1;_melLastLeap=0;
+    return noDrone(setDeg(_melDeg+dir,LO,HI),LO,HI,CENTER);}
+  // MOTIF: in the answer phrase, sometimes echo the shape sung in the question = a hook the ear recognises
+  if(phrase===1&&_melMotif.length&&Math.random()<0.5){
+    const mv=_melMotif[pos%_melMotif.length];
+    if(mv!==0)return noDrone(setDeg(_melDeg+mv,LO,HI),LO,HI,CENTER);
+  }
+  const up=_melContour>0?1:-1;
+  if(strong){ // strong beat -> a chord tone, but NEVER the one we are already on, and leaning with the arch
+    let best=null,bd=1e9;
+    for(let o=-1;o<=1;o++)for(const ct of chord){
+      const cand=(Math.round(CENTER/n)*n)+ct+o*n;
+      if(cand===_melDeg)continue;                       // landing where we already are IS the repeat
+      const dist=Math.abs(cand-_melDeg);
+      if(dist>5)continue;
+      const back=(_melHist.length>=2&&cand===_melHist[_melHist.length-2])?2.2:0; // don't bounce straight back
+      const score=dist+((Math.sign(cand-_melDeg)===up)?0:1.6)+back; // prefer the arch's direction, don't force it
+      if(score<bd){bd=score;best=cand;}
+    }
+    setDeg(best==null?_melDeg+up:best,LO,HI);
+  }else{ // weak beat -> a passing step (mostly), a 3rd skip sometimes, a rare leap that resolves
+    const r=Math.random(); let step;
     if(r<0.66)step=up*(Math.random()<0.72?1:-1);        // 66% step, usually in the arch direction
     else if(r<0.9)step=up*(Math.random()<0.7?2:-2);     // 24% 3rd skip
-    else{step=up*3;_melLastLeap=step;}                   // 10% leap → resolves next note
-    _melDeg+=step;
+    else{step=up*3;_melLastLeap=step;}                  // 10% leap -> resolves next note
+    setDeg(_melDeg+step,LO,HI);
   }
-  _melDeg=clampDeg(_melDeg,LO,HI);
   if(phrase===0){_melMotif.push(_melDeg-CENTER);if(_melMotif.length>8)_melMotif.shift();} // remember the question's shape
-  return _melDeg;
+  return noDrone(_melDeg,LO,HI,CENTER);
 }
 function clampDeg(d,lo,hi){return d<lo?lo+1:(d>hi?hi-1:d);}
 // spawn a GENTLE, floaty ball (same soft physics as the original rain — NO aggressive blast) but nudge its drift toward
@@ -4408,8 +4616,54 @@ function midiMsg(d){
   if(cmd===0x90&&d[2]>0)playNote(d[1],d[2]);
   else if(cmd===0xB0){const cc=d[1],v=d[2];
     if(ccLearn&&ccArm){ccMap[cc]={id:ccArm};ccSave();ccRender();toast('CC '+cc+' → '+ccLabel(ccArm));document.getElementById(ccArm)?.classList.remove('ccarmed');ccArm=null;return;}
-    if(ccMap[cc]){ccApply(cc,v);return;}
-    if(cc===1){const el=$("cut");if(el){el.value=Math.round(v/127*100);el.dispatchEvent(new Event('input'));}}} // default: mod wheel → cutoff (until you map it)
+    if(cc===120||cc===123){try{allNotesOffLocal();}catch(e){}return;} // a controller's panic must stop US too
+    if(ccMap[cc]){ccApply(cc,v);return;}                                // a user assignment always wins
+    const d2=DEFAULT_CC[cc]; if(d2)ccSet(d2,v);}                        // otherwise the standard meaning
+}
+// ================================================================================================
+//  DEFAULT CC MAP — the difference between "supports MIDI" and PLUG AND PLAY.
+//  Before this, exactly ONE controller number did anything out of the box (CC1 -> cutoff). Every
+//  other knob on every controller ever made did nothing until the user hand-assigned it through
+//  MIDI-learn. That is not a MIDI implementation, it is a MIDI-learn implementation.
+//  These are the assignments the spec already gives these numbers -- General MIDI Level 2 fixes
+//  7/10/11/64/71-74/91/93, and 120/123 are the universal panic pair -- so a stock controller lands
+//  on the right control with no setup at all. A user's own assignment always overrides.
+//  DELIBERATELY NOT MAPPED: CC10 pan, CC64 sustain, CC91 reverb, CC93 chorus. This app has no pan
+//  stage, no note-hold concept and no reverb send, and guessing a wrong destination for a pedal is
+//  worse than leaving it silent -- you cannot tell a broken mapping from a broken cable.
+// A controller's panic button has to stop US, not just be forwarded. There is no voice registry to
+// hard-kill from -- every hit is a fire-and-forget oscillator pair with its own onended -- so this
+// stops the SOURCE (the balls, which is what generates notes) and silences the rig. Voices already
+// sounding decay on their own envelope, which is tens of milliseconds. Building a voice registry to
+// cut those too is a bigger refactor than the problem deserves.
+function allNotesOffLocal(){
+  try{balls.length=0;}catch(e){}
+  try{if(typeof pendingNotes!=='undefined')pendingNotes.length=0;}catch(e){}
+  try{midiPanic();}catch(e){}
+}
+const DEFAULT_CC={
+  1 :'cutoff',      // mod wheel -> brightness, the near-universal convention
+  7 :'volume',      // GM2: Channel Volume
+  71:'res',         // GM2: Timbre / Harmonic Content  -> resonance
+  72:'rel',         // GM2: Release Time
+  73:'atk',         // GM2: Attack Time
+  74:'cutoff',      // GM2: Brightness. Also MPE's per-note timbre axis.
+  75:'dec'          // GM2: Decay Time (Sound Controller 6)
+};
+// resolve a role to whichever control is actually on screen: play and studio have their own master
+// volume slider, and mapping a CC to the hidden one looks like the CC is broken
+function ccEl(role){
+  const pick=(...ids)=>{for(const id of ids){const e=document.getElementById(id);
+    if(e&&e.offsetParent!==null)return e;} for(const id of ids){const e=document.getElementById(id);if(e)return e;} return null;};
+  if(role==='volume')return pick('volPlay','vol');
+  if(role==='cutoff')return pick('cut');
+  return pick(role);
+}
+function ccSet(role,v){
+  const el=ccEl(role); if(!el)return;
+  const mn=+el.min||0, mx=(el.max!==''&&el.max!=null)?+el.max:100;
+  el.value=mn+(v/127)*(mx-mn);
+  el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change'));
 }
 // ---- MIDI Learn: map any knob to any on-screen control, saved in the browser (state declared above the IIFE) ----
 function ccSave(){try{localStorage.setItem('slimehedron-cc',JSON.stringify(ccMap));}catch(e){}}

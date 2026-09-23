@@ -1,0 +1,26 @@
+{
+  "splash": {
+    "controls": 25,
+    "words": 74
+  },
+  "play": {
+    "controls": 21,
+    "words": 29
+  },
+  "studio": {
+    "controls": 17,
+    "words": 16
+  },
+  "learn-home": {
+    "controls": 11,
+    "words": 106
+  },
+  "lesson": {
+    "controls": 6,
+    "words": 19
+  },
+  "midi-prefs": {
+    "controls": 17,
+    "words": 25
+  }
+}
