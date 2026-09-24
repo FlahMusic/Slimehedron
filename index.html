@@ -11,12 +11,19 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover"/><!-- pinch-zoom MUST stay available (WCAG 1.4.4). the tank sets touch-action:none so zoom never fights ball spawning. -->
-<title>slimehedron</title>
+<title>Slimehedron — music you can see</title>
+<meta name="description" content="Bouncing slime plays notes. 17 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#c4a9f5">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="icon-192.png">
+<meta property="og:type" content="website"/>
+<meta property="og:title" content="Slimehedron — music you can see"/>
+<meta property="og:description" content="Bouncing slime plays notes. 17 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
+<meta property="og:url" content="https://flahmusic.github.io/Slimehedron/"/>
+<meta property="og:image" content="https://flahmusic.github.io/Slimehedron/icon-512.png"/>
+<meta name="twitter:card" content="summary"/>
 <!-- Quicksand is SELF-HOSTED (SIL Open Font License 1.1). google fonts was a third-party request on every
      load: it leaks the visitor's IP, render-blocks, and is blocked on plenty of school networks — which for a
      kids' app is the wrong trade. one variable woff2 per subset covers weights 400-700. -->
@@ -1212,6 +1219,13 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 .recItem{display:flex;align-items:center;gap:8px;margin:8px 0}
 .recItem audio{flex:1;height:32px;min-width:0}
 .recItem button{border:none;background:rgba(255,255,255,.75);border-radius:8px;padding:5px 9px;cursor:pointer;font-size:14px;box-shadow:0 1px 4px rgba(120,110,160,.25)}
+.recItem button.copied{background:#bff0d0;font-size:11px;letter-spacing:.02em}
+.recItem button[disabled]{opacity:.6;cursor:default}
+#jamBar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:10px;
+  background:rgba(255,255,255,.94);border-radius:16px;padding:10px 14px;box-shadow:0 6px 26px rgba(90,80,130,.3);max-width:calc(100vw - 24px)}
+#jamBar p{margin:0;font-size:14px;color:#4a4066}
+#jamBar button{border:none;border-radius:12px;padding:9px 15px;font-size:15px;cursor:pointer;background:#c4a9f5;color:#231b3d;font-weight:600}
+#jamBar button.ghost{background:rgba(120,110,160,.14);font-weight:500}
 #toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#fff;border-radius:14px;padding:10px 18px;font-size:13px;font-weight:700;color:var(--ink);box-shadow:var(--shadow);z-index:150;opacity:0;transition:.3s;pointer-events:none}
 #toast.show{opacity:1}
 #countNum{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:130px;font-weight:700;color:var(--accent);z-index:140;pointer-events:none;text-shadow:0 4px 30px rgba(255,255,255,.95)}
@@ -5555,11 +5569,98 @@ async function saveTake(evOrBlob){
   const db=await recDB();if(!db){toast('could not save 😢');return;}
   const midi={};if(notes){const chmap={melody:0,bass:1,chords:2,drums:9}; // drums on ch10 so DAWs auto-load a kit
     for(const part in notes)if(notes[part].length>2)midi[part]=midiFile(notes[part],recBpm,chmap[part]);}
-  const take={when:Date.now(),blob,midi,name:'slime jam · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
+  const take={when:Date.now(),blob,midi,notes,bpm:recBpm,root:S.root,name:'slime jam · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})};
   db.transaction('takes','readwrite').objectStore('takes').add(take).onsuccess=()=>{renderTakes();
     const mob=matchMedia('(max-width:820px)').matches;
     toast('saved → my recordings');
     if(mob)document.querySelector('aside').classList.add('open');};}
+// ---------- share a jam as a link ----------
+// A link to a recording would need a server to host the audio on, and this app has no server and
+// makes no third-party request — that is the whole privacy claim. So the link carries the NOTES, not
+// the audio: every note the jam played, packed to a few hundred bytes and put in the URL's #fragment,
+// which browsers never send to the host. Open the link and Slimehedron plays the jam back itself.
+// Nothing is uploaded, nothing is stored anywhere but the link itself.
+const JAMPARTS=['melody','bass','chords','drums'];
+const DRUMR={36:'K',38:'s',42:'h',37:'r',63:'C',62:'c'};
+const JAMCAP=90000; // only the first 90s travels — past that a link stops fitting in a text message
+const b64u=(u8)=>{let s='';for(const b of u8)s+=String.fromCharCode(b);
+  return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');};
+const b64d=(t)=>{t=t.replace(/-/g,'+').replace(/_/g,'/');const s=atob(t);
+  const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;};
+const vpush=(a,n)=>{n=Math.max(0,n|0);while(n>127){a.push((n&127)|128);n>>>=7;}a.push(n);};
+function vread(u,c){let n=0,sh=0,b;do{b=u[c.i++];n|=(b&127)<<sh;sh+=7;}while(b&128);return n>>>0;}
+async function jamPack(notes,bpm,root){
+  const out=[1,Math.max(0,Math.min(255,Math.round(bpm)-40)),root&127,0];
+  let mask=0;
+  for(let pi=0;pi<4;pi++){
+    const ns=(notes[JAMPARTS[pi]]||[]).filter(n=>n.t<JAMCAP).sort((a,b)=>a.t-b.t);
+    if(!ns.length)continue;
+    mask|=1<<pi;vpush(out,ns.length);let last=0;
+    for(const n of ns){const t=Math.round(n.t/10);vpush(out,Math.max(0,t-last));last=t;}
+    for(const n of ns)out.push(n.note&127);
+    for(const n of ns)out.push(Math.max(1,Math.min(127,n.vel))>>1);
+    for(const n of ns)vpush(out,Math.round((n.dur||180)/20));
+  }
+  out[3]=mask;
+  let u=new Uint8Array(out);
+  if(window.CompressionStream){try{
+    const cs=new CompressionStream('deflate-raw');
+    const buf=await new Response(new Blob([u]).stream().pipeThrough(cs)).arrayBuffer();
+    return 'z'+b64u(new Uint8Array(buf));}catch(e){}}
+  return 'r'+b64u(u);
+}
+async function jamUnpack(str){
+  let u;
+  if(str[0]==='z'){const ds=new DecompressionStream('deflate-raw');
+    const buf=await new Response(new Blob([b64d(str.slice(1))]).stream().pipeThrough(ds)).arrayBuffer();
+    u=new Uint8Array(buf);}
+  else u=b64d(str.slice(1));
+  if(u.length<5||u[0]!==1)throw new Error('version');
+  const J={bpm:u[1]+40,root:u[2],parts:{}},c={i:4},mask=u[3];
+  if(!mask)throw new Error('empty');
+  for(let pi=0;pi<4;pi++){
+    if(!(mask&(1<<pi)))continue;
+    const cnt=vread(u,c);
+    if(cnt>20000||c.i>=u.length)throw new Error('bad count');
+    const arr=[];let t=0;
+    for(let k=0;k<cnt;k++){t+=vread(u,c);arr.push({t:t*10,note:0,vel:0,dur:0});}
+    for(let k=0;k<cnt;k++)arr[k].note=u[c.i++];
+    for(let k=0;k<cnt;k++)arr[k].vel=Math.max(1,u[c.i++]<<1);
+    for(let k=0;k<cnt;k++)arr[k].dur=vread(u,c)*20;
+    if(c.i>u.length)throw new Error('truncated');
+    J.parts[JAMPARTS[pi]]=arr;
+  }
+  if(!Object.keys(J.parts).length)throw new Error('no notes');
+  return J;
+}
+let jamStop=null;
+function jamPlayNotes(J){
+  if(!AC)return;
+  const t0=AC.currentTime+0.2,ids=[];let end=0;
+  for(const part in J.parts)for(const n of J.parts[part]){
+    const t=t0+n.t/1000;end=Math.max(end,n.t+n.dur);
+    if(part==='drums')dHit(DRUMR[n.note]||'s',t,Math.min(1.4,n.vel/90));
+    else pluck((n.note-S.root)*100,t,Math.max(.15,Math.min(1,n.vel/100)),part!=='chords');
+  }
+  jamStop=()=>{try{ids.forEach(clearTimeout);}catch(e){}};
+  return end;
+}
+// someone opened a shared link: play it, then get out of the way
+async function openSharedJam(code){
+  let J=null;try{J=await jamUnpack(code);}catch(e){toast('that link did not work');return;}
+  const bar=document.createElement('div');bar.id='jamBar';
+  bar.innerHTML='<p>someone sent you a jam</p>';
+  const play=document.createElement('button');play.textContent='▶ play it';
+  const mine=document.createElement('button');mine.className='ghost';mine.textContent='make my own';
+  mine.onclick=()=>{history.replaceState(null,'',location.pathname);bar.remove();};
+  play.onclick=()=>{
+    if(AC&&AC.state==='suspended')AC.resume();
+    play.disabled=true;play.textContent='▶ playing';
+    const end=jamPlayNotes(J)||0;
+    setTimeout(()=>{play.disabled=false;play.textContent='▶ play again';},end+400);
+  };
+  bar.appendChild(play);bar.appendChild(mine);document.body.appendChild(bar);
+}
 async function renderTakes(){
   const db=await recDB();if(!db)return;
   const rq=db.transaction('takes').objectStore('takes').getAll();
@@ -5570,11 +5671,30 @@ async function renderTakes(){
       const ext=tk.blob.type.includes('wav')?'wav':tk.blob.type.includes('mp4')?'m4a':'webm'; // per take — old takes keep their true format
       const row=document.createElement('div');row.className='recItem';
       row.innerHTML='<audio controls preload="metadata" src="'+url+'"></audio>';
-      const sh=document.createElement('button');sh.textContent='📤';sh.title='share the audio';
-      sh.onclick=async()=>{const f=new File([tk.blob],takeBase(tk)+'-audio.'+ext,{type:tk.blob.type});
-        if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'slime jam'});}catch(e){}}
-        else{const a=document.createElement('a');a.href=url;a.download=f.name;a.click();}};
-      row.appendChild(sh);
+      // download: the file a kid hands in. This is the one that has to be boring and work everywhere.
+      const dl=document.createElement('button');dl.textContent='↓';dl.title='download the audio';
+      dl.setAttribute('aria-label','download the audio');
+      dl.onclick=()=>{const a=document.createElement('a');a.href=url;a.download=takeBase(tk)+'.'+ext;
+        document.body.appendChild(a);a.click();a.remove();};
+      row.appendChild(dl);
+      // share: a link that plays the jam back. Phones get the normal share sheet, desktops get the
+      // clipboard plus the word "copied" where the button was — the way every other site does it.
+      if(tk.notes){
+        const sh=document.createElement('button');sh.textContent='↗';sh.title='share a link to this jam';
+        sh.setAttribute('aria-label','share a link to this jam');
+        sh.onclick=async()=>{
+          sh.disabled=true;
+          try{
+            const code=await jamPack(tk.notes,tk.bpm||120,tk.root||57);
+            const link=location.origin+location.pathname+'#j='+code;
+            if(navigator.share){try{await navigator.share({title:'my slime jam',text:'i made this on slimehedron',url:link});sh.disabled=false;return;}catch(e){if(e&&e.name==='AbortError'){sh.disabled=false;return;}}}
+            await navigator.clipboard.writeText(link);
+            const was=sh.textContent;sh.textContent='copied';sh.classList.add('copied');
+            setTimeout(()=>{sh.textContent=was;sh.classList.remove('copied');sh.disabled=false;},1800);
+          }catch(e){toast('could not make a link');sh.disabled=false;}
+        };
+        row.appendChild(sh);
+      }
       const parts=tk.midi?Object.keys(tk.midi):[];
       if(parts.length){const mb=document.createElement('button');mb.textContent='MIDI';mb.title='MIDI tracks';
         mb.onclick=async()=>{const files=parts.map(p=>new File([tk.midi[p]],takeBase(tk)+'-'+p+'.mid',{type:'audio/midi'}));
@@ -5731,7 +5851,7 @@ window.slimeStar=function(){}; // intentionally a no-op — a "win" is its own r
     '<div id="spPitch">free &middot; no account &middot; no ads &middot; nothing is tracked &middot; works offline</div>'+
     '<div id="spShareRow"><button id="shareApp" title="share slimehedron with a friend"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12 L20 5 L15 20 L11 13 Z"/></svg><span>share slimehedron</span></button></div>'+
     '<label id="cbdBox" title="colour-blind friendly palette"><input type="checkbox" id="cbdChk"><span class="cbdMark" aria-hidden="true"></span><span class="cbdTxt">colour-blind mode</span></label>'+
-    '<div class="spCredit">© 2026 FlahMusic · free &amp; open source · <a href="https://github.com/FlahMusic/Slimehedron" target="_blank" rel="noopener">source</a> · <a href="https://github.com/FlahMusic/Slimehedron/blob/main/LICENSE" target="_blank" rel="noopener">license</a> · <a id="spSupport" href="https://ko-fi.com/flahmusic" target="_blank" rel="noopener">☕ support</a></div>'; // credit + license link + tip jar
+    '<div class="spCredit">© 2026 FlahMusic · <a href="https://github.com/FlahMusic/Slimehedron" target="_blank" rel="noopener">source</a> · <a href="https://github.com/FlahMusic/Slimehedron/blob/main/LICENSE" target="_blank" rel="noopener">license</a> · <a id="spSupport" href="https://ko-fi.com/flahmusic" target="_blank" rel="noopener">☕ support</a><br><a href="teachers/">for grown-ups</a> · <a href="privacy.html">privacy</a></div>'; // credit + license link + tip jar
   document.body.appendChild(sp);
   function boot(m){sp.classList.add('gone');setTimeout(()=>sp.remove(),600);
     if(window.__openTools){window.__openTools=0;setTimeout(()=>{try{window._toolsMenu();}catch(e){}},700);}
@@ -5818,6 +5938,8 @@ window.slimeStar=function(){}; // intentionally a no-op — a "win" is its own r
     // overlay is never even unhidden. Play and studio own nothing in that file, so they go straight in.
     if(l||m==='learn')setTimeout(()=>bootLesson(0),60);
     else if(m==='play'||m==='studio')setTimeout(()=>boot(m),60);
+    const jm=(location.hash.match(/[#&]j=([A-Za-z0-9_\-]+)/)||[])[1];
+    if(jm)setTimeout(()=>{boot('play');openSharedJam(jm);},60);
   }catch(e){}
 })();
 

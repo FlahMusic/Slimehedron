@@ -1,7 +1,7 @@
 {
   "splash": {
-    "controls": 25,
-    "words": 74
+    "controls": 27,
+    "words": 78
   },
   "play": {
     "controls": 21,
@@ -9,7 +9,7 @@
   },
   "studio": {
     "controls": 17,
-    "words": 16
+    "words": 15
   },
   "learn-home": {
     "controls": 11,

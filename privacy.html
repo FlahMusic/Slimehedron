@@ -1,0 +1,140 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Slimehedron — privacy</title>
+<meta name="description" content="Slimehedron collects nothing. No accounts, no cookies, no analytics, no third parties. Recordings stay in the browser on the child's device.">
+<style>
+:root{--ink:#3c3458;--soft:#6b5f92;--line:rgba(150,140,185,.3);--mint:#9fe6cf;--lav:#c4a9f5}
+*{box-sizing:border-box}
+body{margin:0;padding:0 20px 80px;font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);
+  background:linear-gradient(180deg,#f3fbf8,#f7f3ff 40%,#fff)}
+main{max-width:720px;margin:0 auto}
+header{padding:48px 0 8px}
+h1{font-size:34px;line-height:1.15;margin:0 0 6px;letter-spacing:-.4px}
+.sub{font-size:18px;color:var(--soft);margin:0 0 6px}
+h2{font-size:20px;margin:36px 0 10px;padding-top:20px;border-top:1px solid var(--line)}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:22px}li{margin:4px 0}
+a{color:#5a3fb8;overflow-wrap:break-word}
+code{background:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:14px;word-break:break-all}
+.go{display:inline-block;margin:10px 0 4px;padding:14px 22px;border-radius:14px;text-decoration:none;font-weight:800;
+  color:#2f2a44;background:linear-gradient(135deg,var(--mint),var(--lav));box-shadow:0 4px 14px rgba(120,110,160,.28)}
+.note{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:14px 0}
+.qa{background:#fff;border:1px solid var(--line);border-radius:14px;padding:4px 16px;margin:14px 0}
+.qa dl{margin:0}
+.qa dt{font-weight:700;margin:16px 0 2px;font-size:16.5px}
+.qa dd{margin:0 0 16px;color:var(--soft)}
+.qa dd strong{color:var(--ink)}
+.big{display:block;font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.2px;margin-bottom:2px}
+.stamp{font-size:14px;color:var(--soft);margin:6px 0 0}
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:14px;color:var(--soft)}
+</style></head><body><main>
+
+<header>
+<h1>Privacy</h1>
+<p class="sub">Slimehedron is a free music toy for children that runs in a browser tab.</p>
+<p><strong>It collects nothing.</strong> There is no account, no tracking and no server we control. Everything a child makes stays in the browser on the device they made it on.</p>
+<a class="go" href="./">Open Slimehedron</a>
+</header>
+
+<h2>The questions, answered</h2>
+
+<div class="qa"><dl>
+
+<dt>Do you collect personal information?</dt>
+<dd><span class="big">No.</span> Not a name, not an email, not an age. The app never asks for any.</dd>
+
+<dt>Do children need an account?</dt>
+<dd><span class="big">No.</span> There is no account system at all. No login, no sign-up, no password, nothing to reset.</dd>
+
+<dt>Do you use cookies?</dt>
+<dd><span class="big">No.</span> The app sets no cookies of any kind.</dd>
+
+<dt>Do you use analytics?</dt>
+<dd><span class="big">No.</span> No Google Analytics, no Plausible, no pixel, no beacon, no error reporting service.</dd>
+
+<dt>Are there third parties?</dt>
+<dd><span class="big">No.</span> The page loads no fonts, scripts, ads or images from anyone else's server. Every file it uses comes from the same address as the page itself.</dd>
+
+<dt>Where do recordings go?</dt>
+<dd>Into the browser's own storage on that device, in a database called <code>slimehedron-rec</code>. They are never uploaded. There is nowhere for them to be uploaded to.</dd>
+
+<dt>What about settings and lesson progress?</dt>
+<dd>Same thing. They sit in the browser's <code>localStorage</code> on that device, under keys starting <code>slimehedron-</code>. Progress is per-device and per-browser.</dd>
+
+<dt>What happens if you clear your browser?</dt>
+<dd>The recordings and the progress are gone. Permanently. There is no copy anywhere else and no login that can bring them back. That is the trade for not having accounts, and on a shared classroom machine it is a feature.</dd>
+
+<dt>Does the microphone get used?</dt>
+<dd><span class="big">No.</span> The app never asks for microphone access. Recording captures the sound the app is making itself, inside the browser. Nothing is listening to the room.</dd>
+
+<dt>Camera? Location?</dt>
+<dd><span class="big">No, and no.</span> Neither is requested or used.</dd>
+
+<dt>What about MIDI?</dt>
+<dd>Studio mode can talk to a MIDI keyboard if you have one. Your browser asks you first, and you can say no — the on-screen keyboard works either way. It is only used to send and receive notes. It is off unless you turn it on.</dd>
+
+<dt>Does anything ever leave the device?</dt>
+<dd>Only if a person deliberately makes it. There is a share button that hands a recording, or a link to the app, to your own device's share sheet. Nothing happens until you tap it and pick where it goes, and it goes wherever you picked — not to us.</dd>
+
+<dt>Does the site keep server logs?</dt>
+<dd><strong>Yes, and it should be said plainly.</strong> See below.</dd>
+
+<dt>Who do I contact?</dt>
+<dd><a href="mailto:flahobino@gmail.com">flahobino@gmail.com</a></dd>
+
+</dl></div>
+
+<h2>The one thing that is logged</h2>
+<p>Slimehedron is hosted on GitHub Pages. Like every web host on earth, GitHub keeps standard server logs when it serves the page: IP address, time, which file was requested, browser type. That happens at the hosting layer, before any of our code runs, and it is the same thing that happens when you load any website.</p>
+<p>We do not see those logs, we do not have an account feature that could connect them to a child, and the app itself sends nothing back. But the logs exist, and a privacy page that did not mention them would be lying by omission. GitHub's handling of them is covered by the <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub Privacy Statement</a>.</p>
+<p>If your district needs even that removed: the app is one folder of static files under the GPL. Host it on your own server or your own intranet and the logs are yours.</p>
+
+<h2>Check this yourself</h2>
+<p>You do not have to take our word for any of it. Three ways to prove it in under a minute.</p>
+
+<div class="note">
+<p><strong>1. Watch the network.</strong></p>
+<ol>
+<li>Open Slimehedron.</li>
+<li>Press <code>F12</code> (or <code>Cmd</code>+<code>Option</code>+<code>I</code> on a Mac) and click the <strong>Network</strong> tab.</li>
+<li>Reload the page. Play with it. Record something.</li>
+<li>Look at the Domain column. Every request goes to the one domain the page is on. There is no other domain in the list.</li>
+</ol>
+</div>
+
+<div class="note">
+<p><strong>2. Pull the plug.</strong></p>
+<ol>
+<li>Load Slimehedron once.</li>
+<li>Turn off your wifi, or switch the device to aeroplane mode.</li>
+<li>Reload. It still works — lessons, sound, recording, all of it.</li>
+</ol>
+<p style="margin:8px 0 0">An app that keeps running with the network off is not sending anything anywhere.</p>
+</div>
+
+<div class="note">
+<p><strong>3. Read the code.</strong></p>
+<p style="margin:0 0 8px">All of it is public, under the GPL-3.0-or-later, at <a href="https://github.com/FlahMusic/Slimehedron">github.com/FlahMusic/Slimehedron</a>. Search it for <code>fetch</code>, <code>XMLHttpRequest</code> or <code>sendBeacon</code> — the three ways a web page sends data out. There are no matches. Search it for <code>getUserMedia</code>, the only way a page can reach the microphone or camera. No matches there either.</p>
+<p style="margin:0">If you find something that contradicts this page, email it to us and we will fix the app or fix the page.</p>
+</div>
+
+<h2>Schools and districts</h2>
+<ul>
+<li>No data is collected, so there is nothing to sign a data-processing agreement about.</li>
+<li>No data is collected from children, so COPPA, FERPA and UK GDPR obligations around pupil data do not attach to anything we hold. We hold nothing.</li>
+<li>There is no paid tier, no in-app purchase and no advertising.</li>
+<li>Source is public and licensed GPL-3.0-or-later, so it can be reviewed, forked and self-hosted.</li>
+<li>Written answers for a procurement form, or a self-hosting walkthrough: <a href="mailto:flahobino@gmail.com">flahobino@gmail.com</a>.</li>
+</ul>
+
+<p class="stamp">Last updated 23 September 2026.</p>
+
+<footer>
+&copy; 2026 FlahMusic &middot; free &amp; open source &middot;
+<a href="./">the app</a> &middot;
+<a href="teachers/">for teachers</a> &middot;
+<a href="accessibility.html">accessibility</a> &middot;
+<a href="https://github.com/FlahMusic/Slimehedron">source</a> &middot;
+<a href="mailto:flahobino@gmail.com">flahobino@gmail.com</a>
+</footer>
+</main></body></html>

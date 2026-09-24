@@ -78,6 +78,9 @@ One renderer per thing — a second way to draw a lesson is a second place for c
 One definition per string — a duplicate key later in `LANG` silently wins.
 Band patterns are degree-relative tokens, never absolute pitches (that's what lets `keyJourney()`
 walk the circle of fifths). Import via `patterns/tools/`, never a runtime MIDI parser.
+A share link carries NOTES in the `#j=` fragment (columnar varint + deflate-raw + base64url), never
+audio and never a server — the fragment is the one part of a URL the host never sees. ~270 chars for
+a 10s jam. `boot()` lives inside the splash IIFE: anything deferred out of that scope can't call it.
 
 # 6. KNOWN TRAPS — one line each, generalised
 

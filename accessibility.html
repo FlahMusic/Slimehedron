@@ -1,0 +1,154 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Slimehedron — accessibility</title>
+<meta name="description" content="Slimehedron's accessibility statement. Target: WCAG 2.2 Level AA. What is tested and passing, what is not met, and who to tell.">
+<style>
+:root{--ink:#3c3458;--soft:#6b5f92;--line:rgba(150,140,185,.3);--mint:#9fe6cf;--lav:#c4a9f5;
+  --yes:#1f7a52;--yesbg:#eafaf2}
+*{box-sizing:border-box}
+body{margin:0;padding:0 20px 80px;font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);
+  background:linear-gradient(180deg,#f3fbf8,#f7f3ff 40%,#fff)}
+main{max-width:720px;margin:0 auto}
+header{padding:48px 0 8px}
+h1{font-size:34px;line-height:1.15;margin:0 0 6px;letter-spacing:-.4px}
+.sub{font-size:18px;color:var(--soft);margin:0 0 6px}
+h2{font-size:20px;margin:36px 0 10px;padding-top:20px;border-top:1px solid var(--line)}
+h3{font-size:16px;margin:20px 0 6px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:22px}li{margin:4px 0}
+a{color:#5a3fb8;overflow-wrap:break-word}
+code{background:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:14px;word-break:break-all}
+.go{display:inline-block;margin:10px 0 4px;padding:14px 22px;border-radius:14px;text-decoration:none;font-weight:800;
+  color:#2f2a44;background:linear-gradient(135deg,var(--mint),var(--lav));box-shadow:0 4px 14px rgba(120,110,160,.28)}
+.note{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14.5px;margin:0 0 12px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--soft)}
+.tag{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+  padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pass{color:var(--yes);background:var(--yesbg);border:1px solid rgba(31,122,82,.3)}
+.stamp{font-size:14px;color:var(--soft);margin:6px 0 0}
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:14px;color:var(--soft)}
+/* on a phone the three columns get too narrow to read, so each row becomes a card */
+@media (max-width:560px){
+  table,tbody,tr,td{display:block;width:100%}
+  tr:first-child{display:none}
+  tr{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px}
+  td{border:0;padding:0}
+  td:nth-child(1){font-size:16px;margin-bottom:4px}
+  td:nth-child(2){color:var(--soft);margin-bottom:8px}
+}
+</style></head><body><main>
+
+<header>
+<h1>Accessibility</h1>
+<p class="sub">Slimehedron is a free music toy for children that runs in a browser tab.</p>
+<p><strong>Target standard: WCAG 2.2 Level AA.</strong> That is the bar set by the US ADA Title II web rule and by the UK public sector accessibility regulations. We are not fully there. This page says which parts we test, which parts pass, and which parts do not.</p>
+<a class="go" href="./">Open Slimehedron</a>
+</header>
+
+<h2>What is tested automatically</h2>
+<p>The repository contains an accessibility test suite, <code>dev-a11y.js</code>, which drives a real browser against the real app. It is public and you can run it yourself. As of 23 September 2026 it runs 33 checks and all 33 pass.</p>
+<p>Here is what those checks actually verify. Nothing outside this list is machine-tested, so nothing outside it is claimed as conformant.</p>
+
+<table>
+<tr><th>Checked</th><th>What it proves</th><th>Result</th></tr>
+
+<tr><td><strong>Touch target size</strong><br>SC 2.5.5 / 2.5.8</td>
+<td>Every visible button, link, select, input and label in play, studio, learn and the front page is at least 44&times;44 CSS pixels. Run at 390px and again at 375px wide. Two documented exemptions: links inside a sentence, and the step-sequencer grid, both of which SC 2.5.8 permits.</td>
+<td><span class="tag pass">pass</span></td></tr>
+
+<tr><td><strong>Mute is a real button</strong><br>SC 4.1.2</td>
+<td>The speaker icon is a <code>&lt;button&gt;</code>, it toggles <code>aria-pressed</code>, it changes its own accessible name to &ldquo;unmute&rdquo;, and it genuinely silences the audio rather than just looking muted.</td>
+<td><span class="tag pass">pass</span></td></tr>
+
+<tr><td><strong>Mute is not colour alone</strong><br>SC 1.4.1</td>
+<td>The muted state is carried by a shape: a slash appears and the sound waves disappear. The test measures the opacity of both, it does not take the CSS on trust.</td>
+<td><span class="tag pass">pass</span></td></tr>
+
+<tr><td><strong>Mute is reachable</strong></td>
+<td>In play, in studio, and inside a lesson, the mute button is on screen, is 44px, and answers a tap at its own centre rather than sitting under something else. A child in a lesson can always turn the sound down.</td>
+<td><span class="tag pass">pass</span></td></tr>
+
+<tr><td><strong>Lit sequencer steps are not colour alone</strong><br>SC 1.4.1</td>
+<td>An active step in the step sequencer carries a dot as well as a fill.</td>
+<td><span class="tag pass">pass</span></td></tr>
+
+<tr><td><strong>Colour-blind mode works</strong></td>
+<td>The switch is on the front page, in a bottom corner, fully on screen, 44px, and not overlapping anything. Ticking it turns the mode on, saves the choice for next time, and repaints the slime tank itself — not just the menus around it.</td>
+<td><span class="tag pass">pass</span></td></tr>
+
+<tr><td><strong>Colour-blind mode is measured, not assumed</strong></td>
+<td>The test simulates deuteranopia (Machado 2009, in linear RGB) and measures the Lab distance between the palette's two known collisions. Pink against mint goes from &Delta;E 4.8 to 15.0; lavender against sky from 5.0 to 23.1. Both clear &Delta;E 10, the point where a pair is reliably tellable apart.</td>
+<td><span class="tag pass">pass</span></td></tr>
+
+<tr><td><strong>Layout congruence</strong><br>SC 3.2.3</td>
+<td>The transport controls sit at the same horizontal position in play and in studio, so a control does not move when a child changes room. Measured drift: 0&ndash;1px.</td>
+<td><span class="tag pass">pass</span></td></tr>
+</table>
+
+<div class="note">
+<p style="margin:0 0 8px"><strong>Run it yourself.</strong> Clone <a href="https://github.com/FlahMusic/Slimehedron">the repository</a>, then:</p>
+<p style="margin:0"><code>npm install &amp;&amp; node dev-a11y.js</code></p>
+</div>
+
+<h2>What is built in but not machine-tested</h2>
+<p>These are in the code and we believe they work. They are not covered by the automated suite, so treat them as claims to verify rather than as verified claims.</p>
+<ul>
+<li><strong>Pinch zoom is not blocked.</strong> The page allows scaling up to 5&times; (SC 1.4.4).</li>
+<li><strong>Reduced motion is respected</strong> in 13 places in the stylesheet. Card transitions, hover transforms and the lesson-complete animation stop when the operating system asks for less motion (SC 2.3.3).</li>
+<li><strong>Visible focus.</strong> Ten <code>:focus-visible</code> rules draw a 3px outline with an offset.</li>
+<li><strong>Accessible names.</strong> Around 40 <code>aria-label</code> attributes across the app and the lesson engine.</li>
+<li><strong>Lesson instructions are read aloud</strong> using the browser's own speech synthesis, so a child who cannot read yet can start a lesson alone. There is a speaker button on every lesson to turn it off.</li>
+<li><strong>No fail state.</strong> A wrong answer repeats the question. No timer, no streak, no score, nothing to lose.</li>
+<li><strong>Colour is systematic.</strong> Every scale degree keeps one colour in every lesson and every key, so colour is a consistent label rather than the only channel of meaning.</li>
+</ul>
+
+<h2>What is not met</h2>
+<p>Named plainly, because a vague accessibility page is worse than none.</p>
+
+<h3>It is an audio-first app</h3>
+<p>The whole point is listening. Pitch, rhythm, interval and tonic are taught by ear. A deaf child cannot use the lessons for their intended purpose, and no caption or transcript fixes that, because the sound is the content rather than a delivery of it. The visual side — the tank, the keyboard, the sequencer, the notation — remains usable and is genuinely fun on its own, but it is not the lesson. We say this straight rather than claiming an equivalent experience that does not exist.</p>
+
+<h3>The slime tank is visual physics</h3>
+<p>Balls bounce around a tank and strike notes. That is a visual, continuous, non-verbal thing. It has no text equivalent and no screen-reader description. In play mode this is most of the screen.</p>
+
+<h3>Screen reader support is partial</h3>
+<p>Controls have accessible names and the mute button reports its state correctly. But there are no <code>aria-live</code> regions, so a change the app announces visually — a correct answer, a mode change, a toast message — is not announced to a screen reader. There is no skip link. We have not run a full screen-reader pass with NVDA, JAWS or VoiceOver, and so we make no conformance claim for SC 4.1.3 or for the 1.3.x set.</p>
+
+<h3>Colour contrast is not automatically tested</h3>
+<p>The suite tests colour-blind separation, which is a different thing from contrast ratio. SC 1.4.3 and 1.4.11 are not machine-verified across the app. We have not audited every text-on-background pair.</p>
+
+<h3>Keyboard-only operation is incomplete</h3>
+<p>There are keyboard shortcuts, and controls take focus. We have not verified that every path through the app can be completed with a keyboard alone, so SC 2.1.1 is not claimed.</p>
+
+<h3>Headphones or a speaker are required</h3>
+<p>It is all sound. There is no silent mode of use.</p>
+
+<h2>Reporting a problem</h2>
+<p>If something here is wrong, or you hit a barrier this page does not mention, tell us and be specific about the device and browser:</p>
+<ul>
+<li>Email <a href="mailto:flahobino@gmail.com">flahobino@gmail.com</a></li>
+<li>Or open an issue at <a href="https://github.com/FlahMusic/Slimehedron/issues">github.com/FlahMusic/Slimehedron/issues</a></li>
+</ul>
+<p>We aim to reply within five working days. The app is free and maintained by one person, so a fix takes as long as it takes, but you will get a straight answer about whether it is going to be fixed.</p>
+
+<h2>For procurement</h2>
+<ul>
+<li><strong>VPAT available on request.</strong> Email the address above.</li>
+<li>Standard targeted: WCAG 2.2 Level AA. Status: partially conformant, with the gaps named above.</li>
+<li>Assessment method: the automated suite described on this page, plus manual testing on phone, tablet and desktop. No third-party audit has been commissioned.</li>
+<li>The app is GPL-3.0-or-later and the source is public, so any claim on this page can be checked against the code.</li>
+</ul>
+
+<p class="stamp">Last updated 23 September 2026. Test suite last run against the current build on the same date: 33 checks, 33 passing.</p>
+
+<footer>
+&copy; 2026 FlahMusic &middot; free &amp; open source &middot;
+<a href="./">the app</a> &middot;
+<a href="teachers/">for teachers</a> &middot;
+<a href="privacy.html">privacy</a> &middot;
+<a href="https://github.com/FlahMusic/Slimehedron">source</a> &middot;
+<a href="mailto:flahobino@gmail.com">flahobino@gmail.com</a>
+</footer>
+</main></body></html>
