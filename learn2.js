@@ -154,10 +154,10 @@ const LANG={
     mn_name:'This is the NATURAL MINOR SCALE. Its mode name is AEOLIAN.',
     sh_do:'Tap the note you hear.',
     sh_p1:'now raise the sixth as well',
-    sh_name:'Raise the seventh: HARMONIC MINOR. Raise the sixth too: MELODIC MINOR.',
+    sh_name:'Raise the seventh: HARMONIC MINOR. Raise the sixth too, going up: MELODIC MINOR.',
     md_do:'Tap the note you hear.',
     md_p1:'now Mixolydian',
-    md_name:'DORIAN is minor with a raised sixth. MIXOLYDIAN is major with a lowered seventh.',
+    md_name:'DORIAN is minor with a raised sixth and a low seventh. MIXOLYDIAN is major with a low seventh.',
     rev_do:'Find it again.',
     rev_name:'You still had it.',
     rev_none:'nothing to review yet',
@@ -309,6 +309,27 @@ const SOLFEGE=['do','re','mi','fa','sol','la','ti'];
 // saying SO is two names for one note on one screen. Kodály's own English sequence uses so.
 const SOLF_BY_CENTS={0:'do',100:'ra',200:'re',300:'me',400:'mi',500:'fa',600:'fi',700:'so',800:'le',900:'la',1000:'te',1100:'ti'};
 let labelMode='solfege';
+// Note names are NOT twelve pitch classes -- the fourth degree of F major is Bb, never A#, and a
+// piano teacher would wince at the latter. A scale uses each letter once, in order, so the letter
+// comes from the DEGREE and the accidental is whatever makes that letter land on the right pitch.
+// That is how spelling actually works, and it makes every key come out right for free.
+const LTR=['C','D','E','F','G','A','B'];
+const LTRSEMI=[0,2,4,5,7,9,11];
+// how each tonic is spelled -- flat side of the circle of fifths takes flats, sharp side sharps
+const SPELL_MAJ={0:[0,0],1:[1,-1],2:[1,0],3:[2,-1],4:[2,0],5:[3,0],6:[3,1],7:[4,0],8:[5,-1],9:[5,0],10:[6,-1],11:[6,0]};  // pc6 as F# not Gb: avoids Cb, which nobody writes
+const SPELL_MIN={0:[0,0],1:[0,1],2:[1,0],3:[2,-1],4:[2,0],5:[3,0],6:[3,1],7:[4,0],8:[4,1],9:[5,0],10:[6,-1],11:[6,0]};
+function letterFor(d){
+  try{
+    const pc=(x)=>((x%12)+12)%12;
+    const minor=(typeof isMinorScale==='function')&&isMinorScale();
+    const k=(minor?SPELL_MIN:SPELL_MAJ)[pc(S.root)];
+    const li=(k[0]+d)%7;                                  // one letter per scale degree, in order
+    let acc=pc(Math.round(S.root+degCents(d)/100)-LTRSEMI[li]);
+    if(acc>6)acc-=12;                                     // -1 = flat, +1 = sharp
+    if(acc<-2||acc>2)return '';                           // not a spellable degree: show nothing
+    return LTR[li]+(acc>0?'#'.repeat(acc):acc<0?'b'.repeat(-acc):'');
+  }catch(e){return '';}
+}
 function solfegeFor(cents){
   const c=((Math.round(cents)%1200)+1200)%1200;
   let best=null,bd=1e9;
@@ -750,7 +771,11 @@ function ladderUnit(cfg){
   function take(){
     LAB.take({scale:(cfg.scales?cfg.scales[Math.min(phase,cfg.scales.length-1)]:cfg.scale)||'pentaMaj',
               root:inSingRange(HOME()+roamAt),octs:1,drums:false,band:false,touch:false});
-    LAB.labels(null);LAB.clear(); }
+    LAB.labels(null);LAB.clear();
+    if(cfg.letters)refreshAbc(); }
+  function refreshAbc(){
+    rungs.forEach(r=>{const el=r.querySelector('.rgAbc');
+      if(el)el.textContent=letterFor(+r.dataset.deg);}); }
   take();
   function setOf(){ return (typeof cfg.use==='function')?cfg.use(phase):cfg.use; }
   function retake(){ if(cfg.scales)take(); }   // a lesson that changes scale between phases
@@ -775,6 +800,7 @@ function ladderUnit(cfg){
     const ladder=use.map((d,i)=>
       '<button class="lgRung" data-deg="'+d+'" style="--rc:'+degTint(d)+'">'+
         '<span class="rgName">'+name(d)+'</span>'+
+        (cfg.letters?'<span class="rgAbc">'+letterFor(d)+'</span>':'')+
         '<span class="rgDeg">'+(i===0?'LOW':(i===use.length-1?'HIGH':''))+'</span></button>').join('');
     stage(
       '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
@@ -1066,7 +1092,7 @@ function highUnit(){
   ladderUnit({id:'high',title:'u_high',doIt:'high_do',name:'high_name',
     use:[DEG.do,DEG.la],need:10,names:{0:'low',4:'high'},showTarget:false,
     pick:(u)=>u[(Math.random()*u.length)|0],
-    play:(d)=>sing(d,94,.6)});
+    play:(d)=>{sing(DEG.mi,80,.42);later(()=>sing(d,94,.6),520);}});  // middle note first, then the one to judge
 }
 // ---------- 4. FIND THE NOTE -- two notes, then three, then five ----------
 // This was three separate lessons (so-mi, add la, all five) that were the SAME screen with one more
@@ -1084,20 +1110,26 @@ function findNoteUnit(){
     play:(d)=>sing(d,94,.55)});
 }
 // ---------- 5. HOME NOTE -- the one that finishes ----------
+const LEAN=[[DEG.so,DEG.mi],[DEG.so,DEG.re],[DEG.la,DEG.so,DEG.mi],[DEG.mi,DEG.re]];
+function leanHome(){                          // a phrase that wants to finish on do, without playing it
+  const ph=LEAN[(Math.random()*LEAN.length)|0];
+  ph.forEach((d,i)=>later(()=>sing(d,88,.42),i*440));
+}
 function homeUnit(){
   ladderUnit({id:'home',title:'u_home',doIt:'home_do',name:'home_name',
-    use:[DEG.do,DEG.mi,DEG.so],need:10,showTarget:false,
-    pick:()=>DEG.do,
-    play:()=>{sing(DEG.so,88,.42);later(()=>sing(DEG.mi,88,.42),460);}});
+    use:[DEG.do,DEG.mi,DEG.so,5],need:10,showTarget:false,   // 5 = do an octave up: also home
+    pick:()=>Math.random()<0.5?DEG.do:5,
+    play:leanHome});
 }
 // ---------- 6. STEPS AND SKIPS -- walk up the ladder one rung at a time ----------
 function stepsUnit(){
-  let want=0;
+  let from=2;                                  // start in the middle so both directions are available
   ladderUnit({id:'steps',title:'u_steps',doIt:'steps_do',name:'steps_name',
-    use:[0,1,2,3,4],need:10,showTarget:true,
-    pick:()=>{want=(want)%5;return want;},
-    correct:(d,tg)=>{const ok=(d===tg);want=ok?(tg+1)%5:0;return ok;},
-    play:(d)=>sing(d,90,.45)});
+    use:[0,1,2,3,4],need:10,showTarget:false,
+    pick:()=>{const o=[from-2,from-1,from+1,from+2].filter(d=>d>=0&&d<=4);
+      return o[(Math.random()*o.length)|0];},  // a step (next rung) or a skip (over one), either way
+    correct:(d,tg)=>{const ok=(d===tg);if(ok)from=tg;return ok;},
+    play:(d)=>{sing(from,84,.42);later(()=>sing(d,94,.5),500);}});  // where you are, then where to go
 }
 // ---------- 7. SAME NOTES, NEW HOME -- the la-pentatonic ----------
 // Kodaly Grade 2: the step after the major pentatonic is not the major scale, it is these same five
@@ -1113,7 +1145,7 @@ function sadFiveUnit(){
 // before ti in the Kodaly sequence, so it still arrives first -- as phase one of the same lesson.
 function majorScaleUnit(){
   ladderUnit({id:'majorscale',title:'u_majorscale',doIt:'ms_do',name:'ms_name',
-    scale:'major',use:(ph)=>ph?[0,1,2,3,4,5,6]:[0,1,2,3,4,5],need:12,phases:6,maxPhase:1,showTarget:false,roam:true,
+    scale:'major',use:(ph)=>ph?[0,1,2,3,4,5,6]:[0,1,2,3,4,5],need:12,phases:6,maxPhase:1,showTarget:false,roam:true,letters:true,
     phaseSay:[null,'ms_p1'],
     pick:(u)=>u[(Math.random()*u.length)|0],
     play:(d)=>sing(d,94,.55)});
@@ -1152,7 +1184,7 @@ function intervalUnit(){
 // ---------- 10-12. THE SEVEN-NOTE SCALES ----------
 function scaleLadder(id,title,scales,doIt,nameK,need,phases,maxPhase,phaseSay){
   ladderUnit({id:id,title:title,doIt:doIt,name:nameK,scales:scales,
-    use:[0,1,2,3,4,5,6],need:need||10,phases:phases,maxPhase:maxPhase||0,phaseSay:phaseSay,showTarget:false,roam:true,
+    use:[0,1,2,3,4,5,6],need:need||10,phases:phases,maxPhase:maxPhase||0,phaseSay:phaseSay,showTarget:false,roam:true,letters:true,
     pick:(u)=>u[(Math.random()*u.length)|0],
     play:(d)=>sing(d,94,.55)});
 }
@@ -1280,9 +1312,9 @@ function upDownGame(){
 function findHomeGame(){
   // the same job as the home lesson, with all five notes on the ladder instead of three
   ladderUnit({id:'findhome',title:'g_findhome',doIt:'fh_do',name:'fh_name',
-    use:[0,1,2,3,4],need:10,showTarget:false,roam:true,anchor:false,
-    pick:()=>DEG.do,
-    play:()=>{sing(DEG.so,88,.42);later(()=>sing(DEG.re,88,.42),420);later(()=>sing(DEG.mi,88,.5),840);}});
+    use:[0,1,2,3,4,5],need:10,showTarget:false,roam:true,anchor:false,
+    pick:()=>Math.random()<0.5?0:5,           // home is at the bottom AND at the top -- hear which
+    play:leanHome});
 }
 
 // ---------- ECHO: the ladder, played back in order ----------

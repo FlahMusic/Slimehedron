@@ -66,6 +66,14 @@ Three things look wrong and must not be "tidied":
 subtitle is the plain sentence. "la-pentatonic" is Kodály shop-talk — the world says minor
 pentatonic. If a piano teacher wouldn't recognise the word, it's the wrong word.
 
+**Letter names** sit beside the syllable on the seven-note lessons only (`letters:true`), and refresh
+when the key roams — the syllable staying put while the letter moves IS the movable-do idea, and it
+is what a producer needs to read a piano roll. Spelling comes from the DEGREE, never the pitch class:
+one letter per degree in order, accidental chosen to land on the pitch. The 4th of F major is Bb.
+Unverified in §5, do not re-cite as fact: Trinity's piano syllabus has no modes at any grade (the
+"Dorian at G7" line may be Rock & Pop); and the published Kodály sequence puts modes at Grade 4,
+BEFORE the major scale — modes-last is right on ABRSM/MMC grounds, not Kodály ones.
+
 **Copy.** Western terminology, methods from anywhere, no cultural tour in front of the child. One
 short sentence per line. If an adult would skim it, a child can't read it. Lessons are numbered.
 
@@ -87,6 +95,9 @@ deferred out of that scope cannot call it.
 
 - **Never let a test assertion drive the design.** Fix the thing, then fix the test.
 - **A test that proves it RUNS is not a test that it WORKS.** Measure whether it can be *done*.
+- **A lesson clearable by a fixed strategy is a button, not a lesson.** Run the dumb strategy (always
+  the bottom rung, always the lit one, always the next one up) and require it to FAIL — `dev-cheat.js`.
+  Three lessons shipped passing every other suite while needing no ears at all.
 - **An intermittent test failure is an intermittent bug.** Chase it before touching the assertion.
 - **Generate a few hundred outputs and take the statistics.** A generator can be architecturally
   correct and sound terrible. ("Has an arch contour" ≠ sounds like anything.)

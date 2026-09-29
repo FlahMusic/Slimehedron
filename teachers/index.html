@@ -1,0 +1,111 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Slimehedron for teachers</title>
+<meta name="description" content="A free browser music-theory toy for children. No signup, no ads, no data collected. Put one link on the board and every child lands on the same lesson.">
+<style>
+:root{--ink:#3c3458;--soft:#6b5f92;--line:rgba(150,140,185,.3);--mint:#9fe6cf;--lav:#c4a9f5}
+*{box-sizing:border-box}
+body{margin:0;padding:0 20px 80px;font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);
+  background:linear-gradient(180deg,#f3fbf8,#f7f3ff 40%,#fff)}
+main{max-width:720px;margin:0 auto}
+header{padding:48px 0 8px}
+h1{font-size:34px;line-height:1.15;margin:0 0 6px;letter-spacing:-.4px}
+.sub{font-size:18px;color:var(--soft);margin:0 0 6px}
+h2{font-size:20px;margin:36px 0 10px;padding-top:20px;border-top:1px solid var(--line)}
+p{margin:0 0 12px}
+ul{margin:0 0 12px;padding-left:22px}li{margin:4px 0}
+a{color:#5a3fb8}
+code{background:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:14px;word-break:break-all}
+.go{display:inline-block;margin:10px 0 4px;padding:14px 22px;border-radius:14px;text-decoration:none;font-weight:800;
+  color:#2f2a44;background:linear-gradient(135deg,var(--mint),var(--lav));box-shadow:0 4px 14px rgba(120,110,160,.28)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;margin:0 0 12px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--soft)}
+.note{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:14px 0}
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:14px;color:var(--soft)}
+</style></head><body><main>
+
+<header>
+<h1>Slimehedron for teachers</h1>
+<p class="sub">A free music-theory toy for children, in a browser tab.</p>
+<a class="go" href="../">Open Slimehedron</a>
+</header>
+
+<h2>What you need to know first</h2>
+<ul>
+<li><strong>No signup.</strong> No accounts, for you or the children.</li>
+<li><strong>No data leaves the device.</strong> Nothing is collected, nothing is sent anywhere. Lesson progress is kept in the browser on that device and nowhere else.</li>
+<li><strong>No ads, no purchases, no subscription.</strong> There is nothing to buy.</li>
+<li><strong>Nothing to install.</strong> It is one web page. It works offline once it has loaded.</li>
+<li><strong>Free and open source</strong> under the GPL-3.0. The code is on <a href="https://github.com/FlahMusic/Slimehedron">GitHub</a>.</li>
+</ul>
+<p>In practice that means you can open it on a locked-down school network without a purchase order, a data-processing agreement or a privacy review.</p>
+
+<h2>Put one link on the board</h2>
+<p>Add <code>?l=</code> and a lesson name to the address and every child lands on that exact lesson, with no menu to get lost in.</p>
+<div class="note">
+<p style="margin:0 0 8px"><strong>Lesson 4, straight in:</strong></p>
+<code>https://flahmusic.github.io/Slimehedron/?l=countbar</code>
+</div>
+<p><code>?m=play</code>, <code>?m=studio</code> and <code>?m=learn</code> open a whole mode the same way.</p>
+
+<h2>The three rooms</h2>
+<ul>
+<li><strong>Learn</strong> — 19 numbered lessons, in order. Nothing is locked; the numbers show the path.</li>
+<li><strong>Play</strong> — a sandbox. Sound happens in the first second, no reading required.</li>
+<li><strong>Studio</strong> — the full thing: scales, chords, a step sequencer, MIDI.</li>
+<li><strong>Tools</strong> — metronome, circle of fifths, chord builder and drum machine, each on its own screen.</li>
+</ul>
+
+<h2>The lessons, and their links</h2>
+<table>
+<tr><th>#</th><th>Lesson</th><th>Idea</th><th>Link</th></tr>
+<tr><td>1</td><td>Steady Beat</td><td>find the pulse and tap with it</td><td><code>?l=pulse</code></td></tr>
+<tr><td>2</td><td>Rhythm Syllables</td><td>say a rhythm before playing it</td><td><code>?l=sayplay</code></td></tr>
+<tr><td>3</td><td>Note Duration</td><td>quarter, half, dotted half, whole</td><td><code>?l=howlong</code></td></tr>
+<tr><td>4</td><td>Measures and Time</td><td>four beats to a measure; 4/4</td><td><code>?l=countbar</code></td></tr>
+<tr><td>5</td><td>Rest Duration</td><td>the quarter rest — counted, not played</td><td><code>?l=rest</code></td></tr>
+<tr><td>6</td><td>Playing from Notation</td><td>read a written tune and play it</td><td><code>?l=song</code></td></tr>
+<tr><td>7</td><td>Pitch</td><td>high and low</td><td><code>?l=high</code></td></tr>
+<tr><td>8</td><td>The Major Pentatonic</td><td>do re mi so la, one note at a time</td><td><code>?l=notes</code></td></tr>
+<tr><td>9</td><td>The Tonic</td><td>the note a melody comes home to</td><td><code>?l=home</code></td></tr>
+<tr><td>10</td><td>Steps and Skips</td><td>how a melody moves</td><td><code>?l=steps</code></td></tr>
+<tr><td>11</td><td>The Relative Minor</td><td>same five sounds, a new tonic</td><td><code>?l=newhome</code></td></tr>
+<tr><td>12</td><td>The Major Scale</td><td>add fa, then ti</td><td><code>?l=majorscale</code></td></tr>
+<tr><td>13</td><td>Major and Minor</td><td>the third sets the quality</td><td><code>?l=brightdark</code></td></tr>
+<tr><td>14</td><td>Intervals</td><td>a 2nd and a 5th, heard together</td><td><code>?l=intervals</code></td></tr>
+<tr><td>15</td><td>The Minor Scale</td><td>natural minor / Aeolian</td><td><code>?l=minorscale</code></td></tr>
+<tr><td>16</td><td>Harmonic and Melodic Minor</td><td>raised seventh, then raised sixth</td><td><code>?l=minorshapes</code></td></tr>
+<tr><td>17</td><td>Modes</td><td>Dorian and Mixolydian</td><td><code>?l=modes</code></td></tr>
+<p>Games: <code>?l=echo</code> (call and response), <code>?l=updown</code> (melodic direction), <code>?l=findhome</code> (find the tonic). Review: <code>?l=review</code>.</p>
+<p><strong>From lesson 11 the key moves between questions.</strong> The lesson plays the tonic first, then the note to find, so the child is comparing two sounds rather than remembering a position on the screen. Lessons 1–10 stay in one key on purpose.</p>
+<p><strong>Colour is information.</strong> Every scale degree has one colour, in every lesson and every key — the tonic is always the same colour, the third always another. A lowered degree keeps its natural’s colour, because it is the same degree.</p>
+
+<h2>Why the lessons are in that order</h2>
+<p>The sequence follows the Kod&aacute;ly order as published by the <a href="https://www.kodalycollection.org/pdf/Sequence_of_Concepts.pdf">Holy Names University Kod&aacute;ly Center</a>, cross-checked against the Trinity College London theory syllabus and the DfE Model Music Curriculum.</p>
+<p>Two parts of it surprise most adults:</p>
+<ul>
+<li><strong>The step after the major pentatonic is not the major scale.</strong> It is the la-pentatonic &mdash; the same five notes with a different one as home. Kod&aacute;ly puts it two grades before the major scale.</li>
+<li><strong>fa arrives a whole grade before ti</strong>, and the major scale is built up rather than handed over whole.</li>
+</ul>
+<p>Modes sit at the very end, and Aeolian is introduced as a second name for the natural minor &mdash; which is how Trinity frames it. Phrygian, Lydian and Locrian are not included: they do not appear in any primary-level syllabus we could find.</p>
+
+<h2>Things worth knowing in a classroom</h2>
+<ul>
+<li><strong>There is no fail state.</strong> A wrong answer repeats the question. Nothing is lost, there is no timer, no streak and no score to protect.</li>
+<li><strong>Instructions are read aloud</strong>, so a child who cannot read yet can still start a lesson alone. There is a speaker button on every lesson to turn it off.</li>
+<li><strong>Headphones or a speaker are needed.</strong> It is all sound.</li>
+<li><strong>Colour-blind mode</strong> is a checkbox in the bottom-left corner of the front page. It repaints everything, not just the menus.</li>
+<li><strong>Progress is per-device and per-browser.</strong> On shared machines, or if the browser clears its storage, it starts again. There is no login to fix this, by design.</li>
+<li><strong>A MIDI keyboard works</strong> if you have one &mdash; plug it in, it is picked up automatically.</li>
+</ul>
+
+<footer>
+&copy; 2026 FlahMusic &middot; free &amp; open source &middot;
+<a href="https://github.com/FlahMusic/Slimehedron">source</a> &middot;
+<a href="https://github.com/FlahMusic/Slimehedron/blob/main/LICENSE">license</a> &middot;
+<a href="https://github.com/FlahMusic/Slimehedron/issues">report a problem</a><br>
+<a href="../privacy.html">privacy</a> &middot;
+<a href="../accessibility.html">accessibility</a>
+</footer>
+</main></body></html>
