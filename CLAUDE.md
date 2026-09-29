@@ -78,9 +78,10 @@ One renderer per thing — a second way to draw a lesson is a second place for c
 One definition per string — a duplicate key later in `LANG` silently wins.
 Band patterns are degree-relative tokens, never absolute pitches (that's what lets `keyJourney()`
 walk the circle of fifths). Import via `patterns/tools/`, never a runtime MIDI parser.
-A share link carries NOTES in the `#j=` fragment (columnar varint + deflate-raw + base64url), never
-audio and never a server — the fragment is the one part of a URL the host never sees. ~270 chars for
-a 10s jam. `boot()` lives inside the splash IIFE: anything deferred out of that scope can't call it.
+Sharing a recording means handing over the FILE (audio via the OS share sheet, MIDI per part), never
+a payload encoded into a URL: a real 75s jam packed to 1828 chars, and an audio file plays inline in
+every messenger while a link is a tap-through. `boot()` lives inside the splash IIFE — anything
+deferred out of that scope cannot call it.
 
 # 6. KNOWN TRAPS — one line each, generalised
 
@@ -95,7 +96,12 @@ a 10s jam. `boot()` lives inside the splash IIFE: anything deferred out of that 
 - **Measure the bytes, not the intent** — for MIDI, stub the port and assert on the stream.
 - **When visual evidence conflicts with an automated check, the visual wins.** Zoom in before
   explaining it away.
-- **A live bug can be a stale upload.** Verify the deployed asset equals the local one.
+- **A live bug can be a stale upload.** Verify the deployed asset equals the local one — and that
+  every file the app references is actually THERE, with a real browser against the real URL.
+- **`cache.addAll()` is all-or-nothing.** One 404 in the list silently kills the whole service
+  worker: no registration, empty cache, no offline. Add files one at a time and catch each.
+- **`navigator.share()` needs the tap still warm.** Any `await` before it spends the activation and
+  iOS never opens the sheet. Build what you are sharing BEFORE the click handler runs.
 - **Flex `justify-content:center` overflows BOTH ends.** Use `safe center`; put short-viewport
   media blocks at the END of the stylesheet.
 - **Micro-timing offsets stay < 0.5 step; downbeat locked to 0; clamp velocity.**
