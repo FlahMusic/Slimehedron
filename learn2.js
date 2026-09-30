@@ -97,6 +97,20 @@ const LANG={
     note_dh:'a DOTTED HALF note \u2014 3 counts', note_w:'a WHOLE note \u2014 4 counts',
     note_r:'a QUARTER REST \u2014 1 count of silence',
     u_rest:'Rest Duration', u_restSub:'silence is written down too',
+    u_split:'Splitting the Beat', u_splitSub:'two sounds in the time of one',
+    sb_do:'Two taps where the notes are joined up.',
+    sb_name:'Two EIGHTH NOTES fill one beat. Count "1 and".',
+    u_tempo:'Tempo', u_tempoSub:'how fast the beat goes',
+    tp_hear:'Listen.', tp_do:'Was that fast or slow?',
+    tp_fast:'fast', tp_slow:'slow',
+    tp_name:'TEMPO is how fast the beat goes. It is measured in BPM.',
+    u_dynamic:'Dynamics', u_dynamicSub:'how loud a note is played',
+    dy_hear:'Listen.', dy_do:'Was that loud or soft?',
+    dy_loud:'loud', dy_soft:'soft',
+    dy_name:'DYNAMICS are how loud you play. Soft is PIANO, loud is FORTE.',
+    sh_hear:'Listen to the top of the scale.',
+    sh_nat:'natural', sh_harm:'harmonic', sh_mel:'melodic',
+    md_hear:'Listen.', md_dor:'Dorian', md_mix:'Mixolydian',
     rs_do:'Play on the notes. Stay silent on the rests.',
     rs_name:'A REST is silence you count. This one lasts 1 beat.',
     u_countbar:'Measures and Time', u_countbarSub:'four beats to a measure',
@@ -152,10 +166,10 @@ const LANG={
     bright:'major', dark:'minor',
     mn_do:'Tap the note you hear.',
     mn_name:'This is the NATURAL MINOR SCALE. Its mode name is AEOLIAN.',
-    sh_do:'Tap the note you hear.',
+    sh_do:'Which minor was that?',
     sh_p1:'now raise the sixth as well',
     sh_name:'Raise the seventh: HARMONIC MINOR. Raise the sixth too, going up: MELODIC MINOR.',
-    md_do:'Tap the note you hear.',
+    md_do:'Which mode was that?',
     md_p1:'now Mixolydian',
     md_name:'DORIAN is minor with a raised sixth and a low seventh. MIXOLYDIAN is major with a low seventh.',
     rev_do:'Find it again.',
@@ -494,6 +508,9 @@ const UNITS=[
   {id:'countbar',   title:'u_countbar',   sub:'u_countbarSub',   tier:'lesson', run:countBarUnit,   tint:'#f5c8a8'},
   {id:'rest',       title:'u_rest',       sub:'u_restSub',       tier:'lesson', run:restUnit,       tint:'#e8dcc8'},
   {id:'song',       title:'u_song',       sub:'u_songSub',       tier:'lesson', run:songUnit,       tint:'#f5b8c8'},
+  {id:'split',      title:'u_split',      sub:'u_splitSub',      tier:'lesson', run:splitBeatUnit,  tint:'#c8e8b8'},
+  {id:'tempo',      title:'u_tempo',      sub:'u_tempoSub',      tier:'lesson', run:tempoUnit,      tint:'#ffd9b8'},
+  {id:'dynamic',    title:'u_dynamic',    sub:'u_dynamicSub',    tier:'lesson', run:dynamicUnit,    tint:'#f5d8e8'},
   {id:'high',       title:'u_high',       sub:'u_highSub',       tier:'lesson', block:'b', run:highUnit,       tint:'#a6c8ff', use:[DEG.do,DEG.la]},
   {id:'notes',      title:'u_notes',      sub:'u_notesSub',      tier:'lesson', block:'b', run:findNoteUnit,   tint:'#d9e88f', use:[0,1,2,3,4]},
   {id:'home',       title:'u_home',       sub:'u_homeSub',       tier:'lesson', block:'b', run:homeUnit,       tint:'#ffb6d6', use:[DEG.do,DEG.mi,DEG.so]},
@@ -527,6 +544,9 @@ const UNITS=[
 //      That teaches a half note without ever saying the word duration.
 // ================================================================================================
 const NOTEG={ // real notation, drawn properly — this is the one place a vector glyph IS the subject
+  // a beamed pair of eighths. Drawn as ONE glyph spanning two cells would need new machinery, so each
+  // eighth is its own cell with its own flag — which is also how a child taps them: twice, evenly.
+  e:'<svg viewBox="0 0 60 96"><ellipse cx="20" cy="76" rx="15" ry="11" transform="rotate(-20 20 76)" fill="#2f2a44"/><rect x="33" y="14" width="5" height="60" fill="#2f2a44"/><path d="M38 16 q16 8 15 26 q-4-14-15-18z" fill="#2f2a44"/></svg>',
   q:'<svg viewBox="0 0 60 96"><ellipse cx="20" cy="76" rx="15" ry="11" transform="rotate(-20 20 76)" fill="#2f2a44"/><rect x="33" y="14" width="5" height="60" fill="#2f2a44"/></svg>',
   h:'<svg viewBox="0 0 60 96"><ellipse cx="20" cy="76" rx="15" ry="11" transform="rotate(-20 20 76)" fill="none" stroke="#2f2a44" stroke-width="6"/><rect x="33" y="14" width="5" height="60" fill="#2f2a44"/></svg>',
   dh:'<svg viewBox="0 0 74 96"><ellipse cx="20" cy="76" rx="15" ry="11" transform="rotate(-20 20 76)" fill="none" stroke="#2f2a44" stroke-width="6"/><rect x="33" y="14" width="5" height="60" fill="#2f2a44"/><circle cx="50" cy="76" r="5.5" fill="#2f2a44"/></svg>',
@@ -538,7 +558,7 @@ const NOTEG={ // real notation, drawn properly — this is the one place a vecto
     'stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>'+
     '<path d="M42 78 Q27 73 25 87 Q34 79 43 88" fill="none" stroke="#2f2a44" stroke-width="6" stroke-linecap="round"/></svg>'
 };
-const NOTEV={q:1,h:2,dh:3,w:4,r:1};
+const NOTEV={q:1,h:2,dh:3,w:4,r:1,e:0.5};   // e = one eighth: half a beat, two to the count
 const NOTEN={q:'note_q',h:'note_h',dh:'note_dh',w:'note_w',r:'note_r'};
 const isRest=(k)=>k==='r';
 
@@ -610,6 +630,10 @@ const BARS={
   // a rest is a beat you COUNT but do not PLAY -- which is exactly what the small counting numbers
   // already mean on this screen, so the notation the books use needs no new machinery here
   rest:[['q','r','q','r'],['q','q','r','q'],['r','q','q','q'],['h','r','q'],['q','r','h'],['q','q','q','r']],
+  // SPLIT THE BEAT: one sound per count, then two. This is the pattern under every hi-hat ever
+  // programmed, and it is the last thing in the rhythm block a DAW actually needs.
+  split:[['q','e','e','q','q'],['e','e','q','e','e','q'],['q','q','e','e','h'],
+         ['e','e','e','e','h'],['q','e','e','h'],['e','e','q','q','e','e']],
   song:[ // Hot Cross Buns and Mary Had a Little Lamb: both long out of copyright
     {n:'song_hotcross',bars:[['q','q','h'],['q','q','h']]},
     {n:'song_mary',bars:[['q','q','q','q'],['h','h']]}
@@ -633,7 +657,10 @@ function readUnit(cfg){
       const v=NOTEV[k], nums=[], rest=isRest(k);
       // EVERY count under a rest is small. The book's own convention already says it: big means play,
       // small means count in silence. A rest is simply a beat where nothing is big.
-      for(let j=0;j<v;j++)nums.push('<u class="'+((j||rest)?'small':'')+'">'+((b+j)%4+1)+'</u>');
+      if(v<1){ // an eighth: on the beat it takes the number, off the beat it takes "and"
+        const onBeat=(Math.abs(b-Math.round(b))<0.01);
+        nums.push('<u class="'+(rest?'small':'')+'">'+(onBeat?((Math.round(b)%4)+1):'&')+'</u>');
+      } else for(let j=0;j<v;j++)nums.push('<u class="'+((j||rest)?'small':'')+'">'+((b+j)%4+1)+'</u>');
       const newBar=(b>0&&b%4===0);     // a bar line every four counts, drawn where it belongs
       b+=v;
       return '<div class="lgCell'+(newBar?' bar2':'')+(rest?' rest':'')+'" data-i="'+i+'">'+
@@ -677,7 +704,7 @@ function readUnit(cfg){
       if(bi>=0&&bi!==window.__lastBi){window.__lastBi=bi;
         try{dHit(bi%4===0?'K':'h',AC.currentTime,bi%4===0?1.1:0.42,true);}catch(e){}}
       // advance the cursor when its note's time is past
-      while(idx<seq.length-1&&beat>=beatOf[idx+1]-0.5)idx++;
+      while(idx<seq.length-1&&beat>=beatOf[idx+1]-Math.min(0.5,NOTEV[seq[idx+1]]*0.6))idx++;
       raf=requestAnimationFrame(tick);})();
   }
   function judge(){
@@ -688,7 +715,8 @@ function readUnit(cfg){
     seq.forEach((k,i)=>{const d=Math.abs(now-(t0+beatOf[i]*P));if(d<bd){bd=d;best=i;}});
     const pad=document.getElementById('lgPad');
     if(pad){pad.classList.remove('hit');void pad.offsetWidth;pad.classList.add('hit');}
-    if(best>=0&&bd<=P*0.34&&cells[best]){
+    const win=P*0.34*Math.min(1,NOTEV[seq[best]]||1);   // an eighth gets a tighter window than a whole note
+    if(best>=0&&bd<=win&&cells[best]){
       if(cells[best].classList.contains('rest'))cells[best].classList.remove('hitok');
       else cells[best].classList.add('hitok');}
   }
@@ -708,6 +736,37 @@ function countBarUnit(){
 // The same reading screen with silence written into the bar. Nothing new to operate: the big/small
 // counting convention the percussion book already uses says it -- you count every number, you play
 // only the big ones, and under a rest none of them are big.
+// ---------- SPLITTING THE BEAT -- the lesson a DAW actually needs ----------
+// Every method book stops the primer at the quarter note and so did this course. But two sounds in
+// the time of one IS the hi-hat grid, and a child who has only ever counted 1-2-3-4 cannot program
+// a beat. Same screen, same click track, same tapping -- the notes are just twice as close.
+function splitBeatUnit(){
+  readUnit({id:'split',title:'u_split',doIt:'sb_do',name:'sb_name',need:10,
+    pick:()=>({notes:BARS.split[(Math.random()*BARS.split.length)|0]})});
+}
+// ---------- FAST OR SLOW ----------
+// Dalla Bella 2001 -- the same paper this course already cites for putting major/minor at lesson 13 --
+// found five-year-olds judge music by TEMPO before they can use mode at all. It was the earliest
+// discrimination a small child has, and the course did not use it. It is also just "BPM".
+function tempoUnit(){
+  choiceUnit({id:'tempo',roam:true,title:'u_tempo',hear:'tp_hear',doIt:'tp_do',name:'tp_name',
+    scale:'pentaMaj',need:10,
+    opts:[{v:'fast',label:'tp_fast',tint:'#ffd3a8'},{v:'slow',label:'tp_slow',tint:'#a6c8ff'}],
+    pick:()=>Math.random()<0.5?'fast':'slow',
+    play:(v)=>{const gap=(v==='fast')?165:520, n=(v==='fast')?8:4;
+      for(let i=0;i<n;i++)later(()=>sing([0,2,3,2][i%4],92,(v==='fast')?0.16:0.46),i*gap);}});
+}
+// ---------- LOUD OR SOFT ----------
+// Every piano method teaches p and f in level one. In a DAW it is the velocity lane, which is the
+// single most-edited thing in any piano roll. Same notes both times -- only the playing changes.
+function dynamicUnit(){
+  choiceUnit({id:'dynamic',roam:true,title:'u_dynamic',hear:'dy_hear',doIt:'dy_do',name:'dy_name',
+    scale:'pentaMaj',need:10,
+    opts:[{v:'loud',label:'dy_loud',tint:'#ffb6d6'},{v:'soft',label:'dy_soft',tint:'#9fe6cf'}],
+    pick:()=>Math.random()<0.5?'loud':'soft',
+    play:(v)=>{const vel=(v==='loud')?118:42;
+      [0,2,4,2].forEach((d,i)=>later(()=>sing(d,vel,0.42),i*330));}});
+}
 function restUnit(){
   readUnit({id:'rest',title:'u_rest',doIt:'rs_do',name:'rs_name',need:10,
     pick:()=>({notes:BARS.rest[(Math.random()*BARS.rest.length)|0]})});
@@ -1189,8 +1248,33 @@ function scaleLadder(id,title,scales,doIt,nameK,need,phases,maxPhase,phaseSay){
     play:(d)=>sing(d,94,.55)});
 }
 function minorScaleUnit(){scaleLadder('minorscale','u_minorscale',['minor'],'mn_do','mn_name',10);}
-function minorShapesUnit(){scaleLadder('minorshapes','u_minorshapes',['harmMin','melMin'],'sh_do','sh_name',12,6,1,[null,'sh_p1']);}
-function modesUnit(){scaleLadder('modes','u_modes',['dorian','mixolydian'],'md_do','md_name',12,6,1,[null,'md_p1']);}
+// The three minor shapes differ by ONE note (the seventh) and then by two (the sixth). Hearing which
+// one you are in is the skill; hunting for a rung is not. Same run of notes, three endings.
+function minorShapesUnit(){
+  choiceUnit({id:'minorshapes',roam:true,title:'u_minorshapes',hear:'sh_hear',doIt:'sh_do',name:'sh_name',
+    scale:'minor',need:10,
+    opts:[{v:'nat',label:'sh_nat',tint:'#b5a9f5'},{v:'harm',label:'sh_harm',tint:'#ffd3a8'},{v:'mel',label:'sh_mel',tint:'#9fe6cf'}],
+    pick:()=>['nat','harm','mel'][(Math.random()*3)|0],
+    play:(v)=>{
+      // walk up 5-6-7-8. natural: flat 6, flat 7. harmonic: flat 6, RAISED 7 (that big gap is the
+      // sound). melodic: raised 6 AND 7, which is why it sounds almost major on the way up.
+      const six=(v==='mel')?900:800, sev=(v==='nat')?1000:1100;
+      [700,six,sev,1200].forEach((c,i)=>later(()=>note(c,96,0.42),i*370));}});
+}
+// A mode is a colour, not a note-hunt. Dorian and Mixolydian are each one note away from a scale the
+// child already owns, so the question is which one that note makes it sound like.
+function modesUnit(){
+  choiceUnit({id:'modes',roam:true,title:'u_modes',hear:'md_hear',doIt:'md_do',name:'md_name',
+    scale:'major',need:10,
+    opts:[{v:'dor',label:'md_dor',tint:'#9fe0c4'},{v:'mix',label:'md_mix',tint:'#ffe0a8'}],
+    pick:()=>Math.random()<0.5?'dor':'mix',
+    play:(v)=>{
+      // dorian = minor with a bright sixth; mixolydian = major with a soft seventh. Play the scale
+      // to the note that decides it, then the chord underneath so the colour is unmistakable.
+      const sc=(v==='dor')?[0,200,300,500,700,900,1000]:[0,200,400,500,700,900,1000];
+      sc.forEach((c,i)=>later(()=>note(c,92,0.3),i*230));
+      later(()=>{const th=(v==='dor')?300:400;note(0,84,1.6);note(th,84,1.6);note(700,84,1.6);note(1000,80,1.6);},sc.length*230+180);}});
+}
 
 // ---------- PRACTICE: COME BACK TOMORROW ----------
 // The one activity built directly on the spacing evidence. Simmons (2012) found accuracy gains only at
@@ -1281,7 +1365,13 @@ function choiceUnit(cfg){
     // v==null means "clear it" -- passing null THROUGH to cfg.art lit the ruler before the question
     // was answered, which handed the child the answer instead of teaching them anything
     if(h&&cfg.art)h.innerHTML=ruler(v==null?null:cfg.art(v)); }
-  function ask(){cur=cfg.pick();window._labExpect=cur;showArt(null);cfg.play(cur);}
+  let roamAt=0;
+  function reKey(){ if(!cfg.roam)return;
+    roamAt=ROAM[(Math.random()*ROAM.length)|0];
+    LAB.take({scale:cfg.scale||'pentaMaj',root:inSingRange(HOME+roamAt),octs:1,drums:false,band:false,touch:false});
+    LAB.labels(null);LAB.clear(); }
+  window._labRoam=()=>roamAt;   // readable: dev-earwork proves the key actually moves
+  function ask(){reKey();cur=cfg.pick();window._labExpect=cur;showArt(null);cfg.play(cur);}
   const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-ch]');if(!b||busy)return;
     e.preventDefault();
     const ok=(b.dataset.ch===String(cur)); score(cfg.id,ok); if(ok)right++;

@@ -59,10 +59,15 @@ for(const id of MUST_MOVE){
   for(let i=0;i<24;i++){
     const k=await p.evaluate(()=>window._labRoam&&window._labRoam());
     if(k!=null)keys.add(k);
-    const d=await p.evaluate(()=>window._labHintDeg);
-    if(d!=null)await p.evaluate(dd=>{const r=document.querySelector('.lgRung[data-deg="'+dd+'"]');
-      if(r)r.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));},d);
-    await p.waitForTimeout(240);
+    // some of these lessons answer on a ladder and some on two or three big buttons. The point of
+    // this test is that the KEY moves, so it has to be able to advance either screen.
+    await p.evaluate(()=>{
+      const d=window._labHintDeg;
+      const r=(d!=null)&&document.querySelector('.lgRung[data-deg="'+d+'"]');
+      if(r){r.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));return;}
+      const c=(window._labExpect!=null)&&document.querySelector('[data-ch="'+window._labExpect+'"]');
+      if(c)c.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));});
+    await p.waitForTimeout(340);
   }
   await ctx.close();
   ok(keys.size>=3,'['+id+'] the key MOVES between questions — the answer cannot be a screen position ('

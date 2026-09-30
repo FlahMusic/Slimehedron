@@ -15,14 +15,12 @@ const {chromium}=require('playwright');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 const MIN=44;
 // links inside a sentence are exempt (SC 2.5.8 "Inline"); the step grid is exempt (SC 2.5.8 "Spacing")
-// #cbdChk is a visually-hidden native input; its <label> (#cbdBox) is the real 44px target and IS tested.
-const EXEMPT='.spCredit a, .spCredit, #stepGrid .sgCell, .lk, #labKeys *, .cofNode, #cofSvg *, #cbdBox input';
+const EXEMPT='.spCredit a, .spCredit, #stepGrid .sgCell, .lk, #labKeys *, .cofNode, #cofSvg *';
 
 (async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
- const open=async(w,h,mode,cbd)=>{
+ const open=async(w,h,mode)=>{
    const ctx=await b.newContext({viewport:{width:w,height:h},hasTouch:true,isMobile:true,deviceScaleFactor:2});
    const p=await ctx.newPage();
-   if(cbd)await p.addInitScript(()=>{try{localStorage.setItem('slimehedron-cbd','1')}catch(e){}});
    await p.goto('file://'+process.cwd()+'/index.html');await p.waitForTimeout(500);
    if(mode){await p.tap(`.modeCard[data-m="${mode}"]`);await p.waitForTimeout(2100);}
    return {ctx,p};};
@@ -70,75 +68,51 @@ const EXEMPT='.spCredit a, .spCredit, #stepGrid .sgCell, .lk, #labKeys *, .cofNo
     ok(+st.faderKept>0,'the fader keeps its position while muted, so unmuting returns to the same level');}
   await ctx.close();}
 
- // mute must be reachable in EVERY mode — a child in a lesson needs the volume down too
+ // Mute must be reachable wherever sound can play — a child in a lesson needs the volume down too.
+ // LEARN HOME is the exception, and deliberately: it is a modal menu (#learnOverlay, z120) with the
+ // bar sealed underneath it, so the six controls showing through the blur were visible and dead. The
+ // bar is hidden there now and comes back the moment a lesson starts, which is the moment sound does.
+ // So learn is checked INSIDE a lesson, not on the menu — and "reachable" means it answers a tap,
+ // not merely that it has a rectangle.
  for(const mode of ['play','studio','learn']){
    const {ctx,p}=await open(390,844,mode);
+   if(mode==='learn'){await p.evaluate(()=>{const c=document.querySelector('#learnOverlay .uCard');if(c)c.click();});
+                      await p.waitForTimeout(1400);}
    const v=await p.evaluate(()=>{const e=document.getElementById('volMute');
      if(!e)return 'absent';const c=getComputedStyle(e);
      if(c.display==='none'||c.visibility==='hidden')return 'hidden';
      const r=e.getBoundingClientRect();
-     return (r.width>=44&&r.height>=44&&r.top>=0&&r.bottom<=innerHeight)?'ok':'offscreen/small';});
+     if(!(r.width>=44&&r.height>=44&&r.top>=0&&r.bottom<=innerHeight))return 'offscreen/small';
+     const t=document.elementFromPoint(Math.round(r.left+r.width/2),Math.round(r.top+r.height/2));
+     return (t===e||e.contains(t))?'ok':'covered by '+((t&&(t.id||t.className))||'?');});
    ok(v==='ok','['+mode+'] mute is reachable ('+v+')');
    await ctx.close();}
 
- // ---------- 3. COLOUR-BLIND MODE ----------
+ // ---------- 3. COLOUR IS NEVER THE ONLY SIGNAL (WCAG 1.4.1) ----------
+ // There used to be a colour-blind toggle here. It swapped four CSS tokens for darker, more separated
+ // ones -- real, measurable (pink vs mint went from dE 4.8 to 15.0 under deuteranopia) but hidden
+ // behind a switch almost nobody finds, and dark enough to fight the crayon art everywhere else.
+ // 1.4.1 does not actually ask for a special palette. It asks that colour is never the ONLY way to
+ // know something. That is the thing worth testing, for every user, with no switch to find.
  {const {ctx,p}=await open(390,844,null);
-  const box=await p.evaluate(()=>{const e=document.getElementById('cbdBox');
-    if(!e)return{err:'no switch'};const r=e.getBoundingClientRect();
-    const near=(r.left<innerWidth*0.4||r.right>innerWidth*0.6)&&r.bottom>innerHeight*0.72;
-    const clash=[...document.querySelectorAll('#spShareRow,.spCredit,#modeCards')].some(o=>{
-      const q=o.getBoundingClientRect();
-      return q.left<r.right&&q.right>r.left&&q.top<r.bottom&&q.bottom>r.top;});
-    return {err:null,corner:near,clash,h:Math.round(r.height),onScreen:r.bottom<=innerHeight&&r.left>=0};});
-  ok(!box.err,'the colour-blind switch is on the splash');
-  if(!box.err){
-    ok(box.corner,'it sits in a bottom corner');
-    ok(box.onScreen,'it is fully on screen');
-    ok(!box.clash,'it does not sit on the share button or the credit line');
-    ok(box.h>=44,'it is a 44px target ('+box.h+'px)');}
-  // toggling it must persist AND repaint the tank, not just the chrome
-  const t=await p.evaluate(async()=>{
-    const before=aurora(0.25,62);
-    document.getElementById('cbdChk').click();
-    await new Promise(r=>setTimeout(r,200));
-    return {before,after:aurora(0.25,62),cls:document.body.classList.contains('cbd'),
-            flag:!!window.CBD,saved:localStorage.getItem('slimehedron-cbd')};});
-  ok(t.cls&&t.flag,'ticking it turns the mode on');
-  ok(t.saved==='1','and remembers it for next time');
-  ok(t.before!==t.after,'the TANK repaints, not just the CSS chrome ('+t.before+' -> '+t.after+')');
+  const gone=await p.evaluate(()=>({box:!!document.getElementById('cbdBox'),
+    chk:!!document.getElementById('cbdChk'),fn:typeof window.setCBD}));
+  ok(!gone.box&&!gone.chk,'the colour-blind switch is gone from the splash');
+  ok(gone.fn==='undefined','and its code went with it, not just the button');
   await ctx.close();}
 
- // the mode must pull the palette's known collisions apart, measured, not assumed
- {const {ctx,p}=await open(1440,900,null);
-  const sep=await p.evaluate(()=>{
-    // Machado 2009 deuteranopia, severity 1.0, applied in LINEAR RGB (the step most implementations skip)
-    const M=[[0.367322,0.860646,-0.227968],[0.280085,0.672501,0.047413],[-0.011820,0.042940,0.968881]];
-    const s2l=c=>{c/=255;return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4);};
-    const l2s=c=>{c=c<=0.0031308?c*12.92:1.055*Math.pow(c,1/2.4)-0.055;return Math.max(0,Math.min(255,c*255));};
-    const hex=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
-    const deut=h=>{const [r,g,b]=hex(h).map(s2l);
-      return M.map(row=>l2s(row[0]*r+row[1]*g+row[2]*b));};
-    const lab=(rgb)=>{ // sRGB -> Lab (D65)
-      const f=rgb.map(s2l);
-      const X=f[0]*0.4124+f[1]*0.3576+f[2]*0.1805, Y=f[0]*0.2126+f[1]*0.7152+f[2]*0.0722, Z=f[0]*0.0193+f[1]*0.1192+f[2]*0.9505;
-      const g=t=>t>0.008856?Math.cbrt(t):(7.787*t+16/116);
-      const fx=g(X/0.95047),fy=g(Y/1),fz=g(Z/1.08883);
-      return [116*fy-16,500*(fx-fy),200*(fy-fz)];};
-    const dE=(a,b)=>{const A=lab(a),B=lab(b);return Math.hypot(A[0]-B[0],A[1]-B[1],A[2]-B[2]);};
-    const cs=()=>getComputedStyle(document.body);
-    const tok=n=>{const v=cs().getPropertyValue(n).trim();return v;};
-    const read=()=>({mint:tok('--mint'),pink:tok('--pink'),lav:tok('--lav'),sky:tok('--sky')});
-    const norm=read();
-    document.body.classList.add('cbd');
-    const cbd=read();
-    document.body.classList.remove('cbd');
-    const pairSep=(o)=>({pinkMint:dE(deut(o.pink),deut(o.mint)), lavSky:dE(deut(o.lav),deut(o.sky))});
-    return {norm:pairSep(norm),cbd:pairSep(cbd),tokens:{norm,cbd}};});
-  ok(sep.cbd.pinkMint>sep.norm.pinkMint,
-     'pink vs mint separates further under deuteranopia in CB mode (dE '+sep.norm.pinkMint.toFixed(1)+' -> '+sep.cbd.pinkMint.toFixed(1)+')');
-  ok(sep.cbd.lavSky>sep.norm.lavSky,
-     'lavender vs sky separates further (dE '+sep.norm.lavSky.toFixed(1)+' -> '+sep.cbd.lavSky.toFixed(1)+')');
-  ok(sep.cbd.pinkMint>=10,'and clears dE 10, the point where the pair is reliably tellable apart ('+sep.cbd.pinkMint.toFixed(1)+')');
+ // every rung a child has to tell apart carries a WORD, not just a colour
+ {const {ctx,p}=await open(390,844,null);
+  await p.goto('http://127.0.0.1:8765/index.html?l=majorscale');
+  await p.waitForTimeout(3000);
+  const rungs=await p.evaluate(()=>[...document.querySelectorAll('.lgRung')].map(r=>({
+    txt:(r.querySelector('.rgName')||{}).textContent||'',
+    abc:(r.querySelector('.rgAbc')||{}).textContent||'',
+    bg:getComputedStyle(r).getPropertyValue('--rc')})));
+  ok(rungs.length>0,'the ladder rendered ('+rungs.length+' rungs)');
+  ok(rungs.every(r=>r.txt.trim().length>0),'every rung is named in words, not only tinted');
+  ok(rungs.every(r=>r.abc.trim().length>0),'and carries its letter name too');
+  ok(new Set(rungs.map(r=>r.txt)).size===rungs.length,'no two rungs share a label');
   await ctx.close();}
 
  // an ON step must be marked by a shape, not only a fill (SC 1.4.1)

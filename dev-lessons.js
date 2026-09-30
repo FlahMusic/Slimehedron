@@ -85,7 +85,7 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
  // guesses 50/50 will (correctly) loop forever — it has to actually answer right. window._labExpect
  // carries the expected answer for exactly this purpose.
  // up/down runs on the same two-choice screen as bright/dark now, so it answers the same way
- for(const id of ['updown']){
+ for(const id of ['updown','tempo','dynamic','minorshapes','modes']){
    await home();await open(id);
    for(let i=0;i<120&&!(await doneUp());i++){
      const w=await p.evaluate(()=>window._labExpect);
@@ -109,7 +109,7 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
  // sayplay is the long one: each rep plays a whole four-syllable pattern AT you before asking for it
  // back, so it needs a bigger budget than a single-note lesson. That is the repetition, not a stall.
  // the LADDER lessons answer by tapping a rung, and the lesson publishes which one it wants.
- for(const id of ['high','notes','newhome','majorscale','minorscale','minorshapes','modes']){
+ for(const id of ['high','notes','newhome','majorscale','minorscale']){
    await home();await open(id);
    for(let i=0;i<200&&!(await doneUp());i++){
      const d=await p.evaluate(()=>window._labHintDeg);
@@ -130,7 +130,8 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
 
  // REST DURATION: play the notes, stay silent on the rests. dev-rest.js proves the silence MATTERS;
  // this just proves the lesson terminates like every other one.
- {await home();await open('rest');
+ for(const RID of ['rest','split']){
+  await home();await open(RID);
   for(let i=0;i<700&&!(await doneUp());i++){
     const r=await p.evaluate(()=>{
       if(typeof AC==='undefined'||!AC||window._labReadAt==null)return null;
@@ -140,7 +141,7 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
     if(r.wait>0)await p.waitForTimeout(Math.min(700,r.wait));
     if(!r.rest)await p.evaluate(()=>window._lab_tap&&window._lab_tap());
     await p.waitForTimeout(90);}
-  ok(await doneUp(),'REST ends with a "you did it" card');}
+  ok(await doneUp(),RID.toUpperCase()+' ends with a "you did it" card');}
 
  // BRIGHT AND DARK answers with two big buttons; the lesson publishes which one is right.
  {await home();await open('brightdark');

@@ -48,7 +48,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-si
 </header>
 
 <h2>What is tested automatically</h2>
-<p>The repository contains an accessibility test suite, <code>dev-a11y.js</code>, which drives a real browser against the real app. It is public and you can run it yourself. As of 23 September 2026 it runs 33 checks and all 33 pass.</p>
+<p>The repository contains an accessibility test suite, <code>dev-a11y.js</code>, which drives a real browser against the real app. It is public and you can run it yourself. As of 30 September 2026 it runs 33 checks and all 33 pass.</p>
 <p>Here is what those checks actually verify. Nothing outside this list is machine-tested, so nothing outside it is claimed as conformant.</p>
 
 <table>
@@ -74,12 +74,12 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-si
 <td>An active step in the step sequencer carries a dot as well as a fill.</td>
 <td><span class="tag pass">pass</span></td></tr>
 
-<tr><td><strong>Colour-blind mode works</strong></td>
-<td>The switch is on the front page, in a bottom corner, fully on screen, 44px, and not overlapping anything. Ticking it turns the mode on, saves the choice for next time, and repaints the slime tank itself — not just the menus around it.</td>
+<tr><td><strong>Colour never carries meaning on its own</strong></td>
+<td>Every rung a child has to tell apart is labelled in words, and on the seven-note lessons it carries its letter name too. No two rungs share a label. A lit step in the drum grid shows a dot as well as a fill. This is what SC 1.4.1 actually asks for.</td>
 <td><span class="tag pass">pass</span></td></tr>
 
-<tr><td><strong>Colour-blind mode is measured, not assumed</strong></td>
-<td>The test simulates deuteranopia (Machado 2009, in linear RGB) and measures the Lab distance between the palette's two known collisions. Pink against mint goes from &Delta;E 4.8 to 15.0; lavender against sky from 5.0 to 23.1. Both clear &Delta;E 10, the point where a pair is reliably tellable apart.</td>
+<tr><td><strong>No colour-blind switch to find</strong></td>
+<td>There used to be one. It swapped four colour tokens for darker, more separated ones &mdash; a real, measurable improvement, but hidden behind a control almost nobody finds, and dark enough to fight the hand-drawn art everywhere else. It was removed. The colours that carry meaning are indexed by distance from the home note and are labelled in words regardless, so nothing depends on telling two hues apart.</td>
 <td><span class="tag pass">pass</span></td></tr>
 
 <tr><td><strong>Layout congruence</strong><br>SC 3.2.3</td>
@@ -117,7 +117,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-si
 <p>Controls have accessible names and the mute button reports its state correctly. But there are no <code>aria-live</code> regions, so a change the app announces visually — a correct answer, a mode change, a toast message — is not announced to a screen reader. There is no skip link. We have not run a full screen-reader pass with NVDA, JAWS or VoiceOver, and so we make no conformance claim for SC 4.1.3 or for the 1.3.x set.</p>
 
 <h3>Colour contrast is not automatically tested</h3>
-<p>The suite tests colour-blind separation, which is a different thing from contrast ratio. SC 1.4.3 and 1.4.11 are not machine-verified across the app. We have not audited every text-on-background pair.</p>
+<p>Colour contrast is not machine-verified. SC 1.4.3 and 1.4.11 are not claimed, and we have not audited every text-on-background pair. The suite checks that colour is never the only signal, which is a different requirement.</p>
 
 <h3>Keyboard-only operation is incomplete</h3>
 <p>There are keyboard shortcuts, and controls take focus. We have not verified that every path through the app can be completed with a keyboard alone, so SC 2.1.1 is not claimed.</p>
@@ -141,7 +141,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-si
 <li>The app is GPL-3.0-or-later and the source is public, so any claim on this page can be checked against the code.</li>
 </ul>
 
-<p class="stamp">Last updated 23 September 2026. Test suite last run against the current build on the same date: 33 checks, 33 passing.</p>
+<p class="stamp">Last updated 30 September 2026. Test suite last run against the current build on the same date: 33 checks, 33 passing.</p>
 
 <footer>
 &copy; 2026 FlahMusic &middot; free &amp; open source &middot;

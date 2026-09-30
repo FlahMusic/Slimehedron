@@ -51,7 +51,7 @@ the next unseen case beats a war story about one that already happened.
 
 # 5. REFERENCE — do not re-derive these
 
-**Learn-mode scale ramp.** 17 lessons, 4 blocks: Rhythm and Notation (1–6), Pitch (7–10), Scales and
+**Learn-mode scale ramp.** 20 lessons, 4 blocks: Rhythm and Notation (1–6), Pitch (7–10), Scales and
 Harmony (11–14), Minor and Modes (15–17). Order from the Kodály sequence (Holy Names University
 Kodály Center), cross-checked against Trinity College London and the DfE Model Music Curriculum.
 Three things look wrong and must not be "tidied":
@@ -76,6 +76,16 @@ BEFORE the major scale — modes-last is right on ABRSM/MMC grounds, not Kodály
 
 **Copy.** Western terminology, methods from anywhere, no cultural tour in front of the child. One
 short sentence per line. If an adult would skim it, a child can't read it. Lessons are numbered.
+
+**Buttons have thickness, not a drop shadow.** `--depth` / `--depthUp` / `--depthIn`: a hard
+unblurred bottom edge, a lit top face, a tight contact shadow — and pressing travels DOWN the full
+thickness. A big soft blur under a rectangle is the flat "a machine made this" look. No gradient text.
+
+**Sound.** Reverb is a ConvolverNode with a noise-generated stereo IR (nothing is downloaded); drums,
+band and lead have separate sends, drums least or the kick turns to mud. Every noise voice starts at a
+random offset in one shared 2s buffer — sharing offset 0 is what made fast hats machine-gun. Filter
+cutoffs track pitch AND velocity. Ghost snares at 14-28% between the backbeats. Karplus-Strong is NOT
+viable: a DelayNode inside a feedback loop is forced to ≥128 samples, so it detunes below ~344Hz.
 
 **Art.** Crayon and coloured pencil end to end. Never swap hand-drawn art for flat vector, geometric
 or chart-shaped glyphs. A missing icon means a drawn asset, not an SVG path. Ask before changing art

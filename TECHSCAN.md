@@ -1,5 +1,27 @@
 # Slimehedron Weekly Tech Scan
 
+## 2026-09-30
+
+Quiet week: nothing new launched in the last 1-2 weeks that's worth Slimehedron's attention. Searched Web Audio/AudioWorklet, Tone.js, faustwasm, Elementary, sfizz, MTS-ESP/Scale Workshop, Web MIDI browser support.
+
+- **Web Audio 1.1 draft (Sept 22)** still the only platform news; already logged 09-23 (`playbackStats`, `renderSizeHint`). Feature-detect only.
+- **Tone.js** - GitHub's latest release is 15.1.22 (Jul 12), no September release. (Earlier entry cited 15.5.12; the npm "next" tag may differ, so verify before relying on either.) No action.
+- **faustwasm** - no tagged releases on GitHub. No action.
+- **MTS-ESP / Scale Workshop / Web MIDI 2.0** - unchanged, no browser MTS-ESP, MIDI 1.0 only in browsers.
+
+**Summary:** nothing to adopt. Single-file PWA model intact.
+
+## 2026-09-23
+
+Two real platform items this week, both built into the browser, so no new libraries or licenses to deal with. The library scene is quiet again.
+
+- **Chrome 153 (stable Sept 8): `renderSizeHint` on AudioContext.** Lets the app ask for a render quantum other than 128 frames (an integer, `"default"` or `"hardware"`). *Why it helps:* `"hardware"` could cut glitches on cheap Android devices, which is exactly where kids play. **Easy**: one constructor option, and older browsers ignore it. *Risk:* Chrome-only. Firefox had no plans to implement it as of Jan 2026. Changing the quantum can shift timing assumptions in the MIDI-clock DLL or any worklet that hardcodes 128. Test it before shipping; don't default it on.
+- **Web Audio API 1.1 Working Draft (W3C, published Sept 22).** Formalises `playbackStats` (AudioPlaybackStats: average/min/max latency plus underrun counts, updated every 1s), `setSinkId`/`sinkId`, and the render-quantum hint. *Why it helps:* real measured latency would help MIDI-clock/output offset compensation more than `outputLatency` alone, and underrun counts could drive an automatic "lite mode" on weak devices. **Easy**, and it should be feature-detected (`'playbackStats' in ctx`). *Risk:* MDN marks it **experimental**. I could not confirm which browsers ship it (the compat table didn't render), so treat it as progressive enhancement only.
+- **Tone.js / Faust / Elementary / RNBO / sfizz / MTS-ESP:** no new tagged releases found. Scale Workshop has active PRs (e.g. a measured harmonium timbre) but no release. No action.
+- **Skipped:** hobby WASM-worklet repos (808/909 kits etc.). They're single-dev projects with no clear license, so not worth copying from.
+
+**Summary:** Nothing to install. Two optional one-liners are worth trying behind feature detection: `renderSizeHint:"hardware"` and `playbackStats`. The single-file PWA model stays intact.
+
 ## 2026-09-09
 
 Quiet week — nothing genuinely new dropped in the last 1–2 weeks. Checked Tone.js release history, Faust/faustwasm and IFC-26 conference chatter, Elementary Audio/RNBO/Cmajor DSP-language landscape, MTS-ESP, and the xenharmonic tooling scene (Scale Workshop, Sevish). No new releases or announcements surfaced beyond what's already logged in prior entries.
@@ -42,3 +64,14 @@ Nothing urgent. WASM stabilizing as audio DSP standard. Single-file vanilla JS +
 - **Scale Workshop** (active 2026) – Still the gold standard for .scl/.kbm design and export. Community-maintained by xenharmonic-devs. Asset library remains valuable for future scale packs.
 
 **Summary:** September week is quiet on urgent fronts. Tone.js stable; WASM synthesis now commodity (no blocker for vanilla JS parity). New AudioWorklet libs are convenience, not necessity. Scale Workshop's microtonal export chain still unsurpassed. No breaking changes. Slimehedron positioned well.
+
+## 2026-09-16
+
+Another quiet week — no new browser-audio releases or announcements in the last 1–2 weeks worth Slimehedron's attention. Checked Web Audio API/MDN changelog, Tone.js releases, Faust/faustwasm, Elementary Audio, MTS-ESP, Web MIDI 2.0 status, and Web Audio Conference chatter.
+
+- **Web MIDI 2.0** – still unshipped in any browser (Chrome/Edge/Opera/Firefox all MIDI 1.0 only); W3C draft only. No action — MPE via `mpe.js` (already logged) remains the right approach.
+- **Tone.js** – repo touched Sept 10, 2026 but no new tagged release since 15.x line. No action.
+- **Faust / faustwasm, Elementary Audio, MTS-ESP** – unchanged from prior scans, no new browser-relevant tooling.
+- **Web Audio Conference** – 2025 edition was Nov 2025 in Paris; no 2026 edition announced yet, nothing to mine.
+
+**Summary:** No breaking changes, nothing new to adopt. Single-file vanilla JS + Web Audio approach remains sound and futureproof.
