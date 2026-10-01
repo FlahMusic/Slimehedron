@@ -97,6 +97,13 @@ const LANG={
     note_dh:'a DOTTED HALF note \u2014 3 counts', note_w:'a WHOLE note \u2014 4 counts',
     note_r:'a QUARTER REST \u2014 1 count of silence',
     u_rest:'Rest Duration', u_restSub:'silence is written down too',
+    u_staff:'The Staff', u_staffSub:'the ladder, drawn on five lines',
+    st_do:'Tap the note you hear.',
+    u_melody:'Reading a Melody', u_melodySub:'play a real tune off the page',
+    ml_do:'Play the notes, left to right.',
+    ml_name:'You played a tune straight off the page.',
+    song_ode:'Ode to Joy',
+    st_name:'The STAFF is five lines. A note sits ON a line or IN a space.',
     u_split:'Splitting the Beat', u_splitSub:'two sounds in the time of one',
     sb_do:'Two taps where the notes are joined up.',
     sb_name:'Two EIGHTH NOTES fill one beat. Count "1 and".',
@@ -116,9 +123,9 @@ const LANG={
     u_countbar:'Measures and Time', u_countbarSub:'four beats to a measure',
     cb_do:'Tap on the big numbers. Count the small ones.',
     cb_name:'Four beats in a MEASURE. The 4/4 is the TIME SIGNATURE.',
-    u_song:'Playing from Notation', u_songSub:'read a written tune and play it',
+    u_song:'Reading a Rhythm', u_songSub:'a real tune, played as its rhythm',
     sg_do:'Tap each note as it lights up.',
-    sg_name:'You played a tune straight off the page.',
+    sg_name:'You read the RHYTHM of a real tune off the page.',
     song_hotcross:'Hot Cross Buns', song_mary:'Mary Had a Little Lamb',
     u_high:'Pitch', u_highSub:'high notes and low notes',
     u_notes:'The Major Pentatonic', u_notesSub:'five notes: do re mi so la',
@@ -186,6 +193,7 @@ const LANG={
     fh_name:'The TONIC is DO. Every melody leans towards it.',
     // ---- the four lesson blocks, in order ----
     blockA:'Rhythm and Notation', blockB:'Pitch', blockC:'Scales and Harmony', blockD:'Minor and Modes',
+    blockE:'Reading Music',
     // pulse
     // instruction copy: ONE short sentence, and the thing to DO goes at the end of it (Sesame
     // Workshop's tablet guidance for pre-readers). Narrated as well as shown -- narration beats
@@ -524,6 +532,9 @@ const UNITS=[
   {id:'minorscale', title:'u_minorscale', sub:'u_minorscaleSub', tier:'lesson', block:'d', run:minorScaleUnit, tint:'#b5a9f5', use:[0,1,2,3,4,5,6]},
   {id:'minorshapes',title:'u_minorshapes',sub:'u_minorshapesSub',tier:'lesson', block:'d', run:minorShapesUnit,tint:'#a9c4f5', use:[0,1,2,3,4,5,6]},
   {id:'modes',      title:'u_modes',      sub:'u_modesSub',      tier:'lesson', block:'d', run:modesUnit,      tint:'#9fe0c4', use:[0,1,2,3,4,5,6]},
+  // ---- block E: the page ----
+  {id:'staff',      title:'u_staff',      sub:'u_staffSub',      tier:'lesson', block:'e', run:staffUnit,      tint:'#ffe8c0'},
+  {id:'melody',     title:'u_melody',     sub:'u_melodySub',     tier:'lesson', block:'e', run:melodyUnit,     tint:'#ffd8e0'},
   // ---- games and practice ----
   {id:'echo',     title:'g_echo',     sub:'g_echoSub',     tier:'game', run:echoGame,     tint:'#a6c8ff'},
   {id:'updown',   title:'g_updown',   sub:'g_updownSub',   tier:'game', run:upDownGame,   tint:'#c4a9f5'},
@@ -1276,6 +1287,195 @@ function modesUnit(){
       later(()=>{const th=(v==='dor')?300:400;note(0,84,1.6);note(th,84,1.6);note(700,84,1.6);note(1000,80,1.6);},sc.length*230+180);}});
 }
 
+// ================================================================================================
+//  THE STAFF -- the one thing a book does that this did not.
+//  The course already notated RHYTHM: note heads, stems, bar lines, rests, a 4/4 sign. What it never
+//  drew was PITCH, so "Playing from Notation" had the child clap the rhythm of Hot Cross Buns without
+//  ever playing the tune. Half a thought.
+//  The bridge is already built: the ladder IS a staff. It is vertical, high notes are at the top, one
+//  slot per note. A staff is the same picture with five lines. So this block says exactly that -- the
+//  ladder you know, drawn the way grown-ups draw it -- and changes nothing else about the job.
+//  It sits LAST on purpose. Sound before symbol (Kodaly, Suzuki, Gordon). Twenty lessons of ear work
+//  come first; this is where the ear gets a page to write on.
+//  Pinned to C major, no roaming, no key signature, no accidentals. Every other lesson roams to stop
+//  the child answering from screen position -- here the screen position IS the lesson.
+// ================================================================================================
+const STAFF_LTR=['C','D','E','F','G','A','B','C'];   // middle C up to the next C: do re mi fa so la ti do
+const STAFF_SEMI=[0,2,4,5,7,9,11,12];
+// Geometry, in the SVG's own units. 5 lines, 14 apart. Bottom line is E4, so each diatonic step is
+// half a line-gap up from it, and middle C lands one ledger line below the staff.
+const ST_TOP=30, ST_GAP=14, ST_HALF=7, ST_X0=120, ST_DX=52;
+const staffY=(step)=>ST_TOP+4*ST_GAP-(step-2)*ST_HALF;   // step 0 = C4, step 2 = E4 = bottom line
+function staffNoteSVG(step,x,cls,fill){
+  const y=staffY(step);
+  let led='';
+  if(step<=0)led='<line class="stLed" x1="'+(x-16)+'" y1="'+staffY(0)+'" x2="'+(x+16)+'" y2="'+staffY(0)+'"/>';
+  if(step>=8)led='<line class="stLed" x1="'+(x-16)+'" y1="'+staffY(8)+'" x2="'+(x+16)+'" y2="'+staffY(8)+'"/>';
+  // stems go UP (on the right) below the middle line, DOWN (on the left) on or above it
+  const up=(step<6);
+  const stem='<rect x="'+(up?x+9:x-11)+'" y="'+(up?y-42:y+2)+'" width="3.2" height="42" fill="'+(fill||'#2f2a44')+'"/>';
+  return led+'<g class="'+(cls||'')+'">'+stem+
+    '<ellipse cx="'+x+'" cy="'+y+'" rx="10.5" ry="8" transform="rotate(-18 '+x+' '+y+')" fill="'+(fill||'#2f2a44')+'"/></g>';
+}
+// The G-clef, generated rather than hand-tuned. Its whole meaning is that the spiral wraps the G
+// line, so that is literally how it is built: a spiral centred on G4, then a sweep up over the top
+// of the staff and back down through it to a hook below. Drawing it beats depending on a music font
+// being installed, and generating it beats me guessing at bezier handles.
+function clefPath(){
+  const cx=54, cy=ST_TOP+3*ST_GAP;           // the second line from the bottom = G4
+  const pts=[];
+  const N=120, TURNS=2.15, R0=2.6, R1=17.5;
+  for(let i=0;i<=N;i++){
+    const u=i/N, a=Math.PI*0.35+u*TURNS*Math.PI*2, r=R0+(R1-R0)*Math.pow(u,0.88);
+    pts.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]);
+  }
+  let d='M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1);
+  for(let i=1;i<pts.length;i++)d+=' L'+pts[i][0].toFixed(1)+' '+pts[i][1].toFixed(1);
+  const [ex,ey]=pts[pts.length-1];
+  // up and over the top of the staff, then straight back down through it, then the tail hook
+  const top=ST_TOP-13, bot=ST_TOP+4*ST_GAP+17;
+  d+=' C'+(ex-6).toFixed(1)+' '+(ey-26)+' '+(cx-9)+' '+(top+16)+' '+(cx+2)+' '+top;
+  d+=' C'+(cx+13)+' '+(top-9)+' '+(cx+21)+' '+(top+13)+' '+(cx+15)+' '+(top+30);
+  d+=' L'+(cx+8)+' '+(bot-16);
+  d+=' C'+(cx+6)+' '+bot+' '+(cx-11)+' '+(bot+3)+' '+(cx-13)+' '+(bot-8);
+  return d;
+}
+const CLEF='<path class="stClef" d="'+clefPath()+'" fill="none" stroke="#5b4f82" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>';
+function staffFrame(inner,w){
+  let lines='';
+  for(let i=0;i<5;i++){const y=ST_TOP+i*ST_GAP;
+    lines+='<line class="stLine" x1="34" y1="'+y+'" x2="'+(w-14)+'" y2="'+y+'"/>';}
+  return '<svg class="stSvg" viewBox="18 4 '+(w-24)+' 118" preserveAspectRatio="xMidYMid meet" aria-hidden="true">'+
+    lines+CLEF+inner+'</svg>';
+}
+
+// ---------- 21. THE STAFF -- hear it, then find it on the lines ----------
+function staffUnit(){
+  stageOff();
+  const need=10; let right=0,busy=false,target=null,hit=null;
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  // C major, fixed. The ear work is done; this lesson is about the picture.
+  LAB.take({scale:'major',root:60,octs:1,drums:false,band:false,touch:false});
+  LAB.labels(null);LAB.clear();
+  const W=ST_X0+ST_DX*1.2;
+  function paint(){
+    // one note at a time, dead centre, with every position tappable
+    const x=ST_X0;
+    let hits='';
+    for(let st=0;st<=7;st++){
+      const y=staffY(st);
+      hits+='<rect class="stHit" data-st="'+st+'" x="'+(x-22)+'" y="'+(y-ST_HALF)+'" width="44" height="'+(ST_HALF*2)+'"/>';
+    }
+    const note=(target!=null)?staffNoteSVG(target,x,'stNote'+(hit==null?'':(hit?' ok':' no')),'#2f2a44'):'';
+    stage(
+      '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t('u_staff')+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
+      '<div class="stWrap">'+staffFrame(note+hits,W)+'</div>'+
+      '<p class="lgSay">'+t('st_do')+'</p><div class="lgFeed" id="lgFeed"></div>'+
+      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>');
+  }
+  const play=()=>{try{note(STAFF_SEMI[target]*100,94,0.6);}catch(e){}};
+  function ask(){hit=null;target=(Math.random()*8)|0;window._labHintDeg=target;paint();later(play,280);}
+  window._lab_lgAgain=()=>{if(!busy&&target!=null)play();};
+  const onDown=(e)=>{
+    const r=e.target.closest&&e.target.closest('.stHit');if(!r||busy||target==null)return;
+    e.preventDefault();
+    const st=+r.dataset.st, ok=(st===target);
+    score('staff',ok); hit=ok;
+    if(!ok){ // show where it actually was, then try again -- a wrong answer has to teach something
+      target=target; }
+    paint();
+    const fd=document.getElementById('lgFeed');
+    if(fd)fd.textContent=ok?t('yes'):(STAFF_LTR[target]+' — '+t('onceMore'));
+    if(ok){right++;
+      const c=document.querySelector('.lgCount');if(c)c.textContent=right+' / '+need;
+      document.querySelectorAll('.lgDots i').forEach((x,i)=>x.classList.toggle('got',i<right));
+      if(right>=need){busy=true;later(()=>{stageOff();finish('staff',t('st_name'));},820);return;}}
+    later(ask,ok?760:1250);
+  };
+  ov.addEventListener('pointerdown',onDown,true);
+  _render=paint;ask();
+  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._lab_lgAgain=null;window._labHintDeg=null;stageOff();LAB.clear();};
+}
+
+// ---------- 22. READING A MELODY -- the actual "off the page" lesson ----------
+// Hot Cross Buns is the first melody in every method there is, and it is mi-re-do: three notes, all
+// next to each other, all inside the octave this block just taught. The child reads left to right
+// and plays each note by its place on the staff. No click track and no timing window -- reading the
+// PITCH is the whole job here, and the rhythm lessons already did rhythm.
+// Tunes are stored as PHRASES, not as one long ribbon of notes. A method book never puts fourteen
+// notes in front of a beginner; it puts one line. Short phrases also keep the staff wide enough on
+// screen to be legible, which a fourteen-note stave is not on a phone.
+const TUNES=[
+  {n:'song_hotcross', ph:[[2,1,0],[2,1,0],[0,0,0,0],[2,1,0]]},          // mi re do -- the first tune in every method
+  {n:'song_mary',     ph:[[2,1,0,1],[2,2,2],[1,1,1],[2,4,4]]},
+  {n:'song_ode',      ph:[[2,2,3,4],[4,3,2,1],[0,0,1,2],[1,0,0]]}       // Beethoven, public domain since 1827
+];
+function melodyUnit(){
+  stageOff();
+  let tune=null, pi=0, at=0, done=0, busy=false;
+  const need=4;                                   // four phrases read clean
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  LAB.take({scale:'major',root:60,octs:1,drums:false,band:false,touch:false});
+  LAB.labels(null);LAB.clear();
+  const phrase=()=>tune.ph[pi];
+  function build(){tune=TUNES[(Math.random()*TUNES.length)|0];pi=(Math.random()*tune.ph.length)|0;at=0;}
+  function paint(){
+    const ph=phrase(), n=ph.length, W=ST_X0+ST_DX*(n-1)+56;
+    let notes='';
+    ph.forEach((st,i)=>{
+      const x=ST_X0+i*ST_DX;
+      const cls=(i<at)?'stNote done':(i===at?'stNote now':'stNote todo');
+      notes+=staffNoteSVG(st,x,cls,(i<at)?'#3f9e78':(i===at?'#2f2a44':'#c9c2dd'));
+    });
+    // The staff is the thing to READ. The row underneath is the thing to PRESS -- it is the same
+    // eight steps as the ladder from every lesson before this, laid on its side and named. That is
+    // the whole bridge: you already know the ladder, this is how it is written down.
+    const keys=STAFF_LTR.map((L,st)=>
+      '<button class="stKey" data-st="'+st+'" style="--rc:'+degTint(Math.min(st,6))+'">'+L+'</button>').join('');
+    stage(
+      '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t('u_melody')+'</h3><span class="lgCount">'+done+' / '+need+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<done?'got':'')+'"></i>').join('')+'</div>'+
+      '<p class="lgSay" style="font-size:19px;color:#463d66">'+t(tune.n)+'</p>'+
+      '<div class="stWrap">'+staffFrame(notes,W)+'</div>'+
+      '<p class="lgSay">'+t('ml_do')+'</p><div class="lgFeed" id="lgFeed"></div>'+
+      '<div class="stKeys">'+keys+'</div>'+
+      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>');
+  }
+  const hear=()=>{phrase().forEach((st,i)=>later(()=>{try{note(STAFF_SEMI[st]*100,90,0.36);}catch(e){}},i*430));};
+  window._lab_lgAgain=()=>{if(!busy)hear();};
+  const onDown=(e)=>{
+    const k=e.target.closest&&e.target.closest('.stKey');if(!k||busy)return;
+    e.preventDefault();
+    const st=+k.dataset.st, want=phrase()[at], ok=(st===want);
+    score('melody',ok);
+    k.classList.remove('right','wrong');void k.offsetWidth;k.classList.add(ok?'right':'wrong');
+    const fd=document.getElementById('lgFeed');
+    if(ok){
+      try{note(STAFF_SEMI[st]*100,96,0.44);}catch(e){}
+      at++;
+      if(at>=phrase().length){
+        done++;busy=true;if(fd)fd.textContent=t('yes');paint();
+        if(done>=need){later(()=>{stageOff();finish('melody',t('ml_name'));},950);return;}
+        later(()=>{busy=false;build();paint();},1050);return;}
+      paint();
+    }else{
+      try{note(STAFF_SEMI[st]*100,54,0.24);}catch(e){}   // you hear what you picked: that IS the feedback
+      if(fd)fd.textContent=t('onceMore');
+    }
+  };
+  ov.addEventListener('pointerdown',onDown,true);
+  window._labHintDeg=null;
+  build();_render=paint;paint();
+  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._lab_lgAgain=null;stageOff();LAB.clear();};
+}
+
 // ---------- PRACTICE: COME BACK TOMORROW ----------
 // The one activity built directly on the spacing evidence. Simmons (2012) found accuracy gains only at
 // a 24-hour gap; Wiseheart (2017) found nothing at all inside 15 minutes. So this unit refuses to run
@@ -1514,7 +1714,7 @@ function home(){
   // first notes, more notes, minor keys, modes -- with the NUMBERING running straight through, so the
   // blocks say roughly how hard and the numbers still say exactly what order. Nothing is locked: the
   // sequence is shown, never enforced.
-  const BLOCKS=[['a','blockA'],['b','blockB'],['c','blockC'],['d','blockD']];
+  const BLOCKS=[['a','blockA'],['b','blockB'],['c','blockC'],['d','blockD'],['e','blockE']];
   // no "LESSONS" heading above "FIRST NOTES" - two headings stacked saying the same thing
   for(const [bk,lbl] of BLOCKS){
     const inBlock=UNITS.filter(x=>x.tier==='lesson'&&(x.block||'a')===bk);

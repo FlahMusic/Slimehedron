@@ -143,6 +143,29 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
     await p.waitForTimeout(90);}
   ok(await doneUp(),RID.toUpperCase()+' ends with a "you did it" card');}
 
+ // THE STAFF: hear a note, tap where it lives on the five lines.
+ {await home();await open('staff');
+  for(let i=0;i<140&&!(await doneUp());i++){
+    await p.evaluate(()=>{const st=window._labHintDeg;
+      const h=(st!=null)&&document.querySelector('.stHit[data-st="'+st+'"]');
+      if(h)h.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));});
+    await p.waitForTimeout(300);}
+  ok(await doneUp(),'STAFF ends with a "you did it" card');}
+
+ // READING A MELODY: read the phrase off the stave and play it on the letter keys.
+ {await home();await open('melody');
+  for(let i=0;i<220&&!(await doneUp());i++){
+    await p.evaluate(()=>{
+      const heads=[...document.querySelectorAll('.stNote.now ellipse')];
+      if(!heads.length)return;
+      const lines=[...document.querySelectorAll('.stLine')].map(l=>+l.getAttribute('y1')).sort((a,b)=>a-b);
+      const half=(lines[1]-lines[0])/2;
+      const st=Math.round((lines[4]-(+heads[0].getAttribute('cy')))/half)+2;
+      const k=document.querySelector('.stKey[data-st="'+st+'"]');
+      if(k)k.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));});
+    await p.waitForTimeout(280);}
+  ok(await doneUp(),'MELODY ends with a "you did it" card');}
+
  // BRIGHT AND DARK answers with two big buttons; the lesson publishes which one is right.
  {await home();await open('brightdark');
   for(let i=0;i<120&&!(await doneUp());i++){

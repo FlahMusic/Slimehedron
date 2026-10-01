@@ -51,7 +51,7 @@ the next unseen case beats a war story about one that already happened.
 
 # 5. REFERENCE — do not re-derive these
 
-**Learn-mode scale ramp.** 20 lessons, 4 blocks: Rhythm and Notation (1–6), Pitch (7–10), Scales and
+**Learn-mode scale ramp.** 22 lessons, 5 blocks: Rhythm and Notation (1–6), Pitch (7–10), Scales and
 Harmony (11–14), Minor and Modes (15–17). Order from the Kodály sequence (Holy Names University
 Kodály Center), cross-checked against Trinity College London and the DfE Model Music Curriculum.
 Three things look wrong and must not be "tidied":
@@ -76,6 +76,18 @@ BEFORE the major scale — modes-last is right on ABRSM/MMC grounds, not Kodály
 
 **Copy.** Western terminology, methods from anywhere, no cultural tour in front of the child. One
 short sentence per line. If an adult would skim it, a child can't read it. Lessons are numbered.
+
+**The staff block is LAST and pinned to C major** — no roaming, no key signature, no accidentals.
+Every other lesson roams so the answer cannot be a screen position; here the screen position IS the
+lesson. Geometry lives in `staffY()`: step 0 = middle C on a ledger below, step 2 = E on the bottom
+line. Stems go UP below the middle line (step 6 = B) and DOWN on or above it. The clef is generated
+as a spiral centred on the G line rather than hand-tuned beziers. `dev-staff.js` checks every note
+lands where a musician would read it. Never let staff reading creep earlier — ear first, page last,
+or the app becomes a worse musictheory.net and loses the only thing it is best at.
+
+**No camera, no microphone, ever.** That is what lets a school approve the URL without a meeting, and
+it is worth more than any feature it rules out (posture checking, "hear the real piano"). The
+teachers page says plainly what the app therefore cannot teach.
 
 **Buttons have thickness, not a drop shadow.** `--depth` / `--depthUp` / `--depthIn`: a hard
 unblurred bottom edge, a lit top face, a tight contact shadow — and pressing travels DOWN the full
