@@ -51,7 +51,7 @@ the next unseen case beats a war story about one that already happened.
 
 # 5. REFERENCE — do not re-derive these
 
-**Learn-mode scale ramp.** 22 lessons, 5 blocks: Rhythm and Notation (1–6), Pitch (7–10), Scales and
+**Learn-mode scale ramp.** 23 lessons, 5 blocks: Rhythm and Notation (1–6), Pitch (7–10), Scales and
 Harmony (11–14), Minor and Modes (15–17). Order from the Kodály sequence (Holy Names University
 Kodály Center), cross-checked against Trinity College London and the DfE Model Music Curriculum.
 Three things look wrong and must not be "tidied":
@@ -117,6 +117,16 @@ deferred out of that scope cannot call it.
 
 - **Never let a test assertion drive the design.** Fix the thing, then fix the test.
 - **A test that proves it RUNS is not a test that it WORKS.** Measure whether it can be *done*.
+- **A silent failure passes every test you have.** `note()` routed through `playNote()`, which takes a
+  MIDI number and was handed a FREQUENCY; its `if(m<12||m>120)return` fired, nothing threw, and every
+  pitched sound in learn mode was silent while 21 suites stayed green. `playSynth(freq,…)` is the
+  voice. `dev-audible.js` now counts oscillators for every lesson — if something claims to play, it
+  has to move air. When wrapping a function to measure it, check the wrapper actually fires: `note`
+  and `staffY` live inside learn2's IIFE and cannot be hooked from outside at all.
+- **Lesson 2 is where this product category dies** (Hoffman: 1.4M views on lesson 1, 46.9K on lesson
+  2). It is a looper, not a quiz, and its three guarantees are load-bearing: pentatonic so nothing
+  sounds wrong, snap-to-eighth so nothing is out of time, and the loop never stops so you hear
+  yourself inside half a second. Never put a drill in that slot.
 - **A lesson clearable by a fixed strategy is a button, not a lesson.** Run the dumb strategy (always
   the bottom rung, always the lit one, always the next one up) and require it to FAIL — `dev-cheat.js`.
   Three lessons shipped passing every other suite while needing no ears at all.

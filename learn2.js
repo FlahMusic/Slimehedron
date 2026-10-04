@@ -97,6 +97,11 @@ const LANG={
     note_dh:'a DOTTED HALF note \u2014 3 counts', note_w:'a WHOLE note \u2014 4 counts',
     note_r:'a QUARTER REST \u2014 1 count of silence',
     u_rest:'Rest Duration', u_restSub:'silence is written down too',
+    u_make:'Make a Loop', u_makeSub:'four beats of your own',
+    mk_do:'Tap the colours. Whatever you play comes back round.',
+    mk_clear:'start again', mk_keep:'keep it',
+    mk_kept:'Kept. Make another one.',
+    mk_name:'You made a four-beat loop. Nothing you play here is wrong.',
     u_staff:'The Staff', u_staffSub:'the ladder, drawn on five lines',
     st_do:'Tap the note you hear.',
     u_melody:'Reading a Melody', u_melodySub:'play a real tune off the page',
@@ -428,8 +433,16 @@ const SPK='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="c
   '<path d="M10 11.5h.01M13 11.5h.01M16 11.5h.01"/></svg>';
 
 // ---------------------------------------------------------------- audio helpers (reuse the app's synth)
+// This routed through playNote(), which takes a MIDI NOTE NUMBER -- and was handed a FREQUENCY.
+// freqFromCents(0) is ~349, playNote's guard is `if(m<12||m>120)return`, so every single call
+// returned silently. It never threw, so the catch never fired, and the `return` skipped the
+// working fallback underneath. Result: every pitched sound in learn mode was silent -- an ear
+// training app that made no sound in its ear training. playSynth IS the voice and it takes a
+// frequency, which is what we have.
 function note(cents,vel,dur){
-  try{if(typeof freqFromCents==='function'&&typeof playNote==='function'){playNote(freqFromCents(cents),vel||90,dur||0.5);return;}}catch(e){}
+  try{if(typeof playSynth==='function'&&typeof freqFromCents==='function'){
+    playSynth(freqFromCents(cents),vel||90,0.72);   // fixed impact: a listening test needs the same tone every time
+    return;}}catch(e){}
   try{trigger(cents,0.7);}catch(e){}
 }
 // Play a scale degree AND light its key + its wall. This is the "call" half of call-and-response: the
@@ -511,6 +524,7 @@ const SEVEN=[0,1,2,3,4,5,6];
 const UNITS=[
   // ---- block A: first notes ----
   {id:'pulse',      title:'u_pulse',      sub:'u_pulseSub',      tier:'lesson', run:pulseUnit,      tint:'#9fe6cf'},
+  {id:'make',       title:'u_make',       sub:'u_makeSub',       tier:'lesson', run:makeUnit,       tint:'#ffd9f0'},
   {id:'sayplay',    title:'u_sayplay',    sub:'u_sayplaySub',    tier:'lesson', run:sayPlayUnit,    tint:'#ffd3a8'},
   {id:'howlong',    title:'u_howlong',    sub:'u_howlongSub',    tier:'lesson', run:noteValueUnit,  tint:'#ffe0a8'},
   {id:'countbar',   title:'u_countbar',   sub:'u_countbarSub',   tier:'lesson', run:countBarUnit,   tint:'#f5c8a8'},
@@ -778,6 +792,121 @@ function dynamicUnit(){
     play:(v)=>{const vel=(v==='loud')?118:42;
       [0,2,4,2].forEach((d,i)=>later(()=>sing(d,vel,0.42),i*330));}});
 }
+// ================================================================================================
+//  LESSON 2 -- MAKE SOMETHING.
+//  This slot is where products in this category die. Hoffman Academy's lesson 1 has 1.4M views and
+//  its lesson 2 has 46.9K: ~97% of everyone who arrives never comes back for a second lesson. What
+//  the market leader puts in that slot is IMPROVISATION -- before it has even taught the musical
+//  alphabet. Drilling a second quiz there is how you get the 97%.
+//
+//  So lesson 2 is a four-beat looper, and the whole design is three guarantees:
+//    * It cannot sound wrong. Five notes of the major pentatonic, which is the Orff trick -- he
+//      physically removes the F and B bars so a child's improvising cannot fail. The no-fail state
+//      lives in the MATERIAL, not in a forgiving interface.
+//    * It cannot be out of time. Every tap snaps to the nearest eighth. A five-year-old's timing is
+//      not the thing being taught here; having an idea is.
+//    * You hear yourself immediately. The loop never stops, so a tap becomes something that repeats
+//      with a band under it within half a second. That is the "I made this" moment, and it is the
+//      only reason anyone comes back.
+//  No score, no target, no way to lose. You finish when you have kept two loops.
+// ================================================================================================
+const MAKE_BPM=96, MAKE_SLOTS=8;                  // 4 beats of eighth notes
+const MAKE_DEG=[0,1,2,3,4];                        // do re mi so la -- no wrong notes exist here
+function makeUnit(){
+  stageOff();
+  const SLOT=60/MAKE_BPM/2, LOOP=SLOT*MAKE_SLOTS;  // an eighth, and one bar
+  let grid=new Array(MAKE_SLOTS).fill(null);       // what the child has put down
+  let kept=0, loopAt=0, raf=0, cur=-1, busy=false, bars=0;
+  const need=2;
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  LAB.take({exact:false,shape:'5',scale:'pentaMaj',octs:1,drums:false,band:false,grav:0,bpm:MAKE_BPM,touch:false});
+  LAB.labels(null);LAB.clear();
+
+  function paint(){
+    const pads=MAKE_DEG.map(d=>
+      '<button class="mkPad" data-d="'+d+'" style="--rc:'+degTint(d)+'"></button>').join('');
+    const dots=grid.map((g,i)=>
+      '<i class="mkSlot'+(g!=null?' on':'')+(i===cur?' now':'')+'"'+(g!=null?' style="--rc:'+degTint(g)+'"':'')+'></i>').join('');
+    stage(
+      '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t('u_make')+'</h3><span class="lgCount">'+kept+' / '+need+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<kept?'got':'')+'"></i>').join('')+'</div>'+
+      '<div class="mkRing" id="mkRing">'+dots+'</div>'+
+      '<p class="lgSay">'+t('mk_do')+'</p>'+
+      '<div class="mkPads">'+pads+'</div>'+
+      '<div class="mkBtns">'+
+        '<button class="btn mkClear" data-mk="clear">'+t('mk_clear')+'</button>'+
+        '<button class="btn primary mkKeep" data-mk="keep">'+t('mk_keep')+'</button></div>');
+  }
+
+  // Schedule one whole bar at once: the groove, plus whatever the child has put in the grid. Doing
+  // it a bar at a time keeps it sample-accurate without a per-frame scheduler fighting the browser.
+  function bar(t0){
+    for(let i=0;i<MAKE_SLOTS;i++){
+      const t=t0+i*SLOT;
+      try{
+        if(i%4===0)dHit('K',t,i===0?1.15:0.95,true);          // a kick on each beat 1 and 3
+        if(i%2===1)dHit('h',t,0.30+Math.random()*0.10);        // light off-beat hats
+        if(i===4)dHit('s',t,0.85,true);                        // backbeat
+      }catch(e){}
+      const d=grid[i];
+      if(d!=null){try{note(degCents(d),98,SLOT*1.6);}catch(e){}}
+    }
+    bars++;
+  }
+  function tick(){
+    if(busy)return;
+    const now=AC.currentTime;
+    if(now>=loopAt-0.08){bar(loopAt);loopAt+=LOOP;}            // schedule the next bar just before it starts
+    const pos=Math.floor(((now-(loopAt-LOOP))/SLOT))%MAKE_SLOTS;
+    if(pos!==cur&&pos>=0){cur=pos;
+      const dd=document.querySelectorAll('.mkSlot');
+      dd.forEach((e,i)=>e.classList.toggle('now',i===cur));}
+    raf=requestAnimationFrame(tick);
+  }
+  const onDown=(e)=>{
+    const pad=e.target.closest&&e.target.closest('.mkPad');
+    const btn=e.target.closest&&e.target.closest('[data-mk]');
+    if(pad&&!busy){
+      e.preventDefault();
+      const d=+pad.dataset.d;
+      // snap to the NEAREST eighth, not the last one -- a tap a hair early still lands where the
+      // child meant it, which is the difference between "it works" and "it fights me"
+      const now=AC.currentTime, start=loopAt-LOOP;
+      let slot=Math.round((now-start)/SLOT)%MAKE_SLOTS;
+      if(slot<0)slot+=MAKE_SLOTS;
+      grid[slot]=d;
+      try{note(degCents(d),104,SLOT*1.6);}catch(e){}            // you hear the tap itself, right now
+      pad.classList.remove('hit');void pad.offsetWidth;pad.classList.add('hit');
+      paint();
+      return;
+    }
+    if(btn&&!busy){
+      e.preventDefault();
+      if(btn.dataset.mk==='clear'){grid=new Array(MAKE_SLOTS).fill(null);paint();return;}
+      if(btn.dataset.mk==='keep'){
+        if(!grid.some(g=>g!=null))return;                       // nothing made yet: ignore, never scold
+        kept++; score('make',true);
+        const fd=document.querySelector('.lgSay');if(fd)fd.textContent=t('mk_kept');
+        grid=new Array(MAKE_SLOTS).fill(null);
+        if(kept>=need){busy=true;cancelAnimationFrame(raf);
+          later(()=>{stageOff();finish('make',t('mk_name'));},900);return;}
+        later(paint,700);
+      }
+    }
+  };
+  ov.addEventListener('pointerdown',onDown,true);
+  window._lab_mkGrid=()=>grid.slice();      // readable: dev-make proves taps land on the grid
+  window._lab_mkTap=(d)=>{const el=document.querySelector('.mkPad[data-d="'+d+'"]');
+    if(el)el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));};
+  _render=paint;paint();
+  loopAt=AC.currentTime+0.25;raf=requestAnimationFrame(tick);
+  _cleanup=()=>{busy=true;cancelAnimationFrame(raf);
+    try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._lab_mkGrid=null;window._lab_mkTap=null;stageOff();LAB.clear();};
+}
+
 function restUnit(){
   readUnit({id:'rest',title:'u_rest',doIt:'rs_do',name:'rs_name',need:10,
     pick:()=>({notes:BARS.rest[(Math.random()*BARS.rest.length)|0]})});

@@ -51,7 +51,11 @@ p.on('pageerror',e=>{FAIL.push('pageerror: '+e.message);console.log('  FAIL  pag
 await p.goto('http://127.0.0.1:8765/index.html?m=learn');
 await p.waitForTimeout(3000);
 
-const N=16;
+// "Pitch" offers two buttons, so chance IS 50% and a short sample can spike past the bar on luck
+// alone. Sample in short blocks and re-open the lesson between them: enough tries for a stable
+// number, without the strategy ever accumulating enough correct answers to COMPLETE the lesson
+// (which would leave no ladder to tap and look like a crash).
+const BLOCK=8, BLOCKS=4;
 const CASES=[
   {id:'home',    cheat:'bottom', label:'The Tonic'},
   {id:'findhome',cheat:'bottom', label:'Find the Tonic'},
@@ -60,11 +64,15 @@ const CASES=[
   {id:'high',    cheat:'bottom', label:'Pitch'},
 ];
 for(const c of CASES){
-  const r=await run(p,c.id,c.cheat,N);
-  if(r.err){ok(false,c.label+': '+r.err);continue;}
-  const pct=Math.round(r.right/r.rounds*100);
+  let right=0,rounds=0,err=null;
+  for(let bl=0;bl<BLOCKS;bl++){
+    const r=await run(p,c.id,c.cheat,BLOCK);
+    if(r.err){err=r.err;break;}
+    right+=r.right;rounds+=r.rounds;}
+  if(err){ok(false,c.label+': '+err);continue;}
+  const pct=Math.round(right/rounds*100);
   // chance on these ladders is 20-50%. Anything at or above 80% means the strategy IS the lesson.
-  ok(pct<80,'['+c.label+'] cannot be cleared without listening ('+pct+'% from the '+c.cheat+' strategy)');
+  ok(pct<80,'['+c.label+'] cannot be cleared without listening ('+pct+'% over '+rounds+' tries, '+c.cheat+' strategy)');
 }
 console.log('');
 // and the honest way must still work, or we have only made it impossible

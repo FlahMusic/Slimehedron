@@ -13,9 +13,9 @@ const listen=async(b,id,ms)=>{
   const ctx=await b.newContext({viewport:{width:393,height:852},hasTouch:true,isMobile:true});
   const p=await ctx.newPage();
   await p.addInitScript(()=>{window.__ev=[];
-    const h=setInterval(()=>{ if(typeof playNote==='function'&&!window.__hk){ window.__hk=1;
-      const orig=window.playNote;
-      window.playNote=function(f,v,d){window.__ev.push({f:Math.round(f),t:Date.now(),d:d});
+    const h=setInterval(()=>{ if(typeof playSynth==='function'&&!window.__hk){ window.__hk=1;
+      const orig=window.playSynth;
+      window.playSynth=function(f,v,d){window.__ev.push({f:Math.round(f),t:Date.now(),d:d});
         return orig.apply(this,arguments);};
       clearInterval(h);} },25);});
   await p.goto('http://127.0.0.1:8765/index.html?l='+id);

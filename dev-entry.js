@@ -53,8 +53,11 @@ const U='http://127.0.0.1:8765/index.html';
     return c?{txt:c.textContent.trim(),u:c.dataset.u,h:Math.round(c.getBoundingClientRect().height)}:null;});
   ok(!!r,'a returner IS offered "carry on"');
   if(r){
-    ok(/^carry on/.test(r.txt)&&/3\./.test(r.txt),'and it names the next lesson by number ("'+r.txt+'")');
-    ok(r.u==='howlong','pointing at the right unit ('+r.u+')');  // lesson 3 after the counting block moved first
+    ok(/^carry on/.test(r.txt)&&/\b\d+\./.test(r.txt),'and it names the next lesson by number ("'+r.txt+'")');
+    const nxt=await p.evaluate(()=>{const done={pulse:1,sayplay:1};
+      const u=window.LEARN2.UNITS.filter(x=>x.tier==='lesson').find(x=>!done[x.id]);
+      return u?u.id:null;});
+    ok(r.u===nxt,'pointing at the first lesson not yet done ('+r.u+', expected '+nxt+')');
     ok(r.h>=44,'the chip is a 44px target ('+r.h+'px)');
     // the ethics guard: nothing loss-framed anywhere on the front door
     const bad=await p.evaluate(()=>{const t=(document.getElementById('splash')||document.body).innerText.toLowerCase();

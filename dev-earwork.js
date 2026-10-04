@@ -24,9 +24,11 @@ const pitches=async(b,id,rounds)=>{
   const ctx=await b.newContext({viewport:{width:393,height:852},hasTouch:true,isMobile:true});
   const p=await ctx.newPage();
   await p.addInitScript(()=>{window.__f=[];
-    const h=setInterval(()=>{ if(typeof playNote==='function'&&!window.__hk){ window.__hk=1;
-      const o=window.playNote;
-      window.playNote=function(f,v,d){window.__f.push(Math.round(f));return o.apply(this,arguments);};
+    // playSynth is the actual voice. This used to hook playNote, which the lessons stopped routing
+   // through -- and because playNote never threw, a broken hook looked exactly like a silent lesson.
+   const h=setInterval(()=>{ if(typeof playSynth==='function'&&!window.__hk){ window.__hk=1;
+      const o=window.playSynth;
+      window.playSynth=function(f,v,d){window.__f.push(Math.round(f));return o.apply(this,arguments);};
       clearInterval(h);} },25);});
   await p.goto('http://127.0.0.1:8765/index.html?l='+id);
   await p.waitForTimeout(2000);
@@ -107,9 +109,11 @@ ok(clash.length===0,'every colour means one scale degree, in every lesson'+(clas
 {const ctx=await b.newContext({viewport:{width:393,height:852},hasTouch:true,isMobile:true});
  const p=await ctx.newPage();
  await p.addInitScript(()=>{window.__n=0;
-   const h=setInterval(()=>{ if(typeof playNote==='function'&&!window.__hk){ window.__hk=1;
-     const o=window.playNote;
-     window.playNote=function(){window.__n++;return o.apply(this,arguments);};clearInterval(h);} },25);});
+   // playSynth is the actual voice. This used to hook playNote, which the lessons stopped routing
+   // through -- and because playNote never threw, a broken hook looked exactly like a silent lesson.
+   const h=setInterval(()=>{ if(typeof playSynth==='function'&&!window.__hk){ window.__hk=1;
+     const o=window.playSynth;
+     window.playSynth=function(){window.__n++;return o.apply(this,arguments);};clearInterval(h);} },25);});
  await p.goto('http://127.0.0.1:8765/index.html?l=majorscale');
  await p.waitForTimeout(3400);
  const n=await p.evaluate(()=>window.__n);
