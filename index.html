@@ -2272,7 +2272,9 @@ const nOff=()=>Math.random()*1.6;          // start anywhere in the first 1.6s, 
 // a panner in front of a destination, so a voice can sit somewhere other than dead centre
 function panTo(dest,p){ try{const sp=AC.createStereoPanner();sp.pan.value=Math.max(-1,Math.min(1,p));
     sp.connect(dest);return sp;}catch(e){return dest;} }
-function dHit(v,t,a,solid){a=Math.min(1.9,a||1); // clamp so accent grooves can't clip the mix. solid=true => LOCKED (no human wobble): used for the anchor hits (kick on 1 & 3) so the groove stays tight.
+function dHit(v,t,a,solid){a=Math.min(1.9,a||1);
+  if(!drumBus){try{initDrums();}catch(e){}}            // self-arming: see the note above, this was a two-month silence
+  if(!drumBus)return; // clamp so accent grooves can't clip the mix. solid=true => LOCKED (no human wobble): used for the anchor hits (kick on 1 & 3) so the groove stays tight.
   // per-instrument human feel: nudge velocity + micro-timing (hats ghost, kick locks). t stays ≥ now so it never schedules in the past.
   if(!solid && typeof humanVoice==='function'){const h=humanVoice(v);a*=h.v;t=Math.max(AC.currentTime,t+h.t);}
   else t=Math.max(AC.currentTime,t);

@@ -117,6 +117,20 @@ deferred out of that scope cannot call it.
 
 - **Never let a test assertion drive the design.** Fix the thing, then fix the test.
 - **A test that proves it RUNS is not a test that it WORKS.** Measure whether it can be *done*.
+- **MEASURE THE OUTPUT, NOT THE CALL.** This is the rule the whole file exists for. Two separate
+  silences shipped for ~2 months with 21 suites green: `note()` routed to `playNote()`, which takes a
+  MIDI number and got a frequency, so its range guard returned — no throw, no error; and `dHit()`
+  threw on a null `drumBus` into a silent `catch`, muting every click track and the whole rhythm
+  block. Nothing was "broken" by any test's definition. `dev-realaudio.js` taps the graph at
+  `AudioContext.destination` and reads RMS off the actual samples; `dev-controls.js` presses every
+  hit-testable control and demands audio, a DOM change or a class change. Those two cannot be
+  satisfied by calling something. Add to them; never replace them with a call-counter.
+  There are ~117 `catch(e){}` in this codebase. Any one of them can hide a dead dependency, so a
+  function must arm its own dependencies (`dHit` now calls `initDrums()` itself) rather than trusting
+  a caller to have done it.
+- **Headless throttles requestAnimationFrame.** A rAF-driven lesson looks mute in a test for a reason
+  that is not the product. Shim rAF to a timer before concluding anything — then if it is still
+  silent, it is real. Both suites above do this.
 - **A silent failure passes every test you have.** `note()` routed through `playNote()`, which takes a
   MIDI number and was handed a FREQUENCY; its `if(m<12||m>120)return` fired, nothing threw, and every
   pitched sound in learn mode was silent while 21 suites stayed green. `playSynth(freq,…)` is the
