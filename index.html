@@ -2028,12 +2028,27 @@ function cutHzFill(x){return 260*Math.pow(14000/260,Math.max(0,Math.min(1,x)));}
 // so a line played on Random keeps surprising you. all four base types are native, so this is cheap + always valid.
 const REALWAVES=['sine','triangle','sawtooth','square'];
 function setOscWave(o,w){o.type=(w==='random')?REALWAVES[(Math.random()*4)|0]:w;}
+// WHEN SOMETHING GOES WRONG, SAY SO.
+// There are ~130 `catch(e){}` blocks in this app. They were meant to stop one bad note killing the
+// page. What they actually did was swallow a thrown error at EVERY call site of dHit() for two
+// months, while the entire rhythm block played nothing and every test stayed green.
+// Un-silencing 130 call sites would be a huge diff for a small gain, and a caller's empty catch
+// can't be reached from here anyway. So the sound functions report their OWN failures instead:
+// one place to instrument, every call site covered, and dev-silence.js can fail the build on a
+// report that should never happen. A silent failure is the only kind that survives.
+const OOPS=[];
+function oops(what){
+  if(OOPS.length<200)OOPS.push(what);
+  try{window.__oops=OOPS;}catch(e){}
+  try{console.warn('[slimehedron] '+what);}catch(e){}
+}
+try{window.__oops=OOPS;}catch(e){}
 function playSynth(freq,vel,imp,hold){   // hold = seconds to SIT at sustain level; omit for the old behaviour
   if(!Number.isFinite(freq)||freq<=0)freq=440; if(!Number.isFinite(vel))vel=90; // BACKSTOP: never let a bad value reach an AudioParam (that threw + glitched the render on note-spam)
   // raindrop model: every hit is TWO sounds — a noise "tick" (the impact), then a tonal "ring"
   // (the trapped-bubble resonance) a few ms later. impact geometry (imp 0..1) sets the character:
   // hard head-on hit = big splashy drop (ticky, short); soft grazing hit = small clean ringer (airy, long).
-  if(!S.synth)return;
+  if(!S.synth){oops('playSynth: S.synth is off — every pitched note is silent');return;}
   initAudio();
   if(activeVoices>32)return; // polyphony cap: ramped tempos stay clean, never mushy
   activeVoices++;
@@ -2285,8 +2300,8 @@ const nOff=()=>Math.random()*1.6;          // start anywhere in the first 1.6s, 
 function panTo(dest,p){ try{const sp=AC.createStereoPanner();sp.pan.value=Math.max(-1,Math.min(1,p));
     sp.connect(dest);return sp;}catch(e){return dest;} }
 function dHit(v,t,a,solid){a=Math.min(1.9,a||1);
-  if(!drumBus){try{initDrums();}catch(e){}}            // self-arming: see the note above, this was a two-month silence
-  if(!drumBus)return; // clamp so accent grooves can't clip the mix. solid=true => LOCKED (no human wobble): used for the anchor hits (kick on 1 & 3) so the groove stays tight.
+  if(!drumBus){try{initDrums();}catch(e){oops('dHit: initDrums() threw — '+(e&&e.message||e));}}  // self-arming: see the note above, this was a two-month silence
+  if(!drumBus){oops('dHit: no drum bus — the whole kit is mute');return;} // clamp so accent grooves can't clip the mix. solid=true => LOCKED (no human wobble): used for the anchor hits (kick on 1 & 3) so the groove stays tight.
   // per-instrument human feel: nudge velocity + micro-timing (hats ghost, kick locks). t stays ≥ now so it never schedules in the past.
   if(!solid && typeof humanVoice==='function'){const h=humanVoice(v);a*=h.v;t=Math.max(AC.currentTime,t+h.t);}
   else t=Math.max(AC.currentTime,t);
@@ -2884,7 +2899,7 @@ function padVoice(c,t,lvl,attack,holdTo,endAt,spread){
   lp.connect(g);g.connect(bandBus);
 }
 function pluck(cents,t,vel,short){ // one short bouncy note (the comp/arp instrument). short=extra-plucky (arp)
-  if(!S.synth)return;
+  if(!S.synth){oops('pluck: S.synth is off — the comp/arp instrument is silent');return;}
   const o=AC.createOscillator(),o2=AC.createOscillator(),g=AC.createGain(),lp=AC.createBiquadFilter();
   o.type='triangle';o2.type='square';o2.detune.value=6;                    // triangle body + a whisper of square = a little bite
   o.frequency.value=o2.frequency.value=freqFromCents(cents);
@@ -3526,7 +3541,27 @@ function fillPhysics(now){
 }
 
 // ---------- ball stepping ----------
+// THE REVIVE SWEEP.
+// Guards at the entry points only stop the bad numbers you thought of. One that gets in anywhere else
+// lives FOREVER: a ball whose x/y went to NaN matches no despawn test (every comparison against NaN is
+// false), so it is never removed, and it throws inside the renderer on every frame from then on. That
+// is a dead app, from one bad subtraction.
+// So stop guessing entry points and check the actual state once a frame instead: whatever has gone bad
+// gets thrown out, and the app carries on. Recovery, not prevention.
+// It is COUNTED and logged on purpose. A thing that quietly fixes itself is a thing nobody ever fixes,
+// and silent self-healing is how learn mode stayed mute for two months.
+let _nanDrops=0;
+function sweepBadBalls(){
+  let n=0;
+  for(let i=balls.length-1;i>=0;i--){const b=balls[i];
+    if(!(Number.isFinite(b.x)&&Number.isFinite(b.y)&&Number.isFinite(b.vx)&&Number.isFinite(b.vy))){
+      balls.splice(i,1);n++;}}
+  if(n){_nanDrops+=n;try{window.__nanDrops=_nanDrops;}catch(e){}
+    try{console.warn('[slimehedron] threw out '+n+' ball(s) with broken numbers (total '+_nanDrops+') — something upstream produced NaN/Infinity');}catch(e){}}
+  return n;
+}
 function step(){
+  sweepBadBalls();           // before any maths touches them this frame
   if(LAB&&LAB._hold)return; // a lesson has frozen the world to explain what just happened
   // GRACEFUL DRAIN: when the tank gets crowded, open a wall so the oldest balls drift OUT through the gap and leave
   // on their own (the off-screen cleanup removes them) — NO more instant despawn-flash. walls reform later so it breathes.

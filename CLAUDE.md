@@ -193,3 +193,31 @@ deferred out of that scope cannot call it.
   and called a *paused* tank "100% duplicate frames". Paused meaning frozen was correct — so assert
   the freeze too, then start the transport and measure smoothness. Two real assertions out of one
   false alarm.
+- **Recover from bad numbers; don't try to prevent them all.** A ball whose x/y goes to NaN matches
+  no despawn test (every comparison against NaN is false), so it is never removed and then throws
+  inside the renderer on every frame, forever — a dead app from one bad subtraction. Eleven
+  hand-placed `isFinite` guards only cover the entry points someone thought of. `sweepBadBalls()`
+  runs once per frame, throws out whatever has gone bad, and the app carries on. `dev-revive.js`
+  proves it by deliberately poisoning the tank with NaN and Infinity balls and then demanding the
+  app still animates, still sounds and still responds to a touch — removing them is not the point,
+  surviving them is.
+- **A thing that quietly fixes itself is a thing nobody ever fixes.** The sweep COUNTS and logs every
+  drop, and the suite fails if normal play drops even one. Self-healing without reporting is just a
+  slower version of the silent failure.
+- **Report from inside the callee, because the caller's `catch(e){}` cannot be reached from there.**
+  ~130 empty catch blocks swallowed dHit() throwing at every single call site for two months.
+  Un-silencing 130 sites is a huge diff for a small gain; instead `playSynth`, `pluck` and `dHit`
+  report their own silent exits into `window.__oops`. One place to instrument, every call site
+  covered. `dev-silence.js` drives all three modes and all 26 lessons and fails if that list is not
+  empty — the gate that would have caught the mute on day one.
+- **An empty failure list must be PROVEN capable of being non-empty.** `dev-silence.js` first switches
+  the synth off on purpose and demands the report appears. Otherwise "no failures" and "nothing can
+  write to the list" look identical, which is the same trap as the dead hook.
+- **The microtuning is real — verify the tuning, never the label.** Measured at the walls: major gives
+  a 400c third, 19-EDO gives 379c (7c flat of a pure 5/4, i.e. better than 12-TET's 14c-sharp 400c),
+  Maqam Rast gives a 350c neutral third. `dev-tuning.js` asserts the intervals in cents AND that the
+  three tunings differ from each other, so three menu entries that all secretly produce 12-TET cannot
+  pass. A scale menu that selects without retuning teaches a child something false.
+- **`#scale` is a hidden duplicate; `#scaleTop` is the one on screen.** Test the control a human can
+  reach — `getElementById('scale')` returns the hidden one and will tell you the picker is invisible.
+  Play mode has no scale picker at all, deliberately (it is the ultra-minimal kids' door).
