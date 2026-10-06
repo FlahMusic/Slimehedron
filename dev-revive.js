@@ -53,15 +53,17 @@ const afterIdle=await p.evaluate(()=>window.__nanDrops||0);
 ok(afterIdle===0,'normal play produces NO broken numbers at all (dropped '+afterIdle+')');
 
 // ---------- 2. POISON THE TANK ----------
-const before=await p.evaluate(()=>({n:balls.length,drops:window.__nanDrops||0}));
-await p.evaluate(()=>{
+// Push and count in ONE evaluate. The sweep runs on the very next frame, so splitting this across
+// two round trips meant the app had already binned them before the count came back — the test was
+// failing because the fix works faster than the test could look.
+const before=await p.evaluate(()=>{
+  const was={n:balls.length,drops:window.__nanDrops||0};
   // every flavour of bad: NaN position, Infinity position, NaN velocity
   balls.push({x:NaN,y:NaN,px:NaN,py:NaN,vx:1,vy:1,hue:0.5,trail:[]});
   balls.push({x:Infinity,y:0,px:0,py:0,vx:0,vy:0,hue:0.2,trail:[]});
   balls.push({x:100,y:100,px:100,py:100,vx:NaN,vy:-Infinity,hue:0.8,trail:[]});
-});
-const poisoned=await p.evaluate(()=>balls.length);
-ok(poisoned===before.n+3,'three poisoned balls are in the tank ('+before.n+' -> '+poisoned+')');
+  return {...was,poisoned:balls.length};});
+ok(before.poisoned===before.n+3,'three poisoned balls went into the tank ('+before.n+' -> '+before.poisoned+')');
 
 await p.waitForTimeout(600);
 const after=await p.evaluate(()=>({n:balls.length,drops:window.__nanDrops||0,

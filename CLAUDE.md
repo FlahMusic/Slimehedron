@@ -221,3 +221,35 @@ deferred out of that scope cannot call it.
 - **`#scale` is a hidden duplicate; `#scaleTop` is the one on screen.** Test the control a human can
   reach — `getElementById('scale')` returns the hidden one and will tell you the picker is invisible.
   Play mode has no scale picker at all, deliberately (it is the ultra-minimal kids' door).
+- **A fader must fade the WHOLE sound.** The percussive tick of every tank note connected straight to
+  `master`, bypassing `melBus`, so the triangle mixer's melody corner only ever faded the tonal half
+  of a note — the impact kept playing at full level wherever you dragged it. That is most of why the
+  mixer "made no sense". Found only because a chord-bed test refused to go silent with every corner
+  muted; the leak was the clue, not the noise.
+- **The chord bed has its own path to the speakers** (`padBus` → master, with its own reverb send) and
+  a fixed level (`PAD_LVL`). It used to run through `bandMix` AND be multiplied by the bass/pad
+  crossfader, so harmony vanished when you moved a control that said nothing about chords. The band
+  on/off button is still the deliberate switch; a mixer is not a mute. `dev-chordbed.js` proves it by
+  dragging the triangle hard to drums with the kit off, then muting `padBus` as a control.
+- **Do NOT try to prove an audio routing claim by setting `melBus`/`drumBus`/`master`.gain.value.**
+  `applyMix()` rewrites those continuously with `setTargetAtTime`, so the assignment is undone before
+  the next measurement. `padBus` is not touched by it. Meter the bus you care about instead.
+- **Decoration families must share ONE notion of "someone is already standing there".** Every placer
+  avoided the furniture (controls, tank, mixer, worm) but none avoided the OTHER placers: the nappers
+  hang in the very band the margin slimes fill, the edge peekers slid along their rails not knowing
+  the worm or the band characters existed (83% overlap), and the 4-bar morph-hop could land on a
+  friend. Fixed with `decorRects()` + `boxFree()` + one ordered `relayoutDecor()` — the ORDER is the
+  fix, because each family only avoids what was placed before it. `dev-crowding.js` counts overlapping
+  rectangles across 3 modes × 6 screen sizes, before and after 40 hops.
+- **Skipping beats stacking.** When a decoration finds no clear spot, it is left out. One slime fewer
+  reads as deliberate; two on top of each other reads as broken.
+- **Artwork needs room, not redrawing.** The rhythm tiles are hand-drawn band scenes supplied at
+  256px and were shown at 78 — every kit read as the same coloured blob. Nothing about the art was
+  changed; it was given ~37% more linear size at every breakpoint (there was vertical headroom on all
+  of them) plus a 7% crop of its own dead border. Look at the asset before deciding a picture problem
+  is a drawing problem.
+- **Children's natural tempo is FASTER than adults', not slower.** Spontaneous motor tempo runs from
+  ~200bpm at age 4 down to ~90bpm in elderly adults, and a 19–20-month-old synchronised best with
+  140bpm songs (Frontiers in Psychology, 2019). So "this feels fast for a kid" is usually the
+  harmonic rhythm, not the tempo — at 80bpm in 4/4, one chord per bar is a chord change every three
+  seconds, which reads as restless. Change those two independently.
