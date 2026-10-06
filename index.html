@@ -97,8 +97,12 @@ header .spacer{flex:1}
    right now. This is it. It replaces the floating #chordPill (which parked under the studio
    strip) and the phone circle-of-fifths (which parked on top of the tank). Painted by
    paintChordChip() from the same source as the wheel hub, so the two can never disagree. */
+/* The chord name inside this chip changes every bar, and "G", "Bb" and "F#m" are different widths --
+   so the chip grew and shrank, and because the transport row is centred, the play button, record button
+   and slime switch all slid sideways on EVERY chord change. A child aiming at a moving button. Reserve
+   enough width for the longest name once and nothing moves again. */
 #hdrChord{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;
-  min-width:52px;padding:3px 9px;border-radius:11px;background:rgba(255,255,255,.72);
+  min-width:66px;padding:3px 9px;border-radius:11px;background:rgba(255,255,255,.72);
   border:1.5px solid rgba(160,150,200,.35);box-shadow:0 2px 8px rgba(120,110,160,.14);flex:none}
 #hdrChord{cursor:pointer;-webkit-tap-highlight-color:transparent}
 #hdrChord:hover{border-color:var(--accent)}
@@ -1237,6 +1241,11 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 .seg svg,.adsr .k svg{pointer-events:none;vertical-align:-1px;margin-left:3px}
 .btn.big{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:8px 18px;font-size:15px;border-radius:18px}
 .btn.big>svg{display:block} /* icon buttons: no baseline gap, uniform height */
+/* The transport label swaps between "play" and "pause", which are different widths -- so every control
+   to its right used to jump sideways by ~20px EVERY time the button was pressed. Reserve the width of
+   the longer label once and the header stops moving. (The narrow-screen rules below replace the label
+   with an icon and set their own min-width, so they still win there.) */
+#playBtn{min-width:98px}
 .btn.big.on{--icAcc:rgba(255,255,255,.9);--icInk:#fff} /* accent strokes flip white on active gradient */
 .btn.magic{background:linear-gradient(135deg,var(--mint),var(--sky));font-weight:700;animation:beckon 2.6s ease-in-out infinite}
 .btn.magic.on{outline:3px solid var(--accent);box-shadow:0 0 18px rgba(179,136,240,.5);animation:none}
@@ -1364,7 +1373,7 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   .btngroup #slimeBig .sic{width:20px;height:19px}
   .hdrSep{display:none} /* phone: the gap is the separator */
   /* it is a BUTTON now (tap to lock/release the key), so it needs 44 on both axes, not just height */
-  #hdrChord{min-width:44px;min-height:44px;padding:1px 4px;background:none;border:0;box-shadow:none;justify-content:center}
+  #hdrChord{min-width:54px;min-height:44px;padding:1px 4px;background:none;border:0;box-shadow:none;justify-content:center} /* wide enough for the longest chord name, so the row never shifts */
   #hdrChord b{font-size:16px} #hdrChord i{display:none} /* the chord is the news; the key label is desktop-only */
   /* FADERS on their own line: full width, centred, and finally long enough to actually aim at.
      A 30px-wide volume slider was not a control, it was a rumour. */
@@ -2019,7 +2028,7 @@ function cutHzFill(x){return 260*Math.pow(14000/260,Math.max(0,Math.min(1,x)));}
 // so a line played on Random keeps surprising you. all four base types are native, so this is cheap + always valid.
 const REALWAVES=['sine','triangle','sawtooth','square'];
 function setOscWave(o,w){o.type=(w==='random')?REALWAVES[(Math.random()*4)|0]:w;}
-function playSynth(freq,vel,imp){
+function playSynth(freq,vel,imp,hold){   // hold = seconds to SIT at sustain level; omit for the old behaviour
   if(!Number.isFinite(freq)||freq<=0)freq=440; if(!Number.isFinite(vel))vel=90; // BACKSTOP: never let a bad value reach an AudioParam (that threw + glitched the render on note-spam)
   // raindrop model: every hit is TWO sounds — a noise "tick" (the impact), then a tonal "ring"
   // (the trapped-bubble resonance) a few ms later. impact geometry (imp 0..1) sets the character:
@@ -2060,7 +2069,10 @@ function playSynth(freq,vel,imp){
   if(S.fenv>0)f.frequency.linearRampToValueAtTime(base,tr+A+D);
   const g=AC.createGain();const peak=v*0.42*(dud?0.16:1)*(1-imp*0.18);
   g.gain.setValueAtTime(0,tr);g.gain.linearRampToValueAtTime(peak,tr+A);g.gain.linearRampToValueAtTime(peak*Su,tr+A+D);
-  const relStart=tr+A+D+0.05;g.gain.setValueAtTime(peak*Su,relStart);g.gain.exponentialRampToValueAtTime(0.0001,relStart+Rl);
+  // The sustain segment was a flat 0.05s, so a "whole note" and a "quarter note" were the same
+  // length -- which made the note-duration lesson teach nothing by ear. hold extends it.
+  const susHold=Math.max(0.05,(typeof hold==='number'&&isFinite(hold))?hold:0.05);
+  const relStart=tr+A+D+susHold;g.gain.setValueAtTime(peak*Su,relStart);g.gain.exponentialRampToValueAtTime(0.0001,relStart+Rl);
   if(S.filtOn){mix.connect(f);f.connect(g);}else{mix.connect(g);}g.connect(melBus);if(S.fxOn)g.connect(delayNode);
   o.onended=()=>{activeVoices=Math.max(0,activeVoices-1);};
   o.start(tr);if(sub)sub.start(tr);const end=relStart+Rl+0.03;o.stop(end);if(sub)sub.stop(end);
@@ -2743,7 +2755,12 @@ function clockSchedule(){
   if(Math.abs(clockAt(AC.currentTime)-performance.now())>20)clockLatch();
   let guard=0;
   while(_clkNext<AC.currentTime+look&&guard++<400){
-    try{S.midiOut.send([0xF8],Math.max(performance.now(),clockAt(_clkNext)));}catch(e){}
+    // NO Math.max(performance.now(), ...) HERE. Clamping a late tick up to "now" collapses several
+    // ticks onto one identical timestamp, and the spacing is the only thing a sequencer reads -- it
+    // measured 20-51ms of spread where there should be none. The spec says a timestamp in the past is
+    // sent as soon as possible anyway (Web MIDI API, MIDIOutput.send), so the clamp bought nothing and
+    // destroyed the timing it was meant to protect. The >0.5s re-anchor above handles a real stall.
+    try{S.midiOut.send([0xF8],clockAt(_clkNext));}catch(e){}
     _clkNext+=tick;
   }
 }
@@ -3342,8 +3359,11 @@ function spawn(x,y){const ang=Math.random()*Math.PI*2, sp=ballSpeed();
   balls.push({x,y,px:x,py:y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,hue:((hueIdx++)%12)/12,trail:[]});}
 function velForHit(){return S.velRand?Math.round(S.velMin+Math.random()*(S.velMax-S.velMin)):S.velFix;}
 let pendingNotes=[];
-function trigger(cents,imp,goo){noteFeed(cents);goo=goo||0;const vel=Math.round(velForHit()*(1-goo*0.3)); // gooed notes land softer too
-  if(S.quantize)pendingNotes.push({cents,vel,imp,goo});else{playSynth(freqFromCents(cents),vel,imp);sendMidi(cents,vel,imp);}} // every note also teaches the chord brain
+function trigger(cents,imp,goo,now){noteFeed(cents);goo=goo||0;const vel=Math.round(velForHit()*(1-goo*0.3)); // gooed notes land softer too
+  // now=true skips the quantize queue. A HAND gets its note instantly; a ball still lands on the grid.
+  // No music software quantizes live input as you play it, and a child cannot feel they caused a sound
+  // that arrives on the next grid line.
+  if(S.quantize&&!now)pendingNotes.push({cents,vel,imp,goo});else{playSynth(freqFromCents(cents),vel,imp);sendMidi(cents,vel,imp);}} // every note also teaches the chord brain
 function jitter(b){if(S.chaos<=0)return;const sp=Math.hypot(b.vx,b.vy);const a=Math.atan2(b.vy,b.vx)+(Math.random()-0.5)*S.chaos*2.2; // perturb angle only — speed stays steady
   b.vx=Math.cos(a)*sp;b.vy=Math.sin(a)*sp;}
 
@@ -4366,13 +4386,20 @@ LAB.take=function(cfg){
   cfg=cfg||{};
   LAB._touch=(cfg.touch!==false); // lessons get a directly playable tank unless one opts out
   if(!LAB._on){ // remember EVERYTHING we are about to touch, once
-    LAB._saved={shape:S.shape,scale:S.scale,root:S.root,octs:S.octs,slime:S.slimeMode,
+    LAB._saved={synth:S.synth,atk:S.atk,dec:S.dec,sus:S.sus,rel:S.rel,
+      shape:S.shape,scale:S.scale,root:S.root,octs:S.octs,slime:S.slimeMode,
       drum:(typeof drumOn!=='undefined'&&drumOn),band:(typeof bandOn!=='undefined'&&bandOn),
       randomShape:S.randomShape,bpm:S.bpm,grav:S.grav};
     LAB._on=true;
   }
   if(S.slimeMode)S.slimeMode=false;               // the lesson drives, not the auto-jammer
   S.randomShape=false;                            // no surprise shape changes mid-explanation
+  // A lesson MUST be able to speak. The internal-synth switch lives in studio; a child who flips it
+  // would silence every lesson with no error and no clue. And the envelope knobs persist across
+  // reloads, so a 0.8s attack set in studio was arriving in the children's lessons. Normalise both
+  // here; LAB.give() puts the player's own settings back untouched.
+  S.synth=true;
+  S.atk=0.004; S.dec=0.09; S.sus=0.72; S.rel=0.22;   // a clean, even teaching tone
   if(cfg.scale!=null){S.scale=cfg.scale;const el=$("scale");if(el)el.value=cfg.scale;}
   if(cfg.root!=null){S.root=cfg.root;const el=$("root");if(el)el.value=String(cfg.root);}
   if(cfg.octs!=null)S.octs=cfg.octs;
@@ -4403,6 +4430,7 @@ LAB.give=function(){
   const v=LAB._saved;LAB._on=false;LAB._saved=null;LAB._hit=null;LAB._labels=null;LAB._hold=false;
   LAB._exact=_labExact=false; // play/studio get their musical chord-tone mapping back
   if(!v)return;
+  S.synth=v.synth;S.atk=v.atk;S.dec=v.dec;S.sus=v.sus;S.rel=v.rel;   // hand the player's own rig back exactly
   S.shape=v.shape;S.octs=v.octs;S.randomShape=v.randomShape;S.bpm=v.bpm;S.grav=v.grav;
   S.scale=v.scale;S.root=v.root;
   const sc=$("scale"),rt=$("root");if(sc)sc.value=v.scale;if(rt)rt.value=String(v.root);
@@ -4452,7 +4480,7 @@ LAB.nearestWall=function(x,y){
 LAB.strike=function(i,vel){
   const e=edges[i];if(!e)return null;
   e.flash=1;
-  try{trigger(e.cents,vel==null?0.85:vel);}catch(err){}
+  try{trigger(e.cents,vel==null?0.85:vel,0,true);}catch(err){}   // a struck wall sounds NOW, never quantized
   try{splash((e.ax+e.bx)/2,(e.ay+e.by)/2,e.nx,e.ny,e.hue);}catch(err){}
   if(LAB._hit){try{LAB._hit(e.deg,e.cents);}catch(err){}}
   return e;
@@ -4918,13 +4946,23 @@ addEventListener('keydown',e=>{
   });
 })();
 cv.addEventListener('pointerdown',e=>{initAudio();if(AC.state==="suspended")AC.resume();
-  const r=cv.getBoundingClientRect();const x=(e.clientX-r.left)*(W/r.width),y=(e.clientY-r.top)*(H/r.height);
+  const r=cv.getBoundingClientRect();
+  if(!(r.width>0&&r.height>0))return;                 // canvas not laid out (hidden): any maths here yields NaN/Infinity
+  const x=(e.clientX-r.left)*(W/r.width),y=(e.clientY-r.top)*(H/r.height);
+  if(!Number.isFinite(x)||!Number.isFinite(y))return; // belt and braces: a NaN ball never despawns and kills the renderer
   // LEARN: the tank is an INSTRUMENT you touch, not a ball dispenser. Nearest wall, so a small finger
   // anywhere near a wall still gets that note. PLAY/STUDIO keep the original drop-a-ball behaviour.
   if(LAB&&LAB._on&&LAB._touch){
     const i=LAB.nearestWall(x,y);
     if(i>=0){LAB.strike(i);if(window._labKeyFlash)window._labKeyFlash(edges[i].deg);return;}
   }
+  // THE TOUCH MUST SOUND NOW. Measured before this line existed: a tap took 1471ms to make any noise --
+  // the ball has to fly across the tank to reach a wall, and then quantize held the note back until the
+  // next grid line. A child cannot feel they caused a sound 1.5s later, and the auto-band that used to
+  // start on entry hid it completely (you tapped, you heard the band, you assumed it was you).
+  // So: ring the nearest wall on contact -- same mapping learn mode already teaches -- then drop the
+  // ball. Instant cause-and-effect, and the generative ball layer is untouched.
+  const wi=LAB.nearestWall(x,y);if(wi>=0){try{LAB.strike(wi);}catch(err){}}
   spawn(x,y);if(!S.playing)setPlaying(true);});
 
 // ---------- moog knobs ----------
@@ -5850,10 +5888,26 @@ window.slimeStar=function(){}; // intentionally a no-op — a "win" is its own r
       const sc=$("scale");if(sc){sc.value='major';sc.dispatchEvent(new Event('change'));}
       const rt=$("root");if(rt){rt.value='55';rt.dispatchEvent(new Event('change'));} // G3
       _keyProgrammatic=false;_keyPinned=false;
+      // THE FIRST SOUND BELONGS TO THE CHILD. The band used to start the instant the door opened, which
+      // means the app's first sound was the app's, not theirs — and a child who taps the tank while a
+      // band is already playing cannot hear that they caused anything. So: open silent, and bring the
+      // band in 400ms AFTER their first touch (their note lands alone, then the band arrives to meet it).
+      // If they touch nothing for 9s they are stuck looking at a quiet shape, so the band starts anyway
+      // as a rescue. Either way the band still happens; only the ordering changed.
       let _sp='1';try{_sp=localStorage.getItem('slimehedron-slime');}catch(e){}
-      if(_sp!=='0'&&!S.slimeMode)$("slimeBig").click(); // auto-slime ON by default (unless the user turned it off themselves)
-      if(!drumOn)$("drumBtn").click();
-      if(!bandOn)$("bandBtn").click();
+      let _bandIn=false;
+      const _startBand=()=>{ if(_bandIn)return; _bandIn=true;
+        try{if(!S.playing)setPlaying(true);}catch(e){} // transport live; silent by itself
+        if(!drumOn)$("drumBtn").click();
+        if(!bandOn)$("bandBtn").click();
+        if(_sp!=='0'&&!S.slimeMode)$("slimeBig").click(); };
+      const _rescue=setTimeout(_startBand,9000);
+      const _firstTouch=()=>{ clearTimeout(_rescue);
+        removeEventListener('pointerdown',_firstTouch,true);
+        removeEventListener('keydown',_firstTouch,true);
+        setTimeout(_startBand,400); };
+      addEventListener('pointerdown',_firstTouch,true);
+      addEventListener('keydown',_firstTouch,true);
       setTimeout(startCoach,900);
     }else if(m==='studio'){ // studio: auto-slime jamming from the first second (a musical bed you can grab & shape)
       const sc=$("scale");if(sc){sc.value='major';sc.dispatchEvent(new Event('change'));} // a real scale, not chromatic random — sounds musical out of the gate

@@ -94,20 +94,40 @@ const U='http://127.0.0.1:8765/index.html';
    await ctx.close();}
 
  // ---- 4. TIME TO FIRST SOUND (off the audio graph) ----
+ // The two modes are DELIBERATELY different and this used to demand they behave the same:
+ //   studio is a musical bed you grab and shape, so it starts jamming on its own.
+ //   play is an instrument, so it opens silent and the CHILD's touch makes the first sound.
+ // Play mode starting its own band hid a 1471ms delay between a tap and any noise -- you tapped,
+ // you heard the band that was already going, and nobody noticed the tap itself did nothing.
+ // dev-firsttouch.js owns that story in full; this block guards the arrival behaviour per mode.
  for(const mode of ['play','studio']){
    const {ctx,p}=await open('?m='+mode);
    const hooked=await p.evaluate(()=>{if(typeof AC==='undefined'||!AC||typeof master==='undefined'||!master)return false;
      const an=AC.createAnalyser();an.fftSize=1024;master.connect(an);
      const buf=new Float32Array(an.fftSize);window.__first=null;const t0=performance.now();
      (function poll(){an.getFloatTimeDomainData(buf);let m=0;for(const v of buf)m=Math.max(m,Math.abs(v));
-       if(m>0.01&&window.__first==null)window.__first=Math.round(performance.now()-t0);
+       if(m>0.01&&window.__first==null){window.__first=Math.round(performance.now()-t0);window.__firstAbs=performance.now();}
        requestAnimationFrame(poll);})();return true;});
    ok(hooked,'['+mode+'] the audio graph is reachable to measure');
    await p.waitForTimeout(2500);
    const f=await p.evaluate(()=>window.__first);
-   ok(f!==null&&f<2000,'['+mode+'] makes sound on its own, with nothing touched ('+(f===null?'silent':f+'ms')+')');
+   if(mode==='studio'){
+     ok(f!==null&&f<2000,'[studio] makes sound on its own, with nothing touched ('+(f===null?'silent':f+'ms')+')');
+   }else{
+     ok(f===null,'[play] stays SILENT with nothing touched — the app does not play itself ('+(f===null?'silent':f+'ms')+')');
+     // now the half that matters: the child's own touch has to sound, and sound immediately
+     await p.evaluate(()=>{window.__first=null;window.__firstAbs=null;window.__t0=performance.now();});
+     const box=await p.evaluate(()=>{const r=document.getElementById('cv').getBoundingClientRect();
+       return {x:r.left+r.width*0.5,y:r.top+r.height*0.38};});
+     await p.mouse.click(box.x,box.y);                 // a real trusted click, like a real finger
+     await p.waitForTimeout(350);                      // the band is not due until 400ms, so this is the TAP
+     // measure from the CLICK, not from page load -- the poll's own t0 is the page hook
+     const tap=await p.evaluate(()=>window.__firstAbs==null?null:Math.round(window.__firstAbs-window.__t0));
+     ok(tap!==null,'[play] tapping the tank makes a sound');
+     ok(tap!==null&&tap<250,'[play] and it arrives in '+(tap===null?'never':tap+'ms')+' — under 250ms, so it feels caused');
+   }
    await ctx.close();}
 
  await b.close();
- console.log('\n'+(FAIL.length?FAIL.length+' FAILURE(S)':'the front door works: deep links, carry-on, sound on arrival'));
+ console.log('\n'+(FAIL.length?FAIL.length+' FAILURE(S)':'the front door works: deep links, carry-on, and the right mode makes the first sound'));
  process.exit(FAIL.length?1:0);})();

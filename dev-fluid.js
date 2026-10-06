@@ -45,6 +45,26 @@ for(const mode of ['play','studio']){
   const p=await ctx.newPage();
   await p.goto('http://127.0.0.1:8765/index.html?m='+mode);
   await p.waitForTimeout(3500);
+  // PAUSED MEANS FROZEN, so prove that first and then start the transport to measure smoothness.
+  // play mode now opens silent and still (the child's touch makes the first sound), so a sampler
+  // that spawns its own balls and never starts the clock measures a paused app and calls it stutter.
+  // This suite is about whether MOTION is smooth, not about whether pause works -- so assert the
+  // freeze, then press play, then measure.
+  if(mode==='play'){
+    const frozen=await p.evaluate(()=>new Promise(res=>{
+      for(let i=0;i<4;i++){try{spawnRain();}catch(e){}}
+      const pts=[];let n=0;
+      const tick=()=>{ if(balls.length)pts.push([balls[0].x,balls[0].y]);
+        if(++n<40)requestAnimationFrame(tick);
+        else{let moved=0;for(let i=1;i<pts.length;i++)if(Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1])>1e-6)moved++;
+          res({samples:pts.length,moved:moved});}};
+      requestAnimationFrame(tick);}));
+    ok(frozen.samples>0,'[play] balls exist to measure while paused ('+frozen.samples+')');
+    ok(frozen.moved===0,'[play] a paused tank is completely still — pause really pauses ('+frozen.moved+' moving frames)');
+    await p.evaluate(()=>{try{balls.length=0;}catch(e){}});
+  }
+  await p.evaluate(()=>{try{if(!S.playing)setPlaying(true);}catch(e){}});
+  await p.waitForTimeout(250);
   const r=await sample(p,240);
   const R=stats(r.raw), D=stats(r.drawn);
   console.log('  ['+mode+'] '+R.n+' frames — raw duplicates '+R.dupPct.toFixed(0)+

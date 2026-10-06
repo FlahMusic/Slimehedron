@@ -164,3 +164,32 @@ deferred out of that scope cannot call it.
 - **Micro-timing offsets stay < 0.5 step; downbeat locked to 0; clamp velocity.**
 - **Image knockout:** border flood-fill of a colour the subject doesn't share; feather only the
   true edge. A pale subject on a near-matching background is an impossible matte — demand a key colour.
+- **A feature that covers a bug is two bugs, and fixing one of them ships something worse.** Play
+  mode started its whole band the second the door opened. That hid the fact that touching the tank
+  took **1471ms** to make any sound at all — the ball has to fly across the tank to reach a wall, and
+  quantize then held the note until the next grid line. A child tapped, heard the band that was
+  already going, and nobody ever noticed the tap itself did nothing. Turning the auto-band off on its
+  own would have shipped a play mode whose first touch is silent. Measured both, fixed both: the tap
+  now rings the nearest wall on contact (63ms), then the band joins 400ms later.
+- **Time-to-sound is a number. Assert the number.** "It makes a sound" passes in 1.5 seconds and in
+  60ms, and only one of those feels like the child caused it. `dev-firsttouch.js` clicks with a real
+  trusted click and fails over 250ms.
+- **A hand never gets quantized.** No music software quantizes live input while you play it. Balls
+  land on the grid; fingers sound now. That is what `trigger(...,now)` is for.
+- **Never clamp a scheduled timestamp up to "now".** `send([0xF8], Math.max(performance.now(), want))`
+  collapsed every late tick onto one identical timestamp — 20–51ms of spread in a clock whose spacing
+  was otherwise perfect, and the spacing is the only thing a sequencer reads. The Web MIDI spec says a
+  past timestamp is sent as soon as possible anyway, so the clamp protected nothing and destroyed the
+  timing it existed for. 0.00ms after removing it.
+- **Any control whose text changes width drags every control beside it.** The transport label swaps
+  "play"/"pause" and the chord chip prints "G", "Bb", "F#m" — both resize, the row is centred, so the
+  play button, record button and slime switch slid sideways on every chord change. A child aiming at a
+  moving target. Reserve the width of the longest label (`min-width`) and watch real playback across
+  several chords demanding exactly ONE x position per control.
+- **A flaky check is worse than no check, because you stop believing it.** 3px drift, then 0, then
+  3px. The answer was never the tolerance — it was a chip that genuinely changed size. Fix the cause;
+  the flake goes with it.
+- **A suite that sets up its own state can measure the wrong app.** `dev-fluid` spawned its own balls
+  and called a *paused* tank "100% duplicate frames". Paused meaning frozen was correct — so assert
+  the freeze too, then start the transport and measure smoothness. Two real assertions out of one
+  false alarm.

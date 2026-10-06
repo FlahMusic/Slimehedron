@@ -130,6 +130,12 @@ const EXEMPT='.spCredit a, .spCredit, #stepGrid .sgCell, .lk, #labKeys *, .cofNo
     const ctx=await b.newContext({viewport:{width:1440,height:900}});const p=await ctx.newPage();
     await p.goto('file://'+process.cwd()+'/index.html');await p.waitForTimeout(450);
     await p.click(`.modeCard[data-m="${mode}"]`);await p.waitForTimeout(2000);
+    // Wait for the webfont before measuring. Text measured in the fallback font is a few px wider or
+    // narrower, which made this check report a 3px drift on one run and 0 on the next -- flaky, and a
+    // flaky check is worse than no check because you stop believing it.
+    await p.evaluate(()=>document.fonts&&document.fonts.ready?document.fonts.ready:null).catch(()=>{});
+    await p.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
+    await p.waitForTimeout(250);
     pos[mode]=await p.evaluate(()=>{const o={};
       ['playBtn','recBtn','slimeBig','hdrChord'].forEach(id=>{const e=document.getElementById(id);
         if(!e)return;const r=e.getBoundingClientRect();o[id]=Math.round(r.left);});
@@ -138,6 +144,29 @@ const EXEMPT='.spCredit a, .spCredit, #stepGrid .sgCell, .lk, #labKeys *, .cofNo
   for(const k of ['playBtn','recBtn','slimeBig','hdrChord']){
     const d=Math.abs((pos.play[k]||0)-(pos.studio[k]||0));
     ok(d<=2,'#'+k+' is at the same x in play and studio (drift '+d+'px)');}}
+
+ // ---------- 4b. THE CONTROLS MUST HOLD STILL WHILE THE MUSIC PLAYS ----------
+ // The chord chip prints the chord name, and "G", "Bb" and "F#m" are different widths. The transport
+ // row is centred, so the chip growing by 6px slid the play button, record button and slime switch
+ // sideways on EVERY chord change -- a child aiming at a button that moves. Both that chip and the
+ // play/pause label (whose text also swaps width) now reserve their width. This watches real playback
+ // across several chords and demands that every control stays at exactly ONE x position.
+ {const ctx=await b.newContext({viewport:{width:1440,height:900}});const p=await ctx.newPage();
+  await p.goto('file://'+process.cwd()+'/index.html?m=studio');await p.waitForTimeout(3000);
+  const r=await p.evaluate(()=>new Promise(res=>{
+    const ids=['playBtn','recBtn','slimeBig','hdrChord','chordBtn'];
+    const seen={},names=new Set();let n=0;
+    ids.forEach(i=>seen[i]=new Set());
+    const iv=setInterval(()=>{
+      ids.forEach(i=>{const e=document.getElementById(i);if(e)seen[i].add(Math.round(e.getBoundingClientRect().left));});
+      const hc=document.getElementById('hcName');if(hc&&hc.textContent.trim())names.add(hc.textContent.trim());
+      if(++n>=170){clearInterval(iv);const o={};ids.forEach(i=>o[i]=[...seen[i]]);res({pos:o,chords:[...names]});}
+    },100);}));
+  ok(r.chords.length>=3,'the chord actually changed while we watched ('+r.chords.length+' chords: '+r.chords.join(' ')+')');
+  for(const k in r.pos){
+    const xs=r.pos[k];
+    ok(xs.length===1,'#'+k+' never moves while the music plays ('+xs.length+' position'+(xs.length===1?'':'s '+JSON.stringify(xs))+')');}
+  await ctx.close();}
 
  await b.close();
  console.log('\n'+(FAIL.length?FAIL.length+' FAILURE(S)':'accessibility + congruence clean'));
