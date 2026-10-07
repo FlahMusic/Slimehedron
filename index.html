@@ -1118,6 +1118,8 @@ canvas{background:none;border:0;box-shadow:none;border-radius:0;max-width:100%;m
 .cpChip .cpX{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:#f4a2b6;color:#fff;border:none;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(150,90,110,.4)}
 .cpChip .cpX:hover{background:#ec7f99}
 .cpChip.active{border-color:#b79fe8;box-shadow:0 0 0 2px rgba(183,159,232,.4)}
+#chordPanel .cpAuto{display:flex;align-items:center;gap:8px;margin:2px 0 8px;font:700 12px system-ui,sans-serif;color:#5a4f78}
+#chordPanel .cpAuto select{flex:1;min-width:0;font:600 12px system-ui,sans-serif;padding:5px 7px;border-radius:9px;border:1.5px solid rgba(160,150,200,.5);background:rgba(255,255,255,.7);color:#5a4f78}
 #cpAdd{width:30px;height:34px;border:1.5px dashed #9cc88f;background:rgba(255,255,255,.55);border-radius:10px;color:#6ea35e;font-size:19px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.12s}
 #cpAdd:hover{background:#eafbe6;border-color:#7bbf6a;color:#4f8a41}
 .cpFoot{display:flex;align-items:center;gap:10px;margin-top:10px}
@@ -1724,6 +1726,9 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
         <button id="cpDice" title="roll a new progression in this key">🎲</button>
         <button id="cpClose" title="close">✕</button></div>
       <div id="cpChips"></div>
+      <div class="cpAuto"><label for="cpAutoBars">chord lasts</label>
+        <select id="cpAutoBars" title="how long each chord plays while the slime is jamming by itself">
+          <option value="1">1 bar</option><option value="2">2 bars</option><option value="4">4 bars</option></select></div>
       <div class="cpFoot"><label class="cpFollow"><input type="checkbox" id="cpFollow"> follow this progression</label>
         <button id="cpClear" title="remove all chords">clear</button></div>
       <!-- inline editor for a single chord (root + quality + bars) -->
@@ -1951,6 +1956,10 @@ const NOTE_NAMES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 const S={
   playing:false,bpm:80,div:0.125,dotted:false,triplet:false,swing:0.15,quantize:true,rain:false, // a lil default swing so the groove bounces instead of marching
   root:60,scale:"major",octs:2,shape:6,spin:0,
+  chordBars:2, // HOW LONG ONE CHORD LASTS, in bars. One per bar at 80bpm is a change every three
+               // seconds, which reads as restless; children's music sits on a chord longer. The
+               // chord menu exposes this. 4 is a calm wash, 1 is the old restless behaviour.
+
   chaos:0.12,speed:4,grav:0,
   velRand:true,velFix:100,velMin:12,velMax:94,
   synth:true,wave:"triangle",sub:0,
@@ -2823,6 +2832,9 @@ function sendMidiAt(midiFloat,vel,ch,acT,durSec,timbre){ // midiFloat may be fra
   try{S.midiOut.send([0x90|(outCh-1),note,vel],ts);S.midiOut.send([0x80|(outCh-1),note,0],ts+durSec*1000);}catch(e){}
   midiRelease(outCh,note,durSec*1000);}
 let curRootDeg=0;
+let _autoHold=0;        // bars still to run on the current auto chord
+let _chordIdx=0;        // how many CHORDS we have been through (not bars) — see advanceHarmony
+let _chordLastBar=true; // is this the LAST bar of the current chord? (the bass leads in, the comp pushes)
 // ---- DIRECT chord override: when a human plays, the chord IS what they play — no histogram guessing, no delay ----
 let manualNotes=[]; // {deg,t}
 function degOf(cents){const sc=scaleObj().c,len=sc.length,rem=((Math.round(cents)%1200)+1200)%1200;let idx=0,bd=1e9;
@@ -2952,7 +2964,179 @@ function pluck(cents,t,vel,short){ // one short bouncy note (the comp/arp instru
   sendMidiAt(S.root+cents/100,Math.round(70*vel),S.chLead||S.chPad,t,dec*0.9); // fractional = true microtonal pitch (MPE keeps it)
 }
 // syncopated comp rhythms (16th positions). rotate through them for bar-to-bar variety — classic soul/funk off-beat push.
-const COMP_RHY=[[3,6,10,11,14],[2,6,10,13],[3,7,10,14,15],[2,3,8,11,14]];
+const COMP_RHY=[[3,6,10,11,14],[2,6,10,13],[3,7,10,14,15],[2,3,8,11,14]]; // legacy fallback only — see FEELS below
+
+// ============================================================================================
+//  THE FEEL TABLE  —  the band's whole personality, as RULES instead of recordings.
+//  ------------------------------------------------------------------------------------------
+//  WHY RULES AND NOT A PATTERN LIBRARY:
+//   1. A folder of loops is finite. Pick the same rhythm twice and you hear the same bar twice.
+//      These rules generate a fresh part every chord, so the same button never plays the same
+//      thing — and the kid can't wear it out.
+//   2. A genre's conventions are common musical practice, not anybody's file: "a bossa puts its
+//      chord hits on 1, the & of 2 and 4", "disco bass jumps the octave every eighth". Those are
+//      facts you can read in any method book. Generating from them means we are not deriving
+//      from someone's MIDI, which keeps us clean under GPL-3.0 with nothing to attribute.
+//   3. It stays small. No .mid ever reaches the browser (that rule predates this and still holds).
+//
+//  HOW TO CHANGE IT: every genre is one row. Add a row to add a genre. Nothing else moves.
+//    grid     16th-note slots in a bar (always 16 here; odd meters keep the old pad bed)
+//    seeds    the textbook rhythms, cited. Played verbatim some of the time so the genre still
+//             sounds like itself — a player who only ever improvises stops being recognisable.
+//    w        how likely a chord hit is on each 16th. index 0=beat1, 4=2, 8=3, 12=4; 2/6/10/14
+//             are the "&"s. This is the genre's accent, and the generator samples from it.
+//    density  [min,max] chord hits per bar
+//    seedOdds chance of using a textbook seed verbatim instead of generating
+//    push     chance of anticipating the NEXT chord on the & of 4 (the pop/jazz "push")
+//    dodge    0..1, how hard the chords avoid landing on a bass note. NOT a universal good:
+//             disco and rock LOCK chords to the bass on purpose, jazz and bossa weave around
+//             it. So this is a genre decision, not a quality setting.
+//    ring     true = chords sustain into each other, false = short stabs
+//    bass     { w, density, oct, approach } — same idea, in the degree tokens R/T/F/O/A
+//    fill     { every, len } — a drum fill on the last `len` sixteenths of every `every` bars
+//
+//  SOURCES for the seeds (conventions, not transcriptions):
+//    bossa  1, &2, 4  /  &1, 3, 4            — tunableapp.com bossa nova rhythm
+//    jazz   Charleston 1+&2; reverse &1+3;   — jazz-library.com comping guide
+//           Freddie Green 1,2,3,4; Garland &2+&4
+//    disco  four-on-floor, offbeat open hats — musicradar disco programming
+//    disco bass  octave alternation on 8ths  — ujam nu-disco guide
+// ============================================================================================
+const FEELS={
+  pop:   {grid:16, seedOdds:.45, push:.45, ring:false, density:[3,5], dodge:.6,
+          seeds:[[0,6,8,14],[0,3,6,10,14],[0,6,10],[0,4,6,12,14]],
+          w:[10,1,3,2, 5,1,9,2, 7,1,4,2, 6,1,8,2],                 // leans on 1, the &2 and the &4 push
+          bass:{w:[10,0,1,1, 2,0,3,1, 8,0,1,1, 3,0,4,2],density:[2,4],oct:.25,approach:.45},
+          fill:{every:8,len:4}},
+  rock:  {grid:16, seedOdds:.4, push:.25, ring:false, density:[4,7], dodge:.3,
+          seeds:[[0,4,8,12],[0,2,4,8,10,12],[0,4,6,8,12,14],[0,4,8,10,12]],
+          w:[10,1,5,1, 9,1,5,1, 9,1,5,1, 9,1,6,1],                 // straight and driving, 8ths with grit
+          bass:{w:[10,0,2,0, 7,0,2,0, 8,0,2,0, 7,0,3,2],density:[4,6],oct:.15,approach:.55},
+          fill:{every:8,len:6}},
+  disco: {grid:16, seedOdds:.35, push:.2, ring:false, density:[4,7], dodge:.12,
+          seeds:[[2,6,10,14],[2,3,6,10,11,14],[2,6,7,10,14,15],[0,2,6,10,14]],
+          w:[3,1,10,3, 2,1,10,3, 3,1,10,3, 2,1,10,4],              // the chord lives on the OFF-beats; that is disco
+          bass:{w:[10,0,8,0, 8,0,8,0, 8,0,8,0, 8,0,8,0],density:[6,8],oct:.85,approach:.3},
+          fill:{every:8,len:4}},
+  bossa: {grid:16, seedOdds:.6, push:.15, ring:true, density:[3,4], dodge:.8,
+          seeds:[[0,6,12],[2,8,12],[0,6,10],[2,8,14]],
+          w:[8,1,7,1, 2,1,9,1, 6,1,3,1, 8,1,4,1],                  // 1, &2, 4 / &1, 3, 4 — gentle and syncopated
+          bass:{w:[10,0,1,0, 1,0,2,0, 9,0,1,0, 2,0,2,1],density:[2,3],oct:.2,approach:.35},
+          fill:{every:16,len:4}},
+  jazz:  {grid:16, seedOdds:.55, push:.5, ring:true, density:[2,4], dodge:.85,
+          seeds:[[0,6],[2,8],[0,4,8,12],[6,14],[0,6,10],[2,6,12]],
+          w:[8,0,6,0, 5,0,10,0, 7,0,5,0, 5,0,9,0],                 // beats and &s only, never the e/a — swing lives there
+          bass:{w:[10,0,1,0, 6,0,2,0, 8,0,1,0, 6,0,2,1],density:[2,4],oct:.1,approach:.6},
+          fill:{every:8,len:6}}
+};
+// anything without its own row plays the house feel rather than nothing
+const FEEL_DEFAULT={grid:16, seedOdds:.4, push:.3, ring:false, density:[3,5], dodge:.5,
+  seeds:[[0,6,10,14],[0,4,8,12],[2,6,10,14],[0,3,6,10]],
+  w:[9,1,5,2, 6,1,7,2, 7,1,5,2, 6,1,7,2],
+  bass:{w:[10,0,2,0, 5,0,3,1, 8,0,2,0, 5,0,3,2],density:[3,5],oct:.25,approach:.45},
+  fill:{every:8,len:4}};
+function feelFor(kit){return FEELS[kit]||FEEL_DEFAULT;}
+
+// ONE PLAN PER BAR, shared by the chords and the bass so they can be written against each other.
+// The bass figure holds for a 16-bar block (a bassline that changes every bar is not a bassline),
+// while the chord rhythm is redrawn every bar inside that block — which is roughly how a real
+// rhythm section behaves: the bass player keeps the groove, the chord player varies around it.
+const BAND={comp:[],compBar:-1,bass:{},bassBlock:-1,kit:null};
+function _kitHash(k){let h=0;k=String(k||'');for(let i=0;i<k.length;i++)h=(h*31+k.charCodeAt(i))|0;return h;}
+function bandPlan(barI,kit){
+  const feel=feelFor(kit);
+  const block=Math.floor(barI/16);                  // "mix it up every 16 bars"
+  if(BAND.bassBlock!==block||BAND.kit!==kit){
+    BAND.bass=genBass(feel,mulberry32((_bandSalt^(block*40503)^_kitHash(kit))|0),false);
+    BAND.bassBlock=block;}
+  if(BAND.compBar!==barI||BAND.kit!==kit){
+    const avoid=new Set(Object.keys(BAND.bass).map(Number));
+    BAND.comp=genComp(feel,mulberry32((_bandSalt^Math.imul(barI,2654435761)^_kitHash(kit))|0),avoid);
+    BAND.compBar=barI;}
+  BAND.kit=kit;BAND.feel=feel;
+  return BAND;
+}
+// ONE DRUM FILL STEP. Returns {v:voice, a:amplitude} or null for "play nothing here".
+// Fills sit on the last `len` sixteenths of the last bar of a phrase (every 8 or 16 bars, the
+// kit's own choice). They are built from THIS kit's own voices, so each kit fills in character,
+// and they get busier and louder as they land on the next downbeat — which is what makes a fill
+// read as a hand-off rather than a stumble. Generated, so a phrase end is never the same twice.
+function genFill(kit,barI,inBar){
+  const fl=feelFor(kit).fill, from=16-fl.len;
+  if(((barI+1)%fl.every)!==0||inBar<from)return null;
+  const vm=(typeof KITVOICE!=='undefined'&&KITVOICE[kit])||{lo:'K',mid:'s',hi:'h'};
+  const r=mulberry32((_bandSalt^Math.imul(barI,97)^Math.imul(inBar,7919))|0);
+  const frac=(inBar-from)/Math.max(1,fl.len-1);        // 0 at the start of the fill, 1 as it lands
+  if(r()>=0.5+0.45*frac)return null;                   // sparse at the top, busy at the bottom
+  const q=r();
+  return {v:(q<0.6?vm.mid:(q<0.85?vm.hi:vm.lo)), a:0.5+0.5*frac};
+}
+window.__genFill=genFill;
+window.__bandPlan=bandPlan; // for dev-band.js
+window.__genComp=genComp;window.__feelFor=feelFor;window.__mul32=mulberry32; // so the suite can A/B the dodge on identical seeds
+
+// Small deterministic RNG. Seeded per (bar, chord, kit) so a part is stable while it is playing
+// and genuinely different next time round — rather than re-rolling mid-bar and stuttering.
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+let _bandSalt=(Math.random()*1e9)|0;   // a new salt per page load = a new band every session
+
+// Weighted pick of `n` distinct 16th positions. `avoid` is what the BASS is already playing:
+// a chord hit on top of a bass note is one sound, a chord hit between them is a groove, so the
+// generator is pushed away from doubling the bass. That interlock is the whole point.
+function pickOnsets(w,n,rng,avoid,dodge){
+  const pool=[];
+  const keep=1-0.9*(dodge==null?0.5:dodge);          // dodge 0 = ignore the bass, 1 = work hard to miss it
+  for(let i=0;i<16;i++){let p=w[i];if(p<=0)continue;
+    if(avoid&&avoid.has(i))p*=keep;
+    pool.push([i,p]);}
+  const out=[];
+  for(let k=0;k<n&&pool.length;k++){
+    let tot=0;for(const q of pool)tot+=q[1];
+    let r=rng()*tot,i=0;
+    for(;i<pool.length;i++){r-=pool[i][1];if(r<=0)break;}
+    i=Math.min(i,pool.length-1);
+    out.push(pool[i][0]);pool.splice(i,1);}
+  return out.sort((a,b)=>a-b);
+}
+// One bar of chord rhythm. Returns 16th positions.
+function genComp(feel,rng,avoid){
+  const dodge=(feel.dodge==null?0.5:feel.dodge);
+  if(rng()<feel.seedOdds){                           // play it straight: the genre's own rhythm
+    let s=feel.seeds[(rng()*feel.seeds.length)|0].slice();
+    // a player thins out where the bass is already busy — but only in the genres that do that.
+    if(avoid&&s.length>2&&rng()<dodge){
+      const clash=s.filter(k=>avoid.has(k)&&k!==0);  // never drop the downbeat, that is the anchor
+      if(clash.length)s=s.filter(k=>k!==clash[(rng()*clash.length)|0]);
+    }
+    if(rng()<0.35){const extra=pickOnsets(feel.w,1,rng,avoid,dodge)[0];   // ...with one ornament on top
+      if(extra!=null&&s.indexOf(extra)<0)s.push(extra);}
+    return s.sort((a,b)=>a-b);
+  }
+  const[d0,d1]=feel.density;
+  const n=d0+((rng()*(d1-d0+1))|0);
+  const hits=pickOnsets(feel.w,n,rng,avoid,dodge);
+  if(!hits.length)hits.push(0);
+  return hits;
+}
+// One bar of bass, in the degree tokens the rest of the engine already speaks (R root, T third,
+// F fifth, O octave, A stepwise lead-in). Never absolute pitches — that is what lets the key
+// journey walk the circle of fifths without transposing anything.
+function genBass(feel,rng,lastBarOfChord){
+  const b=feel.bass,out={};
+  out[0]='R';                                        // the downbeat is the root, always. that is the anchor.
+  const[d0,d1]=b.density;
+  const n=Math.max(1,d0+((rng()*(d1-d0+1))|0)-1);
+  for(const k of pickOnsets(b.w,n,rng,null)){
+    if(k===0)continue;
+    const r=rng();
+    out[k]= r<b.oct?'O' : r<b.oct+0.34?'F' : r<b.oct+0.5?'T' : 'R';
+  }
+  // a lead-in on the last 16th walks you into the next chord instead of stopping dead
+  if(lastBarOfChord&&rng()<b.approach)out[14]='A';
+  return out;
+}
+
 function bandComp(t,barI,degs,stepDur,steps){ // schedule this bar's comp OR arp across its 16th grid
   if(steps!==16)return;                        // fancy comp only on the 4/4 grid; odd meters keep the pad bed
   const gr=(typeof activeGroove==='function')?activeGroove():null; // borrow the same swing/micro-timing as the drums
@@ -2966,10 +3150,21 @@ function bandComp(t,barI,degs,stepDur,steps){ // schedule this bar's comp OR arp
     run.forEach((c,i)=>{const k=pos[i];if(k<15)pluck(c,swing(k),0.55+Math.random()*0.25,true);});
     // land a stab of the NEXT chord's root on the last 16th = the "and here we go" pickup
     const nx=centsForDegree((nextRootDeg==null?curRootDeg:nextRootDeg));pluck(nx,swing(15),0.7,true);
-  }else{ // ---- BARS 1-3: rhythmic chord COMP — syncopated stabs, a different rhythm each bar ----
-    const rhy=COMP_RHY[(barI+ (curRootDeg||0))%COMP_RHY.length];   // rotate rhythm by bar+chord so it keeps evolving
+  }else{ // ---- BARS 1-3: rhythmic chord COMP, generated fresh from the kit's own feel ----
+    // Was four hardcoded rhythms rotated by bar, identical for all five kits — so a bossa comped
+    // like a rock song and you heard the same four bars forever. Now it comes from FEELS: the
+    // genre's own accent, sometimes its textbook rhythm verbatim, always dodging the bass.
+    const plan=bandPlan(barI,(typeof drumKit!=='undefined'?drumKit:'pop'));
+    const rhy=(plan.comp&&plan.comp.length)?plan.comp:COMP_RHY[(barI+(curRootDeg||0))%COMP_RHY.length];
+    const ring=!!(plan.feel&&plan.feel.ring);
     for(const k of rhy){const vel=0.45+Math.random()*0.3;         // human velocity on every stab
-      for(const c of degs)pluck(c,swing(k),vel,false);}           // full voice-led chord on each stab
+      for(const c of degs)pluck(c,swing(k),vel,!ring);}           // ring = let it sustain (bossa, jazz); else a stab
+    // THE PUSH: land the next chord early, on the & of 4. This is the single move that makes a
+    // backing track sound played rather than placed — pop and jazz live on it.
+    if(plan.feel&&Math.random()<plan.feel.push&&typeof nextRootDeg!=='undefined'&&nextRootDeg!=null
+       &&nextRootDeg!==curRootDeg&&rhy.indexOf(14)<0){
+      const nx=centsForDegree(nextRootDeg);
+      pluck(nx,swing(14),0.5,!ring);}
   }
 }
 // ============================================================================================
@@ -3009,6 +3204,7 @@ function advanceHarmony(barI){
       CHORD_MODE.idx=(CHORD_MODE.idx+1)%CHORD_MODE.prog.length;
     }
     CHORD_MODE.barsLeft--;
+    _chordLastBar=(CHORD_MODE.barsLeft<=0);
     const cc=CHORD_MODE.prog[((CHORD_MODE.idx-1)+CHORD_MODE.prog.length)%CHORD_MODE.prog.length];
     const nn=CHORD_MODE.prog[CHORD_MODE.idx%CHORD_MODE.prog.length];
     rd=pcToNearestDeg(cc.pc);                 // for wheel/pill/color tracking only
@@ -3019,7 +3215,18 @@ function advanceHarmony(barI){
   _cmCur=null;
   if(man!=null){rd=man%n;nextRootDeg=man%n;} // hold YOUR chord — no roulette, no lag
   else if(harm==='drone'){rd=(Math.random()<0.8?0:degNear(sc,700))%n;nextRootDeg=rd;} // 80% tonic, else drift to the 5th degree
-  else{rd=(nextRootDeg!=null?nextRootDeg:pickChord(barI))%n;nextRootDeg=pickChord(barI+1)%n;} // auto only when hands are off
+  else{ // auto only when hands are off — and a chord now LASTS, instead of flipping every bar
+    // COUNT CHORDS, NOT BARS. pickChord()'s quiet-tank fallback indexes a 4-chord loop by the number
+    // you hand it, so asking it for bar+4 every 4 bars returned the SAME chord forever — a chord set
+    // to 4 bars actually lasted 12. The progression must step once per CHORD, whatever its length.
+    const hold=Math.max(1,Math.min(8,S.chordBars||2));
+    if(_autoHold>0){_autoHold--;rd=curRootDeg;}                      // still sitting on this chord
+    else{rd=(nextRootDeg!=null?nextRootDeg:pickChord(_chordIdx))%n;
+         _chordIdx++;
+         nextRootDeg=pickChord(_chordIdx)%n;                         // where we go when this one runs out
+         _autoHold=hold-1;}
+    _chordLastBar=(_autoHold===0);                                   // the bar the bass walks us out on
+  }
   _prevRootDeg=curRootDeg;curRootDeg=rd;paintHarmony();
 }
 // one place that refreshes every harmony readout. NOTE: updateChordPill() bails when the pill is hidden
@@ -3156,10 +3363,18 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
         const barDur=bar*_sDur();
         if(inBar===0){const tok=(barI===3)?'F':'R'; bassNote(tok,drumTime,hum,barDur*1.06);} // 1.06 = slight overlap into the next bar = seamless drone (bar 4 lifts to the 5th)
       } else {
-        const set=(_sSig==='16')?(KITBASS[drumKit]||BASSGROOVES):null,bp=set?set[(_bassGroove+barI)%set.length]:BASSPAT[_sSig],tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));
+        // THE BASS. Generated per 16-bar block from the kit's own feel (see FEELS) in the same
+        // degree tokens as before, so the key journey still works untouched. KITBASS stays as the
+        // fallback for odd meters and anything without a feel row.
+        const gen=(_sSig==='16')?bandPlan(barI,drumKit).bass:null;
+        const set=(_sSig==='16')?(KITBASS[drumKit]||BASSGROOVES):null;
+        const bp=gen||(set?set[(_bassGroove+barI)%set.length]:BASSPAT[_sSig]);
+        let tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));
+        // on the last bar of a chord, walk into the next one instead of stopping dead
+        if(gen&&inBar===14&&!tok&&_chordLastBar&&Math.random()<(feelFor(drumKit).bass.approach||0))tok='A';
         if(tok){const anchor=(inBar===0||inBar===8);
           // hold this note until the NEXT bass note in the pattern (wrapping into the next bar) → sustained, connected groove, no gaps
-          let g=1;while(g<bar){const bp2=set?set[(_bassGroove+barI+(((inBar+g)>=bar)?1:0))%set.length]:BASSPAT[_sSig];const at=(inBar+g)%bar;if(bp2&&bp2[at]!=null)break;if(!bp2&&(at%4===0))break;g++;}
+          let g=1;while(g<bar){const bp2=gen||(set?set[(_bassGroove+barI+(((inBar+g)>=bar)?1:0))%set.length]:BASSPAT[_sSig]);const at=(inBar+g)%bar;if(bp2&&bp2[at]!=null)break;if(!bp2&&(at%4===0))break;g++;}
           const len=g*_sDur(); // seconds until the next bass hit → this note rings that long, with a legato tail
           bassNote(tok, drumTime+(anchor?0:0.012), anchor?1:hum, len);}
       }
@@ -3183,11 +3398,24 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
         pst=(KL>=16)?(inBar+16*barI):(((drumStep%KL)+KL)%KL),
         gt=drumTime+(gr?gr.off[inBar]*swMod*_sDur():0),     // nudge the HIT off the grid by the (breathing) feel
         gv=(gr?gr.vel[inBar]:1);                                  // velocity accent from the feel
+      // ---- DRUM FILL WINDOW ------------------------------------------------------------------
+      // Nobody likes a fancy metronome. A loop with no fills reads as a machine, so the last few
+      // 16ths of a phrase (every 8 or 16 bars, the kit's own choice — see FEELS) hand over to a
+      // generated fill. It is built from THIS kit's own voices, so a bossa fills like a bossa and
+      // the rock kit doesn't suddenly sound like someone else. Generated, so the same phrase end
+      // never comes round twice the same.
+      const _fl=feelFor(drumKit).fill;
+      const _fillBar=(((barI+1)%_fl.every)===0);
+      const _fillFrom=16-_fl.len;
+      const inFill=_fillBar&&inBar>=_fillFrom;
       for(const v in kit)if(kit[v].includes(pst)){
         const anchor=(v===KITVOICE[drumKit].lo)&&(inBar===0||inBar===8); // kick on beats 1 & 3 = the LOCK; everything else stays human
         if(!anchor&&!padKeeps(v,inBar))continue;          // SIMPLE end of the pad: drop the decorative hits, keep the skeleton
+        if(inFill&&!anchor)continue;                      // the fill owns this space — don't play the loop over it
         dHit(v,gt,(anchor?(inBar===0?1.25:1.12)*gv:(inBar===0?1.25:1)*hum*gv)*padVel(), anchor);
       }
+      if(inFill){const f=genFill(drumKit,barI,inBar);
+        if(f)dHit(f.v,gt,f.a*hum*padVel(),false);}
       // COMPLEX end of the pad: an extra off-beat hat, so the puck adds as well as removes
       if(PAD.x>0.72&&KITVOICE[drumKit].hi==='h'&&(inBar%2===1)&&!kit.h.includes(pst)&&Math.random()<(PAD.x-0.72)*2.6)
         dHit('h',gt,0.22*hum*padVel());
@@ -6259,7 +6487,7 @@ function startCoach(){
 // ============================================================================
 (function(){try{
   const btn=$("chordBtn"),panel=$("chordPanel"),chips=$("cpChips"),edit=$("cpEdit"),
-        selRoot=$("cpRoot"),selQual=$("cpQual"),selBars=$("cpBars"),
+        selRoot=$("cpRoot"),selQual=$("cpQual"),selBars=$("cpBars"),autoBars=$("cpAutoBars"),
         follow=$("cpFollow");
   if(!btn||!panel)return;
   // populate the dropdowns once
@@ -6295,6 +6523,17 @@ function startCoach(){
   // dice: whole famous progression in the current key
   $("cpDice").addEventListener('click',()=>{cmRandomProg();follow.checked=true;editIdx=-1;edit.hidden=true;sync();});
   $("cpClear").addEventListener('click',()=>{CHORD_MODE.prog=[];CHORD_MODE.on=false;follow.checked=false;editIdx=-1;edit.hidden=true;sync();});
+  // HOW LONG A CHORD LASTS when the slime is jamming on its own. Remembered, because it is a taste
+  // setting, not a per-session one. Applies to the auto progression; a custom progression keeps its
+  // own per-chord bar counts.
+  if(autoBars){
+    try{const sv=localStorage.getItem('slimehedron-chordbars');if(sv)S.chordBars=Math.max(1,Math.min(8,parseInt(sv)||2));}catch(e){}
+    autoBars.value=String(S.chordBars||2);
+    autoBars.addEventListener('change',()=>{
+      S.chordBars=Math.max(1,Math.min(8,parseInt(autoBars.value)||2));
+      _autoHold=0;                                   // take effect on the next bar, not in four bars' time
+      try{localStorage.setItem('slimehedron-chordbars',String(S.chordBars));}catch(e){}});
+  }
   follow.addEventListener('change',()=>{CHORD_MODE.on=follow.checked&&CHORD_MODE.prog.length>0;if(CHORD_MODE.on){CHORD_MODE.idx=0;CHORD_MODE.barsLeft=0;}cmSave();reflectBtn();updateChordPill();});
   // open/close the panel over the wheel
   btn.addEventListener('click',()=>{panel.hidden=!panel.hidden;if(!panel.hidden){follow.checked=cmActive();render();}});

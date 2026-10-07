@@ -253,3 +253,35 @@ deferred out of that scope cannot call it.
   140bpm songs (Frontiers in Psychology, 2019). So "this feels fast for a kid" is usually the
   harmonic rhythm, not the tempo — at 80bpm in 4/4, one chord per bar is a chord change every three
   seconds, which reads as restless. Change those two independently.
+
+## The band generator (2026-10-06)
+
+- **`FEELS` is the band's personality, as rules instead of recordings.** One row per rhythm class:
+  `grid, seeds, w[16], density, seedOdds, push, ring, dodge, bass{}, fill{}`. `genComp` / `genBass`
+  / `genFill` / `bandPlan` build a fresh part every bar from it. Add a genre by adding a row.
+- **Why generated and not a pattern library.** A folder of loops is finite — pick the same rhythm
+  twice and you hear the same bar twice. And a genre's conventions ("bossa hits 1, &2, 4"; "disco
+  bass jumps the octave every eighth") are common practice you can read in any method book, not
+  anyone's file, so generating from them means nothing is derived from third-party MIDI. Sources
+  are cited in the table header. The old rule still holds: **no .mid ever reaches the browser.**
+- **It still speaks the old language.** Comps are 16th step arrays, bass is still R/T/F/O/A degree
+  tokens — which is what lets `keyJourney()` walk the circle of fifths without transposing. Nothing
+  downstream had to change.
+- **Bass holds a 16-bar block; the comp is redrawn every bar.** A bassline that changes every bar is
+  not a bassline. That split is roughly how a real rhythm section behaves.
+- **`dodge` is a genre decision, not a quality setting.** Jazz (.85) and bossa (.8) weave around the
+  bass; disco (.12) and rock (.3) lock to it ON PURPOSE. Measured: the weaving kits land 26–41%
+  fewer hits on a bass note than the same seeds would with the bass hidden from them.
+- **Measure a generator's STATISTICS, not that it ran.** `dev-band.js` checks distinct-pattern counts
+  over 240 bars, per-genre signatures (disco off-beat ≫ on-beat, jazz never touches the e/a, rock
+  the reverse), that the five kits' onset histograms differ, that the bass holds then changes, and
+  the dodge A/B.
+- **A baseline can be unfair and fail a working feature.** The first interlock test compared against
+  a uniform baseline and failed all five kits. Chord hits and bass notes both cluster on strong
+  beats, so they collide more than random chance even with no dodging. The fair test runs the same
+  generator on the SAME seeds with and without the bass handed to it.
+- **`pickChord()` takes a CHORD index, never a bar index.** Its quiet-tank fallback indexes a 4-chord
+  loop by the number you give it, so holding a chord for 4 bars and asking for `pickChord(bar+4)`
+  returned the same chord forever — a 4-bar chord actually lasted 12. `_chordIdx` counts chords.
+- **`S.chordBars`** (chord menu, remembered, default 2) is how long an auto chord lasts. Custom
+  progressions keep their own per-chord bar counts.

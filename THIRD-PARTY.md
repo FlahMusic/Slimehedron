@@ -51,5 +51,31 @@ Mascot, background and slime artwork are generated with Midjourney under a paid 
 
 ---
 
+## The band generator (chords, bass, drum fills)
+
+Added 2026-10-06. The backing band's chord rhythms, basslines and drum fills are **generated at
+runtime from rules**, not played back from anybody's pattern files. The rules live in the `FEELS`
+table in `index.html` and encode ordinary, documented genre conventions — the kind of thing stated
+in any method book or free online lesson:
+
+- bossa nova chord hits on 1, the & of 2 and 4 (and &1, 3, 4 in the second bar), bass root on 1 and
+  fifth on 3 — *tunableapp.com, "Bossa Nova Rhythm"*
+- jazz comping: the Charleston (1 + &2), its reverse (&1 + 3), Freddie Green four-to-the-bar, the
+  Red Garland &2 + &4, and chord anticipation on the & of 4 — *jazz-library.com, "Jazz Comping"*
+- disco four-on-the-floor with off-beat open hats — *MusicRadar, "How to program a typical disco
+  drum beat"*
+- disco bass alternating octaves on eighth notes — *UJAM, "The Ultimate Guide to Nu Disco"*
+- drum fills at the end of 8- or 16-bar phrases — *MusicRadar, "Learn how drum fills work"*
+
+**No third-party MIDI, audio or notation was copied, converted or embedded for this.** A rhythmic
+convention is a fact about a style, not a protected work; the cited pages are where those facts
+were checked, not sources any material was taken from. Nothing here requires attribution — it is
+listed for transparency.
+
+The older rule still stands and is unchanged: no `.mid` file is ever shipped to or parsed by the
+browser.
+
+---
+
 *Corrections welcome. If you are a rights holder listed above and want an entry changed or
 removed, open an issue.*
