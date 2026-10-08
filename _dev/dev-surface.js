@@ -17,7 +17,7 @@
 // ============================================================================================
 const {chromium}=require('playwright');
 const fs=require('fs');
-const BASE='surface-baseline.json';
+const BASE='_dev/surface-baseline.json';   // lives beside the suite, not in the served root
 const ACCEPT=process.argv.includes('--accept');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 
