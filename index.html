@@ -1560,8 +1560,8 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 <button id="kbBtn" title="play notes with your computer keyboard or a MIDI keyboard" aria-label="keyboard play" style="min-height:48px">⌨</button>
 <div id="kbMap" hidden></div>
 <!-- play mode: big soft candy buttons in the side space — pick a sound (left), pick a beat (right) -->
-<!-- The lesson overlay. It lives HERE, not in learn.js, because learn2.js (the Lab) is what actually
-     uses it and learn.js is only an on-demand fallback that normally never loads. When learn.js owned
+<!-- The lesson overlay. It lives HERE, not in learn2.js, because the markup has to exist before the
+     Lab boots. (It used to be shared with a learn.js fallback, which is gone. When that file owned
      it, deferring that download silently emptied every lesson screen — caught by dev-learnmap. -->
 <div id="learnOverlay" hidden></div>
 <div id="playSide"><div class="psCol left" id="psWaves"></div><div class="psCol right" id="psDrums"></div></div>
@@ -4558,10 +4558,12 @@ function applyMode(m){S.mode=m;
     if(hdr&&clr&&clr.parentElement!==hdr)hdr.insertBefore(clr,$("resetBtn")||null);
     if(tr)tr.remove();
   }
-  // LEARN2 (the Lab) owns learn mode; window.LEARN is kept as the fallback so a failed load still teaches.
+  // LEARN2 (the Lab) IS learn mode. There used to be a learn.js fallback behind it — the pre-Lab
+  // curriculum — and it had been silently broken for months, so if it had ever fired a child would
+  // have got lessons that made no sound. A door that opens onto nothing is worse than one that
+  // politely says it is stuck, which is what openLearn() does now.
   try{midiPanic();}catch(e){}   // changing mode rebuilds the instrument; do not leave notes hanging on the gear
-  const L=window.LEARN2||window.LEARN;
-  if(window.LEARN&&window.LEARN!==L&&m!=='learn'){try{LEARN.exit();}catch(e){}}
+  const L=window.LEARN2;
   if(L){if(m==='learn')L.enter();else L.exit();}}
 // MIDI-Learn state must exist BEFORE the wiring IIFE below runs (it calls ccRender at load).
 let ccMap={},ccLearn=false,ccArm=null;
@@ -5135,7 +5137,6 @@ function autoMelodyNote(strong){
 function playNote(midi,vel){ // one door for every performance: computer keyboard, MIDI, anything later
   initAudio();if(AC&&AC.state==='suspended')AC.resume();
   const m=snapToScale(Math.round(midi));if(m<12||m>120)return;
-  if(S.mode==='learn'&&window.LEARN&&LEARN.noteIn){LEARN.noteIn(m,vel||96);return;} // lessons take the wheel
   const cents=(m-S.root)*100;
   playSynth(freqFromCents(cents),vel||96,0.75); // sound on the press — zero delay
   noteFeed(cents,3);sendMidi(cents,vel||96);noteFlash(m); // weight 3: a deliberate press outvotes a bouncing ball — the chords and band follow YOU
@@ -6517,7 +6518,7 @@ if(window._freshStart){ // first-ever visit: roll the dice — C major is a fine
   $("root").value=roots[(Math.random()*roots.length)|0];$("root").dispatchEvent(new Event('change'));
   $("scale").value=scales[(Math.random()*scales.length)|0];$("scale").dispatchEvent(new Event('change'));}
 
-/* LEARN MODE lives in learn.js — its own file, loaded after this script. */
+/* LEARN MODE lives in learn2.js — its own file, loaded after this script. */
 
 // ================= (no streaks, no daily goals, no come-back-tomorrow loop) =================
 // Deliberately removed. Slimehedron does NOT manufacture anxiety or addiction — no streak counters, no fire emojis,
@@ -6857,12 +6858,28 @@ if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWor
 <!-- LEARN LAB: the tank-driven curriculum. This is the one that runs. -->
 <script src="learn2.js"></script>
 <script>
-/* learn.js is the PRE-LAB curriculum, kept only as a fallback for the case where learn2.js fails to
-   load. It is 104KB — a tenth of this app's mobile payload — and it never executes when the Lab is
-   present (applyMode picks `window.LEARN2 || window.LEARN`, and learn2.js references LEARN nowhere).
-   So it is fetched on demand instead of on every visit. A child on school wifi should not download a
-   file that will not run. */
-if(!window.LEARN2){var _lj=document.createElement('script');_lj.src='learn.js';document.head.appendChild(_lj);}
+/* THERE IS NO SECOND CURRICULUM. learn.js — 104KB of pre-Lab lessons — used to load here if learn2.js
+   had not arrived. It had been silently broken for months, so the one time it would ever have run is
+   the one time it would have handed a child a lesson that made no sound. It is gone. If the Lab does
+   not load, learn mode says so in one plain line and offers the other two doors. */
+if(!window.LEARN2){
+  var _lw=document.getElementById('learnWrap')||document.body;
+  var _ld=document.createElement('div');_ld.id='learnBroke';
+  _ld.setAttribute('role','status');
+  _ld.style.cssText='position:fixed;inset:0;z-index:9999;display:none;flex-direction:column;'+
+    'align-items:center;justify-content:center;gap:18px;text-align:center;padding:24px;'+
+    'background:var(--bg,#1b1327);color:#fff;font:600 20px/1.4 system-ui,sans-serif';
+  _ld.innerHTML='<img src="minis/grn2.png" alt="" style="width:110px;height:auto" draggable="false">'+
+    '<p style="margin:0;max-width:17em">The lessons did not load. Check your internet and open this again.</p>'+
+    '<button id="learnBrokeBack" style="font:inherit;padding:12px 22px;border:0;border-radius:14px;'+
+    'background:#fff;color:#1b1327;min-height:48px;cursor:pointer">Go back</button>';
+  document.body.appendChild(_ld);
+  _ld.querySelector('#learnBrokeBack').addEventListener('click',function(){
+    _ld.style.display='none';try{location.href=location.pathname;}catch(e){}});
+  window.LEARN2={ enter:function(){_ld.style.display='flex';},
+                  exit:function(){_ld.style.display='none';},
+                  UNITS:null, __broken:true };
+}
 </script>
 </body>
 </html>
