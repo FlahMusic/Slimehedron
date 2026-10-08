@@ -12,7 +12,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover"/><!-- pinch-zoom MUST stay available (WCAG 1.4.4). the tank sets touch-action:none so zoom never fights ball spawning. -->
 <title>Slimehedron — music you can see</title>
-<meta name="description" content="Bouncing slime plays notes. 17 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
+<meta name="description" content="Bouncing slime plays notes. 23 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#c4a9f5">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,7 +20,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta property="og:type" content="website"/>
 <meta property="og:title" content="Slimehedron — music you can see"/>
-<meta property="og:description" content="Bouncing slime plays notes. 17 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
+<meta property="og:description" content="Bouncing slime plays notes. 23 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
 <meta property="og:url" content="https://flahmusic.github.io/Slimehedron/"/>
 <meta property="og:image" content="https://flahmusic.github.io/Slimehedron/icon-512.png"/>
 <meta name="twitter:card" content="summary"/>
@@ -1972,7 +1972,7 @@ const S={
 let BURST_MS=6000; // how long the corners stay broken open before reforming
 
 // ---------- audio ----------
-let AC=null,master=null,delayNode=null,dlyFb=null,dlyWet=null,masterFilt=null,slimeEQ=null,slimeComp=null,activeVoices=0,recTap=null,masterHP=null,bandBus=null,melBus=null,bandMix=null,padBus=null,lim=null;
+let AC=null,master=null,delayNode=null,dlyFb=null,dlyWet=null,masterFilt=null,slimeEQ=null,slimeComp=null,activeVoices=0,recTap=null,masterHP=null,bandBus=null,melBus=null,bandMix=null,padBus=null,lim=null,outClip=null;
 let noiseBuf=null,tapeDry=null,tapeWet=null,tapeDrive=null,tapeShaper=null,tapeTone=null,tapeDly=null,wowDepth=null,flutDepth=null,hissG=null; // tape color stage
 function initAudio(){
   if(AC)return;
@@ -1994,9 +1994,13 @@ function initAudio(){
   melBus=AC.createGain();melBus.gain.value=1;melBus.connect(master);
   melSend=AC.createGain();melSend.gain.value=0.17;melBus.connect(melSend);
   lim=AC.createDynamicsCompressor(); // module-level so the PCM recorder (startPCM) can tap it on iOS
-  // KID-SAFE OUTPUT CEILING: final brickwall limiter. threshold -8.5dBFS (was -6) so sustained loudness stays gentle
-  // for long sessions on earbuds/headphones — peaks physically cannot exceed this. attack fast enough to catch transients.
+  // KID-SAFE OUTPUT CEILING, in two parts. the compressor does the musical work: it leans on anything
+  // sustained past -8.5dBFS so a long session on earbuds stays gentle. but a compressor has a soft knee
+  // and a 3ms attack, so a sharp transient CAN still poke above it — this used to claim otherwise.
+  // outClip is the part that actually cannot be exceeded: a hard clamp at -1dBFS on the way to the speakers.
   lim.threshold.value=-8.5;lim.ratio.value=16;lim.attack.value=.003;lim.release.value=.25;
+  outClip=AC.createWaveShaper();outClip.oversample='4x';
+  {const n=2048,c=new Float32Array(n),CEIL=0.891;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.max(-CEIL,Math.min(CEIL,x));}outClip.curve=c;}
   delayNode=AC.createDelay(2.0);delayNode.delayTime.value=60/S.bpm*0.75;
   dlyFb=AC.createGain();dlyFb.gain.value=0.2;
   dlyWet=AC.createGain();dlyWet.gain.value=S.dly;
@@ -2052,8 +2056,8 @@ function initAudio(){
   master.connect(masterFilt);dlyWet.connect(masterFilt);rvbWet.connect(masterFilt);
   masterFilt.connect(masterHP);masterHP.connect(slimeEQ);slimeEQ.connect(slimeComp);
   slimeComp.connect(tapeDry);slimeComp.connect(tapeDrive);tapeDrive.connect(tapeShaper);tapeShaper.connect(tapeWet); // dry/wet split is pre-delay, so no comb filtering
-  tapeDry.connect(tapeTone);tapeWet.connect(tapeTone);tapeTone.connect(tapeDly);tapeDly.connect(lim);lim.connect(AC.destination);
-  recTap=AC.createMediaStreamDestination();lim.connect(recTap); // recorder hears exactly what you hear
+  tapeDry.connect(tapeTone);tapeWet.connect(tapeTone);tapeTone.connect(tapeDly);tapeDly.connect(lim);lim.connect(outClip);outClip.connect(AC.destination);
+  recTap=AC.createMediaStreamDestination();outClip.connect(recTap); // recorder hears exactly what you hear — same side of the ceiling
   setWarmth(S.warm);
 }
 function setWarmth(w){S.warm=w;if(!AC)return;const t=AC.currentTime;
@@ -6290,6 +6294,7 @@ const REC_MIME=window.MediaRecorder?(MediaRecorder.isTypeSupported('audio/mp4')?
 const IS_IOS=/iP(ad|hone|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const USE_WAV=IS_IOS||!REC_MIME;
 let pcmNode=null,pcmSink=null,pcmOn=false,pcmBufs=null,pcmLen=0;
+const REC_MAX_SEC=300;   // the longest one take may run before it saves itself
 function startPCM(){pcmBufs=[[],[]];pcmLen=0;
   if(!pcmNode){ // ScriptProcessor: deprecated on paper, bulletproof in practice — fine for a record tap
     pcmNode=AC.createScriptProcessor(4096,2,2);
@@ -6297,8 +6302,14 @@ function startPCM(){pcmBufs=[[],[]];pcmLen=0;
     pcmNode.onaudioprocess=e=>{if(!pcmOn)return;const b=e.inputBuffer;
       pcmBufs[0].push(new Float32Array(b.getChannelData(0)));
       pcmBufs[1].push(new Float32Array(b.numberOfChannels>1?b.getChannelData(1):b.getChannelData(0)));
-      pcmLen+=b.length;};
-    lim.connect(pcmNode);} // same tap point as the stream recorder: you record exactly what you hear
+      pcmLen+=b.length;
+      // HARD STOP. these are raw float samples held in RAM: five minutes is already ~115MB, and a
+      // kid who taps record and walks away used to keep growing it until the tab died. so the tape
+      // ends itself, saves what it has, and says so.
+      if(pcmLen>=REC_MAX_SEC*AC.sampleRate){pcmOn=false;try{saveTake(wavBlob());}catch(err){}
+        try{toast('that take hit '+Math.round(REC_MAX_SEC/60)+' minutes, so I saved it');}catch(err){}}
+      };
+    (outClip||lim).connect(pcmNode);} // same tap point as the stream recorder: you record exactly what you hear
   pcmOn=true;}
 function wavBlob(){const n=pcmLen,sr=AC.sampleRate;
   const L=new Float32Array(n),R2=new Float32Array(n);let o=0;
@@ -6371,9 +6382,13 @@ async function renderTakes(){
   const db=await recDB();if(!db)return;
   const rq=db.transaction('takes').objectStore('takes').getAll();
   rq.onsuccess=()=>{const takes=rq.result||[],card=$("recCard"),list=$("recList");
+    // hand back the URLs the LAST render handed out. without this, every redraw leaked one blob
+    // per take and the browser kept all of them alive for the life of the page.
+    try{(window.__takeURLs||[]).forEach(u=>URL.revokeObjectURL(u));}catch(e){}
+    const liveURLs=[];window.__takeURLs=liveURLs;
     document.body.classList.toggle('hasTakes',takes.length>0); // the sidebar exists only once there is something in it
     card.style.display=takes.length?'block':'none';list.innerHTML='';
-    for(const tk of takes){const url=URL.createObjectURL(tk.blob);
+    for(const tk of takes){const url=URL.createObjectURL(tk.blob);liveURLs.push(url);
       const ext=tk.blob.type.includes('wav')?'wav':tk.blob.type.includes('mp4')?'m4a':'webm'; // per take — old takes keep their true format
       const row=document.createElement('div');row.className='recItem';
       row.innerHTML='<audio controls preload="metadata" src="'+url+'"></audio>';
@@ -6392,7 +6407,7 @@ async function renderTakes(){
         mb.onclick=()=>{
           if(navigator.canShare&&navigator.canShare({files:mfiles})){navigator.share({files:mfiles,title:'slime jam MIDI'}).catch(()=>{});return;}
           mparts.forEach((k,i)=>setTimeout(()=>{const a=document.createElement('a');
-            a.href=URL.createObjectURL(tk.midi[k]);a.download=takeBase(tk)+'-'+k+'.mid';
+            const mu=URL.createObjectURL(tk.midi[k]);a.href=mu;setTimeout(()=>{try{URL.revokeObjectURL(mu);}catch(e){}},60000);a.download=takeBase(tk)+'-'+k+'.mid';
             document.body.appendChild(a);a.click();a.remove();},i*400)); // staggered so the browser allows all of them
           toast(mparts.length+' MIDI tracks \u2193');};
         row.appendChild(mb);}

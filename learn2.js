@@ -440,8 +440,10 @@ const SPK='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="c
 // training app that made no sound in its ear training. playSynth IS the voice and it takes a
 // frequency, which is what we have.
 function note(cents,vel,dur){
+  // dur was accepted and thrown away: playSynth had no length parameter, so a whole note and a
+  // quarter note sounded identical and the note-duration lesson could not be answered by ear.
   try{if(typeof playSynth==='function'&&typeof freqFromCents==='function'){
-    playSynth(freqFromCents(cents),vel||90,0.72);   // fixed impact: a listening test needs the same tone every time
+    playSynth(freqFromCents(cents),vel||90,0.72,dur);   // fixed impact, real length
     return;}}catch(e){}
   try{trigger(cents,0.7);}catch(e){}
 }
@@ -594,6 +596,12 @@ function noteValueUnit(){
   stageOff();
   const need=10, POOL=['q','h','w','dh'];
   let kind='q', right=0, busy=false, timer=null;
+  // ONE ANSWER PER QUESTION. `busy` only went true at the END of a unit, so until then every tap
+  // scored: a child could hit 1,2,3,4 and one of them had to be right. That is not an answer, it is
+  // a brute force, and it was being written into the progress file as mastery. `armed` is the real
+  // gate: a question arms it, the first committed answer disarms it, the next question arms it again.
+  let armed=false;
+
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
   LAB.take({exact:false,shape:'4',scale:'pentaMaj',octs:1,drums:false,band:false,grav:0,bpm:100,touch:false});
   LAB.labels(null);LAB.clear();
@@ -611,7 +619,12 @@ function noteValueUnit(){
       '<div class="lgChoice">'+[1,2,3,4].map(n=>
         '<button data-cnt="'+n+'" style="--rc:'+RUNG_TINT[(n-1)%RUNG_TINT.length]+'">'+n+'</button>').join('')+'</div>');
   }
-  // play the note and fill one circle per beat, so the answer is visible before it is asked for
+  // The four circles are the BEAT GRID, not the answer. They used to outline exactly n of them the
+  // instant the note sounded -- so the whole lesson could be cleared by counting outlines without
+  // hearing anything, which a driver proved at 10/10 with the audio ignored. All four now tick past
+  // on the pulse; how long the note RINGS against them is the question. (The note only started
+  // genuinely ringing for its full length once playSynth gained a hold parameter -- before that a
+  // whole note and a quarter note were the same sound, and the outlines were the only real signal.)
   function demo(){
     if(timer)clearInterval(timer);
     const cnt=[...document.querySelectorAll('#lgCnt i')];
@@ -619,18 +632,20 @@ function noteValueUnit(){
     const n=NOTEV[kind], P=600; let b=0;
     try{dHit('K',AC.currentTime,1.15,true);}catch(e){}
     try{note(0,92,n*P/1000*0.95);}catch(e){}         // the note SOUNDS for its full length
-    cnt.forEach((c,i)=>c.classList.toggle('beat',i<n));
-    const step=()=>{ if(b<n){cnt[b].classList.add('on');
+    const step=()=>{ if(b<4){cnt[b].classList.add('on');
         if(b>0){try{dHit('h',AC.currentTime,0.5,true);}catch(e){}}
         b++;} else {clearInterval(timer);timer=null;} };
     step(); timer=setInterval(step,P); _timers.push(timer);
   }
+  // after the child has committed, show what the answer was -- that is teaching, not leaking
+  function reveal(n){ [...document.querySelectorAll('#lgCnt i')].forEach((c,i)=>c.classList.toggle('beat',i<n)); }
   window._lab_lgAgain=demo;
-  function ask(){ kind=POOL[(Math.random()*POOL.length)|0]; paint(); later(demo,260); }
-  const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-cnt]');if(!b||busy)return;
-    e.preventDefault();
+  function ask(){ kind=POOL[(Math.random()*POOL.length)|0]; armed=true; paint(); later(demo,260); }
+  const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-cnt]');if(!b||busy||!armed)return;
+    e.preventDefault();armed=false;
     const ok=(+b.dataset.cnt===NOTEV[kind]);
     score('howlong',ok); if(ok)right++;
+    reveal(NOTEV[kind]);                            // now it is safe to show how long it was
     const fd=document.getElementById('lgFeed');
     if(fd)fd.textContent=ok?t(NOTEN[kind]):t('notYet');
     if(ok)speech(t(NOTEN[kind]),true);
@@ -964,6 +979,12 @@ function ladderUnit(cfg){
   stageOff();
   const id=cfg.id, need=cfg.need||10;
   let rungs=[], right=0, busy=false, target=null, phase=0, roamAt=0;
+  // ONE ANSWER PER QUESTION. `busy` only went true at the END of a unit, so until then every tap
+  // scored: a child could hit 1,2,3,4 and one of them had to be right. That is not an answer, it is
+  // a brute force, and it was being written into the progress file as mastery. `armed` is the real
+  // gate: a question arms it, the first committed answer disarms it, the next question arms it again.
+  let armed=false;
+
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
   const HOME=()=>((LAB._saved&&LAB._saved.root!=null)?LAB._saved.root:S.root)+(cfg.rootShift||0);
   // the tank still SOUNDS the notes - it is the app's instrument - but it is not on screen.
@@ -1015,12 +1036,16 @@ function ladderUnit(cfg){
   }
   function markTarget(){ rungs.forEach(r=>r.classList.toggle('target', cfg.showTarget===true && +r.dataset.deg===target));
     window._labHintDeg=target; }   // readable target: dev-lessons drives the lesson through this
-  function ask(){ if(busy)return; reKey(); target=cfg.pick(setOf(),phase); markTarget();
+  function ask(){ if(busy)return; reKey(); target=cfg.pick(setOf(),phase); armed=true; markTarget();
     withAnchor(()=>cfg.play(target,setOf())); }
   window._lab_lgAgain=()=>{ if(!busy&&target!=null)withAnchor(()=>cfg.play(target,setOf())); };
   window._labRoam=()=>roamAt;   // readable: dev-curriculum proves the key actually moves
   function answer(ok,deg){
-    if(busy)return;
+    if(busy||!armed)return;
+    armed=false;
+    // the due-clock belongs to the ANSWER. resetting it when the question was merely drawn meant a
+    // child who looked at a card and wandered off had it filed as reviewed.
+    try{if(cfg.onAnswer)cfg.onAnswer();}catch(e){}
     const el=rungs.find(r=>+r.dataset.deg===deg);
     if(el){el.classList.remove('right','wrong');void el.offsetWidth;el.classList.add(ok?'right':'wrong');
            later(()=>el.classList.remove('right','wrong'),380);}
@@ -1309,10 +1334,21 @@ function findNoteUnit(){
     play:(d)=>sing(d,94,.55)});
 }
 // ---------- 5. HOME NOTE -- the one that finishes ----------
-const LEAN=[[DEG.so,DEG.mi],[DEG.so,DEG.re],[DEG.la,DEG.so,DEG.mi],[DEG.mi,DEG.re]];
-function leanHome(){                          // a phrase that wants to finish on do, without playing it
-  const ph=LEAN[(Math.random()*LEAN.length)|0];
-  ph.forEach((d,i)=>later(()=>sing(d,88,.42),i*440));
+// This lesson asks WHICH do finished the phrase -- the low one or the octave. The phrase therefore
+// has to point at one of them. It did not: leanHome took no argument, ignored the target entirely,
+// and played a random phrase out of the middle of the ladder, so the child was told "not yet" half
+// the time for tapping the right note in the wrong octave. A driver scored 8/14 tapping the bottom
+// rung every time -- chance. It was unanswerable by ear, and it was my own doing: I added the octave
+// do to stop a child clearing it by always tapping the bottom, and made it a coin flip instead.
+// Now the phrase LEANS: it walks down and finishes a step above the low do, or walks up and finishes
+// a step below the octave. Direction is the answer, which is what "find home" actually trains.
+const LEAN_DOWN=[[DEG.so,DEG.mi,DEG.re],[DEG.mi,DEG.re],[DEG.la,DEG.so,DEG.mi,DEG.re]];
+const LEAN_UP  =[[DEG.mi,DEG.so,DEG.la],[DEG.so,DEG.la],[DEG.re,DEG.mi,DEG.so,DEG.la]];
+function leanHome(target){
+  const up=(target===5);                      // 5 is do an octave up; 0 is the low do
+  const set=up?LEAN_UP:LEAN_DOWN;
+  const ph=set[(Math.random()*set.length)|0];
+  ph.forEach((d,i)=>later(()=>sing(d,88,.42),i*430));
 }
 function homeUnit(){
   ladderUnit({id:'home',title:'u_home',doIt:'home_do',name:'home_name',
@@ -1627,15 +1663,17 @@ function reviewUnit(){
   // The RUNGS are the union of every due lesson's notes, so the ladder does not change shape under a
   // child mid-session. What rotates is where the question comes from: one note from each due lesson
   // in turn, so review revisits last week's lessons instead of drilling one of them ten times.
+  let _revAsked=null;
   const rungs=[...new Set(list.reduce((a,u)=>a.concat(u.use||[0,1,2,3,4]),[]))].sort((a,b)=>a-b);
   let i=0;
   const need=Math.min(10,list.length*3);
   ladderUnit({id:'review',title:'u_review',doIt:'rev_do',name:'rev_name',
     need:need,showTarget:false,
     use:rungs,
+    onAnswer:()=>{ // ANSWERED, not merely shown — see ladderUnit
+      const u=_revAsked; if(u&&prog[u.id]){prog[u.id].at=Date.now();save();} },
     pick:()=>{const u=list[i%list.length];i++;
-      // touching a unit resets ITS clock too, so review keeps rotating rather than drilling one thing
-      if(prog[u.id]){prog[u.id].at=Date.now();save();}
+      _revAsked=u;   // touching a unit rotates review off it, but only once it has been answered
       const p=(u.use||[0,1,2,3,4]).filter(d=>rungs.indexOf(d)>=0);
       return p[(Math.random()*p.length)|0];},
     play:(d)=>sing(d,94,.55)});
@@ -1667,6 +1705,12 @@ function choiceUnit(cfg){
   stageOff();
   const need=cfg.need||10;
   let right=0,busy=false,cur=null;
+  // ONE ANSWER PER QUESTION. `busy` only went true at the END of a unit, so until then every tap
+  // scored: a child could hit 1,2,3,4 and one of them had to be right. That is not an answer, it is
+  // a brute force, and it was being written into the progress file as mastery. `armed` is the real
+  // gate: a question arms it, the first committed answer disarms it, the next question arms it again.
+  let armed=false;
+
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
   // PIN THE KEY, like ladderUnit does. A lesson that does not name a root inherits whatever the last
   // one left in S.root, so after the la-pentatonic lesson (which transposes) everything below it sat
@@ -1700,9 +1744,9 @@ function choiceUnit(cfg){
     LAB.take({scale:cfg.scale||'pentaMaj',root:inSingRange(HOME+roamAt),octs:1,drums:false,band:false,touch:false});
     LAB.labels(null);LAB.clear(); }
   window._labRoam=()=>roamAt;   // readable: dev-earwork proves the key actually moves
-  function ask(){reKey();cur=cfg.pick();window._labExpect=cur;showArt(null);cfg.play(cur);}
-  const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-ch]');if(!b||busy)return;
-    e.preventDefault();
+  function ask(){reKey();cur=cfg.pick();armed=true;window._labExpect=cur;showArt(null);cfg.play(cur);}
+  const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-ch]');if(!b||busy||!armed)return;
+    e.preventDefault();armed=false;
     const ok=(b.dataset.ch===String(cur)); score(cfg.id,ok); if(ok)right++;
     showArt(cur);   // AFTER the answer, never before: show what that actually was
     const fd=document.getElementById('lgFeed');if(fd)fd.textContent=t(ok?'yes':'notYet');
@@ -1839,7 +1883,7 @@ function home(){
     '<span><b>'+t('tierLessons')+'</b><i>'+t('progressOf',{done:done,total:total})+'</i></span></div>';
   // the three section subtitles are gone: they explained spaced repetition and the word "practice" to
   // a child who cannot read them and does not need them. The heading is the whole label.
-  // Nineteen numbered cards in one list is a wall. They are dealt into four named blocks instead --
+  // Twenty-three numbered cards in one list is a wall. They are dealt into four named blocks instead --
   // first notes, more notes, minor keys, modes -- with the NUMBERING running straight through, so the
   // blocks say roughly how hard and the numbers still say exactly what order. Nothing is locked: the
   // sequence is shown, never enforced.
@@ -1874,21 +1918,11 @@ if(ov)ov.addEventListener('click',(e)=>{
   if(a==='unit'){const u=UNITS.find(x=>x.id===b.dataset.u);if(!u)return;
     stopAll();if(_cleanup){_cleanup();_cleanup=null;}
     try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(err){}
+    _lastSaid='';                                   // say the instruction again on a RE-entry, not just a first one
     u.run();return;}
   if(a==='tap'&&window._lab_tap)return window._lab_tap();
-  if(a==='hi_up'&&window._lab_hi)return window._lab_hi('up');
-  if(a==='hi_dn'&&window._lab_hi)return window._lab_hi('down');
-  if(a==='hi_replay'&&window._lab_hiReplay)return window._lab_hiReplay();
   if(a==='lg_again'&&window._lab_lgAgain)return window._lab_lgAgain();
-  if(a==='st_demo'&&window._lab_stepsDemo)return window._lab_stepsDemo();
-  if(a==='sc_demo'&&window._lab_scaleDemo)return window._lab_scaleDemo();
-  if(a==='bd_br'&&window._lab_bd)return window._lab_bd('bright');
-  if(a==='bd_dk'&&window._lab_bd)return window._lab_bd('dark');
-  if(a==='bd_replay'&&window._lab_bdReplay)return window._lab_bdReplay();
-  if(a==='sp_again'&&window._lab_spAgain)return window._lab_spAgain();
 });
-// tapping the tank itself counts as a tap in the beat unit
-if(typeof cv!=='undefined'&&cv)cv.addEventListener('pointerdown',()=>{if(window._lab_tap&&document.body.classList.contains('lab-on'))window._lab_tap();});
 
 function enter(){
   if(ov){ov.hidden=false;}

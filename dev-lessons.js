@@ -13,6 +13,25 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
 const src=fs.readFileSync('learn2.js','utf8');
 const ids=[...src.matchAll(/\{id:'([a-z]+)'/g)].map(m=>m[1]);
 ok(ids.length>=7,'found the unit list ('+ids.length+' units)');
+
+// --- THE ADVERTISED NUMBER MUST BE THE REAL NUMBER ------------------------------------------
+// The store listing, the page description and the teacher page each carried a hand-typed lesson
+// count. Lessons were added and nobody retyped them: the app shipped claiming 17 while running 23,
+// and the teacher page said 19. A parent counts. So the count is asserted, not remembered.
+{
+  const tiers={};
+  for(const m of src.matchAll(/\{id:'([a-z]+)'[^}]*?tier:'(lesson|practice|game)'/g))
+    tiers[m[2]]=(tiers[m[2]]||0)+1;
+  const real=tiers.lesson||0;
+  ok(real>0,'the curriculum reports a lesson count ('+real+' numbered lessons, '+(tiers.game||0)+' games, '+(tiers.practice||0)+' practice)');
+  for(const f of ['manifest.json','index.html','teachers/index.html']){
+    let txt=''; try{txt=fs.readFileSync(f,'utf8');}catch(e){}
+    const claims=[...txt.matchAll(/(\d+)\s+(?:music |numbered )?lessons?/g)].map(m=>+m[1]);
+    const wrong=claims.filter(n=>n!==real);
+    ok(wrong.length===0, f+' advertises the real number of lessons'+
+      (wrong.length?' (says '+[...new Set(wrong)].join('/')+', actually '+real+')':' ('+real+')'));
+  }
+}
 // A unit reaches an ending either by calling finish() itself, or by running on one of the three shared
 // controllers, which finish for it. Checking only for the literal call encoded the OLD architecture and
 // failed the moment the lessons were refactored. The controllers are: ladderUnit (find the note),

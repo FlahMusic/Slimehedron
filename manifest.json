@@ -1,7 +1,7 @@
 {
   "name": "Slimehedron",
   "short_name": "Slimehedron",
-  "description": "Bouncing slime plays notes. 17 music lessons, rhythm to modes. No sign-in.",
+  "description": "Bouncing slime plays notes. 23 music lessons, rhythm to modes. No sign-in.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

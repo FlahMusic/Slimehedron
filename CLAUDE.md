@@ -387,3 +387,45 @@ deferred out of that scope cannot call it.
   The other compared raw block-bar counts BETWEEN kits, which is not comparable when they play
   different numbers of bars; the claim is about each kit's own mix, so it compares block-per-arp
   ratios instead (rock 1.05, disco 0.62).
+
+---
+
+## The outside review, and which parts of it were true (2026-10-08)
+
+An OpenAI source review of the repo came back with ~30 findings. Source-only, no runtime access, and
+the main file changed under it mid-read. Triaged before touching anything. Worth recording WHICH KIND
+of thing it got right and wrong, because the pattern repeats:
+
+**It was right about every invariant that exists only in a comment.** Three of its best findings were
+places where the code asserted something it did not enforce:
+- `lim` was commented "brickwall limiter … peaks physically cannot exceed this". It is a
+  DynamicsCompressor with a soft knee and a 3ms attack. Transients went straight over it. A claim
+  about a child's hearing has to be enforced, not described — there is now an `outClip` hard clamp at
+  -1dBFS between `lim` and the speakers, and the recorders tap `outClip` so the take still matches
+  what you heard. `dev-ceiling.js` splices a meter beside the real destination, hammers 12 full
+  velocity notes plus kicks, and measures 0.894 (-0.97dBFS) pinned at the clamp.
+- `busy` was commented as the answer lock. It only went true when a unit **ended**, so until then
+  every tap ran the whole scoring path. A child could tap 1,2,3,4 and one had to be right — and it
+  was written into the progress file as mastery. `armed` is the real per-question gate now.
+- The lesson count was hand-typed in three places and never retyped. The app shipped advertising 17
+  lessons while running 23; the teacher page said 19. That number is now **asserted** in
+  `dev-lessons.js` against the real tier count, not remembered.
+
+**It was wrong where it reasoned about audio from source alone.** It flagged `countTick` connecting
+to `AC.destination` as bypassing the kid-safe ceiling. True on the wiring, irrelevant in fact: the
+tick peaks at 0.18 linear (-14.9dBFS), far below the ceiling it supposedly escapes. Left alone.
+
+**It was stale on one thing I had already fixed**: `note()` dropping its duration argument. It had
+been passing `dur` to `playSynth` for a while. Normal for a review of a file being edited.
+
+### MEASURE THE OLD BEHAVIOUR TOO
+`dev-oneanswer.js` passed the moment it was written, which proves nothing — 0 -> 0 is also what a
+broken counter reads. So the guard was temporarily reverted and the same test run against the old
+code: **0 -> 1 on both screens**, i.e. brute force used to be worth exactly one point. Only then was
+the test trusted. A test that has never failed is not a test.
+
+### Still open, deliberately
+- `reviewUnit()` re-asks everything on the pitch ladder, so a rhythm or staff lesson comes back as
+  "find the note". The due-clock no longer resets on merely *showing* a card (it needed an `onAnswer`
+  hook), but routing each due item back to its own screen is an architecture change, not a patch.
+- Dev suites hard-code the Linux Chromium path, so they only run in the cloud container.
