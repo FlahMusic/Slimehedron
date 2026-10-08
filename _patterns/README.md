@@ -1,5 +1,15 @@
 # patterns/ — open-source MIDI pattern collection for the slimehedron band
 
+> **THE RAW .MID FILES ARE NOT IN THIS REPO ANY MORE.**
+> All 3,469 of them moved to `../../plinky-assets/midi-source/` on 2026-10-08, same folder
+> structure. They were only ever offline source: the band reads hardcoded JS step arrays in
+> `index.html` and has never opened a MIDI file at runtime (see the table below). Keeping 3,469
+> third-party .mid in the repo meant redistributing them from a children's site for no reason.
+> What stayed here: this README, `MANIFEST.csv`, `tools/` (the extraction scripts),
+> `generated/patterns-generated.js`, and every per-source `LICENSE` / `README-source.md`
+> so the licence trail is still complete. To re-extract, point `tools/midi2patterns.py` at
+> `../../plinky-assets/midi-source/`.
+
 Pulled 2026-09-02. Rollback backup of everything that existed before this:
 `backups/originals-20260902-155143/` (478 original .mid + index.html + learn.js + PATTERNS-BACKUP-v64.js).
 

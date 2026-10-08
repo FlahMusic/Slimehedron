@@ -2234,7 +2234,7 @@ function rep(base,bars){const out=[];for(let b=0;b<bars;b++)for(const st of base
 function bars(...b){const out=[];b.forEach((st,i)=>st.forEach(x=>out.push(x+16*i)));return out;} // 4 DIFFERENT bars (casio styles breathe: the kick moves, bar 4 gets a pickup)
 // RHYTHM SOURCES: pop / rock / disco / bossa / jazz are step positions derived from open-source MIDI
 // (casio-music-data by Nicholas Opuni, github.com/nicholasopuni31/casio-music-data — used with credit per its
-// README; muted.io/drum-patterns for reference grooves). Extracted offline by patterns/tools/midi2patterns.py —
+// README; muted.io/drum-patterns for reference grooves). Extracted offline by _patterns/tools/midi2patterns.py —
 // no MIDI is parsed or fetched at runtime. Full attribution: THIRD-PARTY.md
 const KITS={ // 64 sixteenth-steps = 4 bars
   chip:{K:rep([0,8],4),s:rep([4,12],4),h:rep([0,2,4,6,8,10,12,14],4),c:[],C:[],r:[]}, // gameboy 4/4: kick / hat / snare / hat

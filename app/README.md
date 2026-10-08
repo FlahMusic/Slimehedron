@@ -54,3 +54,17 @@ The web app already exposes a hook: `window.slimeMidiIn(bytes)`. Two pieces conn
 - App id: `io.flahmusic.slimehedron` — change in `capacitor.config.json` before store submission.
 - MIDI **out** and **clock** already work through the same web code once native MIDI in is bridged.
 - Everything else (audio, touch keybed, recording via the WAV path) already works in the webview.
+
+## www/ is built, not edited
+
+`www/` used to hold a hand-copied fork of the app. By 2026-10-08 it was four months behind
+(202KB index.html against the live 603KB, plus a learn.js older than the one that got deleted),
+so anyone building from it shipped a different app than the website. It is empty now except
+`midi-bridge.js`, which is the native shim and has no root equivalent.
+
+Before a capacitor build, copy the current files in from the project root:
+
+    index.html  learn2.js  sw.js  manifest.json  icon-192.png  icon-512.png
+    kits/  minis/  fonts/  teachers/  *.png  *.jpg
+
+Do not edit anything in `www/` by hand.
