@@ -85,7 +85,12 @@ ok(L>0&&R>0,'the image uses BOTH sides (left '+L+', right '+R+')');
 ok(r.offsets>=r.noiseStarts*0.5,'noise voices start at a random point in the buffer ('+r.offsets+'/'+r.noiseStarts+')');
 ok(r.uniqOff>=r.offsets*0.9,'and almost every one is a different point — no machine-gun ('+r.uniqOff+' unique)');
 
-ok(r.periodic>=8,'the pad uses a built waveform, not a raw triangle ('+r.periodic+' voices)');
+// The sustained pad used to be the band's chord voice and this asserted it used a built PeriodicWave
+// rather than a bare triangle. The pad was REMOVED from the band — a held note buried the rhythm —
+// so counting its voices now counts zero, correctly. The chord is carried by pluck(), whose tone
+// claim is different and is checked where it belongs: it blends two oscillators rather than being
+// one raw waveform. padVoice/PADWAVE still exist as a general voice, just unused by the band.
+ok(true,'(the sustained pad is no longer the band\'s chord voice — see dev-band.js, which demands 0 pad voices)');
 
 console.log('\n  drum hits by voice:');
 r.byV.forEach(x=>console.log('    '+x.v+'  x'+String(x.n).padEnd(4)+' velocity '+x.min+' .. '+x.max));

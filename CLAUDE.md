@@ -285,3 +285,105 @@ deferred out of that scope cannot call it.
   returned the same chord forever — a 4-bar chord actually lasted 12. `_chordIdx` counts chords.
 - **`S.chordBars`** (chord menu, remembered, default 2) is how long an auto chord lasts. Custom
   progressions keep their own per-chord bar counts.
+
+## Decoration placement, finished (2026-10-07)
+
+- **Three placers were outside the shared pass entirely.** Fixing the margin slimes was not enough:
+  the phone scatter called `addFill()` directly past the collision gate, and the worm and the
+  rainbow girl placed themselves from their own IIFEs with no idea anything else existed. There is
+  now ONE gate (`tryFill`), ONE busy list (`window._decorBusy`), and ONE order (`relayoutDecor`:
+  worm → rainbow girl → peekers → nappers → margin slimes → motes → guard).
+- **Never do geometry on a zero-size element.** Lesson mode hides the tank, so `cv` measures 0x0;
+  every band computed off it collapsed and three slimes landed on the same pixel ABOVE the screen,
+  and the worm — placed relative to the tank's right edge — ended up mid-screen on the lesson list.
+  Both now fall back to the viewport when the tank has no size. Same lesson as the NaN guard.
+- **A placer must re-run on a MODE change, not just on resize.** The worm only listened to `resize`,
+  so he kept whatever position the previous layout gave him — which is how he parked on "Pattern".
+- **Measure what is ON SCREEN, not where you put it.** The side peekers are rotated 90° by CSS, so
+  the position set in JS is not where they land: on a small phone they sat entirely off the edge,
+  visible to the CSS and invisible to the child, and still counted as placed. Everything decorative
+  now checks its real post-transform rect and hides itself below 15% visible.
+- **An element that animates needs its TRAVEL reserved, not its resting rect.** The rainbow girl
+  pops up out of the floor; peekers placed against where she was sitting got hit when she rose.
+- **No room means no slime.** Skipping is always better than stacking — one missing decoration reads
+  as deliberate, two on top of each other reads as broken. Nappers, peekers, the worm and the girl
+  all now sit a layout out rather than overlap.
+- **`landing.html` is a separate page with its own decorations** and is not covered by any of the
+  above. Its four corner slimes are at fixed percentages; below 560px there is no margin left beside
+  the text column, so they hide.
+- **Don't count a wrapper as a label.** The first version of the text check flagged any element with
+  text, including page-spanning containers, and produced phantom failures. Leaf-ish elements only.
+- `dev-crowding.js` now covers 8 states (landing, splash, play, studio, learn, lesson, tools menu,
+  keyboard) × 6 screen sizes, checking overlap, words, visibility, and all of it again after 40 hops.
+
+## Audio fidelity (2026-10-07)
+
+- **The saturator was the only weak link in the whole engine, and it was one line.** `WaveShaperNode`
+  defaults to `oversample:'none'`, so every harmonic our tape-saturation curve generated above
+  Nyquist folded back as inharmonic noise that slides around with the pitch. Measured with a 7 kHz
+  tone through our exact curve: aliasing sat **26.7 dB** below the fundamental (clearly audible).
+  `tapeShaper.oversample='4x'` puts it at **103.8 dB** below — a 77 dB improvement, with the
+  fundamental moving 0.03 dB, so the tone is unchanged. It costs nothing because the tape stage is
+  ONE node on the master bus, not one per voice. This is what DAWs do to their saturation stages.
+- **The oscillators were already clean and needed nothing.** Measured at A7: sawtooth -126.1 dB,
+  square -125.9 dB, our PADWAVE PeriodicWave -127.2 dB. The browser band-limits native oscillator
+  types and PeriodicWave properly, so we get for free what a native app has to implement itself
+  (Septabee ships a "Skip Ultrasonic Harmonics" setting for exactly this).
+- **Check before "improving".** Three of thecandidate upgrades turned out to be things the browser
+  already does better than a hand-rolled version would. Measure first; most of the engine was fine.
+- `dev-fidelity.js` reads the curve and oversample setting OFF THE LIVE APP and renders that exact
+  configuration, so it fails if someone removes the oversampling rather than passing on a copy of
+  the settings it wishes we had.
+
+## What the band actually sounded like, and why the tests missed it (2026-10-08)
+
+- **An assertion with an `||` escape hatch is not an assertion.** The chord-length test accepted
+  `Math.abs(avg-bars)<0.6 || held.every(x => x%bars===0)`, and that second clause passed a chord set
+  to 4 bars that actually lasted **12**. Never give a test a second way to be satisfied.
+- **Drive the LIVE brain, not the function in a loop.** The same test called `advanceHarmony()` with
+  a stubbed state, so it never saw what the running app does.
+- **`pickChord` can hand back the chord you are already on**, and when it does, two 2-bar chords
+  merge into one 4-bar chord. That is why "2 bars" sounded like 4 and the changes felt random. The
+  auto path now re-rolls up to 8 times for a different degree. Runs are exactly 1.00 / 2.00 / 4.00.
+- **All five kits shared ONE pool of four pop progressions.** However different the grooves were,
+  every rhythm walked the same harmony — so they all sounded like the same song with different drums.
+  Each genre now has its own `progs` (ii-V-I for jazz and bossa, I-IV-V-IV for rock, vi-ii-V-I for
+  disco), and `progIdx` starts somewhere random so a kit does not always open on the same changes.
+- **A sustained pad buries a rhythmic comp.** The bed was one long note per chord tone per bar — a
+  sine pad holding still for eight beats — and a sustained note carries far more energy than short
+  plucks, so the drone was all you could hear and the comp was inaudible underneath it. `voicePad`
+  now re-strikes the bed on the chord rhythm's own hits (11.3 pad voices a bar, was ~3).
+- **The comp was still scaled by `S.bpMix`** — the same bass/pad crossfader mistake the pad bed had,
+  and the comment even said it should "sit under pad+lead", which is backwards.
+- **`relayoutDecor` was blocking the main thread for 158ms (406ms worst).** Five placers each called
+  `hotRects()`, and every call does a querySelectorAll plus a getBoundingClientRect on every control
+  — each one forcing a layout recalculation. The nappers re-measured every decoration on all 12 of
+  their retries. The furniture does not move while slimes are being arranged around it, so it is
+  measured once per pass and shared. Decoration work on the main thread delays the child's touch and
+  the note with it, so this is an AUDIO bug wearing a layout costume.
+- **UNRESOLVED:** `dev-firsttouch` still reports "never" on roughly one run in six, while isolated
+  measurement of the same path gives 32-161ms every time and a direct `LAB.strike` gives 0-14ms at
+  peak 0.10-0.26. Do not assume this is harness noise — it was main-thread blocking last time.
+
+## The chord is PLAYED, not held (2026-10-08, second pass)
+
+- **The sustained bed is gone entirely.** "The pad" and "the chord" were the same thing, and holding
+  it was the problem: a held note carries far more energy than a short one, so the bed buried the
+  rhythm and all you heard was a chord tone sitting there. Re-striking it on the rhythm (the first
+  attempt) was not enough — it was still a pad. `bandComp()` is now the ONLY chord voice.
+- **It plays like a keyboard player.** Each bar picks from the genre's `artic` weights:
+  `block` (chord struck together), `arp` (tones one per hit, up / down / up-and-down, and the
+  arp-happy genres run continuous 8ths across the bar), `broken` (bottom note, then the rest
+  answering). The voicing also ROTATES each bar — start on a different chord tone, lift the ones
+  below it an octave — so two bars of the same chord are not the same bar twice.
+- **Colour comes from the SCALE, so nothing can land outside the key.** `colour:{seventh,ninth,sus}`
+  per genre, all scale degrees. Jazz carries `v7:true`: the V chord always takes its dominant 7th.
+  Measured: 0 of 1148 sounded pitch classes outside the scale, across all five kits.
+- **`pluck()` is the chord, so it rides `padBus`** — straight to the master, around the triangle
+  mixer's band corner. The bass stays on `bandBus`. Dragging the mixer to drums must not delete the
+  harmony.
+- **Two of my own tests had to be rewritten, not the code.** One asserted "the bed re-strikes with
+  the rhythm" — obsolete once there is no bed, so it now asserts the bed is never called at all.
+  The other compared raw block-bar counts BETWEEN kits, which is not comparable when they play
+  different numbers of bars; the claim is about each kit's own mix, so it compares block-per-arp
+  ratios instead (rock 1.05, disco 0.62).

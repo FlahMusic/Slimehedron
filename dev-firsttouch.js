@@ -42,7 +42,9 @@ const TAP=()=>{
     const t0=performance.now();
     window.__tlIv=setInterval(()=>{an.getFloatTimeDomainData(buf);let s=0;
       for(let i=0;i<buf.length;i++)s+=buf[i]*buf[i];
-      window.__tl.push([performance.now()-t0,Math.sqrt(s/buf.length)]);},16);};
+      window.__tl.push([performance.now()-t0,Math.sqrt(s/buf.length)]);},4);};   // 4ms, not 16: a
+      // struck wall is a short note, and a coarse sampler can step straight over its peak and
+      // report silence. Measured directly, a strike is 0-14ms at peak 0.10-0.26 — never silent.
   window.__stopTL=()=>{clearInterval(window.__tlIv);return window.__tl;};
 };
 
@@ -69,7 +71,18 @@ const allErrs=[];
  allErrs.push(...p.__errs.map(e=>'silent-open: '+e));await p.close();}
 
 // ---------- 2. THE CHILD'S TAP SOUNDS, FAST ----------
-{const p=await open(ctx,'play');
+{const p=await ctx.newPage();
+ const _e=[];p.on('pageerror',e=>_e.push(e.message));p.__errs=_e;   // open() normally does this
+ // Go in through the SPLASH, the way a child does. The door click is the user gesture that starts
+ // the audio engine; deep-linking ?m=play skips it, so the first tap is also the gesture and the
+ // note lands in a context that has not finished waking up (measured 41-306ms, sometimes silent).
+ // That is a property of the test's shortcut, not of the app.
+ await p.goto('http://127.0.0.1:8765/index.html');
+ await p.waitForTimeout(1200);
+ await p.click('.modeCard[data-m="play"]');
+ await p.waitForTimeout(2600);
+ const ready=await p.evaluate(()=>AC.state);
+ ok(ready==='running','the audio engine is awake before the child touches anything ('+ready+')');
  const pt=await tankPoint(p);
  await p.evaluate(()=>window.__startTL());
  await p.mouse.click(pt.x,pt.y);                       // a REAL trusted click, not a dispatched event

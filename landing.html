@@ -46,6 +46,11 @@
 
   /* floating decor slimes — the personality, kept in the corners so the middle stays clean */
   .floaty{position:absolute;pointer-events:none;opacity:.6;filter:drop-shadow(0 8px 12px rgba(90,79,120,.12))}
+  /* The four corner slimes sit at fixed percentages and know nothing about the text. On a wide
+     screen they live in the empty margins either side of the centred column; on a narrow phone
+     the column IS the screen, so they were landing on the tagline and the footer. Same rule as
+     the app itself: no room means no slime, rather than one sitting on a word. */
+  @media (max-width:560px){ .floaty{display:none} }
   @keyframes drift{0%,100%{transform:translateY(0) rotate(var(--r,0))}50%{transform:translateY(-13px) rotate(var(--r,0))}}
 
   .hero{width:138px;height:138px;position:relative;animation:bob 3.4s ease-in-out infinite;z-index:2}
