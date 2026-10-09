@@ -12,10 +12,11 @@
 //  So this suite measures TIME-TO-SOUND from a real trusted click, not whether a handler ran.
 //  Run: node dev-firsttouch.js   (needs python3 -m http.server 8765)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 
-const SILENT=0.0004;      // below this is indistinguishable from a dead audio graph
+const SILENT=0.004;       // peak, not RMS: below this is indistinguishable from a dead audio graph
+                          // (a real first tap peaks 0.75-0.84, so this is ~200x of headroom)
 const CAUSAL=250;         // ms. past roughly a quarter second a child stops linking touch to sound
 
 const TAP=()=>{
@@ -31,11 +32,19 @@ const TAP=()=>{
       if(!ctx.__tap){const an=ctx.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=0;ctx.__tap=an;window.__tap=an;}
       oc.call(this,ctx.__tap);}}catch(e){}
     return r;};
+  // MEASURE PEAK, AND MEASURE IT EVERY FRAME.
+  // This used to take an RMS over a 2048-sample window every 16ms. On a low note - the first tap is
+  // a 196Hz G - the window is shorter than two cycles and setTimeout(16) drifts, so the same sound
+  // read anywhere from 0.0004 to 0.05 depending on where in the envelope it happened to land. That
+  // is what produced "the first tap is silent about one run in six": the app was fine and the ruler
+  // was broken. Peak-per-frame over the whole note reads 0.75-0.84 across ten runs, a 1.1x spread.
+  // RMS is kept alongside for the places that want an energy figure rather than a level.
   window.__rms=async(ms)=>{const an=window.__tap;if(!an)return -1;
     const buf=new Float32Array(an.fftSize);let peak=0;const t0=performance.now();
-    while(performance.now()-t0<ms){an.getFloatTimeDomainData(buf);let s=0;
-      for(let i=0;i<buf.length;i++)s+=buf[i]*buf[i];peak=Math.max(peak,Math.sqrt(s/buf.length));
-      await new Promise(r=>setTimeout(r,16));}
+    while(performance.now()-t0<ms){an.getFloatTimeDomainData(buf);
+      let m=0;for(let i=0;i<buf.length;i++){const v=Math.abs(buf[i]);if(v>m)m=v;}
+      if(m>peak)peak=m;
+      await new Promise(r=>requestAnimationFrame(r));}
     return peak;};
   // a timeline, so we can say WHEN a sound happened rather than just that one did
   window.__startTL=()=>{window.__tl=[];const an=window.__tap;const buf=new Float32Array(an.fftSize);
@@ -56,8 +65,7 @@ const tankPoint=p=>p.evaluate(()=>{const r=document.getElementById('cv').getBoun
   return {x:r.left+r.width*0.5,y:r.top+r.height*0.38};});
 
 (async()=>{
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args:['--autoplay-policy=no-user-gesture-required']});
+const b=await launch();
 const ctx=await b.newContext({viewport:{width:1100,height:860}});
 await ctx.addInitScript(TAP);
 const allErrs=[];

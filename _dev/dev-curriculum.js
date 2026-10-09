@@ -15,12 +15,12 @@
 //     positive person praise — lowered persistence. Never tell a child what they ARE.
 //  Run: node dev-curriculum.js     (needs a server on :8765)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const fs=require('fs');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 const src=fs.readFileSync('learn2.js','utf8');
 
-(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+(async()=>{const b=await launch();
  const ctx=await b.newContext({viewport:{width:1280,height:900}});const p=await ctx.newPage();
  const errs=[];p.on('pageerror',e=>{if(!/ServiceWorker/.test(e.message))errs.push(e.message.slice(0,80))});
  await p.goto('http://127.0.0.1:8765/index.html');await p.waitForTimeout(500);

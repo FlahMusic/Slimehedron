@@ -15,7 +15,7 @@
 //  Run:    node dev-surface.js
 //  Accept: node dev-surface.js --accept      (after a growth you can justify)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const fs=require('fs');
 const BASE='_dev/surface-baseline.json';   // lives beside the suite, not in the served root
 const ACCEPT=process.argv.includes('--accept');
@@ -62,8 +62,7 @@ const SCREENS=[
 ];
 
 (async()=>{
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args:['--autoplay-policy=no-user-gesture-required']});
+const b=await launch();
 
 const now={};
 for(const sc of SCREENS){

@@ -11,7 +11,7 @@
 //  makes a sound — not merely that a function was called.
 //  Run: node dev-revive.js   (needs python3 -m http.server 8765)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 const SILENT=0.0004;
 
@@ -35,8 +35,7 @@ const TAP=()=>{
 };
 
 (async()=>{
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args:['--autoplay-policy=no-user-gesture-required']});
+const b=await launch();
 const ctx=await b.newContext({viewport:{width:1100,height:860}});
 await ctx.addInitScript(TAP);
 const p=await ctx.newPage();

@@ -13,7 +13,7 @@
 //  Needs a local server: python3 -m http.server 8765
 //  Run: node dev-midi.js
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 
 const STUB=()=>{
@@ -51,7 +51,7 @@ const split=(ev)=>{
   return {on,off,cc,bend,rt};};
 
 (async()=>{
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+const b=await launch();
 
 // ---- 1. the parts have channels of their own ----
 {const {ctx,p}=await open(b,{});

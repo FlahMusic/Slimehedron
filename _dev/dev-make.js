@@ -7,11 +7,10 @@
 //  plus the one that matters most for a five-year-old: there is no way to fail or get stuck.
 //  Run: node dev-make.js   (needs python3 -m http.server 8765)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 (async()=>{
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args:['--autoplay-policy=no-user-gesture-required']});
+const b=await launch();
 const ctx=await b.newContext({viewport:{width:393,height:852},isMobile:true,hasTouch:true});
 const p=await ctx.newPage();
 await p.addInitScript(()=>{window.__osc=0;

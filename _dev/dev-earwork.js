@@ -14,7 +14,7 @@
 //  Needs a local server: python3 -m http.server 8765
 //  Run: node dev-earwork.js
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 // The explore screen comes first now (Orff stage two): a lesson opens with its notes playable and
 // nothing scored, and the child presses "ask me questions" when they are ready. A driver has to do
@@ -66,7 +66,7 @@ const pitches=async(b,id,rounds)=>{
   return [...new Set(f)];};
 
 (async()=>{
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+const b=await launch();
 
 // ---- 1. the ramp ----
 for(const id of HOLD_STILL){

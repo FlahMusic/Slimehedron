@@ -8,12 +8,12 @@
 //    * the lessons list never said where to start
 //  Run: node dev-polish.js
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 const open=async(b,w,h)=>{const ctx=await b.newContext({viewport:{width:w,height:h}});const p=await ctx.newPage();
   await p.goto('file://'+process.cwd()+'/index.html');await p.waitForTimeout(450);return {ctx,p};};
 
-(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+(async()=>{const b=await launch();
 
  // ---- 1. THE SPLASH is the front door. Nothing from inside the app may float on it. ----
  for(const [tag,w,h] of [['desktop',1440,900],['phone',390,844]]){

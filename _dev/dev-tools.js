@@ -7,11 +7,11 @@
 //  Needs a local server: python3 -m http.server 8765
 //  Run: node dev-tools.js
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 const TOOLS=[['metro','Metronome'],['cof','Circle of fifths'],['chord','Chords'],['drums','Drum machine']];
 
-(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+(async()=>{const b=await launch();
  for(const [tag,w,h] of [['desktop',1280,900],['phone',393,852]]){
   const ctx=await b.newContext({viewport:{width:w,height:h},hasTouch:w<600,isMobile:w<600});
   const p=await ctx.newPage();

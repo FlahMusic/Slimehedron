@@ -6,7 +6,7 @@
 //  cannot be cleared by tapping the same place every time.
 //  Run: node dev-staff.js   (needs python3 -m http.server 8765)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 // The explore screen comes first now (Orff stage two): a lesson opens with its notes playable and
 // nothing scored, and the child presses "ask me questions" when they are ready. A driver has to do
@@ -37,8 +37,7 @@ const TRUTH=[
   {n:'F4',where:'space'},      {n:'G4',where:'line 2'},      {n:'A4',where:'space'},
   {n:'B4',where:'line 3'},     {n:'C5',where:'space'}];
 (async()=>{
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args:['--autoplay-policy=no-user-gesture-required']});
+const b=await launch();
 const ctx=await b.newContext({viewport:{width:1100,height:820}});
 const p=await ctx.newPage();
 p.on('pageerror',e=>{FAIL.push('pageerror: '+e.message);console.log('  FAIL  pageerror: '+e.message);});

@@ -186,6 +186,14 @@ const LANG={
     md_do:'Which mode was that?',
     md_p1:'now Mixolydian',
     md_name:'DORIAN is minor with a raised sixth and a low seventh. MIXOLYDIAN is major with a low seventh.',
+    g_jam:'Your Turn',
+    g_jamSub:'it plays a bit, then you play anything you want',
+    jam_mine:'Listen.',
+    jam_yours:'Your turn. Play anything.',
+    jam_free:'There is no wrong note here.',
+    jam_tally:'{n} notes',
+    jam_done:'all done',
+    jam_name:'You made that up. Nothing you play here is wrong.',
     ex_do:'Play them. Any of them, as many as you like.',
     ex_ready:'ask me questions',
     rev_do:'Play one again.',
@@ -449,7 +457,9 @@ function note(cents,vel,dur){
   // dur was accepted and thrown away: playSynth had no length parameter, so a whole note and a
   // quarter note sounded identical and the note-duration lesson could not be answered by ear.
   try{if(typeof playSynth==='function'&&typeof freqFromCents==='function'){
-    playSynth(freqFromCents(cents),vel||90,0.72,dur);   // fixed impact, real length
+    // firm: a lesson's question must never be the 1-in-20 whisper. A child asked to name a note
+    // they could not hear is being tested on the app's random number generator.
+    playSynth(freqFromCents(cents),vel||90,0.72,dur,true);   // fixed impact, real length, never a dud
     return;}}catch(e){}
   try{trigger(cents,0.7);}catch(e){}
 }
@@ -566,6 +576,7 @@ const UNITS=[
   {id:'melody',     title:'u_melody',     sub:'u_melodySub',     tier:'lesson', block:'e', run:melodyUnit,     tint:'#ffd8e0'},
   // ---- games and practice ----
   {id:'echo',     title:'g_echo',     sub:'g_echoSub',     tier:'game', run:echoGame,     tint:'#a6c8ff'},
+  {id:'jam',      title:'g_jam',      sub:'g_jamSub',      tier:'game', run:jamUnit,      tint:'#ffd9a8'},
   {id:'updown',   title:'g_updown',   sub:'g_updownSub',   tier:'game', run:upDownGame,   tint:'#c4a9f5'},
   {id:'findhome', title:'g_findhome', sub:'g_findhomeSub', tier:'game', run:findHomeGame, tint:'#d9e88f'},
   {id:'review',   title:'u_review',   sub:'u_reviewSub',   tier:'practice', run:reviewUnit, tint:'#9fe6cf'}
@@ -1709,6 +1720,81 @@ function melodyUnit(){
 // a 24-hour gap; Wiseheart (2017) found nothing at all inside 15 minutes. So this unit refuses to run
 // on material learned today -- it waits for the day boundary, then re-asks the OLDEST thing first.
 // No streak, no nag, no penalty for not coming: it simply has something for you when you return.
+// ---------- IMPROVISE: THE STAGE THAT WAS MISSING ----------
+// Orff's sequence is imitate -> explore -> improvise -> compose. This curriculum had imitate
+// (twenty-three quiz screens), then explore (added alongside this), then nothing, then compose
+// (one loop grid). This is the missing third.
+// It is call and response with NO RIGHT ANSWER. The app plays two bars; the child answers with
+// whatever they like over the same groove. Orff takes the F and B bars off the instrument so that
+// nothing a child plays can sound wrong -- the tank is already scale-locked, so that is free here.
+// Nothing is scored, nothing is compared to the call, and the child leaves when they want to.
+function jamUnit(){
+  stageOff();
+  const USE=[0,1,2,3,4];                       // pentatonic: there is no wrong note in it
+  let mine=true, rounds=0, played=0, busy=false, raf=0, barAt=0;
+  const BPM=96, BEAT=60/BPM, BAR=BEAT*4, CALL=BAR*2;
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  LAB.take({scale:'pentaMaj',octs:1,drums:false,band:false,touch:false});
+  LAB.labels(null);LAB.clear();
+  function name(d){let c=0;try{c=degCents(d);}catch(e){c=d*200;}return solfegeFor(c)||String(d+1);}
+  function paint(){
+    const ladder=USE.map((d,i)=>
+      '<button class="lgRung" data-deg="'+d+'" style="--rc:'+degTint(d)+'">'+
+        '<span class="rgName">'+name(d)+'</span>'+
+        '<span class="rgDeg">'+(i===0?'LOW':(i===USE.length-1?'HIGH':''))+'</span></button>').join('');
+    stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t('g_jam')+'</h3><span class="lgCount">'+(played?t('jam_tally',{n:played}):'')+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="lgLadder'+(mine?' lgWait':'')+'" id="lgLadder">'+ladder+'</div>'+
+      '<p class="lgSay">'+t(mine?'jam_mine':'jam_yours')+'</p>'+
+      '<div class="lgFeed" id="lgFeed">'+(mine?'':t('jam_free'))+'</div>'+
+      '<div class="lgHint">'+
+        (rounds?'<button class="btn lgDoneJam" data-jam="done">'+t('jam_done')+'</button>':'')+
+        '</div>');
+  }
+  function lightUp(d,ms){const r=document.querySelector('.lgRung[data-deg="'+d+'"]');
+    if(!r)return; r.classList.add('target'); later(()=>r.classList.remove('target'),ms||360);}
+  // the call: a short phrase the child is NOT asked to copy. It is there to leave a hole.
+  function call(){
+    mine=true;paint();
+    const n=2+((Math.random()*3)|0);
+    let k=(Math.random()*USE.length)|0;
+    for(let i=0;i<n;i++){
+      const mv=(Math.random()<0.7?1:2)*(Math.random()<0.5?-1:1);
+      k=Math.max(0,Math.min(USE.length-1,i===0?k:k+mv));
+      const d=USE[k];
+      later(()=>{sing(d,90,.45);lightUp(d,380);},i*BEAT*1000*0.9);
+    }
+    later(()=>{mine=false;rounds++;paint();
+      window._labJamTurn='child';
+      later(()=>{ if(!busy)call(); }, CALL*1000);     // their two bars, then it comes round again
+    }, n*BEAT*1000*0.9+260);
+  }
+  const onDown=(e)=>{
+    const dn=e.target.closest&&e.target.closest('[data-jam="done"]');
+    if(dn){e.preventDefault();busy=true;cancelAnimationFrame(raf);
+      later(()=>{stageOff();finish('jam',t('jam_name'));},120);return;}
+    const r=e.target.closest&&e.target.closest('.lgRung');if(!r||busy)return;
+    e.preventDefault();
+    const d=+r.dataset.deg;
+    r.classList.add('press');setTimeout(()=>r.classList.remove('press'),90);
+    sing(d,96,.45);
+    // NOTHING IS CHECKED. not against the call, not against a target, not at all. The child can
+    // play during the call too if they want to - interrupting is allowed, this is a jam.
+    played++;
+    if(played===1)seen('jam');     // playing one note of your own IS the thing this teaches
+    const c=document.querySelector('.lgCount'); if(c)c.textContent=t('jam_tally',{n:played});
+    if(played===1||played===4){const el=document.querySelector('.lgHint');if(el&&!el.children.length)paint();}
+  };
+  ov.addEventListener('pointerdown',onDown,true);
+  window._labJam=()=>({mine:mine,played:played,rounds:rounds});
+  _render=paint;paint();
+  later(call,600);
+  _cleanup=()=>{_noteAnswer=null;busy=true;cancelAnimationFrame(raf);
+    try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._lab_lgAgain=null;stageOff();LAB.clear();};
+}
+
 function reviewUnit(){
   stageOff();
   const list=due();

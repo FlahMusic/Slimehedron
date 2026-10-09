@@ -492,3 +492,69 @@ softened to keep a green assertion:
    Poll for the question itself, never for a side effect of the thing you are waiting on.
 2. `dev-explore` asserted 5 rungs on `notes`. That lesson GROWS — two rungs, then three, then five.
    The assertion failed on correct behaviour. Measure what the design says, not what you assumed.
+
+---
+
+## The silent first tap: the app was fine, the ruler was broken (2026-10-09)
+
+For weeks `dev-firsttouch.js` reported "the first tap makes no sound" about one run in six, and the
+note in here said not to write it off as harness noise. Both halves turned out to be real, and the
+second one was mine.
+
+### The real bug: two pieces of rain texture multiplying on a note a child meant
+`playSynth` had **`const dud=Math.random()<0.05`** — about 1 note in 20 "traps no bubble" and comes
+out at **16% level**. That is a lovely detail for rain, where notes are constant and texture is the
+point. It is fatal on the first tap, which is the one sound in the whole app that has to happen.
+
+Worse, it multiplied with the velocity range: **`velMin:12`**, so `velForHit()` can legitimately hand
+back 12 of 127 = **9% level**. An unlucky deliberate tap was 9% × 16% ≈ **1.5% of full scale, about
+−44dB** — silence to a child in a room.
+
+Fixed by separating *a person did this* from *a ball did this*: `playSynth(...,firm)` skips the dud,
+and `trigger()` floors a hand's velocity at 78 when `now` is true. Balls keep the full random range,
+because that is what makes rain sound like rain. Lesson question notes are firm too — a child asked
+to name a note they could not hear is being tested on the random number generator.
+
+Measured after: **velocity 78, firm, ~10ms, identical on every one of 6 runs.**
+
+### My bug: an RMS window shorter than two cycles of the note being measured
+The sampler took an **RMS over a 2048-sample window every 16ms via setTimeout**. The first tap is a
+**196Hz G** — at 48kHz that window holds about 8 cycles, but the envelope of a short plucked note
+moves fast and `setTimeout(16)` drifts, so **the same sound read anywhere from 0.0004 to 0.05**
+depending on where it landed. The threshold was 0.0004. That is the whole "one run in six".
+
+Rewritten to take **peak per animation frame across the whole note**. Ten runs:
+**0.75–0.84, a 1.1× spread.** The threshold is now 0.004 — about 200× of headroom.
+
+**The lesson, which has now cost two bugs in one session:** when a measurement is noisy, suspect the
+measurement first. The other one was the `askQuestions` driver helper breaking out of its poll on a
+side effect of the thing it was waiting for, and reading 344ms early.
+
+## Improvise shipped, and the rest of the backlog (2026-10-09)
+
+- **`jamUnit` — "Your Turn".** Orff stage three, the one that was missing entirely. The app plays a
+  short phrase, the child answers with anything over the same pentatonic. **Nothing is checked** —
+  not against the call, not against a target. `dev-jam.js` plays eight scattered notes and asserts
+  zero are marked wrong, zero marked right, nothing scolds, and the progress record ends 8/8 with no
+  misses. Interrupting during the call is allowed; the rungs dim to show whose turn it is but still
+  work, because that is what a jam is.
+- **MIDI export.** Three claims from the outside review; **one was wrong.** Channel collisions do
+  not exist — each part is written to its own single-track file, so distinct channels cannot clash.
+  The other two were real: a part needed **more than two notes** to get a file at all (three careful
+  bass notes vanished), and the tempo was stamped once at record start, so a mid-take speed change
+  left the MIDI and the audio disagreeing about where bar five was. Now every part with at least one
+  note gets a file, tempo changes during a take are captured into a map and emitted as tempo meta
+  events, and each file carries a track name so a teacher opening four files sees "melody" and "bass"
+  instead of four untitled lanes. `dev-midiexport.js` parses the bytes.
+- **The dev suites run on Windows now.** All 42 hard-coded `/opt/pw-browsers/...`, which exists in
+  the cloud container and nowhere else — so none of these tests could be run on the machine the app
+  is developed on. `_dev/browser.js` resolves one: `SLIME_CHROME` override, the container's pinned
+  build, a normal Playwright install on any OS, then the system Chrome, and if none exist it prints
+  the two commands that fix it instead of a stack trace about a missing file.
+- **The coach stopped lying.** It fired 900ms after play mode opened, pointing at the auto-play
+  switch and saying *"the slime jams for you"* — while the app sat deliberately silent waiting to be
+  touched. It now waits until after the child's first sound and says *"tap the slime — it plays along
+  with you"*: an invitation, not a description of something that is not happening.
+- **`dev-entry.js` had hard-coded a lesson title** (`/major/i`), so renaming "The Major Scale" to
+  "Seven Notes" broke a test that was really checking a deep link. It asks the app what that unit is
+  called now, so the next rename cannot break it.

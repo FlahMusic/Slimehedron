@@ -8,7 +8,7 @@
 //  14c sharp). If the walls say 400c under 19-EDO, the microtuning is decorative.
 //  Run: node dev-tuning.js   (needs python3 -m http.server 8765)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 
 // scale -> the intervals above the lowest wall that MUST be present, in cents (±3c for rounding)
@@ -20,8 +20,7 @@ const WANT={
 const TOL=3;
 
 (async()=>{
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args:['--autoplay-policy=no-user-gesture-required']});
+const b=await launch();
 const ctx=await b.newContext({viewport:{width:1440,height:900}});
 const p=await ctx.newPage();
 const errs=[];p.on('pageerror',e=>errs.push(e.message));

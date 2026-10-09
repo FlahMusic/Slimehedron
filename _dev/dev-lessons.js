@@ -5,7 +5,7 @@
 //    * no unit had a finish: the drill ran forever and never said "you did it"
 //  Run: node dev-lessons.js
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const fs=require('fs');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 // The explore screen comes first now (Orff stage two): a lesson opens with its notes playable and
@@ -87,7 +87,7 @@ for(const id of ids){
     ||viaHelper(id),
   "unit '"+id+"' reaches an ending (its own finish(), a shared controller, or a helper that uses one)");}
 
-(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+(async()=>{const b=await launch();
  const ctx=await b.newContext({viewport:{width:1280,height:860}});const p=await ctx.newPage();
  const errs=[];p.on('pageerror',e=>{if(!/ServiceWorker/.test(e.message))errs.push(e.message)});
  // stub the voice BEFORE the page's scripts run, and record every line it is asked to say

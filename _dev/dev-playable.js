@@ -11,7 +11,7 @@
 //  Needs a local server: python3 -m http.server 8765
 //  Run: node dev-playable.js
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 // The explore screen comes first now (Orff stage two): a lesson opens with its notes playable and
 // nothing scored, and the child presses "ask me questions" when they are ready. A driver has to do
@@ -37,7 +37,7 @@ const askQuestions=async(page)=>{
 };
 
 
-(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+(async()=>{const b=await launch();
  const go=async(w,h,unit)=>{
    const ctx=await b.newContext({viewport:{width:w,height:h},hasTouch:true,isMobile:w<600});
    const p=await ctx.newPage();

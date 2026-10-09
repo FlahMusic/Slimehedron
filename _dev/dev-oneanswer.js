@@ -6,7 +6,7 @@
 //  and that locking the question did not deadlock the lesson.
 //  Run: node dev-oneanswer.js
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 // The explore screen comes first now (Orff stage two): a lesson opens with its notes playable and
 // nothing scored, and the child presses "ask me questions" when they are ready. A driver has to do
@@ -33,7 +33,7 @@ const askQuestions=async(page)=>{
 
 
 (async()=>{
- const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+ const b=await launch();
  const ctx=await b.newContext({viewport:{width:1280,height:860}});const p=await ctx.newPage();
  await p.addInitScript(()=>{Object.defineProperty(window,'speechSynthesis',{configurable:true,
    value:{speak:()=>{},cancel:()=>{},getVoices:()=>[]}});});

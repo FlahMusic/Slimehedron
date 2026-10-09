@@ -15,7 +15,7 @@
 //  top of anything, nothing on top of a word, and nothing placed where it cannot be seen.
 //  Run: node dev-crowding.js   (needs python3 -m http.server 8765)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 
 const SIZES=[['desktop',1440,900],['laptop',1280,800],['tablet',820,1180],
@@ -81,8 +81,7 @@ const SURVEY=()=>{
 };
 
 (async()=>{
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args:['--autoplay-policy=no-user-gesture-required']});
+const b=await launch();
 
 for(const [state,url,extra] of STATES){
   for(const [tag,w,h] of SIZES){

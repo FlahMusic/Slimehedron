@@ -8,7 +8,7 @@
 //  So: install the worker with a file deliberately missing, and require it to survive.
 //  Run: node dev-sw.js    (starts its own server on 8791 — do not point this at 8765)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const http=require('http'),fs=require('fs'),path=require('path');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 const TYPES={'.html':'text/html','.js':'text/javascript','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.xml':'application/xml','.txt':'text/plain'};
@@ -24,7 +24,7 @@ const srv=http.createServer((rq,rs)=>{
 });
 (async()=>{
 await new Promise(r=>srv.listen(8791,r));
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+const b=await launch();
 const ctx=await b.newContext();
 const p=await ctx.newPage();
 await p.goto('http://127.0.0.1:8791/index.html',{waitUntil:'domcontentloaded'});

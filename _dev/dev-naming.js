@@ -8,7 +8,7 @@
 //   4. PLAY MODE READS WITHOUT READING. Every control a child touches carries a glyph or an image.
 //  Run: node dev-naming.js        (needs a server on :8765)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 
 // Terms a musician already knows. Anything user-facing outside this list has to earn its place.
@@ -40,7 +40,7 @@ const HEADINGS=new Set(['pattern','timing','groove — human feel','key & scale'
    .filter(m=>GONE.test(m[2])).map(m=>m[1]+': "'+m[2]+'"');
  ok(bad.length===0,'no lesson names a control that was removed'+(bad.length?': '+bad.join(' | '):''));}
 
-(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+(async()=>{const b=await launch();
  const open=async(mode,open_aside)=>{const ctx=await b.newContext({viewport:{width:1600,height:1000}});const p=await ctx.newPage();
    await p.goto('http://127.0.0.1:8765/index.html');await p.waitForTimeout(500);
    await p.click(`.modeCard[data-m="${mode}"]`);await p.waitForTimeout(2200);

@@ -11,11 +11,11 @@
 //  Needs a local server: python3 -m http.server 8765
 //  Run: node dev-entry.js
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 const U='http://127.0.0.1:8765/index.html';
 
-(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+(async()=>{const b=await launch();
  const open=async(q,seed)=>{const ctx=await b.newContext({viewport:{width:393,height:852},hasTouch:true,isMobile:true});
    const p=await ctx.newPage();
    if(seed)await p.addInitScript(s=>{try{localStorage.setItem('slimehedron-learn2',s);localStorage.setItem('slimehedron-coach','1');}catch(e){}},seed);
@@ -30,12 +30,19 @@ const U='http://127.0.0.1:8765/index.html';
    await ctx.close();}
  {const {ctx,p}=await open('?l=majorscale');
   await p.waitForTimeout(1400);
-  const r=await p.evaluate(()=>({mode:S.mode,scale:S.scale,lab:document.body.classList.contains('lab-on'),
-    stage:!!document.querySelector('.lgStage'),
-    title:(document.querySelector('.lgTop h3')||{}).textContent||''}));
+  // Ask the app what that lesson is CALLED rather than hard-coding its title. This used to test for
+  // /major/i, which passed only while the card said "The Major Scale" - renaming it to what a child
+  // would understand ("Seven Notes") broke a test that was really checking the deep link worked.
+  const r=await p.evaluate(()=>{
+    const u=(window.LEARN2&&LEARN2.UNITS||[]).find(x=>x.id==='majorscale');
+    return {mode:S.mode,scale:S.scale,lab:document.body.classList.contains('lab-on'),
+      stage:!!document.querySelector('.lgStage'),
+      title:(document.querySelector('.lgTop h3')||{}).textContent||'',
+      expect:u?window.LEARN2.t(u.title):''};});
   ok(r.mode==='learn'&&r.lab&&r.stage,'[?l=majorscale] lands INSIDE the lesson, not on the menu');
   ok(r.scale==='major','[?l=majorscale] and the instrument is on that lesson\'s scale ('+r.scale+')');
-  ok(/major/i.test(r.title),'[?l=majorscale] and the right lesson opened ("'+r.title+'")');
+  ok(!!r.expect&&r.title.trim()===r.expect.trim(),
+     '[?l=majorscale] and the right lesson opened ("'+r.title.trim()+'" matches the unit\'s own name)');
   await ctx.close();}
  {const {ctx,p}=await open('?l=notarealunit');
   const r=await p.evaluate(()=>({mode:S.mode,lab:document.body.classList.contains('lab-on')}));

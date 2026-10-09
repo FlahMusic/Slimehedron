@@ -10,7 +10,7 @@
 //  out — no matter how green everything else is. You cannot fake this by calling something.
 //  Run: node dev-realaudio.js   (needs python3 -m http.server 8765)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 
 // Splice an analyser in beside AudioContext.destination, whatever connects to it and whenever.
@@ -55,8 +55,7 @@ const TAP=()=>{
 const SILENT=0.0004;   // below this is numerically indistinguishable from a dead graph
 
 (async()=>{
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args:['--autoplay-policy=no-user-gesture-required']});
+const b=await launch();
 const ctx=await b.newContext({viewport:{width:1100,height:860}});
 await ctx.addInitScript(TAP);
 const p=await ctx.newPage();

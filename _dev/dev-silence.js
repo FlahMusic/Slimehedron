@@ -12,7 +12,7 @@
 //  It also watches console errors, which the catch blocks cannot suppress once the callee reports.
 //  Run: node dev-silence.js   (needs python3 -m http.server 8765)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 
 const SHIM=()=>{   // headless throttles rAF and several lessons drive their click track from it
@@ -27,8 +27,7 @@ const LESSONS=['pulse','make','sayplay','howlong','countbar','rest','song','spli
   'minorscale','minorshapes','modes','staff','melody','echo','updown','findhome'];
 
 (async()=>{
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args:['--autoplay-policy=no-user-gesture-required']});
+const b=await launch();
 const ctx=await b.newContext({viewport:{width:1100,height:860}});
 await ctx.addInitScript(SHIM);
 const allOops=[];

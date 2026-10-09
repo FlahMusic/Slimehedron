@@ -8,15 +8,14 @@
 //  move some air.
 //  Run: node dev-audible.js   (needs python3 -m http.server 8765)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 // every lesson whose job involves hearing something
 const EARS=['pulse','make','sayplay','howlong','countbar','rest','song','split','tempo','dynamic',
             'high','notes','home','steps','newhome','majorscale','brightdark','intervals',
             'minorscale','minorshapes','modes','staff','melody','echo','updown','findhome'];
 (async()=>{
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-  args:['--autoplay-policy=no-user-gesture-required']});
+const b=await launch();
 const ctx=await b.newContext({viewport:{width:1100,height:860}});
 await ctx.addInitScript(()=>{
   window.__osc=0;window.__buf=0;

@@ -5,10 +5,10 @@
 //  This blocks learn2.js at the network and proves the door says so instead of opening onto nothing.
 //  Run: node dev-nolab.js   (needs: python3 -m http.server 8765)
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is - see _dev/browser.js
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 (async()=>{
- const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+ const b=await launch();
  const p=await (await b.newContext({viewport:{width:390,height:780}})).newPage();
  let served=false;
  await p.route('**/learn2.js',r=>{served=true;r.abort();});   // the Lab never arrives
