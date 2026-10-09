@@ -8,6 +8,29 @@
 const {chromium}=require('playwright');
 const fs=require('fs');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
+// The explore screen comes first now (Orff stage two): a lesson opens with its notes playable and
+// nothing scored, and the child presses "ask me questions" when they are ready. A driver has to do
+// the same thing a child does. Pressing it when it is not there is a no-op, so this is safe to call
+// after opening any unit.
+const askQuestions=async(page)=>{
+  try{await page.evaluate(()=>{ if(window._lab_ready)window._lab_ready(); });}catch(e){}
+  // WAIT FOR THE QUESTION, not for a guessed number of milliseconds. A roaming lesson sounds the
+  // tonic first and only plays the question ~820ms later, so a fixed short wait read the screen
+  // mid-anchor and made a working lesson look like it had asked an unanswerable one-note question.
+  for(let i=0;i<40;i++){
+    // Poll ONLY for a real question. An earlier version also broke out when the ready button had
+    // gone, which is true the instant the gate opens - so it read the screen 344ms before the
+    // anchored question actually sounded and a working lesson looked like it asked a one-note
+    // question with no answer.
+    const asked=await page.evaluate(()=>{
+      try{ return window._labHintDeg!=null||window._labExpect!=null; }catch(e){return false;}
+    }).catch(()=>false);
+    if(asked)break;
+    await page.waitForTimeout(60);
+  }
+  await page.waitForTimeout(900);   // a roaming lesson sounds the tonic, THEN the question 820ms later
+};
+
 
 // --- static guard first: a new unit added without an ending is caught here, not in the field ---
 const src=fs.readFileSync('learn2.js','utf8');
@@ -49,10 +72,20 @@ for(const c of ['readUnit','choiceUnit'])
 ok(!/function pitchUnit\(/.test(src),'the retired tank engine is not still in the file');
 const CTRL='(ladderUnit|readUnit|choiceUnit)';
 const viaHelper=(id)=>HELPERS.some(h=>new RegExp(h+"\\('"+id+"'").test(src));
-for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
+// 'review' is a SHELF, not a drill: it lists the lessons that are ready to play again and tapping
+// one re-runs that lesson. A menu has no ending of its own and should not have one - what matters is
+// that everything it OFFERS does, which is every lesson, asserted below. It used to run every due
+// lesson on the pitch ladder, so a rhythm or staff lesson came back as "find the note".
+const MENUS=['review'];
+for(const id of ids){
+  if(MENUS.indexOf(id)>=0){
+    ok(new RegExp("function reviewUnit[\\s\\S]{0,2600}?data-a2=\"unit\"").test(src),
+       "unit '"+id+"' is a menu that hands off to real lessons, so its endings are theirs");
+    continue;}
+  ok(new RegExp("finish\\('"+id+"'").test(src)
     ||new RegExp("id:'"+id+"'[\\s\\S]{0,400}?"+CTRL+"|"+CTRL+"\\(\\{[\\s\\S]{0,160}?id:'"+id+"'").test(src)
     ||viaHelper(id),
-  "unit '"+id+"' reaches an ending (its own finish(), a shared controller, or a helper that uses one)");
+  "unit '"+id+"' reaches an ending (its own finish(), a shared controller, or a helper that uses one)");}
 
 (async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
  const ctx=await b.newContext({viewport:{width:1280,height:860}});const p=await ctx.newPage();
@@ -70,7 +103,7 @@ for(const id of ids)ok(new RegExp("finish\\('"+id+"'").test(src)
  await p.goto('file://'+process.cwd()+'/index.html');await p.waitForTimeout(400);
  await p.click('.modeCard[data-m="learn"]');await p.waitForTimeout(1200);
 
- const open=async(id)=>{await p.click(`.uCard[data-u="${id}"]`);await p.waitForTimeout(900);};
+ const open=async(id)=>{await p.click(`.uCard[data-u="${id}"]`);await p.waitForTimeout(900);await askQuestions(p);await askQuestions(p);};
  const doneUp=()=>p.evaluate(()=>!!document.querySelector('.lgDone'));  // the ending is on the lesson's own screen now
  const home=async()=>{await p.evaluate(()=>window.LEARN2.home());await p.waitForTimeout(500);};
 

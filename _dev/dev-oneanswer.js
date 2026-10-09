@@ -8,6 +8,29 @@
 // ============================================================================================
 const {chromium}=require('playwright');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
+// The explore screen comes first now (Orff stage two): a lesson opens with its notes playable and
+// nothing scored, and the child presses "ask me questions" when they are ready. A driver has to do
+// the same thing a child does. Pressing it when it is not there is a no-op, so this is safe to call
+// after opening any unit.
+const askQuestions=async(page)=>{
+  try{await page.evaluate(()=>{ if(window._lab_ready)window._lab_ready(); });}catch(e){}
+  // WAIT FOR THE QUESTION, not for a guessed number of milliseconds. A roaming lesson sounds the
+  // tonic first and only plays the question ~820ms later, so a fixed short wait read the screen
+  // mid-anchor and made a working lesson look like it had asked an unanswerable one-note question.
+  for(let i=0;i<40;i++){
+    // Poll ONLY for a real question. An earlier version also broke out when the ready button had
+    // gone, which is true the instant the gate opens - so it read the screen 344ms before the
+    // anchored question actually sounded and a working lesson looked like it asked a one-note
+    // question with no answer.
+    const asked=await page.evaluate(()=>{
+      try{ return window._labHintDeg!=null||window._labExpect!=null; }catch(e){return false;}
+    }).catch(()=>false);
+    if(asked)break;
+    await page.waitForTimeout(60);
+  }
+  await page.waitForTimeout(900);   // a roaming lesson sounds the tonic, THEN the question 820ms later
+};
+
 
 (async()=>{
  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
@@ -17,7 +40,7 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
  await p.goto('file://'+process.cwd()+'/index.html');await p.waitForTimeout(400);
  await p.click('.modeCard[data-m="learn"]');await p.waitForTimeout(1200);
  const home=async()=>{await p.evaluate(()=>window.LEARN2.home());await p.waitForTimeout(500);};
- const open=async(id)=>{await p.click(`.uCard[data-u="${id}"]`);await p.waitForTimeout(1100);};
+ const open=async(id)=>{await p.click(`.uCard[data-u="${id}"]`);await p.waitForTimeout(1100);await askQuestions(p);await askQuestions(p);};
  const count=()=>p.evaluate(()=>{const c=document.querySelector('.lgCount');
    return c?(parseInt(c.textContent,10)||0):0;});
  const doneUp=()=>p.evaluate(()=>!!document.querySelector('.lgDone'));

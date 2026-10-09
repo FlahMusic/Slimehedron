@@ -429,3 +429,66 @@ the test trusted. A test that has never failed is not a test.
   "find the note". The due-clock no longer resets on merely *showing* a card (it needed an `onAnswer`
   hook), but routing each due item back to its own screen is an architecture change, not a patch.
 - Dev suites hard-code the Linux Chromium path, so they only run in the cloud container.
+
+---
+
+## Learn mode was a quiz wearing a music app's clothes (2026-10-09)
+
+Mapped all 26 units by the thing a child physically does to answer. 16 tapped a rung on a ladder,
+5 tapped one of two-to-four buttons, 2 tapped along a bar, 3 had their own screen. **23 of 26 were
+"hear a thing, tap the right answer."** Different art, same verb.
+
+The four big twentieth-century approaches all agree on the thing this had backwards: **sound before
+symbol, body before the name.** Orff spells out the sequence — **imitate → explore → improvise →
+compose** — and sets the instrument up so nothing a child plays can sound wrong, by physically
+removing the F and B bars.
+
+**That is already this app's tank.** Scale-locked walls, pentatonic by default, nothing sounds
+wrong. The best idea in children's music pedagogy was already shipped in play mode — and learn mode
+turned its back on it to ask about intervals. It did Orff stage one twenty-three times and never the
+other three.
+
+### What changed
+
+- **`makeUnit` is a sandbox again.** It had `need=2` with a progress counter: make two loops and
+  you're finished. The one unit where a child invents something was a quiz in a sandbox's clothes.
+  No quota now, a tally instead of a target, the first kept loop counts as the lesson learned, and
+  the child presses "all done" when they are done.
+- **Every ladder lesson opens on an EXPLORE screen.** The notes are already loaded in the tank by
+  the time the first question fires, so the child plays them first — no target, no scoring, no
+  clock — and presses "ask me questions" themselves. Stage two, for one screen per lesson.
+- **Review asks the question the lesson asked.** It used to run everything on the pitch ladder with
+  a merged note set, so a rhythm, staff or note-length lesson came back as "find the note" — the one
+  question none of them taught. There is no need for a second set of question types: the lesson that
+  taught the thing already asks correctly. Review is a shelf of what is ready to play again, oldest
+  first, and tapping one re-runs that lesson.
+- **A played note is an answer.** A child with a keyboard could hear the question, play it back, and
+  have it count for nothing. `playNote()` in index.html was already "one door for every performance";
+  it now also feeds `LEARN2.noteIn(cents)`, which the active ladder matches against the rungs on
+  screen, octave-agnostic, within a quarter-tone. Sound always happens first — the note is never
+  swallowed by the lesson, it just also counts.
+- **Every lesson renamed.** The cards said *Note Duration, Measures and Time, The Relative Minor,
+  Melodic Direction, Intervals, Dynamics* — a syllabus index on cards for children who may not read
+  yet. They now say what happens (*Long and Short, Count to Four, A New Home Note, Step or Jump,
+  Two at Once, Loud and Soft*) and the theory word moved into the subtitle where a parent or teacher
+  still finds it.
+
+### Three tests, and the lesson about tests
+
+`dev-explore.js`, `dev-review.js`, and the rewrites of `dev-make.js` / `dev-curriculum.js` /
+`dev-lessons.js`. The design changed, so **the drivers followed the design** — none of the above was
+softened to keep a green assertion:
+- `dev-make` had asserted "keeping two loops finishes the lesson." That WAS the bug. It now asserts
+  the opposite, plus that pressing "all done" still reaches an ending.
+- `dev-lessons` had asserted every unit calls `finish()`. Review is a menu now; a menu has no ending
+  of its own, so it asserts the menu hands off to real lessons, whose endings are theirs.
+- `dev-explore` was run against `exploring=false` to confirm it fails: **6 failures.** A test that
+  has never failed is not a test.
+
+### And two of my own measurement bugs, which cost more than the feature
+1. The shared `askQuestions` driver helper broke out of its poll when the ready button disappeared —
+   true the instant the gate opens. So it read the screen **344ms before** the anchored question
+   sounded, and `dev-earwork` reported that a working lesson asked an unanswerable one-note question.
+   Poll for the question itself, never for a side effect of the thing you are waiting on.
+2. `dev-explore` asserted 5 rungs on `notes`. That lesson GROWS — two rungs, then three, then five.
+   The assertion failed on correct behaviour. Measure what the design says, not what you assumed.

@@ -136,10 +136,17 @@ const src=fs.readFileSync('learn2.js','utf8');
  await p.click('.modeCard[data-m="learn"]');await p.waitForTimeout(1300);
  const due=await p.evaluate(()=>window.LEARN2._due().length);
  ok(due===1,'a lesson learned YESTERDAY comes back ('+due+' due)');
- // and the review unit actually runs on it
+ // Review is a SHELF, not a question. It used to run everything on the pitch ladder, so a rhythm or
+ // staff lesson came back as "find the note" - the one question none of them taught. Now it offers
+ // the lessons themselves, and tapping one re-runs the lesson that actually taught the thing.
  await p.click('.uCard[data-u="review"]');await p.waitForTimeout(1100);
- const running=await p.evaluate(()=>!!document.querySelector('.lgFeed')&&!document.querySelector('.lgDone'));
- ok(running,'the review session opens with something to ask');
+ const shelf=await p.evaluate(()=>({
+   offered:[...document.querySelectorAll('.uCard')].map(c=>c.dataset.u),
+   rungs:document.querySelectorAll('.lgRung').length,
+   due:(window._labDue||[]).slice()}));
+ ok(shelf.offered.length>0,'the review session offers something to play again ('+shelf.offered.join(', ')+')');
+ ok(shelf.rungs===0,'and it does not force a pitch ladder on every lesson');
+ ok(shelf.offered.every(id=>shelf.due.indexOf(id)>=0),'everything it offers is genuinely due');
 
  // ---- 6. PROCESS PRAISE: never tell a child what they ARE ----
  const praise=await p.evaluate(()=>{

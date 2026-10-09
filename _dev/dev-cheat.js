@@ -10,6 +10,29 @@
 // ============================================================================================
 const {chromium}=require('playwright');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
+// The explore screen comes first now (Orff stage two): a lesson opens with its notes playable and
+// nothing scored, and the child presses "ask me questions" when they are ready. A driver has to do
+// the same thing a child does. Pressing it when it is not there is a no-op, so this is safe to call
+// after opening any unit.
+const askQuestions=async(page)=>{
+  try{await page.evaluate(()=>{ if(window._lab_ready)window._lab_ready(); });}catch(e){}
+  // WAIT FOR THE QUESTION, not for a guessed number of milliseconds. A roaming lesson sounds the
+  // tonic first and only plays the question ~820ms later, so a fixed short wait read the screen
+  // mid-anchor and made a working lesson look like it had asked an unanswerable one-note question.
+  for(let i=0;i<40;i++){
+    // Poll ONLY for a real question. An earlier version also broke out when the ready button had
+    // gone, which is true the instant the gate opens - so it read the screen 344ms before the
+    // anchored question actually sounded and a working lesson looked like it asked a one-note
+    // question with no answer.
+    const asked=await page.evaluate(()=>{
+      try{ return window._labHintDeg!=null||window._labExpect!=null; }catch(e){return false;}
+    }).catch(()=>false);
+    if(asked)break;
+    await page.waitForTimeout(60);
+  }
+  await page.waitForTimeout(900);   // a roaming lesson sounds the tonic, THEN the question 820ms later
+};
+
 
 // Play N rounds picking a rung by `strategy`, return how many were right.
 async function run(page,lesson,strategy,rounds){

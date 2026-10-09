@@ -89,34 +89,36 @@ const LANG={
     // SUBTITLE is the plain sentence. "How long?" and "Bright and dark" told a child nothing they could
     // carry to a piano teacher, a band room, or the next app.
     u_pulse:'Steady Beat', u_pulseSub:'find the pulse and tap with it',
-    u_sayplay:'Rhythm Syllables', u_sayplaySub:'say a rhythm before you play it',
-    u_howlong:'Note Duration', u_howlongSub:'quarter, half, dotted half, whole',
+    u_sayplay:'Say It, Play It', u_sayplaySub:'say a rhythm before you play it',
+    u_howlong:'Long and Short', u_howlongSub:'how long a note is held \u2014 note duration',
     hl_do:'How many counts was that note?',
     hl_name:'A note\u2019s shape tells you how long to hold it. That is its DURATION.',
     note_q:'a QUARTER note \u2014 1 count', note_h:'a HALF note \u2014 2 counts',
     note_dh:'a DOTTED HALF note \u2014 3 counts', note_w:'a WHOLE note \u2014 4 counts',
     note_r:'a QUARTER REST \u2014 1 count of silence',
-    u_rest:'Rest Duration', u_restSub:'silence is written down too',
+    u_rest:'Leave a Gap', u_restSub:'silence is written down too \u2014 rests',
     u_make:'Make a Loop', u_makeSub:'four beats of your own',
     mk_do:'Tap the colours. Whatever you play comes back round.',
     mk_clear:'start again', mk_keep:'keep it',
-    mk_kept:'Kept. Make another one.',
+    mk_kept:'Kept it. Make another if you want.',
+    mk_tally:'{n} kept',
+    mk_done:'all done',
     mk_name:'You made a four-beat loop. Nothing you play here is wrong.',
-    u_staff:'The Staff', u_staffSub:'the ladder, drawn on five lines',
+    u_staff:'Five Lines', u_staffSub:'the ladder, drawn on five lines \u2014 the staff',
     st_do:'Tap the note you hear.',
-    u_melody:'Reading a Melody', u_melodySub:'play a real tune off the page',
+    u_melody:'Read a Tune', u_melodySub:'play a real tune off the page',
     ml_do:'Play the notes, left to right.',
     ml_name:'You played a tune straight off the page.',
     song_ode:'Ode to Joy',
     st_name:'The STAFF is five lines. A note sits ON a line or IN a space.',
-    u_split:'Splitting the Beat', u_splitSub:'two sounds in the time of one',
+    u_split:'Two in One Beat', u_splitSub:'two sounds in the time of one',
     sb_do:'Two taps where the notes are joined up.',
     sb_name:'Two EIGHTH NOTES fill one beat. Count "1 and".',
-    u_tempo:'Tempo', u_tempoSub:'how fast the beat goes',
+    u_tempo:'Fast and Slow', u_tempoSub:'how fast the beat goes \u2014 tempo',
     tp_hear:'Listen.', tp_do:'Was that fast or slow?',
     tp_fast:'fast', tp_slow:'slow',
     tp_name:'TEMPO is how fast the beat goes. It is measured in BPM.',
-    u_dynamic:'Dynamics', u_dynamicSub:'how loud a note is played',
+    u_dynamic:'Loud and Soft', u_dynamicSub:'how loud a note is played \u2014 dynamics',
     dy_hear:'Listen.', dy_do:'Was that loud or soft?',
     dy_loud:'loud', dy_soft:'soft',
     dy_name:'DYNAMICS are how loud you play. Soft is PIANO, loud is FORTE.',
@@ -125,28 +127,28 @@ const LANG={
     md_hear:'Listen.', md_dor:'Dorian', md_mix:'Mixolydian',
     rs_do:'Play on the notes. Stay silent on the rests.',
     rs_name:'A REST is silence you count. This one lasts 1 beat.',
-    u_countbar:'Measures and Time', u_countbarSub:'four beats to a measure',
+    u_countbar:'Count to Four', u_countbarSub:'four beats to a measure',
     cb_do:'Tap on the big numbers. Count the small ones.',
     cb_name:'Four beats in a MEASURE. The 4/4 is the TIME SIGNATURE.',
-    u_song:'Reading a Rhythm', u_songSub:'a real tune, played as its rhythm',
+    u_song:'Read a Rhythm', u_songSub:'a real tune, played as its rhythm',
     sg_do:'Tap each note as it lights up.',
     sg_name:'You read the RHYTHM of a real tune off the page.',
     song_hotcross:'Hot Cross Buns', song_mary:'Mary Had a Little Lamb',
-    u_high:'Pitch', u_highSub:'high notes and low notes',
-    u_notes:'The Major Pentatonic', u_notesSub:'five notes: do re mi so la',
-    u_home:'The Tonic', u_homeSub:'the note a melody comes home to',
-    u_steps:'Steps and Skips', u_stepsSub:'how a melody moves',
-    u_newhome:'The Relative Minor', u_newhomeSub:'same five sounds, a new tonic',
-    u_majorscale:'The Major Scale', u_majorscaleSub:'seven notes \u2014 add fa, then ti',
-    u_brightdark:'Major and Minor', u_brightdarkSub:'one note sets the mood',
-    u_intervals:'Intervals', u_intervalsSub:'two notes at the same time',
+    u_high:'High and Low', u_highSub:'high notes and low notes \u2014 pitch',
+    u_notes:'Five Notes', u_notesSub:'do re mi so la \u2014 the major pentatonic',
+    u_home:'The Home Note', u_homeSub:'the note a melody comes home to \u2014 the tonic',
+    u_steps:'Step or Jump', u_stepsSub:'how a melody moves \u2014 steps and skips',
+    u_newhome:'A New Home Note', u_newhomeSub:'same five sounds, a new home \u2014 the relative minor',
+    u_majorscale:'Seven Notes', u_majorscaleSub:'add fa, then ti \u2014 the major scale',
+    u_brightdark:'Bright and Dark', u_brightdarkSub:'one note sets the mood \u2014 major and minor',
+    u_intervals:'Two at Once', u_intervalsSub:'two notes together \u2014 intervals',
     iv_hear:'Two notes, sounded together.',
     iv_do:'A 2nd is one step wide. A 5th is much wider. Which was it?',
     iv_name:'The distance between two notes is an INTERVAL.',
     iv_near:'2nd', iv_far:'5th',
-    u_minorscale:'The Minor Scale', u_minorscaleSub:'seven notes, also called Aeolian',
-    u_minorshapes:'Harmonic and Melodic Minor', u_minorshapesSub:'raise the seventh, then the sixth',
-    u_modes:'Modes', u_modesSub:'Dorian and Mixolydian',
+    u_minorscale:'Seven Dark Notes', u_minorscaleSub:'the minor scale, also called Aeolian',
+    u_minorshapes:'Raise a Note', u_minorshapesSub:'raise the seventh, then the sixth \u2014 harmonic and melodic minor',
+    u_modes:'More Scales', u_modesSub:'Dorian and Mixolydian \u2014 modes',
     u_review:'Review', u_reviewSub:'notes from earlier lessons',
     // say-it-first: the METHOD is borrowed (konnakol, bols, kuchi shoga, gu-eum, usul all vocalise a
     // rhythm before playing it); the SYLLABLES are English so the child is saying words they own.
@@ -184,8 +186,12 @@ const LANG={
     md_do:'Which mode was that?',
     md_p1:'now Mixolydian',
     md_name:'DORIAN is minor with a raised sixth and a low seventh. MIXOLYDIAN is major with a low seventh.',
-    rev_do:'Find it again.',
+    ex_do:'Play them. Any of them, as many as you like.',
+    ex_ready:'ask me questions',
+    rev_do:'Play one again.',
     rev_name:'You still had it.',
+    rev_ago:'{n} days ago',
+    rev_ago1:'yesterday',
     rev_none:'nothing to review yet',
     rev_noneSub:'Finish a lesson. Come back tomorrow.',
     g_echo:'Call and Response', g_echoSub:'play back what you hear',
@@ -456,6 +462,13 @@ function sing(d,vel,dur){
   try{if(window._labKeyFlash)window._labKeyFlash(d,(dur||0.5)*620);}catch(e){}
 }
 function degCents(d){try{return centsForDegree(d);}catch(e){return d*200;}}
+// A PLAYED NOTE IS AN ANSWER.
+// Every ladder lesson asks "which one was that?" and then only accepted a tap on the screen. A child
+// with a keyboard plugged in could hear the question, play the note back, and have it count for
+// nothing -- the one input that is actually musical was the one input that did not work.
+// The active ladder parks its answer handler here; playNote() in index.html feeds this on every
+// press from any source (computer keys, MIDI, anything later). Cleared by every unit's _cleanup.
+let _noteAnswer=null;
 let _timers=[];
 function later(fn,ms){const id=setTimeout(fn,ms);_timers.push(id);return id;}
 function stopAll(){_timers.forEach(clearTimeout);_timers=[];try{LAB.onHit(null);}catch(e){}}
@@ -601,7 +614,6 @@ function noteValueUnit(){
   // a brute force, and it was being written into the progress file as mastery. `armed` is the real
   // gate: a question arms it, the first committed answer disarms it, the next question arms it again.
   let armed=false;
-
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
   LAB.take({exact:false,shape:'4',scale:'pentaMaj',octs:1,drums:false,band:false,grav:0,bpm:100,touch:false});
   LAB.labels(null);LAB.clear();
@@ -655,7 +667,7 @@ function noteValueUnit(){
     later(ask,ok?1200:1400);};
   ov.addEventListener('pointerdown',onDown,true);
   _render=paint;ask();
-  _cleanup=()=>{busy=true;if(timer)clearInterval(timer);
+  _cleanup=()=>{_noteAnswer=null;busy=true;if(timer)clearInterval(timer);
     try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
     window._lab_lgAgain=null;stageOff();LAB.clear();};
 }
@@ -764,7 +776,7 @@ function readUnit(cfg){
   ov.addEventListener('pointerdown',onDown,true);
   window._lab_tap=judge;
   build();_render=paint;paint();later(run,400);
-  _cleanup=()=>{busy=true;cancelAnimationFrame(raf);
+  _cleanup=()=>{_noteAnswer=null;busy=true;cancelAnimationFrame(raf);
     try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
     window._lab_tap=null;stageOff();LAB.clear();};
 }
@@ -832,7 +844,11 @@ function makeUnit(){
   const SLOT=60/MAKE_BPM/2, LOOP=SLOT*MAKE_SLOTS;  // an eighth, and one bar
   let grid=new Array(MAKE_SLOTS).fill(null);       // what the child has put down
   let kept=0, loopAt=0, raf=0, cur=-1, busy=false, bars=0;
-  const need=2;
+  // NO QUOTA. This is the one unit in the whole curriculum where the child makes something up, and
+  // it used to say need=2 with a progress counter: make two and you're finished. That is a quiz
+  // wearing a sandbox's clothes. Orff's instruments have the F and B bars taken off so nothing can
+  // sound wrong; nobody then tells the child they have improvised enough. So: keep as many as you
+  // like, the first one counts as having learned it, and the CHILD decides when to leave.
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
   LAB.take({exact:false,shape:'5',scale:'pentaMaj',octs:1,drums:false,band:false,grav:0,bpm:MAKE_BPM,touch:false});
   LAB.labels(null);LAB.clear();
@@ -844,15 +860,17 @@ function makeUnit(){
       '<i class="mkSlot'+(g!=null?' on':'')+(i===cur?' now':'')+'"'+(g!=null?' style="--rc:'+degTint(g)+'"':'')+'></i>').join('');
     stage(
       '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
-        '<h3>'+t('u_make')+'</h3><span class="lgCount">'+kept+' / '+need+'</span>'+
+        '<h3>'+t('u_make')+'</h3><span class="lgCount">'+(kept?t('mk_tally',{n:kept}):'')+'</span>'+
         '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
-      '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<kept?'got':'')+'"></i>').join('')+'</div>'+
+
       '<div class="mkRing" id="mkRing">'+dots+'</div>'+
       '<p class="lgSay">'+t('mk_do')+'</p>'+
       '<div class="mkPads">'+pads+'</div>'+
       '<div class="mkBtns">'+
         '<button class="btn mkClear" data-mk="clear">'+t('mk_clear')+'</button>'+
-        '<button class="btn primary mkKeep" data-mk="keep">'+t('mk_keep')+'</button></div>');
+        '<button class="btn primary mkKeep" data-mk="keep">'+t('mk_keep')+'</button>'+
+        (kept?'<button class="btn mkDone" data-mk="done">'+t('mk_done')+'</button>':'')+
+        '</div>');
   }
 
   // Schedule one whole bar at once: the groove, plus whatever the child has put in the grid. Doing
@@ -900,13 +918,15 @@ function makeUnit(){
     if(btn&&!busy){
       e.preventDefault();
       if(btn.dataset.mk==='clear'){grid=new Array(MAKE_SLOTS).fill(null);paint();return;}
+      if(btn.dataset.mk==='done'){                             // the child says when they are finished
+        busy=true;cancelAnimationFrame(raf);
+        later(()=>{stageOff();finish('make',t('mk_name'));},120);return;}
       if(btn.dataset.mk==='keep'){
         if(!grid.some(g=>g!=null))return;                       // nothing made yet: ignore, never scold
         kept++; score('make',true);
+        if(kept===1)seen('make');     // one loop made IS the lesson learned. no need to make a second.
         const fd=document.querySelector('.lgSay');if(fd)fd.textContent=t('mk_kept');
         grid=new Array(MAKE_SLOTS).fill(null);
-        if(kept>=need){busy=true;cancelAnimationFrame(raf);
-          later(()=>{stageOff();finish('make',t('mk_name'));},900);return;}
         later(paint,700);
       }
     }
@@ -917,7 +937,7 @@ function makeUnit(){
     if(el)el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));};
   _render=paint;paint();
   loopAt=AC.currentTime+0.25;raf=requestAnimationFrame(tick);
-  _cleanup=()=>{busy=true;cancelAnimationFrame(raf);
+  _cleanup=()=>{_noteAnswer=null;busy=true;cancelAnimationFrame(raf);
     try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
     window._lab_mkGrid=null;window._lab_mkTap=null;stageOff();LAB.clear();};
 }
@@ -984,6 +1004,16 @@ function ladderUnit(cfg){
   // a brute force, and it was being written into the progress file as mastery. `armed` is the real
   // gate: a question arms it, the first committed answer disarms it, the next question arms it again.
   let armed=false;
+  // ORFF STAGE TWO: EXPLORE.
+  // The sequence every one of the big approaches uses is imitate -> explore -> improvise -> compose,
+  // and this curriculum did the first one twenty-three times and never the rest. The notes for the
+  // lesson are already loaded in the tank by the time the first question fires, so the cheapest
+  // honest fix is: let the child play them first. No target, no scoring, no clock. They press the
+  // button themselves when they want the questions, which means the questions arrive to a child who
+  // already knows what these notes sound like under their own finger.
+  let exploring=(cfg.explore!==false);
+  let touched=0;   // how many notes they tried before asking for the questions
+
 
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
   const HOME=()=>((LAB._saved&&LAB._saved.root!=null)?LAB._saved.root:S.root)+(cfg.rootShift||0);
@@ -1024,18 +1054,28 @@ function ladderUnit(cfg){
         '<span class="rgDeg">'+(i===0?'LOW':(i===use.length-1?'HIGH':''))+'</span></button>').join('');
     stage(
       '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
-        '<h3>'+t(cfg.title)+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
+        '<h3>'+t(cfg.title)+'</h3><span class="lgCount">'+(exploring?'':right+' / '+need)+'</span>'+
         '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
-      '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
+      (exploring?'':'<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>')+
       '<div class="lgLadder" id="lgLadder">'+ladder+'</div>'+
-      '<p class="lgSay">'+t(cfg.doIt)+'</p>'+
+      '<p class="lgSay">'+t(exploring?'ex_do':cfg.doIt)+'</p>'+
       '<div class="lgFeed" id="lgFeed"></div>'+
-      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>');
+      (exploring
+        ? '<div class="lgHint"><button class="btn primary lgReady" data-lg="ready">'+t('ex_ready')+'</button></div>'
+        : '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>'));
     rungs=[...document.querySelectorAll('.lgRung')];
     if(target!=null)markTarget();
   }
   function markTarget(){ rungs.forEach(r=>r.classList.toggle('target', cfg.showTarget===true && +r.dataset.deg===target));
     window._labHintDeg=target; }   // readable target: dev-lessons drives the lesson through this
+  function startAsking(){
+    if(!exploring)return;
+    exploring=false; paint();
+    try{window.__exploredFor=(window.__exploredFor||{});window.__exploredFor[id]=touched;}catch(e){}
+    later(ask,420);
+  }
+  window._lab_ready=startAsking;   // readable: dev-explore.js presses it the way a child would
+  window._lab_exploring=()=>exploring;
   function ask(){ if(busy)return; reKey(); target=cfg.pick(setOf(),phase); armed=true; markTarget();
     withAnchor(()=>cfg.play(target,setOf())); }
   window._lab_lgAgain=()=>{ if(!busy&&target!=null)withAnchor(()=>cfg.play(target,setOf())); };
@@ -1064,15 +1104,38 @@ function ladderUnit(cfg){
     later(ask,ok?780:1020);
   }
   // pointerdown, not click: a young child's tap can rest on the glass for seconds
-  const onDown=(e)=>{const r=e.target.closest&&e.target.closest('.lgRung');if(!r)return;
+  const commit=(d,flash)=>{
+    if(flash){const r=rungs.find(x=>+x.dataset.deg===d);
+      if(r){r.classList.add('press');setTimeout(()=>r.classList.remove('press'),90);}}
+    answer(cfg.correct?cfg.correct(d,target):(d===target), d);};
+  // playing the note IS answering. the note already sounded under the child's finger, so this does
+  // not re-sing it -- it lights the rung they played and scores it exactly like a tap.
+  _noteAnswer=(cents)=>{
+    if(busy||!armed||!rungs.length)return false;
+    // match against THE RUNGS ON SCREEN, octave-agnostic: any C answers "do". A child reaching for
+    // mi who lands a few cents off still meant mi; past a quarter-tone they meant something else.
+    let best=null,bestGap=1e9;
+    for(const r of rungs){const d=+r.dataset.deg;let c;
+      try{c=degCents(d);}catch(e){continue;}
+      if(!Number.isFinite(c))continue;
+      const gap=Math.abs(((cents-c)%1200+1800)%1200-600);
+      if(gap<bestGap){bestGap=gap;best=d;}}
+    if(best==null||bestGap>50)return false;
+    commit(best,true); return true; };
+  const onDown=(e)=>{
+    const rdy=e.target.closest&&e.target.closest('[data-lg="ready"]');
+    if(rdy){e.preventDefault();startAsking();return;}
+    const r=e.target.closest&&e.target.closest('.lgRung');if(!r)return;
     e.preventDefault();
     r.classList.add('press');setTimeout(()=>r.classList.remove('press'),90);
     const d=+r.dataset.deg; sing(d,94,.5);
-    answer(cfg.correct?cfg.correct(d,target):(d===target), d);};
+    if(exploring){touched++;return;}    // exploring: the note is the whole point, nothing is scored
+    commit(d,false);};
   ov.addEventListener('pointerdown',onDown,true);
   _render=paint;paint();
-  later(ask,700);
-  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+  if(exploring){ later(()=>{try{cfg.play&&null;}catch(e){}},0); }   // nothing to play yet: their turn first
+  else later(ask,700);
+  _cleanup=()=>{_noteAnswer=null;busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
     window._lab_lgAgain=null;stageOff();LAB.clear();};
 }
 
@@ -1217,7 +1280,7 @@ function pulseUnit(){
   _render=paint;paint();
   t0=AC.currentTime+0.6; nextBeat=t0;
   raf=requestAnimationFrame(tick);
-  _cleanup=()=>{done=true;cancelAnimationFrame(raf);
+  _cleanup=()=>{_noteAnswer=null;done=true;cancelAnimationFrame(raf);
     try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
     removeEventListener('resize',layout);stageOff();LAB.clear();window._lab_tap=null;};
 }
@@ -1305,7 +1368,7 @@ function sayPlayUnit(){
       busy=true;publish();later(()=>{busy=false;ask();},900);}};
   ov.addEventListener('pointerdown',onDown,true);
   _render=paint;paint();ask();
-  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+  _cleanup=()=>{_noteAnswer=null;busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
     window._lab_lgAgain=null;window._labSayPat=null;window._labExpect=null;stageOff();LAB.clear();};
 }
 
@@ -1562,7 +1625,7 @@ function staffUnit(){
   };
   ov.addEventListener('pointerdown',onDown,true);
   _render=paint;ask();
-  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+  _cleanup=()=>{_noteAnswer=null;busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
     window._lab_lgAgain=null;window._labHintDeg=null;stageOff();LAB.clear();};
 }
 
@@ -1637,7 +1700,7 @@ function melodyUnit(){
   ov.addEventListener('pointerdown',onDown,true);
   window._labHintDeg=null;
   build();_render=paint;paint();
-  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+  _cleanup=()=>{_noteAnswer=null;busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
     window._lab_lgAgain=null;stageOff();LAB.clear();};
 }
 
@@ -1658,25 +1721,31 @@ function reviewUnit(){
         '<p class="lgSay" style="font-size:22px;margin-top:10px">'+t('rev_none')+'</p>'+
         '<p class="lgSay">'+t('rev_noneSub')+'</p></div></div>');
     return;}
-  // Review runs on the ladder like every other note lesson. The NOTE SET rotates: one question from
-  // each lesson that is due, so a child meets the notes they learned last week, not a fresh drill.
-  // The RUNGS are the union of every due lesson's notes, so the ladder does not change shape under a
-  // child mid-session. What rotates is where the question comes from: one note from each due lesson
-  // in turn, so review revisits last week's lessons instead of drilling one of them ten times.
-  let _revAsked=null;
-  const rungs=[...new Set(list.reduce((a,u)=>a.concat(u.use||[0,1,2,3,4]),[]))].sort((a,b)=>a-b);
-  let i=0;
-  const need=Math.min(10,list.length*3);
-  ladderUnit({id:'review',title:'u_review',doIt:'rev_do',name:'rev_name',
-    need:need,showTarget:false,
-    use:rungs,
-    onAnswer:()=>{ // ANSWERED, not merely shown — see ladderUnit
-      const u=_revAsked; if(u&&prog[u.id]){prog[u.id].at=Date.now();save();} },
-    pick:()=>{const u=list[i%list.length];i++;
-      _revAsked=u;   // touching a unit rotates review off it, but only once it has been answered
-      const p=(u.use||[0,1,2,3,4]).filter(d=>rungs.indexOf(d)>=0);
-      return p[(Math.random()*p.length)|0];},
-    play:(d)=>sing(d,94,.55)});
+  // REVIEW ASKS THE QUESTION THE LESSON ASKED.
+  // It used to run everything on the pitch ladder with a merged note set, so a rhythm lesson, a
+  // staff lesson and a note-length lesson all came back as "find the note" -- the one question none
+  // of them taught. A child who learned to clap a bar was tested on hearing an interval.
+  // There is no need for a second set of question types: the lesson that taught the thing already
+  // asks about it correctly. So review is a SHELF of what is ready to play again, oldest first, and
+  // tapping one re-runs that lesson. Finishing it calls finish() as usual, which stamps its clock
+  // and rotates it off the shelf.
+  const card=(u,i)=>{
+    const days=Math.max(1,Math.round((Date.now()-(prog[u.id]&&prog[u.id].at||0))/DAY));
+    const ago=days===1?t('rev_ago1'):t('rev_ago',{n:days});   // not "1 days ago"
+    return '<button class="uCard" data-a2="unit" data-u="'+u.id+'" style="--ut:'+u.tint+'" '+
+      'aria-label="'+t(u.title)+' \u2014 '+ago+'">'+
+      '<span class="uTxt"><b>'+t(u.title)+'</b><i>'+ago+'</i></span>'+
+      (i===0?'<span class="uNext">'+t('revReady')+'</span>':'')+
+      '</button>';
+  };
+  stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+      '<h3>'+t('u_review')+'</h3><span class="lgCount">'+list.length+'</span>'+
+      '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+    '<p class="lgSay">'+t('rev_do')+'</p>'+
+    '<div class="uGrid" style="flex:1;align-content:start;overflow:auto">'+
+      list.map(card).join('')+'</div>');
+  _render=reviewUnit;
+  window._labDue=list.map(u=>u.id);   // readable: dev-review.js proves the right kind of question comes back
 }
 
 // ---------- GAME: ECHO (the flagship — call & response with varied repetition) ----------
@@ -1756,7 +1825,7 @@ function choiceUnit(cfg){
     later(ask,ok?820:1050);};
   ov.addEventListener('pointerdown',onDown,true);
   _render=paint;paint();later(ask,650);
-  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+  _cleanup=()=>{_noteAnswer=null;busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
     window._lab_lgAgain=null;stageOff();LAB.clear();};
 }
 
@@ -1842,7 +1911,7 @@ function echoGame(){
   };
   ov.addEventListener('pointerdown',onDown,true);
   _render=paint;paint();ask();
-  _cleanup=()=>{busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+  _cleanup=()=>{_noteAnswer=null;busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
     window._lab_lgAgain=null;window._labEchoPhrase=null;window._labHintDeg=null;stageOff();LAB.clear();};
 }
 
@@ -1936,6 +2005,13 @@ function exit(){ stopAll(); if(_cleanup){_cleanup();_cleanup=null;}
   try{LAB.give();}catch(e){}
   if(ov){ov.hidden=true;ov.classList.remove('lab');}
   document.body.classList.remove('lab-on'); }
-return {enter,exit,home,setLang,t,LANG,UNITS,_labels:wallLabels,
+// Map a played pitch onto the rung the lesson is asking about, then answer with it. Nearest degree
+// within a quarter-tone: a child reaching for "mi" who lands a cent off still meant mi. Outside the
+// set, or no lesson listening, it does nothing and the note is just a note.
+function noteIn(cents){
+  if(!_noteAnswer)return false;
+  try{return !!_noteAnswer(cents);}catch(e){return false;}
+}
+return {enter,exit,home,setLang,t,LANG,UNITS,noteIn,_labels:wallLabels,
         _MASTERY:MASTERY,_MIN_TRIES:MIN_TRIES,_due:due,_got:got,_acc:acc}; // read-only hooks for dev-curriculum.js
 })();

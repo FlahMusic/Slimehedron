@@ -115,7 +115,23 @@ const fin=await p.evaluate(async()=>{
       document.querySelector('[data-mk="keep"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
     await new Promise(r=>setTimeout(r,1100));}
   return !!document.querySelector('.lgDone');});
-ok(fin,'keeping two loops finishes the lesson');
+// NOT "keeping two loops finishes the lesson". It used to, and that was the bug: the one unit in the
+// curriculum where a child makes something up had need=2 and a progress counter, which is a quiz
+// wearing a sandbox's clothes. Keeping does not end anything now; the CHILD decides when to leave.
+ok(!fin,'keeping loops does NOT end the unit - a sandbox has no quota');
+{const st=await p.evaluate(()=>({
+   dots:document.querySelectorAll('.lgDots i').length,
+   count:(document.querySelector('.lgCount')||{}).textContent||'',
+   done:!!document.querySelector('[data-mk="done"]'),
+   keep:!!document.querySelector('[data-mk="keep"]')}));
+ ok(st.dots===0,'no progress dots in the sandbox');
+ ok(!/\d+\s*\/\s*\d+/.test(st.count),'the header is a tally, not a target ("'+st.count.trim()+'")');
+ ok(st.keep,'and you can still keep another one');
+ ok(st.done,'there is a way out that the child presses themselves');
+ // and pressing it does finish, so the unit is still completable
+ await p.evaluate(()=>document.querySelector('[data-mk="done"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true})));
+ await p.waitForTimeout(700);
+ ok(await p.evaluate(()=>!!document.querySelector('.lgDone')),'and pressing it reaches the ending');}
 
 await b.close();
 console.log(FAIL.length?'\n'+FAIL.length+' FAILURE(S)':'\nlesson 2 is a thing you make, and it cannot go wrong');
