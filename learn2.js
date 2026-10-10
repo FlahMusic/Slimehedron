@@ -149,7 +149,7 @@ const LANG={
     u_minorscale:'Seven Dark Notes', u_minorscaleSub:'the minor scale, also called Aeolian',
     u_minorshapes:'Raise a Note', u_minorshapesSub:'raise the seventh, then the sixth \u2014 harmonic and melodic minor',
     u_modes:'More Scales', u_modesSub:'Dorian and Mixolydian \u2014 modes',
-    u_review:'Review', u_reviewSub:'notes from earlier lessons',
+    u_review:'Play It Again', u_reviewSub:'things you learned earlier',
     // say-it-first: the METHOD is borrowed (konnakol, bols, kuchi shoga, gu-eum, usul all vocalise a
     // rhythm before playing it); the SYLLABLES are English so the child is saying words they own.
     // They still follow Hughes 2000's acoustic logic: voiced stop + back vowel for the low drum,
@@ -202,12 +202,12 @@ const LANG={
     rev_ago1:'yesterday',
     rev_none:'nothing to review yet',
     rev_noneSub:'Finish a lesson. Come back tomorrow.',
-    g_echo:'Call and Response', g_echoSub:'play back what you hear',
+    g_echo:'Copy Me', g_echoSub:'play back what you hear',
     echo_name:'Holding a melody in your head and playing it back is EAR TRAINING.',
-    g_updown:'Melodic Direction', g_updownSub:'did the melody rise or fall',
+    g_updown:'Up or Down', g_updownSub:'did the melody rise or fall \u2014 melodic direction',
     updown_hear:'Two notes, one after the other.',
     updown_name:'A melody that rises is moving UP. One that falls is moving DOWN.',
-    g_findhome:'Find the Tonic', g_findhomeSub:'land on do',
+    g_findhome:'Find Home', g_findhomeSub:'land on do \u2014 find the tonic',
     fh_do:'Tap the note that finishes it.',
     fh_name:'The TONIC is DO. Every melody leans towards it.',
     // ---- the four lesson blocks, in order ----

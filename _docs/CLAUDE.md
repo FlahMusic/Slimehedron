@@ -558,3 +558,34 @@ side effect of the thing it was waiting for, and reading 344ms early.
 - **`dev-entry.js` had hard-coded a lesson title** (`/major/i`), so renaming "The Major Scale" to
   "Seven Notes" broke a test that was really checking a deep link. It asks the app what that unit is
   called now, so the next rename cannot break it.
+
+---
+
+## Devices: a transport rule was shrinking the lesson buttons (2026-10-10)
+
+`dev-devices.js` drives every screen added this session across six viewports — iPhone SE, iPhone 14,
+phone landscape, iPad both ways, desktop — and checks the things that actually break: content off
+the edge, tap targets under 44px, nothing stranded below a fold that cannot scroll.
+
+**The real find.** A landscape rule written for the studio transport —
+`.btn.big,.btn.primary{min-height:30px!important}` — used a **generic class**, so it was also hitting
+every lesson button. On a phone in landscape, "ask me questions" measured **107×30** and "keep it"
+**52×30**. Apple's HIG and WCAG 2.5.5 both put the floor at 44. Scoped to exclude `#learnOverlay`;
+the transport still compresses, the lessons do not. Measured after: **44px**.
+
+Same block set `.lgRung{min-height:28px}` in landscape. Five rungs at 44px plus a header, a prompt
+and a footer do not fit in 390px of height — so **the ladder scrolls now instead of crushing the
+rungs**. Shrinking a child's tap target to avoid a scrollbar is the wrong way round.
+
+### And two more of my own measurement bugs, which is now four this session
+- The "below the fold" assertion read `document.documentElement.scrollHeight`. The **lesson overlay**
+  is what scrolls, so a 28-card list that scrolls perfectly well reported "cannot scroll" and the
+  test flagged correct behaviour on all six devices. It walks for a scrollable ancestor now.
+- The jargon guard caught `Melodic Direction` still on a card: I had renamed the **lesson** titles
+  (`u_*`) and forgotten the **games** (`g_*`). Fixed — Copy Me, Your Turn, Up or Down, Find Home,
+  Play It Again — and `dev-lessons.js` now asserts no card title contains a conservatory term AND
+  that those terms are still present in the subtitles for teachers, so neither half can rot.
+
+**Running total of measurement bugs this session: four.** The dud/RMS ruler, the `askQuestions`
+poll breaking on a side effect, the explore test asserting 5 rungs on a lesson that grows from 2,
+and this scroll probe. Every one of them looked like an app bug first.

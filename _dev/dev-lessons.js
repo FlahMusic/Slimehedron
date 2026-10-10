@@ -70,6 +70,28 @@ for(const c of ['readUnit','choiceUnit'])
      'the shared controller '+c+'() calls finish(), so the lessons on it reach an ending');
 // and the engine every lesson USED to run on must stay gone -- two renderers means two sets of copy
 ok(!/function pitchUnit\(/.test(src),'the retired tank engine is not still in the file');
+
+// --- NO CONSERVATORY TERMS ON THE CARDS -------------------------------------------------------
+// The cards said Note Duration, Measures and Time, The Relative Minor, Melodic Direction. That is a
+// syllabus index, on buttons for children who may not read yet. The card says what HAPPENS; the
+// theory word lives in the SUBTITLE, where a parent or teacher finds it and a child is not asked to
+// read it. Renaming the lessons once is easy; this is what stops one creeping back.
+{
+  const JARGON=/\b(duration|measures?\b|relative minor|melodic direction|dynamics|tonic|interval|pentatonic|aeolian|dorian|mixolydian|modes?\b|the staff|tempo|pitch\b|syllables?)\b/i;
+  const titles=[...src.matchAll(/\b([ug]_[a-z0-9]+):'((?:[^'\\]|\\.)*)'/g)]
+    .filter(m=>!/Sub$/.test(m[1]))
+    .map(m=>({key:m[1],text:m[2]}));
+  ok(titles.length>=24,'found the card titles ('+titles.length+')');
+  const offenders=titles.filter(t=>JARGON.test(t.text));
+  ok(offenders.length===0,'no card title is a textbook heading'
+    +(offenders.length?': '+offenders.map(o=>'"'+o.text+'" ('+o.key+')').join(', '):''));
+  // and the theory words should still EXIST, in the subtitles, for the grown-ups
+  const subs=[...src.matchAll(/\b[ug]_[a-z0-9]+Sub:'((?:[^'\\]|\\.)*)'/g)].map(m=>m[1]).join(' | ');
+  const kept=['tonic','pentatonic','relative minor','interval','dynamics','tempo','staff','duration'];
+  const lost=kept.filter(w=>!new RegExp(w,'i').test(subs));
+  ok(lost.length===0,'and the theory words are still there for a teacher, in the subtitles'
+    +(lost.length?' (missing: '+lost.join(', ')+')':''));
+}
 const CTRL='(ladderUnit|readUnit|choiceUnit)';
 const viaHelper=(id)=>HELPERS.some(h=>new RegExp(h+"\\('"+id+"'").test(src));
 // 'review' is a SHELF, not a drill: it lists the lessons that are ready to play again and tapping
