@@ -589,3 +589,61 @@ rungs**. Shrinking a child's tap target to avoid a scrollbar is the wrong way ro
 **Running total of measurement bugs this session: four.** The dud/RMS ruler, the `askQuestions`
 poll breaking on a side effect, the explore test asserting 5 rungs on a lesson that grows from 2,
 and this scroll probe. Every one of them looked like an app bug first.
+
+---
+
+## One fluid scale, instead of a pile of breakpoints (2026-10-11)
+
+Flah: *"we dont want shit to look cluttered or stupid on phone but good on desktop, then we will be
+in an infinite shitstorm circle. you need to make a base that applies fluidly to all."* He is right,
+and the bugs that week were all the same bug: a hand-tuned `@media` block for one screen leaking
+onto another.
+
+### The base (`:root`)
+`--u --gap --tap --ctl-h --icon --radius --fs-xs/s/m/l`, every one a `clamp()`. Three rules make it
+hold:
+1. **`vmin`, not `vw`.** A phone in landscape is 844 wide and 390 tall; sizing off width makes
+   controls huge exactly when there is no room.
+2. **`--tap: max(44px, clamp(...))`.** A real floor. Apple HIG and WCAG 2.5.5 both say 44.
+3. **max never more than ~2x min**, so 200% zoom and large OS text still hold together (WCAG 1.4.4).
+
+**Browser zoom is just a smaller CSS viewport** — 1920 at 150% reports 1280 CSS px — so the device
+matrix tests zoom by testing those sizes. No special emulation needed.
+
+### What it replaced
+- `.btn.big,.btn.primary{min-height:30px!important}` — a **studio transport** rule that, because
+  `.btn.primary` is generic, was shrinking *lesson* buttons to 30px. Deleted; the bar wraps instead.
+- `header` now `flex-wrap:wrap`. It used to keep everything on one line and let it collide — which
+  is how `clearBtn` landed on `chordBtn` at 150% zoom, and how **every** control in the bar sat
+  under 44px on **every** device, desktop included.
+- `.psCol` was `top:50%;translateY(-50%)` — centred on the whole viewport, so the taller the kit
+  column grew the higher its top crept, until it reached into the header and the clear button sat
+  on the pop card. Now centred in the space *below* whatever furniture is actually up there,
+  measured (`--psTop`) with a static `max()` floor so it holds on the very first paint too.
+- Per-breakpoint sizing for `.psBtn`, `#sbTap`, `#studioBar` controls: gone, replaced by the scale.
+- A global floor: `button,.btn,[role=button],summary,select{min-height:var(--tap)}`. Chasing this
+  container by container was the circle — fix the header, find it again in `#topRight`, then in the
+  preferences sheet. One rule. Two honest exemptions (`#stepGrid`, `.mkSlot`): sixteen steps across
+  a phone cannot each be thumb-sized, and a dense editor grid is not a primary control.
+
+### The measurement traps in this one — five and six for the session
+5. **`requestAnimationFrame` is throttled in headless and in background tabs.** The settle loop
+   that recomputes `--psTop` never ran under test. It has a `setTimeout` fallback now, which also
+   fixes it for a real user in a background tab.
+6. **A clipped element still reports its whole bounding box.** A wave button half-scrolled out of
+   its column "collided" with the mute button — the hidden half landed on those coordinates. The
+   rule that came out of it: **size is measured on the element's own box** (a card half past the
+   bottom of a list is a full-size target you scroll to), **collision on the clipped box** (that is
+   what is actually painted). Different questions, different rectangles.
+
+## Studio stopped playing at you, and the bass was 6.8dB too loud
+- **Studio** switched on drums, band, auto-slime *and* the transport the instant you opened the
+  door. Play mode was deliberately made to open silent and wait for the child; studio doing the
+  opposite is the same mistake in a grown-up's hat. The rig is still set up — one press of play
+  gives the whole thing — it just does not press play for you.
+- **The bass.** The comment read *"MUCH quieter — a subtle foundation, never covers the melody."*
+  Rendered each part alone, eight notes, same length: melody **-23.8dB**, chords **-28.7**, drums
+  **-23.0**, bass **-17.0**. The bass was **+6.8dB on the melody**, about five times the energy.
+  Peaks matched (-6.7 vs -7.3), which is why it read as fine — a bass note *sustains*, so it wins on
+  mean energy with a level peak. `BASS_TRIM=0.40` on the whole voice; now **-26.9dB, 2.3dB under the
+  melody**, which is where a foundation belongs. **Judge a foundation by energy, not by peak.**

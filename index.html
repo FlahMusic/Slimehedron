@@ -36,6 +36,31 @@
 </style>
 <style>
 :root{
+  /* ============================================================================================
+     ONE FLUID SCALE. Everything that kept breaking at a new screen size derives from here.
+     The old approach was a pile of @media overrides - max-width:820px, max-height:760px,
+     max-height:540px - each hand-tuned, each a new chance to get it wrong, and each JUMPING at
+     the breakpoint instead of scaling. That is why a studio rule meant for a 390px-tall phone
+     ended up shrinking a lesson button to 30px, and why browser zoom (which just changes the CSS
+     pixel viewport) kept landing between the tuned sizes.
+     Three rules make this hold everywhere:
+       1. vmin, not vw. A phone in landscape is 844 WIDE and 390 tall; sizing off width makes
+          controls huge exactly when there is no room. vmin follows the scarce axis.
+       2. clamp() with a real floor. --tap can never go under 44px, which is the Apple HIG and
+          WCAG 2.5.5 minimum, no matter how small the window gets.
+       3. max is never more than ~2x min, so a user at 200% zoom or with a large OS text size
+          still gets a layout that holds together (WCAG 1.4.4).
+     ============================================================================================ */
+  --u:      clamp(0.26rem, 0.12rem + 0.55vmin, 0.62rem);   /* the spacing unit everything steps from */
+  --gap:    clamp(0.3rem,  0.12rem + 0.7vmin,  0.9rem);
+  --tap:    max(44px, clamp(2.75rem, 2.3rem + 1.1vmin, 3.5rem));  /* FLOOR: never under 44px */
+  --ctl-h:  var(--tap);
+  --icon:   clamp(1.6rem,  1.05rem + 2.1vmin,  3.1rem);
+  --radius: clamp(10px, 8px + 0.6vmin, 18px);
+  --fs-xs:  clamp(0.66rem, 0.62rem + 0.22vmin, 0.84rem);
+  --fs-s:   clamp(0.78rem, 0.72rem + 0.32vmin, 1.00rem);
+  --fs-m:   clamp(0.92rem, 0.84rem + 0.45vmin, 1.22rem);
+  --fs-l:   clamp(1.10rem, 0.95rem + 0.95vmin, 1.80rem);
   --bg1:#e3d4ff; --bg2:#c4f0e2; --bg3:#ffd3e7; --bg4:#cfe2ff; --bg5:#fff0cf;
   --card:rgba(250,243,255,.42); --card-brd:rgba(255,255,255,.85);
   --ink:#5a4f78; --ink-soft:#9a86bf;
@@ -74,7 +99,32 @@ body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,
   body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}}
 /* (crayon edge-filter removed — it just smeared the edges, didn't read as crayon. real crayon UI will come from
    PNG assets via border-image; see below when those are added.) */
-header{display:flex;align-items:center;gap:14px;padding:14px 22px;position:relative;z-index:70;pointer-events:none} /* the BAR is click-through (its empty full-width space used to eat clicks on the buttons/slimes beneath it); only its actual controls catch clicks */
+header{display:flex;align-items:center;flex-wrap:wrap;gap:clamp(6px,4px + 0.7vmin,14px);
+  padding:clamp(8px,5px + 0.8vmin,14px) clamp(10px,6px + 1.2vmin,22px);position:relative;z-index:70;pointer-events:none}
+/* THE BAR WRAPS RATHER THAN CRUSHING ITSELF.
+   Everything in here used to sit on one line and shrink to fit, which is how the clear button ended
+   up on top of the chords button at 150% zoom, and how every control in the bar ended up under the
+   44px tap floor on EVERY device, desktop included. Wrapping is the only behaviour that holds at
+   any width and any zoom: the bar gets taller instead of its controls getting smaller or colliding.
+   The side columns are positioned from the header's measured height (--psTop), so they follow it
+   down automatically. */
+header>.btn,header button,header .seg,header #keyBtn{min-height:var(--tap)}
+
+/* ============================================================================================
+   THE TAP FLOOR, APPLIED ONCE, TO EVERYTHING.
+   Chasing this container by container is the shitstorm circle: the header got fixed and then the
+   same controls turned up under 44px inside #topRight, the preferences sheet and the wave picker.
+   One base rule instead. Anything a person presses is at least --tap tall, which is clamped so it
+   can never go below 44px at any width, any height, or any browser zoom.
+   Two honest exceptions, both dense editor grids where sixteen-plus cells share one row and a
+   thumb-sized cell is physically impossible: the step sequencer and the loop grid. Everything a
+   child touches - transport, kits, lesson buttons, wave picker - is held to the floor.
+   ============================================================================================ */
+button,.btn,[role="button"],summary,select,.psBtn,.uCard{min-height:var(--tap)}
+#stepGrid .sgCell,.mkSlot,.lgDots i,.lgDots,.uDone,.uNext{min-height:0}
+/* icon-only buttons need the width too, or they are a tall slot you still cannot hit */
+button,.btn,[role="button"]{min-width:min(var(--tap),100%)}
+#stepGrid .sgCell,.mkSlot{min-width:0} /* the BAR is click-through (its empty full-width space used to eat clicks on the buttons/slimes beneath it); only its actual controls catch clicks */
 header>*{pointer-events:auto}
 /* WORDMARK. it was 20px/700 - visually identical to a button label, and the app's own name lost every
    staring contest with the transport row. now a proper lockup: the slime mark, then the name at display
@@ -134,7 +184,7 @@ header h1{flex-shrink:0}
   .btngroup{gap:9px}
   #volTop input[type=range]{width:56px}
   header h1{font-size:clamp(19px,2.4vw,23px);gap:7px}
-  .psBtn{width:70px;height:70px} .psBtn svg{width:42px;height:42px} .psLbl{font-size:16px} .psSub{font-size:14px} /* side buttons ease down so they don't crowd the tank when zoomed */
+  .psBtn{width:clamp(44px,2.4rem + 3.4vmin,78px);height:clamp(44px,2.4rem + 3.4vmin,78px)} /* fluid: no breakpoint steps, never under the 44px tap floor */ .psBtn svg{width:42px;height:42px} .psLbl{font-size:var(--fs-s)} .psSub{font-size:14px} /* side buttons ease down so they don't crowd the tank when zoomed */
 }
 #autoRow{display:flex;justify-content:center;padding:0 0 6px;position:relative;z-index:70;pointer-events:none} /* auto-play slime gets his own centered perch under the buttons; bar is click-through so its empty width doesn't block the buttons/slimes below */
 #autoRow>*{pointer-events:auto}
@@ -181,13 +231,12 @@ header h1{flex-shrink:0}
 #studioBar select,#studioBar input[type=number]{flex:none;width:auto;font-size:12.5px;padding:5px 7px;min-height:34px}
 #studioBar input[type=number]{width:62px}
 #studioBar #sbTap{border:1.5px solid rgba(160,150,200,.45);background:#fff;border-radius:9px;padding:6px 10px;
-  font:800 11px inherit;color:#5a4f78;cursor:pointer;min-height:34px;flex:none}
+  font:800 var(--fs-xs)/1 inherit;color:#5a4f78;cursor:pointer;min-height:var(--tap);min-width:var(--tap);flex:none}
 #studioBar #sbTap:active{background:var(--mint)}
 #studioBar #drumCtl{opacity:1!important;pointer-events:auto!important} /* the strip is always live; the kit selects are useful even before drums are on */
 @media (max-width:820px){
   .mode-studio #studioBar{top:calc(env(safe-area-inset-top) + 46px);padding:4px 7px;gap:3px;max-width:98vw;border-radius:12px}
-  #studioBar select,#studioBar input[type=number]{font-size:12.5px;padding:4px 8px;min-height:44px}
-  #studioBar #sbTap{min-height:44px;min-width:48px}
+  #studioBar select,#studioBar input[type=number]{font-size:var(--fs-xs);padding:4px 8px}
   #studioBar input[type=range]{height:6px;padding:19px 0;box-sizing:content-box}
   /* The strip scrolls on a phone — nine controls do not fit 374px, and none of them are going in a menu.
      But the cut used to land dead on the rounded right edge, so the strip read as "that is all there is":
@@ -288,7 +337,7 @@ header #shareApp{position:static;top:auto;right:auto;left:auto;z-index:auto} /* 
    between the two modes. Reserving the same room on both sides puts play/record at the same x in every
    mode - which is the one layout rule every DAW surveyed actually enforces. */
 .mode-play header{padding-right:184px}
-.mode-play #topRight #shareApp,.mode-play #topRight #clearBtn{position:static;top:auto;right:auto;left:auto;margin:0}
+.mode-play #topRight #shareApp,.mode-play #topRight #clearBtn{position:static;top:auto;right:auto;left:auto;margin:0;min-height:var(--tap);min-width:var(--tap)}
 /* share sits on the splash now, where there is room for the words on any screen */
 /* the computer-keyboard map: white keys on the home row, black keys above, Z/X octave */
 /* keyboard-play: floating pill (all modes, same spot) + translucent reference map, DAW-standard layout */
@@ -322,8 +371,23 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 /* ===== PLAY MODE: big soft side buttons — waves on the left, drum kits on the right ===== */
 #playSide{display:none}
 .mode-play #playSide{display:block}
-.psCol{position:fixed;top:50%;transform:translateY(-50%);z-index:76;display:flex;flex-direction:column;gap:14px;pointer-events:none} /* z above the top bars (70) so Sound/Rhythm buttons are never buried; only the buttons catch clicks, not the column gaps */
+.psCol{position:fixed;
+  /* A HARD FLOOR, NOT JUST A MEASUREMENT. --psTop is measured from whatever furniture is actually
+     up there, which is right - but it is computed after layout, and for the frames before it lands
+     the column could still sit on the top-right cluster. max() with a static minimum means the
+     overlap is impossible even on the very first paint, before any script has run. */
+  top:max(var(--psTop,92px), clamp(76px, 62px + 3.2vmin, 104px));bottom:10px;transform:none;z-index:76;display:flex;flex-direction:column;
+  justify-content:center;gap:14px;pointer-events:none}
+/* THE SIDE COLUMNS CANNOT REACH INTO THE HEADER.
+   This was top:50% with translateY(-50%): centred on the WHOLE viewport, so the taller the column
+   got (five kit cards with labels is ~750px) the further its top crept up - on a 865px window it
+   started at y=57, under a header that ends at 82, and the clear button landed on top of the pop
+   card. Centring inside the space BELOW the header instead makes the overlap impossible at any
+   size, because the box simply does not extend up there. --psTop is set from the header's measured
+   height, since that changes with mode and breakpoint. */
 .psCol.left{left:18px}.psCol.right{right:18px}
+.psCol{overflow-y:auto;overflow-x:visible;scrollbar-width:none}.psCol::-webkit-scrollbar{display:none}
+.psCol:hover,.psCol:focus-within{pointer-events:auto} /* only grabs the pointer when you are actually on it, so the gaps stay click-through to the tank */
 /* icons are SECONDARY — smaller now so the middle tank owns the space; the readable label is the anchor. */
 .psBtn{width:82px;height:82px;border-radius:24px;border:2px solid rgba(255,255,255,.9);cursor:pointer;pointer-events:auto;
   display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
@@ -343,9 +407,9 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 .psSub{font-size:16px;font-weight:700;font-style:normal;color:#7a6ea0;text-transform:lowercase} /* the real waveform/genre name — clearly readable now (~3x the old tiny) */
 .psCol{gap:14px}
 /* SHORT screens: 5 big stacked buttons would overflow, so scale them down to fit vertically */
-@media (max-height:760px){.psBtn{width:60px;height:60px}.psBtn svg{width:36px;height:36px}.psLbl{font-size:15px}.psSub{font-size:13px}.psCol{gap:9px}}
+/* removed: the fluid --fs/--tap scale covers this without a breakpoint step */
 /* phones scale down (screen's small), but still legible */
-@media (max-width:820px){.psBtn{width:52px;height:52px;border-radius:16px}.psBtn svg{width:30px;height:30px}.psCol{gap:8px}
+@media (max-width:820px){.psBtn{border-radius:16px}.psCol{gap:8px}
   /* phone: hide the "Rhythm 1"/"Sound 1" number (font-size:0 kills the text node, not the child) and let the
      style name carry the label at a readable size. 9px/7px labels were the worst offender in the audit. */
   .psLbl{font-size:12.5px!important;line-height:1.15;font-weight:800;color:#5a4f78}
@@ -617,7 +681,7 @@ body.lab-stage #exitMode,body.lab-stage #cofWheel,body.lab-stage #toast{display:
 @media (min-width:760px) and (min-height:700px){#learnOverlay.stage .lgStage{max-width:560px}}
 .lgTop{flex:none;display:flex;align-items:center;gap:10px;padding:10px 12px 10px 66px}
 @media (min-width:760px){.lgTop{padding-left:12px}}   /* wide: the column is centred, the mute is in the corner */
-.lgTop .lgBack{border:0;background:rgba(255,255,255,.8);border-radius:12px;min-height:44px;padding:0 14px;
+.lgTop .lgBack{border:0;background:rgba(255,255,255,.8);border-radius:var(--radius);min-height:var(--tap);padding:0 14px;
   font:800 14px inherit;color:#5a4f78;cursor:pointer;font-family:inherit}
 .lgTop h3{flex:1;margin:0;font-size:19px;color:#463d66;text-align:center;letter-spacing:.2px}
 /* the numeric count is gone from the row: the dot strip directly beneath it is the same information,
@@ -712,7 +776,7 @@ body.lab-stage #exitMode,body.lab-stage #cofWheel,body.lab-stage #toast{display:
 .stNote.no ellipse{fill:#d4718f}
 @media (max-width:820px){.stSvg{max-height:min(330px,44dvh)}}
 .lgRung:active{transform:translateY(4px);box-shadow:0 0 0 rgba(110,92,160,.3), 0 1px 3px rgba(120,100,165,.3), inset 0 3px 8px rgba(105,88,150,.22)}
-.lgRung{position:relative;flex:1 1 0;min-height:58px;max-height:min(140px,12dvh);border-radius:18px;cursor:pointer;
+.lgRung{position:relative;flex:1 1 0;min-height:max(44px,clamp(2.9rem,2.2rem + 2.2vmin,4.2rem));max-height:min(140px,14dvh);border-radius:18px;cursor:pointer;
   border:none;padding:0 18px;display:flex;align-items:center;gap:14px;font-family:inherit;
   color:#2f2a44;font:800 19px system-ui,sans-serif;text-align:left;
   background:linear-gradient(175deg,color-mix(in srgb,var(--rc,#9fe6cf) 78%,#fff),color-mix(in srgb,var(--rc,#9fe6cf) 96%,#000) 100%);
@@ -733,8 +797,8 @@ body.lab-stage #exitMode,body.lab-stage #cofWheel,body.lab-stage #toast{display:
 @keyframes rgNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
 .lgHint{flex:none;display:flex;align-items:center;justify-content:center;gap:10px;
   padding:4px 0 calc(16px + env(safe-area-inset-bottom))}   /* the raised button's shadow needs room under it */
-.lgReady,.mkDone,.lgDoneJam{min-height:52px;padding:0 22px;font-size:16px} /* the buttons added for explore, the loop sandbox and the jam: an explicit floor so they never inherit something a child cannot hit */
-.lgListen{min-height:56px;padding:0 26px;border-radius:18px;border:none;cursor:pointer;font-family:inherit;
+.lgReady,.mkDone,.lgDoneJam{min-height:var(--tap);padding:0 clamp(14px,10px + 1vmin,24px);font-size:var(--fs-m)} /* the buttons added for explore, the loop sandbox and the jam: an explicit floor so they never inherit something a child cannot hit */
+.lgListen{min-height:var(--tap);padding:0 clamp(16px,12px + 1.2vmin,28px);border-radius:18px;border:none;cursor:pointer;font-family:inherit;
   font:800 17px system-ui,sans-serif;color:#2f2a44;display:flex;align-items:center;gap:10px;
   background:linear-gradient(175deg,#ffffff,#e7e2f7);
   box-shadow:0 5px 0 0 #b7addb, 0 9px 18px rgba(80,66,130,.26), inset 0 2px 0 rgba(255,255,255,.9)}
@@ -963,11 +1027,14 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
      but .btn.primary is a generic class, so it was also hitting the lesson buttons - "ask me
      questions" and "keep it" both measured 30px tall, under the 44px a child's thumb needs. The
      transport still compresses; the lessons do not. */
-  #learnOverlay .btn.big,#learnOverlay .btn.primary{min-height:44px!important;padding:0 18px!important;font-size:15px!important;border-radius:14px!important}
-  :not(#learnOverlay) > .btn.big,:not(#learnOverlay) > .btn.primary{min-height:30px;padding:3px 7px;font-size:11px;border-radius:10px}
-  .btn.big:not(#learnOverlay *),.btn.primary:not(#learnOverlay *){min-height:30px!important;padding:3px 7px!important;font-size:11px!important;border-radius:10px!important}
+  #learnOverlay .btn.big,#learnOverlay .btn.primary{min-height:var(--tap)!important;padding:0 18px!important;font-size:var(--fs-s)!important;border-radius:var(--radius)!important}
+  /* THE LAST HAND-TUNED SQUEEZE, REMOVED. This forced the transport to 30px on a short screen -
+     under the tap floor, on the one layout where a thumb has least room. The bar wraps now and the
+     scale is fluid, so it gets taller instead of its buttons getting smaller. Only the padding and
+     type come down here; the floor does not. */
+  .btn.big:not(#learnOverlay *),.btn.primary:not(#learnOverlay *){padding:3px 10px!important;font-size:var(--fs-xs)!important;border-radius:10px!important}
   .btn.big[data-l]::after{display:none!important}
-  #playBtn{font-size:0!important;min-width:38px!important;justify-content:center}
+  #playBtn{font-size:0!important;min-width:var(--tap)!important;justify-content:center}
   #playBtn::before{content:"\25B6";font-size:14px;line-height:1}
   #playBtn.on::before{content:"\23F8"}
   #recDot{width:13px;height:13px}
@@ -1001,7 +1068,7 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 .advReveal[open]>summary::before{transform:rotate(90deg)}
 .advReveal>summary:hover{background:rgba(255,255,255,.78)}
 #prefsCard{background:none;border:none;box-shadow:none;padding:0}
-#prefsBtn{width:100%;min-height:38px;font-weight:800}
+#prefsBtn{width:100%;min-height:var(--tap);font-weight:800}
 #prefsDlg{border:none;border-radius:20px;padding:0;max-width:min(520px,92vw);width:100%;
   box-shadow:0 18px 50px rgba(90,79,120,.35);color:var(--ink);font-family:inherit}
 #prefsDlg::backdrop{background:rgba(70,61,102,.42);backdrop-filter:blur(3px)}
@@ -1022,7 +1089,11 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
    Two rows of eight instead: the whole bar is on screen, the split falls on the half-bar, and the cells
    stay finger-sized. Nothing hidden, nothing to scroll, nothing to discover. */
 #stepGrid .sgCells{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;flex:1;min-width:0;padding-bottom:2px}
-#stepGrid .sgCell{width:auto;height:auto;aspect-ratio:1;min-width:0;max-width:38px;border-radius:6px;border:1px solid rgba(255,255,255,.7);
+/* aspect-ratio:1 with height:auto let a cell compute TALLER than its grid track, so rows sat on top
+   of each other by 5-6px on every narrow screen. Bounding the height to the track stops that.
+   These stay under 44px on purpose: sixteen steps across a phone cannot each be a thumb wide, and a
+   dense editor grid is not a primary control - the transport above it is, and that one now wraps. */
+#stepGrid .sgCell{width:auto;height:auto;aspect-ratio:1;min-width:0;max-width:38px;max-height:38px;border-radius:6px;border:1px solid rgba(255,255,255,.7);
   background:rgba(150,140,185,.16);cursor:pointer;padding:0}
 #stepGrid .sgCell.beat{background:rgba(150,140,185,.28)}
 #stepGrid .sgCell.on{background:linear-gradient(160deg,var(--accent,#b388f0),var(--mint,#9fe6cf));border-color:#fff;box-shadow:0 1px 3px rgba(90,79,120,.3)}
@@ -1104,13 +1175,13 @@ canvas{background:none;border:0;box-shadow:none;border-radius:0;max-width:100%;m
 /* --- custom chord progression: the "chords" button + translucent editor panel over the wheel --- */
 /* centered UNDER the wheel: wheel spans left→left+width; this sits the button's midpoint on the wheel's midpoint.
    left = wheelLeft + wheelWidth/2 - buttonHalf, tuned via clamp to match the wheel's own clamp at every size. */
-#chordBtn{position:static;transform:none;z-index:32;font:800 14px system-ui,sans-serif;min-height:32px;color:#fff;background:linear-gradient(135deg,#c9b3f0,#b388f0);border:1.5px solid #a992e0;border-radius:11px;padding:6px 16px;cursor:pointer;box-shadow:var(--shadow);letter-spacing:.4px;transition:filter .15s} /* lilac so it stands out (was white) */
+#chordBtn{position:static;transform:none;z-index:32;font:800 var(--fs-s)/1 system-ui,sans-serif;min-height:var(--tap);color:#fff;background:linear-gradient(135deg,#c9b3f0,#b388f0);border:1.5px solid #a992e0;border-radius:11px;padding:6px 16px;cursor:pointer;box-shadow:var(--shadow);letter-spacing:.4px;transition:filter .15s} /* lilac so it stands out (was white) */
 #chordBtn:hover{filter:brightness(1.06)}
 /* glyph + word: the picture is for the child, the word is for the adult. Neither alone serves both. */
 #chordBtn,#clearBtn{display:inline-flex;align-items:center;gap:6px;justify-content:center}
 .bIco{flex:none}
 #chordBtn.on{background:#c9b3f0;color:#fff;border-color:#b79fe8}
-@media (max-width:820px){#chordBtn{font-size:14px;padding:6px 14px}} /* position handled by the mobile top-band block below */
+@media (max-width:820px){#chordBtn{font-size:var(--fs-s);padding:6px 14px}} /* position handled by the mobile top-band block below */
 /* lime→lilac candy panel — playful, matches the meadow palette instead of a plain white box */
 #chordPanel{position:fixed;left:clamp(80px,10vw,116px);top:56px;width:min(290px,80vw);z-index:40;background:linear-gradient(150deg,rgba(213,245,214,.92),rgba(233,226,255,.92) 60%,rgba(244,230,255,.92));border:1.5px solid rgba(200,225,190,.85);border-radius:16px;padding:11px 12px 12px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(120,150,110,.24)}
 /* mobile chord panel position handled by the top-band block below */
@@ -1520,7 +1591,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
      smaller still - "ask me questions" measured 107x30 and "keep it" 52x30 on a phone in landscape.
      Shrinking a child's tap target to 30px to avoid a scrollbar is the wrong way round: Apple's HIG
      and WCAG 2.5.5 both put the floor at 44, so the floor stays and the lesson scrolls instead. */
-  .lgTop .lgBack,.lgSpk,.labSpk{min-height:44px;height:44px}
+  .lgTop .lgBack,.lgSpk,.labSpk{min-height:var(--tap);height:var(--tap)}
   .lgDots{padding:0 0 2px}.lgDots i{width:8px;height:8px;border-radius:50%}
   .lgNote{flex-direction:row;align-items:center;justify-content:center;gap:18px;padding:0}
   .lgNoteArt{width:min(104px,30dvh);height:min(104px,30dvh)}
@@ -1529,9 +1600,9 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   .lgSay{font-size:14px;padding-bottom:0}
   .lgFeed{min-height:0;padding-bottom:2px;font-size:13px}
   .lgHint{padding:2px 0 calc(13px + env(safe-area-inset-bottom))}
-  .lgListen{min-height:44px;font-size:15px;padding:0 20px}
-  .lgHint .btn,.lgReady,.mkDone,.lgDoneJam{min-height:44px;font-size:15px;padding:0 18px}
-  .mkBtns .btn,.mkBtns .mkKeep{min-height:44px}
+  .lgListen{font-size:var(--fs-s)}
+  .lgHint .btn,.lgReady,.mkDone,.lgDoneJam{font-size:var(--fs-s)}
+
   /* a ladder of five rungs cannot fit 5x44 plus a header and a footer in 390px of height, so
      the ladder scrolls rather than crushing the rungs under a thumb's worth of target. */
   .lgLadder{overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -1544,7 +1615,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
   .lgLadder{gap:5px;padding:2px 12px 0}
   /* 28px was below any usable tap target. Five rungs at 44px plus a header, a prompt and a footer
      do not fit in 390px of height, so the ladder scrolls instead of crushing them. */
-  .lgRung{min-height:44px;max-height:72px;font-size:15px;padding:0 12px}
+  .lgRung{max-height:72px;font-size:var(--fs-s);padding:0 12px}
   .lgRung .rgDeg{font-size:10px}
   .lgPad{height:min(84px,22dvh);width:min(160px,34vw)}
   .lgBar{padding:2px 8px}
@@ -3457,6 +3528,7 @@ function bandBar(t,barI){ // RENDERS the chord the brain picked. Audio only — 
   window._padV=degs;
   bandComp(t,barI,degs,drumStepDur(),drumBar()); // ← the BAND: the keyboard player. no pad, no drone.
 }
+const BASS_TRIM=0.40;   // -8dB on the whole bass voice: see the measurement in bassNote()
 function bassNote(tok,t,hum,dur){ // bass pluck by default; pass `dur` (seconds) for a long sustained DRONE note (industrial)
   const sc=scaleObj().c,n=sc.length,harm=scaleObj().harm||'triad';let deg=curRootDeg,addOct=0;
   // MICROTONAL GUARDRAIL: in drone/neutral scales the bass stays on the STABLE notes (root + a real 5th). the melodic
@@ -3471,7 +3543,12 @@ function bassNote(tok,t,hum,dur){ // bass pluck by default; pass `dur` (seconds)
   // erratic octave drops when the chord changes. (the octave token 'O' is allowed to leap on purpose.)
   if(_lastBassCents!=null&&tok!=='O'){let best=c,bd=1e9;for(const o of [-1200,0,1200]){const cc=c+o;if(cc<-1300||cc>500)continue;const dd=Math.abs(cc-_lastBassCents);if(dd<bd){bd=dd;best=cc;}}c=best;}
   _lastBassCents=c;
-  if(S.synth){const f=freqFromCents(c)/2,v=0.17*(hum||1)*Math.min(1,(1-S.bpMix)*2); // MUCH quieter — a subtle foundation, never covers the melody
+  // MEASURED, NOT ASSUMED. The old comment here said "MUCH quieter - never covers the melody" and it
+  // was wrong. Rendering each part alone, eight notes each, same length: melody mean -23.8dB, chords
+  // -28.7dB, drums -23.0dB, bass -17.0dB. The bass was +6.8dB on the melody - about five times the
+  // energy. The peaks matched (-6.7 vs -7.3), which is why it read as fine: a bass note SUSTAINS, so
+  // it wins on mean energy even when its peak is level. Judge a foundation by energy, not by peak.
+  if(S.synth){const f=freqFromCents(c)/2,v=0.17*BASS_TRIM*(hum||1)*Math.min(1,(1-S.bpMix)*2);
     const o=AC.createOscillator(),g=AC.createGain(),lp=AC.createBiquadFilter(),sub=AC.createOscillator(),sg=AC.createGain();
     // a real bass player HOLDS notes and connects them. `dur` = how long this note should ring (seconds). the note
     // sustains, then a short release TAIL overlaps the next note = legato. pitch GLIDES from the last note = a smooth walk.
@@ -3484,7 +3561,7 @@ function bassNote(tok,t,hum,dur){ // bass pluck by default; pass `dur` (seconds)
     const har=AC.createOscillator(),hg=AC.createGain(),hbp=AC.createBiquadFilter();
     har.type='triangle'; // triangle = odd harmonics, warm not buzzy — the natural overtones of a plucked/upright bass
     hbp.type='bandpass';hbp.frequency.value=Math.min(520,Math.max(180,f*3.2));hbp.Q.value=0.9; // focus the harmonics in the phone-audible mid-bass
-    hg.gain.value=0.11*(hum||1); // subtle — it fills in the low end without turning into a mid honk
+    hg.gain.value=0.11*BASS_TRIM*(hum||1); // subtle — it fills in the low end without turning into a mid honk
     if(_lastBassFreq&&Math.abs(_lastBassFreq-f)<f*0.6){ // glide only for nearby notes (a walk); big leaps just jump
       o.frequency.setValueAtTime(_lastBassFreq,t);o.frequency.exponentialRampToValueAtTime(f,t+0.05);
       sub.frequency.setValueAtTime(_lastBassFreq/2,t);sub.frequency.exponentialRampToValueAtTime(f/2,t+0.05);
@@ -6658,11 +6735,17 @@ window.slimeStar=function(){}; // intentionally a no-op — a "win" is its own r
       const sc=$("scale");if(sc){sc.value='major';sc.dispatchEvent(new Event('change'));} // a real scale, not chromatic random — sounds musical out of the gate
       const rt=$("root");if(rt){rt.value='55';rt.dispatchEvent(new Event('change'));} // G major
       _keyProgrammatic=false;_keyPinned=false;
+      // THE TOOLS DOOR DOES NOT PLAY AT YOU.
+      // Studio used to switch on drums, band, auto-slime AND the transport the instant you opened
+      // it - a full band, before you had touched anything. Play mode was deliberately changed to
+      // open silent and wait for the child; studio doing the opposite is the same mistake wearing a
+      // grown-up's hat. The rig is still SET UP (scale, key, drums and band armed, slime armed) so
+      // one press of play gives you the whole thing - it just does not press play for you.
       if(!drumOn)$("drumBtn").click();
       if(!bandOn)$("bandBtn").click();
       let _sp='1';try{_sp=localStorage.getItem('slimehedron-slime');}catch(e){}
-      if(_sp!=='0'&&!S.slimeMode)$("slimeBig").click(); // auto-slime ON by default in studio (unless the user turned it off)
-      setPlaying(true);
+      if(_sp!=='0'&&!S.slimeMode)$("slimeBig").click();
+      setPlaying(false);
     }else{setPlaying(true);}
     _keyProgrammatic=false;}
   // ---- colour-blind mode ---------------------------------------------------------------------
@@ -6919,6 +7002,59 @@ function startCoach(){
   cmLoad();follow.checked=cmActive();render();reflectBtn();
 }catch(e){console.warn('chord panel init skip:',e.message);}})();
 
+// The side columns are centred in the space BELOW the header, so they need to know where that is.
+// The header's height changes with mode and breakpoint, so it is measured rather than guessed.
+(function(){
+  const setTop=()=>{ try{
+    // Clear whatever is actually up there, measured - not a list of selectors to keep in sync.
+    // Naming header/#topRight/#studioBar worked until browser zoom moved something else into the
+    // corner. So: find every visible control sitting in the top strip, in the left or right edge
+    // band where the columns live, and start below the lowest of them.
+    const vw=innerWidth, vh=innerHeight;
+    let low=0;
+    const h=document.querySelector('header');
+    if(h&&getComputedStyle(h).display!=='none'){const r=h.getBoundingClientRect();if(r.height>0)low=r.bottom;}
+    for(const e of document.querySelectorAll('button,.btn,[role="button"],select,#topRight,#studioBar')){
+      const c=getComputedStyle(e);
+      if(c.display==='none'||c.visibility==='hidden'||!e.offsetParent)continue;
+      if(e.closest('.psCol'))continue;                 // the columns themselves do not count
+      const r=e.getBoundingClientRect();
+      if(r.height<=0||r.top>vh*0.3)continue;           // only the top strip
+      const edge=r.left<vw*0.28||r.right>vw*0.72;      // only where the columns actually sit
+      if(edge&&r.bottom>low)low=r.bottom;
+    }
+    document.documentElement.style.setProperty('--psTop',(low>0?Math.round(low)+10:12)+'px');
+  }catch(e){} };
+  setTop();
+  addEventListener('resize',setTop);
+  addEventListener('orientationchange',()=>setTimeout(setTop,120));
+  try{ if(window.ResizeObserver){const ro=new ResizeObserver(setTop);
+         for(const sel of ['header','#topRight','#studioBar']){const e=document.querySelector(sel);if(e)ro.observe(e);} }
+       // the header shows and hides with the mode, so watch the body class too
+       new MutationObserver(setTop).observe(document.body,{attributes:true,attributeFilter:['class']});
+  }catch(e){}
+  // The columns were landing on the top-right cluster for the first second or so after a mode
+  // change: --psTop was correct by the time anything settled, but "eventually correct" is still
+  // wrong while a person is looking at it. Recompute every frame until the measurement stops
+  // moving, then stop - no polling left running.
+  (function settle(){
+    let last=-1, still=0, busy=false;
+    const tick=()=>{
+      if(busy)return; busy=true; setTimeout(()=>{busy=false;},16);
+      setTop();
+      const v=parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--psTop'))||0;
+      still = (Math.abs(v-last)<0.5) ? still+1 : 0;
+      last=v;
+      // rAF alone is not enough: it is throttled in a background tab and barely fires in headless,
+      // so the loop that was meant to settle this never ran. Timer as well, belt and braces.
+      if(still<12){ requestAnimationFrame(tick); setTimeout(tick,32); }
+    };
+    requestAnimationFrame(tick);
+  })();
+  addEventListener('load',setTop);
+  try{document.fonts&&document.fonts.ready&&document.fonts.ready.then(setTop);}catch(e){}
+  setTimeout(setTop,300); setTimeout(setTop,1200);
+})();
 if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js'));
 </script>
 <!-- LEARN LAB: the tank-driven curriculum. This is the one that runs. -->
