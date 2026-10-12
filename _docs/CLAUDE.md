@@ -814,3 +814,18 @@ and the frame gap once it is running — on a desktop and on a phone at 4x CPU t
   reduced-motion rules (16), and a layout drift of "0-1px" that was 6px. `dev-claims.js` now asserts
   all of it against the code on every run. **A page that invites you to check it and fails is worse
   than a page that says nothing.**
+
+- **The boot profiler found my own code at the top of the list.** `setTop` (the `--psTop`/`--psBot`
+  measuring pass) was **194ms** on a throttled phone, plus 116ms inside `querySelectorAll`, before
+  the child had pressed anything. Three things, all of them mine: it swept the whole document on
+  every settle tick; it ran while the SPLASH was still up (body gets `.mode-play` before the splash
+  is dismissed, so the columns are technically displayed behind it); and it called `getComputedStyle`
+  on every match before the cheap geometric filters could rule them out. Now 48ms, and the phone's
+  long tasks on load went **942ms to 599ms**, first paint 280ms to 168ms.
+- **`offsetParent === null` is not a visibility test.** It reads like one, and it is also null for
+  every `position:fixed` element - which is *all* the floating furniture this sweep exists to stay
+  clear of: the keyboard toggle, the top-right cluster, the studio strip. The column only cleared the
+  keyboard toggle because the mix triangle happens to sit in the same corner and is absolutely
+  positioned. A zero-sized rect already means "not rendered", and the rect is read anyway.
+  **The same mistake twice in one session**: a probe written to check the side columns reported them
+  missing for the same reason.

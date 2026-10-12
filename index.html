@@ -7195,26 +7195,46 @@ function startCoach(){
     // corner. So: find every visible control sitting in the top strip, in the left or right edge
     // band where the columns live, and start below the lowest of them.
     const vw=innerWidth, vh=innerHeight;
-    let low=0;
     const h=document.querySelector('header');
-    if(h&&getComputedStyle(h).display!=='none'){const r=h.getBoundingClientRect();if(r.height>0)low=r.bottom;}
-    let high=vh;
-    for(const e of document.querySelectorAll('button,.btn,[role="button"],select,#topRight,#studioBar,#triMixBar,#autoRow')){
-      const c=getComputedStyle(e);
-      if(c.display==='none'||c.visibility==='hidden'||!e.offsetParent)continue;
-      if(e.closest('.psCol'))continue;                 // the columns themselves do not count
-      const r=e.getBoundingClientRect();
-      if(r.height<=0)continue;
-      const edge=r.left<vw*0.28||r.right>vw*0.72;      // only where the columns actually sit
-      if(!edge)continue;
-      if(r.top<=vh*0.3){ if(r.bottom>low)low=r.bottom; }        // the top strip
-      else if(r.bottom>=vh*0.7){ if(r.top<high)high=r.top; }    // and the bottom strip
+    // ONLY SWEEP WHEN THERE IS A COLUMN TO POSITION. --psTop and --psBot exist for the play-mode
+    // side columns, and #playSide is display:none everywhere else - so outside play this whole
+    // sweep was measuring the position of furniture for a box that is not on screen. It showed up
+    // as the single biggest named cost in a boot profile: 194ms in here plus 116ms inside
+    // querySelectorAll, on a throttled phone, before the child has pressed anything.
+    // ...and not while the front door is still shut. body gets .mode-play before the splash is
+    // dismissed, so the columns are technically displayed behind it from the first frame and this
+    // sweep was running, repeatedly, over a document nobody can see yet. Whatever it measures now
+    // is remeasured the moment a mode is actually entered (the MutationObserver on body.class).
+    const splash=document.getElementById('splash');
+    const shut=splash&&!splash.classList.contains('gone');
+    const side=document.getElementById('playSide');
+    if(!shut&&side&&side.offsetParent!==null){
+      let low=0, high=vh;
+      if(h&&h.offsetParent!==null){const r=h.getBoundingClientRect();if(r.height>0)low=r.bottom;}
+      for(const e of document.querySelectorAll('button,.btn,[role="button"],select,#topRight,#studioBar,#triMixBar,#autoRow')){
+        // NO offsetParent TEST. It reads like a cheap visibility check and it is - but it is also
+        // null for every position:fixed element, and the floating furniture this sweep exists to
+        // stay clear of (the keyboard toggle, the top-right cluster, the studio strip) is ALL
+        // fixed. The old code had the same test and therefore never saw the keyboard toggle; the
+        // column only cleared it because the mix triangle happens to sit in the same corner and is
+        // absolutely positioned. A zero-height rect already means "not rendered", and the rect is
+        // read here anyway, so it costs nothing to do it properly.
+        const r=e.getBoundingClientRect();
+        if(r.height<=0||r.width<=0)continue;
+        const edge=r.left<vw*0.28||r.right>vw*0.72;      // only where the columns actually sit
+        if(!edge)continue;
+        if(e.closest('.psCol'))continue;                 // the columns themselves do not count
+        const c=getComputedStyle(e);
+        if(c.visibility==='hidden')continue;
+        if(r.top<=vh*0.3){ if(r.bottom>low)low=r.bottom; }        // the top strip
+        else if(r.bottom>=vh*0.7){ if(r.top<high)high=r.top; }    // and the bottom strip
+      }
+      document.documentElement.style.setProperty('--psTop',(low>0?Math.round(low)+10:12)+'px');
+      // never let one tall thing in a corner collapse the column to nothing: 45% of the screen is the
+      // most the bottom furniture may claim.
+      const bot=(high<vh)?Math.min(Math.round(vh-high)+10,Math.round(vh*0.45)):10;
+      document.documentElement.style.setProperty('--psBot',bot+'px');
     }
-    document.documentElement.style.setProperty('--psTop',(low>0?Math.round(low)+10:12)+'px');
-    // never let one tall thing in a corner collapse the column to nothing: 45% of the screen is the
-    // most the bottom furniture may claim.
-    const bot=(high<vh)?Math.min(Math.round(vh-high)+10,Math.round(vh*0.45)):10;
-    document.documentElement.style.setProperty('--psBot',bot+'px');
     // While we are here: how much room does the right-hand cluster actually take IN the header?
     // Only measurable in a mode that keeps it in flow (studio, learn); in play there is nothing to
     // measure, so the last good value stands. That is what play mode reserves so the transport
@@ -7258,7 +7278,7 @@ function startCoach(){
   // wrong while a person is looking at it. Recompute every frame until the measurement stops
   // moving, then stop - no polling left running.
   (function settle(){
-    let last=-1, still=0, busy=false;
+    let last=-1, still=0, busy=false, runs=0;
     const tick=()=>{
       if(busy)return; busy=true; setTimeout(()=>{busy=false;},16);
       setTop();
@@ -7267,7 +7287,10 @@ function startCoach(){
       last=v;
       // rAF alone is not enough: it is throttled in a background tab and barely fires in headless,
       // so the loop that was meant to settle this never ran. Timer as well, belt and braces.
-      if(still<12){ requestAnimationFrame(tick); setTimeout(tick,32); }
+      // SIX stable readings, not twelve, and a hard ceiling on how long it may keep looking. On a
+      // slow phone each pass is real work and twelve of them lands in the same second the child is
+      // waiting to press something. Six is still two different clocks agreeing six times in a row.
+      if(still<6&&++runs<90){ requestAnimationFrame(tick); setTimeout(tick,32); }
     };
     requestAnimationFrame(tick);
   })();
