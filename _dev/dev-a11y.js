@@ -176,6 +176,12 @@ const EXEMPT='.spCredit a, .spCredit, #stepGrid .sgCell, .lk, #labKeys *, .cofNo
  // across several chords and demands that every control stays at exactly ONE x position.
  {const ctx=await b.newContext({viewport:{width:1440,height:900}});const p=await ctx.newPage();
   await p.goto('file://'+process.cwd()+'/index.html?m=studio');await p.waitForTimeout(3000);
+  // STUDIO NO LONGER AUTO-PLAYS - it used to start the whole band at you on entry, which was a real
+  // bug and got fixed. This watch was written against the old behaviour, so it sat there looking at
+  // a stopped transport and reported that the chord never changed. Press play, like a person does.
+  await p.evaluate(()=>{const e=document.getElementById('playBtn');if(e&&!S.playing)e.click();});
+  await p.waitForTimeout(1500);
+  ok(await p.evaluate(()=>!!S.playing),'the transport is running, so there is a chord change to watch');
   const r=await p.evaluate(()=>new Promise(res=>{
     const ids=['playBtn','recBtn','slimeBig','hdrChord','chordBtn'];
     const seen={},names=new Set();let n=0;

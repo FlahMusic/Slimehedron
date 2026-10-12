@@ -51,8 +51,9 @@ the next unseen case beats a war story about one that already happened.
 
 # 5. REFERENCE — do not re-derive these
 
-**Learn-mode scale ramp.** 24 lessons, 5 blocks: Rhythm and Notation (1–6), Pitch (7–10), Scales and
-Harmony (11–14), Minor and Modes (15–17). Order from the Kodály sequence (Holy Names University
+**Learn-mode scale ramp.** 29 lessons, 5 blocks: Rhythm and Notation (1–11), Pitch (12–16), Scales and
+Harmony (17–22), Minor and Modes (23–26), Reading Music (27–29). Each block ends with its own Your
+Turn; block E ends with Write a Tune. Order from the Kodály sequence (Holy Names University
 Kodály Center), cross-checked against Trinity College London and the DfE Model Music Curriculum.
 Three things look wrong and must not be "tidied":
 - the step after the major pentatonic is the **minor pentatonic** (same five notes, new tonic) — two
@@ -667,3 +668,73 @@ matrix tests zoom by testing those sizes. No special emulation needed.
   bottom of a scrolling list is a full-size target you scroll to), COLLISION uses the clipped box
   (that is what is actually painted). Plus a clipped-text check. 13 viewports x 7 screens,
   **559 PASS / 0 FAIL**.
+
+# PHASE 10 — one Your Turn per block, Write a Tune, and ten rulers that had quietly broken
+
+- **Improvise is per block now, not once for the whole app.** `jamUnit(cfg)` takes the note set, so
+  the same screen appears at the end of each block with the vocabulary that block just taught:
+  *Your Turn: Drums* (three unpitched drums, block A), *Five Notes* (pentatonic), *Seven Notes*
+  (major), *Dark Notes* (minor). That is how an Orff class moves on - new bars go ON the instrument,
+  the game does not change. The pentatonic one stopped being a "game" and became the end of the
+  pitch block, where it belongs.
+- **Write a Tune** (`composeUnit`, block E) is Orff's fourth stage, and the half of reading the app
+  never taught. Six places on the staff, the letter keys underneath, hear it, keep it. `dev-compose`
+  asserts the one thing that matters about notation: press *hear it* twice and the same tune comes
+  back, at the right pitches, in the right order. **Repeatability is the whole difference between
+  improvising and composing.** Proved it has teeth by reversing the playback: it failed.
+- **AN INTENDED FIX ROTS EVERY TEST THAT ENCODED THE OLD BEHAVIOUR.** This is the lesson of the
+  pass. Two deliberate changes - the explore screen (lessons no longer play at the child on open)
+  and studio no longer auto-playing - silently broke **ten** suites, and some of them went GREEN on
+  an empty recording, which is worse than failing:
+  - `dev-audible` and `dev-realaudio` called fifteen working lessons mute, because they measured the
+    explore screen. `dev-harmony2` read zero notes - and its fourth assertion, *"a melodic lesson
+    still sounds ONE note at a time"*, **passed on a recording with nothing in it**.
+  - `dev-cheat` answered `_labHintDeg` while exploring (null), read the same screen seven times and
+    reported the key never roamed.
+  - `dev-chordbed`, `dev-a11y`, `dev-entry`, `dev-firsttouch`, `dev-midi` and `dev-revive` were all
+    measuring a **stopped transport**. `dev-chordbed` hand-pumped `drumSchedule()` for its FIRST
+    measurement only, so the full mix read fine and the next three read reverb tail.
+    `dev-firsttouch` asserted *"studio still starts jamming on its own, by design"* - guarding the
+    exact behaviour that later arrived as a bug report.
+  - `dev-sweep` had not run **at all** since the dev scripts moved into `_dev/`: it resolved
+    `__dirname+'/index.html'`. Nobody noticed, because a crashing suite and a passing suite look the
+    same in a list of 46 if you only read the tail.
+  **When you change behaviour on purpose, grep the suites for the behaviour you just removed.** And
+  a suite that measures nothing must fail, not pass: `dev-audible` now asserts BOTH halves of an
+  explore screen - the note the child presses, and the question that comes after - so an empty tape
+  cannot be mistaken for silence being correct.
+- **Four real bugs, all shipped, all found by the rulers once the rulers worked:**
+  - **The letter-key row ran off the right edge** on an iPhone SE and an iPhone 14. Eight keys x the
+    44px tap floor is 414px of row and the phone is 375px wide. It was in *Read a Tune* too, live,
+    and never caught because `melody` was not one of `dev-devices`' screens. The row wraps now:
+    **44px stays 44px, the row gets taller.** Never shrink below the tap floor to make a row fit.
+  - **The transport slid 6px between play and studio.** The reserve that was meant to stop that was
+    a hand-typed `padding-right:184px`, measured once on one screen - and those buttons are sized in
+    `clamp()`ed units, so the true number moves with width and with browser zoom. Measured now
+    (`--hdrR`, alongside `--psTop`), **from the right edge of the last flex spacer, not from the
+    first button**: leaving the gap out of the sum was what left 5px on the table after the first
+    attempt. A hand-measured constant is a measurement that has stopped being true.
+  - **The side columns ran under the keyboard toggle** on a landscape phone - 375px tall, header
+    taking 128 of it, two pills floating in the bottom-left at z-index 260. `--psTop` kept them out
+    of the header; there was no `--psBot`. There is now, measured the same way, with the same static
+    floor so the first paint is safe. The columns scroll, so ending them higher costs reach, not
+    buttons.
+  - **A peeker landed 8% on top of another peeker.** The placement loop slid each edge peeker along
+    its rail testing a candidate box - but the side peekers are rotated 90deg and translated by CSS,
+    so the box it tested, and recorded in `taken`, was **not the rectangle on screen**. The file
+    already said that twenty lines further down, about a different symptom. It applies the position
+    and measures what is actually painted now. **Intermittent, because the band a peeker picks
+    depends on what else is standing - which is why three clean runs, not one, is the check.**
+- **The teachers page listed 17 lessons while the app ran 24**, under names that had been changed
+  two passes earlier, and the `<table>` was never closed. No suite noticed, because every link it
+  did print worked. It is generated from the registry now, and `dev-links` asserts **both
+  directions**: every printed link opens a lesson, and every unit the app runs has a printed link.
+  A missing link is as broken as a dead one.
+- **Hand-kept lists of lessons are a bug waiting for the next lesson.** `dev-audible` and
+  `dev-realaudio` each carried a typed array of ids and neither had heard of the five new units.
+  Both read the registry out of `learn2.js` now, as `dev-lessons` already did. While fixing that:
+  `dev-lessons`' id scan matched `{id:'...'` anywhere, so every unit that is also registered through
+  a controller call ran **twice** - 44 duplicate assertions and about twenty wasted browser minutes
+  per run. De-duped.
+- **29 lessons, 3 games, 1 practice.** Counts asserted in `manifest.json`, `index.html` and
+  `teachers/index.html` by `dev-lessons`, which is the only reason they are right.

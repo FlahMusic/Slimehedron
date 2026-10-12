@@ -34,7 +34,10 @@ const askQuestions=async(page)=>{
 
 // --- static guard first: a new unit added without an ending is caught here, not in the field ---
 const src=fs.readFileSync('learn2.js','utf8');
-const ids=[...src.matchAll(/\{id:'([a-z]+)'/g)].map(m=>m[1]);
+// de-duped: the per-block improvise screens appear twice in the source - once as a registry row
+// and once inside the run:()=>jamUnit({id:...}) that row calls - and running each unit twice is
+// 20 wasted browser minutes, not a second opinion.
+const ids=[...new Set([...src.matchAll(/\{id:'([a-z0-9]+)'/g)].map(m=>m[1]))];
 ok(ids.length>=7,'found the unit list ('+ids.length+' units)');
 
 // --- THE ADVERTISED NUMBER MUST BE THE REAL NUMBER ------------------------------------------
@@ -83,6 +86,11 @@ const bodyOf=(name)=>{
 for(const c of ['readUnit','choiceUnit'])
   ok(/finish\(cfg\.id/.test(bodyOf(c)),
      'the shared controller '+c+'() calls finish(), so the lessons on it reach an ending');
+// jamUnit is the fifth controller. One improvise screen per block - same code, a different set of
+// notes handed out - so it finishes with the id it was GIVEN, not a literal. Prove it finishes once,
+// then every block's Your Turn is covered.
+ok(/finish\(ID,/.test(bodyOf('jamUnit')),
+   "the shared improvise screen jamUnit() calls finish(), so every block's Your Turn reaches an ending");
 // and the engine every lesson USED to run on must stay gone -- two renderers means two sets of copy
 ok(!/function pitchUnit\(/.test(src),'the retired tank engine is not still in the file');
 
@@ -121,6 +129,7 @@ for(const id of ids){
     continue;}
   ok(new RegExp("finish\\('"+id+"'").test(src)
     ||new RegExp("id:'"+id+"'[\\s\\S]{0,400}?"+CTRL+"|"+CTRL+"\\(\\{[\\s\\S]{0,160}?id:'"+id+"'").test(src)
+    ||new RegExp("jamUnit\\(\\{[^}]{0,160}?id:'"+id+"'").test(src)
     ||viaHelper(id),
   "unit '"+id+"' reaches an ending (its own finish(), a shared controller, or a helper that uses one)");}
 

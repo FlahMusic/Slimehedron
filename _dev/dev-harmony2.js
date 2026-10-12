@@ -19,6 +19,13 @@ const listen=async(b,id,ms)=>{
         return orig.apply(this,arguments);};
       clearInterval(h);} },25);});
   await p.goto('http://127.0.0.1:8765/index.html?l='+id);
+  // A lesson opens on its EXPLORE screen now and asks nothing until the child presses ready. This
+  // helper waited and recorded zero notes, so three real assertions failed - and the fourth, "a
+  // melodic lesson still sounds ONE note at a time", PASSED on an empty recording, which is worse.
+  // Ask for the questions, then start the tape, so what is measured is the questions.
+  await p.waitForTimeout(1600);
+  await p.evaluate(()=>{try{if(window._lab_ready)window._lab_ready();}catch(e){}});
+  await p.evaluate(()=>{window.__ev.length=0;});
   await p.waitForTimeout(ms);
   const ev=await p.evaluate(()=>window.__ev.slice());
   await ctx.close();

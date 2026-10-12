@@ -101,12 +101,13 @@ const U='http://127.0.0.1:8765/index.html';
    await ctx.close();}
 
  // ---- 4. TIME TO FIRST SOUND (off the audio graph) ----
- // The two modes are DELIBERATELY different and this used to demand they behave the same:
- //   studio is a musical bed you grab and shape, so it starts jamming on its own.
- //   play is an instrument, so it opens silent and the CHILD's touch makes the first sound.
- // Play mode starting its own band hid a 1471ms delay between a tap and any noise -- you tapped,
+ // NEITHER mode plays at you on arrival. This block used to require that studio did ("a musical bed
+ // you grab and shape, so it starts jamming on its own") - and then a bug report arrived saying
+ // pressing the Tools card just starts playing shit in the background, which is exactly what that
+ // assertion was protecting. Both modes now open silent; studio opens ARMED, so one press of play
+ // gets a full arrangement, and dev-firsttouch.js owns that half.
+ // Play mode starting its own band also hid a 1471ms delay between a tap and any noise -- you tapped,
  // you heard the band that was already going, and nobody noticed the tap itself did nothing.
- // dev-firsttouch.js owns that story in full; this block guards the arrival behaviour per mode.
  for(const mode of ['play','studio']){
    const {ctx,p}=await open('?m='+mode);
    const hooked=await p.evaluate(()=>{if(typeof AC==='undefined'||!AC||typeof master==='undefined'||!master)return false;
@@ -119,7 +120,14 @@ const U='http://127.0.0.1:8765/index.html';
    await p.waitForTimeout(2500);
    const f=await p.evaluate(()=>window.__first);
    if(mode==='studio'){
-     ok(f!==null&&f<2000,'[studio] makes sound on its own, with nothing touched ('+(f===null?'silent':f+'ms')+')');
+     ok(f===null,'[studio] stays SILENT with nothing touched — it does not play at you ('+(f===null?'silent':f+'ms')+')');
+     const armed=await p.evaluate(()=>({drum:drumOn,band:bandOn,playing:S.playing}));
+     ok(armed.drum&&armed.band&&!armed.playing,'[studio] but arrives armed, so one press is a whole band ('+JSON.stringify(armed)+')');
+     await p.evaluate(()=>{window.__first=null;});
+     await p.click('#playBtn');
+     await p.waitForTimeout(1800);
+     const g=await p.evaluate(()=>window.__first);
+     ok(g!==null,'[studio] and pressing play starts it ('+(g===null?'still silent':'sounded')+')');
    }else{
      ok(f===null,'[play] stays SILENT with nothing touched — the app does not play itself ('+(f===null?'silent':f+'ms')+')');
      // now the half that matters: the child's own touch has to sound, and sound immediately

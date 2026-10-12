@@ -108,8 +108,15 @@ const abc=await p.evaluate(async()=>{
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   window.LEARN2.home();await sleep(500);
   document.querySelector('.uCard[data-u="majorscale"]').click();await sleep(1600);
+  // A lesson opens on its EXPLORE screen now (Orff stage two) and asks nothing until the child says
+  // they are ready. This loop answered window._labHintDeg, which is null while exploring, so it read
+  // the same screen seven times and reported that the key never roamed. Ask for the questions.
+  if(window._lab_ready)window._lab_ready();
+  for(let w=0;w<40&&window._labHintDeg==null;w++)await sleep(100);
   const out=[];
   for(let k=0;k<7;k++){
+    // wait for the question rather than guessing a delay: a roaming lesson sounds the tonic first
+    for(let w=0;w<30&&window._labHintDeg==null;w++)await sleep(100);
     const rungs=[...document.querySelectorAll('.lgRung')];
     const shown=rungs.map(r=>({deg:+r.dataset.deg,
       abc:(r.querySelector('.rgAbc')||{}).textContent||'',

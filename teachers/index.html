@@ -23,6 +23,7 @@ th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertic
 th{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--soft)}
 .note{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:14px 0}
 footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-size:14px;color:var(--soft)}
+  tr.tsec td{background:#efeaff;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:13px}
 </style></head><body><main>
 
 <header>
@@ -51,7 +52,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-si
 
 <h2>The three rooms</h2>
 <ul>
-<li><strong>Learn</strong> — 24 numbered lessons, in order. Nothing is locked; the numbers show the path.</li>
+<li><strong>Learn</strong> — 29 numbered lessons, in order. Nothing is locked; the numbers show the path.</li>
 <li><strong>Play</strong> — a sandbox. Sound happens in the first second, no reading required.</li>
 <li><strong>Studio</strong> — the full thing: scales, chords, a step sequencer, MIDI.</li>
 <li><strong>Tools</strong> — metronome, circle of fifths, chord builder and drum machine, each on its own screen.</li>
@@ -60,25 +61,43 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-si
 <h2>The lessons, and their links</h2>
 <table>
 <tr><th>#</th><th>Lesson</th><th>Idea</th><th>Link</th></tr>
+<tr class="tsec"><td colspan="4">Rhythm and Notation</td></tr>
 <tr><td>1</td><td>Steady Beat</td><td>find the pulse and tap with it</td><td><code>?l=pulse</code></td></tr>
-<tr><td>2</td><td>Rhythm Syllables</td><td>say a rhythm before playing it</td><td><code>?l=sayplay</code></td></tr>
-<tr><td>3</td><td>Note Duration</td><td>quarter, half, dotted half, whole</td><td><code>?l=howlong</code></td></tr>
-<tr><td>4</td><td>Measures and Time</td><td>four beats to a measure; 4/4</td><td><code>?l=countbar</code></td></tr>
-<tr><td>5</td><td>Rest Duration</td><td>the quarter rest — counted, not played</td><td><code>?l=rest</code></td></tr>
-<tr><td>6</td><td>Playing from Notation</td><td>read a written tune and play it</td><td><code>?l=song</code></td></tr>
-<tr><td>7</td><td>Pitch</td><td>high and low</td><td><code>?l=high</code></td></tr>
-<tr><td>8</td><td>The Major Pentatonic</td><td>do re mi so la, one note at a time</td><td><code>?l=notes</code></td></tr>
-<tr><td>9</td><td>The Tonic</td><td>the note a melody comes home to</td><td><code>?l=home</code></td></tr>
-<tr><td>10</td><td>Steps and Skips</td><td>how a melody moves</td><td><code>?l=steps</code></td></tr>
-<tr><td>11</td><td>The Relative Minor</td><td>same five sounds, a new tonic</td><td><code>?l=newhome</code></td></tr>
-<tr><td>12</td><td>The Major Scale</td><td>add fa, then ti</td><td><code>?l=majorscale</code></td></tr>
-<tr><td>13</td><td>Major and Minor</td><td>the third sets the quality</td><td><code>?l=brightdark</code></td></tr>
-<tr><td>14</td><td>Intervals</td><td>a 2nd and a 5th, heard together</td><td><code>?l=intervals</code></td></tr>
-<tr><td>15</td><td>The Minor Scale</td><td>natural minor / Aeolian</td><td><code>?l=minorscale</code></td></tr>
-<tr><td>16</td><td>Harmonic and Melodic Minor</td><td>raised seventh, then raised sixth</td><td><code>?l=minorshapes</code></td></tr>
-<tr><td>17</td><td>Modes</td><td>Dorian and Mixolydian</td><td><code>?l=modes</code></td></tr>
-<p>Games: <code>?l=echo</code> (call and response), <code>?l=updown</code> (melodic direction), <code>?l=findhome</code> (find the tonic). Review: <code>?l=review</code>.</p>
-<p><strong>From lesson 11 the key moves between questions.</strong> The lesson plays the tonic first, then the note to find, so the child is comparing two sounds rather than remembering a position on the screen. Lessons 1–10 stay in one key on purpose.</p>
+<tr><td>2</td><td>Make a Loop</td><td>four beats of your own</td><td><code>?l=make</code></td></tr>
+<tr><td>3</td><td>Say It, Play It</td><td>say a rhythm before you play it</td><td><code>?l=sayplay</code></td></tr>
+<tr><td>4</td><td>Long and Short</td><td>how long a note is held — note duration</td><td><code>?l=howlong</code></td></tr>
+<tr><td>5</td><td>Count to Four</td><td>four beats to a measure</td><td><code>?l=countbar</code></td></tr>
+<tr><td>6</td><td>Leave a Gap</td><td>silence is written down too — rests</td><td><code>?l=rest</code></td></tr>
+<tr><td>7</td><td>Read a Rhythm</td><td>a real tune, played as its rhythm</td><td><code>?l=song</code></td></tr>
+<tr><td>8</td><td>Two in One Beat</td><td>two sounds in the time of one</td><td><code>?l=split</code></td></tr>
+<tr><td>9</td><td>Fast and Slow</td><td>how fast the beat goes — tempo</td><td><code>?l=tempo</code></td></tr>
+<tr><td>10</td><td>Loud and Soft</td><td>how loud a note is played — dynamics</td><td><code>?l=dynamic</code></td></tr>
+<tr><td>11</td><td>Your Turn: Drums</td><td>make up your own beat — improvising</td><td><code>?l=rjam</code></td></tr>
+<tr class="tsec"><td colspan="4">Pitch</td></tr>
+<tr><td>12</td><td>High and Low</td><td>high notes and low notes — pitch</td><td><code>?l=high</code></td></tr>
+<tr><td>13</td><td>Five Notes</td><td>do re mi so la — the major pentatonic</td><td><code>?l=notes</code></td></tr>
+<tr><td>14</td><td>The Home Note</td><td>the note a melody comes home to — the tonic</td><td><code>?l=home</code></td></tr>
+<tr><td>15</td><td>Step or Jump</td><td>how a melody moves — steps and skips</td><td><code>?l=steps</code></td></tr>
+<tr><td>16</td><td>Your Turn: Five Notes</td><td>it plays a bit, then you play anything — improvising</td><td><code>?l=jam</code></td></tr>
+<tr class="tsec"><td colspan="4">Scales and Harmony</td></tr>
+<tr><td>17</td><td>A New Home Note</td><td>same five sounds, a new home — the relative minor</td><td><code>?l=newhome</code></td></tr>
+<tr><td>18</td><td>Seven Notes</td><td>add fa, then ti — the major scale</td><td><code>?l=majorscale</code></td></tr>
+<tr><td>19</td><td>Bright and Dark</td><td>one note sets the mood — major and minor</td><td><code>?l=brightdark</code></td></tr>
+<tr><td>20</td><td>Two at Once</td><td>two notes together — intervals</td><td><code>?l=intervals</code></td></tr>
+<tr><td>21</td><td>Three at Once</td><td>notes stacked on each other — chords</td><td><code>?l=chords</code></td></tr>
+<tr><td>22</td><td>Your Turn: Seven Notes</td><td>the whole major scale is yours — improvising</td><td><code>?l=jammaj</code></td></tr>
+<tr class="tsec"><td colspan="4">Minor and Modes</td></tr>
+<tr><td>23</td><td>Seven Dark Notes</td><td>the minor scale, also called Aeolian</td><td><code>?l=minorscale</code></td></tr>
+<tr><td>24</td><td>Raise a Note</td><td>raise the seventh, then the sixth — harmonic and melodic minor</td><td><code>?l=minorshapes</code></td></tr>
+<tr><td>25</td><td>More Scales</td><td>Dorian and Mixolydian — modes</td><td><code>?l=modes</code></td></tr>
+<tr><td>26</td><td>Your Turn: Minor</td><td>the same game in a minor key — improvising</td><td><code>?l=jammin</code></td></tr>
+<tr class="tsec"><td colspan="4">Reading Music</td></tr>
+<tr><td>27</td><td>Five Lines</td><td>the ladder, drawn on five lines — the staff</td><td><code>?l=staff</code></td></tr>
+<tr><td>28</td><td>Read a Tune</td><td>play a real tune off the page</td><td><code>?l=melody</code></td></tr>
+<tr><td>29</td><td>Write a Tune</td><td>put the notes down yourself — composing</td><td><code>?l=compose</code></td></tr>
+</table>
+<p>Games: <code>?l=echo</code> (play back what you hear), <code>?l=updown</code> (did the melody rise or fall — melodic direction), <code>?l=findhome</code> (land on do — find the tonic). Review: <code>?l=review</code>.</p>
+<p><strong>From <em>A New Home Note</em> (17) the key moves between questions.</strong> The lesson plays the tonic first, then the note to find, so the child is comparing two sounds rather than remembering a position on the screen. The pitch lessons before it stay in one key on purpose.</p>
 <p><strong>Colour is information.</strong> Every scale degree has one colour, in every lesson and every key — the tonic is always the same colour, the third always another. A lowered degree keeps its natural’s colour, because it is the same degree.</p>
 
 <h2>Why the lessons are in that order</h2>

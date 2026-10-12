@@ -33,6 +33,9 @@ const SCREENS=[
   {n:'quiz',      url:'?l=notes',  wait:3000, ready:true},
   {n:'Your Turn', url:'?l=jam',    wait:3000, ready:false},
   {n:'loop grid', url:'?l=make',   wait:2600, ready:false},
+  {n:'drum jam',  url:'?l=rjam',  wait:2600, ready:false},   // three pads + a word on each one
+  {n:'write tune',url:'?l=compose',wait:2600,ready:false},   // staff + 8 letter keys + 4 buttons:
+                                                            // the most crowded screen in the app
   {n:'lesson list',url:'',         wait:1800, ready:false, learn:true},
   {n:'studio',     url:'?m=studio',wait:2600, ready:false},
   {n:'play',       url:'?m=play',  wait:2000, ready:false},

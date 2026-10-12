@@ -36,6 +36,11 @@ const open=async(b,setup)=>{
     S.midi=true; Object.assign(S,cfg);
     if(S.mpe&&typeof mpeSetup==='function')mpeSetup();
     if(S.clkOut&&typeof clockStart==='function')clockStart();
+    // STUDIO NO LONGER AUTO-PLAYS - it used to start a full band at you on entry, which was a bug
+    // and got fixed. With the transport stopped the rig sends nothing, and five assertions failed
+    // for a reason that has nothing to do with MIDI. Press play, the way a person does.
+    try{const pb=document.getElementById('playBtn'); if(pb&&!S.playing)pb.click();}catch(e){}
+    await new Promise(r=>setTimeout(r,900));
     window.__midi=[];
   },setup||{});
   return {ctx,p};};

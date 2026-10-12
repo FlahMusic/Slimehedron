@@ -42,6 +42,12 @@ const p=await ctx.newPage();
 const errs=[];p.on('pageerror',e=>errs.push(e.message));
 await p.goto('http://127.0.0.1:8765/index.html?m=studio');
 await p.waitForTimeout(3200);
+// STUDIO NO LONGER AUTO-PLAYS (it used to start a full band at you on entry - a real bug, now
+// fixed). A stopped tank does not step its physics, so there was nothing for the NaN sweep to sweep
+// and nothing to watch move. Press play, the way a person does.
+await p.evaluate(()=>{const e=document.getElementById('playBtn');if(e&&!S.playing)e.click();});
+await p.waitForTimeout(1500);
+ok(await p.evaluate(()=>!!S.playing),'the tank is running, so there is physics to poison');
 
 // ---------- 1. A HEALTHY APP DROPS NOTHING ----------
 // If this ever fires on its own, something upstream is genuinely producing NaN and the sweep is

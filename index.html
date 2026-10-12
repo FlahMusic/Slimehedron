@@ -12,7 +12,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover"/><!-- pinch-zoom MUST stay available (WCAG 1.4.4). the tank sets touch-action:none so zoom never fights ball spawning. -->
 <title>Slimehedron — music you can see</title>
-<meta name="description" content="Bouncing slime plays notes. 24 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
+<meta name="description" content="Bouncing slime plays notes. 29 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#c4a9f5">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,7 +20,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta property="og:type" content="website"/>
 <meta property="og:title" content="Slimehedron — music you can see"/>
-<meta property="og:description" content="Bouncing slime plays notes. 24 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
+<meta property="og:description" content="Bouncing slime plays notes. 29 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
 <meta property="og:url" content="https://flahmusic.github.io/Slimehedron/"/>
 <meta property="og:image" content="https://flahmusic.github.io/Slimehedron/icon-512.png"/>
 <meta name="twitter:card" content="summary"/>
@@ -335,8 +335,13 @@ header #shareApp{position:static;top:auto;right:auto;left:auto;z-index:auto} /* 
 /* The floating clear button lives in this band. The width is not decoration: studio carries clear+reset
    IN the header row, play carries them out of flow, and that asymmetry slid the transport 32px sideways
    between the two modes. Reserving the same room on both sides puts play/record at the same x in every
-   mode - which is the one layout rule every DAW surveyed actually enforces. */
-.mode-play header{padding-right:184px}
+   mode - which is the one layout rule every DAW surveyed actually enforces.
+   The reserve used to be a hand-typed 184px, measured once on one screen. Those buttons are sized in
+   clamp()ed units, so the real number moves with width and with browser zoom: by the time anything
+   else changed, 184 was 22px out and the transport still jumped 6px on a mode switch. It is MEASURED
+   now (--hdrR, set beside --psTop), and 172px is only the first-paint fallback. A hand-measured
+   constant is a measurement that stops being true. */
+.mode-play header{padding-right:var(--hdrR,172px)}
 .mode-play #topRight #shareApp,.mode-play #topRight #clearBtn{position:static;top:auto;right:auto;left:auto;margin:0;min-height:var(--tap);min-width:var(--tap)}
 /* share sits on the splash now, where there is room for the words on any screen */
 /* the computer-keyboard map: white keys on the home row, black keys above, Z/X octave */
@@ -376,7 +381,14 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
      up there, which is right - but it is computed after layout, and for the frames before it lands
      the column could still sit on the top-right cluster. max() with a static minimum means the
      overlap is impossible even on the very first paint, before any script has run. */
-  top:max(var(--psTop,92px), clamp(76px, 62px + 3.2vmin, 104px));bottom:10px;transform:none;z-index:76;display:flex;flex-direction:column;
+  /* AND THE SAME AT THE BOTTOM. The keyboard toggle and the mix triangle float in the bottom
+     corners at z-index 260, so on a landscape phone - 375px tall, header taking 128 of it - the
+     bottom of the left column sat underneath the keyboard toggle and its last button could not
+     be pressed. --psBot is measured the same way --psTop is, from whatever furniture is
+     actually down there, with a static floor so the first paint is safe too. The column
+     scrolls, so ending it higher costs reach, not buttons. */
+  top:max(var(--psTop,92px), clamp(76px, 62px + 3.2vmin, 104px));
+  bottom:max(10px, var(--psBot,10px));transform:none;z-index:76;display:flex;flex-direction:column;
   justify-content:center;gap:14px;pointer-events:none}
 /* THE SIDE COLUMNS CANNOT REACH INTO THE HEADER.
    This was top:50% with translateY(-50%): centred on the WHOLE viewport, so the taller the column
@@ -747,6 +759,12 @@ body.lab-stage #exitMode,body.lab-stage #cofWheel,body.lab-stage #toast{display:
   box-shadow:0 6px 0 rgba(110,92,160,.30), 0 9px 14px rgba(120,100,165,.20), inset 0 3px 0 rgba(255,255,255,.55);
   transition:transform .09s cubic-bezier(.2,.9,.3,1), box-shadow .09s}
 .mkPad:active,.mkPad.hit{transform:translateY(6px);box-shadow:0 0 0 rgba(110,92,160,.3), inset 0 4px 10px rgba(105,88,150,.24)}
+/* the drum pads in Your Turn: Drums carry a word, because "low" and "high" is the whole point of
+   three pads and a blank square does not say it. */
+.rjPad{display:flex;align-items:center;justify-content:center;font-weight:700;font-size:var(--fs-s);color:#4a3f6b}
+/* an empty slot in Write a Tune: a hole on the middle line, dashed on the one you fill next */
+.cmpHole{fill:none;stroke:#cfc7e4;stroke-width:2.6}
+.cmpHole.next{stroke:#7a63c8;stroke-dasharray:4 3.5}
 .mkBtns{display:flex;flex-wrap:wrap;gap:12px;justify-content:safe center;padding:8px 10px 14px;flex:none;align-items:center} /* wrap: there are three buttons once a loop is kept, and a 390px phone cannot hold them in one row */
 .mkBtns .btn{font-size:15px;padding:13px 22px;min-height:48px}
 .mkBtns .mkKeep{font-size:17px;padding:14px 30px;min-height:54px;font-weight:700}
@@ -758,7 +776,11 @@ body.lab-stage #exitMode,body.lab-stage #cofWheel,body.lab-stage #toast{display:
 .stLed{stroke:#8b7fae;stroke-width:2.6;stroke-linecap:round}
 .stHit{fill:transparent;cursor:pointer}
 .stHit:hover{fill:rgba(160,140,220,.13)}
-.stKeys{display:flex;gap:6px;padding:0 10px 4px;justify-content:safe center;flex:none}
+/* Eight letter keys x the 44px tap floor is 414px of row, and a 375px phone is 375px wide: the
+   row ran off the right edge on an iPhone SE in BOTH Read a Tune and Write a Tune. Shrinking the
+   keys would break the tap floor, so the row wraps instead - 44px stays 44px and the second line
+   costs height, which these screens have. */
+.stKeys{display:flex;flex-wrap:wrap;gap:6px;padding:0 10px 4px;justify-content:safe center;flex:none}
 .stKey{flex:1 1 0;max-width:72px;min-height:52px;border:none;border-radius:14px;cursor:pointer;
   font:800 17px/1 system-ui,sans-serif;color:#3b3357;background:var(--rc,#ddd);
   box-shadow:0 4px 0 rgba(110,92,160,.30), 0 6px 10px rgba(120,100,165,.18), inset 0 2px 0 rgba(255,255,255,.55);
@@ -6068,12 +6090,24 @@ const chillers=[]; // full-view slimes with cursor physics
         const ww=w.width||SW, hh=w.height||SH;
         let placed=false;
         for(let pc=6;pc<=94;pc+=4){
-          let box;
-          if(vertical){const t=H*pc/100-hh/2; if(t<4||t+hh>H-4)continue; box={l:w.left,r:w.right,t:t,b:t+hh};}
-          else        {const l=W*pc/100-ww/2; if(l<4||l+ww>W-4)continue; box={l:l,r:l+ww,t:w.top,b:w.bottom};}
-          if(!clear(box,vertical?40:24))continue;
+          // cheap bounds check first, on the pre-transform box
+          if(vertical){const t=H*pc/100-hh/2; if(t<4||t+hh>H-4)continue;}
+          else        {const l=W*pc/100-ww/2; if(l<4||l+ww>W-4)continue;}
+          // THEN APPLY IT AND MEASURE WHERE IT REALLY LANDS. The side peekers are rotated 90deg and
+          // translated by CSS - the note below already says the position set here is not where they
+          // end up - and this loop was testing, and recording in `taken`, the box BEFORE that
+          // transform. So the bottom peeker checked itself against a rectangle the right-edge peeker
+          // was not in, and landed 8% on top of it. Intermittently, because the band it picks
+          // depends on what else is standing. Test the painted rectangle, not the intended one.
+          const pT=el.style.top,pB=el.style.bottom,pL=el.style.left,pR=el.style.right;
           if(vertical){el.style.top=pc+'%';el.style.bottom='';}
           else        {el.style.left=pc+'%';el.style.right='';}
+          const real=el.getBoundingClientRect();
+          const box={l:real.left,r:real.right,t:real.top,b:real.bottom};
+          if(!clear(box,vertical?40:24)){
+            if(vertical){el.style.top=pT;el.style.bottom=pB;}
+            else        {el.style.left=pL;el.style.right=pR;}
+            continue;}
           taken.push(box);placed=true;break;}
         if(!placed)el.style.display='none';   // never in the way: no free band = no slime, full stop
       });});
@@ -7014,16 +7048,52 @@ function startCoach(){
     let low=0;
     const h=document.querySelector('header');
     if(h&&getComputedStyle(h).display!=='none'){const r=h.getBoundingClientRect();if(r.height>0)low=r.bottom;}
-    for(const e of document.querySelectorAll('button,.btn,[role="button"],select,#topRight,#studioBar')){
+    let high=vh;
+    for(const e of document.querySelectorAll('button,.btn,[role="button"],select,#topRight,#studioBar,#triMixBar,#autoRow')){
       const c=getComputedStyle(e);
       if(c.display==='none'||c.visibility==='hidden'||!e.offsetParent)continue;
       if(e.closest('.psCol'))continue;                 // the columns themselves do not count
       const r=e.getBoundingClientRect();
-      if(r.height<=0||r.top>vh*0.3)continue;           // only the top strip
+      if(r.height<=0)continue;
       const edge=r.left<vw*0.28||r.right>vw*0.72;      // only where the columns actually sit
-      if(edge&&r.bottom>low)low=r.bottom;
+      if(!edge)continue;
+      if(r.top<=vh*0.3){ if(r.bottom>low)low=r.bottom; }        // the top strip
+      else if(r.bottom>=vh*0.7){ if(r.top<high)high=r.top; }    // and the bottom strip
     }
     document.documentElement.style.setProperty('--psTop',(low>0?Math.round(low)+10:12)+'px');
+    // never let one tall thing in a corner collapse the column to nothing: 45% of the screen is the
+    // most the bottom furniture may claim.
+    const bot=(high<vh)?Math.min(Math.round(vh-high)+10,Math.round(vh*0.45)):10;
+    document.documentElement.style.setProperty('--psBot',bot+'px');
+    // While we are here: how much room does the right-hand cluster actually take IN the header?
+    // Only measurable in a mode that keeps it in flow (studio, learn); in play there is nothing to
+    // measure, so the last good value stands. That is what play mode reserves so the transport
+    // lands on the same x in every mode at every zoom.
+    if(h){
+      const hr=h.getBoundingClientRect();
+      let lefts=[];
+      for(const id of ['modePill','clearBtn','resetBtn']){
+        const e=document.getElementById(id);
+        if(!e||e.parentElement!==h)continue;
+        const c=getComputedStyle(e);
+        if(c.display==='none'||c.visibility==='hidden')continue;
+        const r=e.getBoundingClientRect();
+        if(r.width>0)lefts.push(r.left);
+      }
+      // Measure from the RIGHT EDGE OF THE LAST FLEX SPACER, not from the first button. The gap
+      // between the spacer and that button is part of the room play mode has to reserve, and
+      // leaving it out left 10px on the table - the transport still moved 5px. The two flex
+      // spacers only end up equal when everything to the right of them is equal.
+      const sps=h.querySelectorAll('.spacer');
+      const sp=sps.length?sps[sps.length-1]:null;
+      if(lefts.length&&sp&&sp.offsetWidth>=0){
+        const spr=sp.getBoundingClientRect();
+        if(spr.width>0||spr.right>0){
+          const w=Math.round(hr.right-spr.right);
+          if(w>40&&w<560)document.documentElement.style.setProperty('--hdrR',w+'px');
+        }
+      }
+    }
   }catch(e){} };
   setTop();
   addEventListener('resize',setTop);

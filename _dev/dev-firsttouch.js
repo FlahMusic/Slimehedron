@@ -122,15 +122,25 @@ const allErrs=[];
  ok(rms>SILENT,'and that rescue actually makes a sound (peak RMS '+rms.toFixed(5)+')');
  allErrs.push(...p.__errs.map(e=>'rescue: '+e));await p.close();}
 
-// ---------- 5. STUDIO IS DELIBERATELY DIFFERENT AND MUST NOT REGRESS ----------
-// studio is a musical bed you grab and shape, so it DOES start by itself. this guards that on purpose,
-// so a future "make everything open silent" pass cannot quietly take it away.
+// ---------- 5. STUDIO OPENS ARMED, NOT PLAYING ----------
+// This used to assert the opposite: "studio DOES start by itself... so a future make-everything-open-
+// silent pass cannot quietly take it away." It was not a silent pass that took it away, it was a bug
+// report - pressing the Tools card started a full band at you, unasked, which is startling and loud
+// and nobody wants it. The contract now: the rig is ARMED (kit on, band on) so one press of play
+// gets a whole arrangement, and NOTHING sounds until that press.
+// The old version also hand-pumped drumSchedule() while measuring, which makes a STOPPED transport
+// produce sound - so its "studio makes a sound on entry" passed no matter what. Measured on the
+// app's own clock here, both times.
 {const p=await open(ctx,'studio');
  const st=await p.evaluate(()=>({drum:drumOn,band:bandOn,playing:S.playing}));
- const rms=await p.evaluate(async()=>{const iv=setInterval(()=>{try{drumSchedule();}catch(e){}},25);
-   const v=await window.__rms(3000);clearInterval(iv);return v;});
- ok(st.playing&&st.band,'studio still starts jamming on its own, by design ('+JSON.stringify(st)+')');
- ok(rms>SILENT,'studio makes a sound on entry (peak RMS '+rms.toFixed(5)+')');
+ const quiet=await p.evaluate(async()=>await window.__rms(3000));
+ ok(!st.playing,'studio does NOT start playing at you on entry ('+JSON.stringify(st)+')');
+ ok(st.drum&&st.band,'but the kit and the band are armed, so one press is a whole arrangement');
+ ok(quiet<=SILENT,'and it is silent until you ask (peak RMS '+quiet.toFixed(5)+')');
+ await p.click('#playBtn');
+ await p.waitForTimeout(1200);
+ const loud=await p.evaluate(async()=>await window.__rms(4000));
+ ok(loud>SILENT,'pressing play starts it (peak RMS '+loud.toFixed(5)+')');
  allErrs.push(...p.__errs.map(e=>'studio: '+e));await p.close();}
 
 // ---------- 6. PRESSING PAUSE FIRST MUST NOT LEAVE A CONTRADICTION ----------

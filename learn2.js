@@ -186,14 +186,37 @@ const LANG={
     md_do:'Which mode was that?',
     md_p1:'now Mixolydian',
     md_name:'DORIAN is minor with a raised sixth and a low seventh. MIXOLYDIAN is major with a low seventh.',
-    g_jam:'Your Turn',
-    g_jamSub:'it plays a bit, then you play anything you want',
+    u_jam:'Your Turn: Five Notes',
+    u_jamSub:'it plays a bit, then you play anything — improvising',
+    u_jammaj:'Your Turn: Seven Notes',
+    u_jammajSub:'the whole major scale is yours — improvising',
+    u_jammin:'Your Turn: Dark Notes',
+    u_jamminSub:'the same game in a minor key — improvising',
     jam_mine:'Listen. Then it is your turn.',   // "Listen." alone does not tell a child what is about to happen
     jam_yours:'Your turn. Play anything.',
     jam_free:'There is no wrong note here.',
+    jam_key:'Every note here belongs to the key.',   // seven notes: "no wrong note" would be a lie
     jam_tally:'{n} notes',
     jam_done:'all done',
     jam_name:'You made that up. Nothing you play here is wrong.',
+    u_rjam:'Your Turn: Drums',
+    u_rjamSub:'make up your own beat — improvising',
+    rj_low:'low', rj_high:'high', rj_shake:'shake',
+    rj_mine:'Listen. Then it is your turn.',
+    rj_yours:'Your turn. Play any beat.',
+    rj_free:'There is no wrong beat here.',
+    rj_tally:'{n} hits',
+    rj_name:'You made that beat up. Nothing you play here is wrong.',
+    u_compose:'Write a Tune',
+    u_composeSub:'put the notes down yourself — composing',
+    cm_do:'Press a letter. The note goes on the staff.',
+    cm_ready:'Press hear it. That is your tune.',
+    cm_hear:'hear it',
+    cm_undo:'take one off',
+    cm_keep:'keep it',
+    cm_kept:'Kept. Write another one.',
+    cm_tally:'{n} kept',
+    cm_name:'You wrote that down, so you can play it again. That is what writing music is for.',
     u_chords:'Three at Once',
     u_chordsSub:'notes stacked on each other \u2014 chords',
     ch_hear:'Listen to the stack.',
@@ -564,26 +587,30 @@ const UNITS=[
   {id:'split',      title:'u_split',      sub:'u_splitSub',      tier:'lesson', run:splitBeatUnit,  tint:'#c8e8b8'},
   {id:'tempo',      title:'u_tempo',      sub:'u_tempoSub',      tier:'lesson', run:tempoUnit,      tint:'#ffd9b8'},
   {id:'dynamic',    title:'u_dynamic',    sub:'u_dynamicSub',    tier:'lesson', run:dynamicUnit,    tint:'#f5d8e8'},
+  {id:'rjam',       title:'u_rjam',       sub:'u_rjamSub',       tier:'lesson', run:rhythmJamUnit,  tint:'#ffcfa8'},
   {id:'high',       title:'u_high',       sub:'u_highSub',       tier:'lesson', block:'b', run:highUnit,       tint:'#a6c8ff', use:[DEG.do,DEG.la]},
   {id:'notes',      title:'u_notes',      sub:'u_notesSub',      tier:'lesson', block:'b', run:findNoteUnit,   tint:'#d9e88f', use:[0,1,2,3,4]},
   {id:'home',       title:'u_home',       sub:'u_homeSub',       tier:'lesson', block:'b', run:homeUnit,       tint:'#ffb6d6', use:[DEG.do,DEG.mi,DEG.so]},
   {id:'steps',      title:'u_steps',      sub:'u_stepsSub',      tier:'lesson', block:'b', run:stepsUnit,      tint:'#c4a9f5', use:[0,1,2,3,4]},
+  {id:'jam',        title:'u_jam',        sub:'u_jamSub',        tier:'lesson', block:'b', run:()=>jamUnit({id:'jam',title:'u_jam'}), tint:'#ffd9a8', use:[0,1,2,3,4]},
   // ---- block B: more notes ----
   {id:'newhome',    title:'u_newhome',    sub:'u_newhomeSub',    tier:'lesson', block:'c', run:sadFiveUnit,    tint:'#8fe0d0', use:[0,1,2,3,4]},
   {id:'majorscale', title:'u_majorscale', sub:'u_majorscaleSub', tier:'lesson', block:'c', run:majorScaleUnit, tint:'#ffe0a8', use:[0,1,2,3,4,5,6]},
   {id:'brightdark', title:'u_brightdark', sub:'u_brightdarkSub', tier:'lesson', block:'c', run:brightDarkUnit, tint:'#f5b8c8', use:[0,1,2,3,4,5,6]},
   {id:'intervals',  title:'u_intervals',  sub:'u_intervalsSub',  tier:'lesson', block:'c', run:intervalUnit,   tint:'#bfe0f5', use:[0,1,2,3,4,5,6]},
   {id:'chords',     title:'u_chords',     sub:'u_chordsSub',     tier:'lesson', block:'c', run:chordUnit,      tint:'#d4c4f5', use:[0,1,2,3,4,5,6]},
+  {id:'jammaj',     title:'u_jammaj',     sub:'u_jammajSub',     tier:'lesson', block:'c', run:()=>jamUnit({id:'jammaj',title:'u_jammaj',scale:'major',use:[0,1,2,3,4,5,6],free:'jam_key'}), tint:'#ffe0b8', use:[0,1,2,3,4,5,6]},
   // ---- block C: minor and modes ----
   {id:'minorscale', title:'u_minorscale', sub:'u_minorscaleSub', tier:'lesson', block:'d', run:minorScaleUnit, tint:'#b5a9f5', use:[0,1,2,3,4,5,6]},
   {id:'minorshapes',title:'u_minorshapes',sub:'u_minorshapesSub',tier:'lesson', block:'d', run:minorShapesUnit,tint:'#a9c4f5', use:[0,1,2,3,4,5,6]},
   {id:'modes',      title:'u_modes',      sub:'u_modesSub',      tier:'lesson', block:'d', run:modesUnit,      tint:'#9fe0c4', use:[0,1,2,3,4,5,6]},
+  {id:'jammin',     title:'u_jammin',     sub:'u_jamminSub',     tier:'lesson', block:'d', run:()=>jamUnit({id:'jammin',title:'u_jammin',scale:'minor',use:[0,1,2,3,4,5,6],free:'jam_key'}), tint:'#c8b8f5', use:[0,1,2,3,4,5,6]},
   // ---- block E: the page ----
   {id:'staff',      title:'u_staff',      sub:'u_staffSub',      tier:'lesson', block:'e', run:staffUnit,      tint:'#ffe8c0'},
   {id:'melody',     title:'u_melody',     sub:'u_melodySub',     tier:'lesson', block:'e', run:melodyUnit,     tint:'#ffd8e0'},
+  {id:'compose',    title:'u_compose',    sub:'u_composeSub',    tier:'lesson', block:'e', run:composeUnit,    tint:'#cfe8d8'},
   // ---- games and practice ----
   {id:'echo',     title:'g_echo',     sub:'g_echoSub',     tier:'game', run:echoGame,     tint:'#a6c8ff'},
-  {id:'jam',      title:'g_jam',      sub:'g_jamSub',      tier:'game', run:jamUnit,      tint:'#ffd9a8'},
   {id:'updown',   title:'g_updown',   sub:'g_updownSub',   tier:'game', run:upDownGame,   tint:'#c4a9f5'},
   {id:'findhome', title:'g_findhome', sub:'g_findhomeSub', tier:'game', run:findHomeGame, tint:'#d9e88f'},
   {id:'review',   title:'u_review',   sub:'u_reviewSub',   tier:'practice', run:reviewUnit, tint:'#9fe6cf'}
@@ -1735,13 +1762,21 @@ function melodyUnit(){
 // whatever they like over the same groove. Orff takes the F and B bars off the instrument so that
 // nothing a child plays can sound wrong -- the tank is already scale-locked, so that is free here.
 // Nothing is scored, nothing is compared to the call, and the child leaves when they want to.
-function jamUnit(){
+function jamUnit(cfg){
+  cfg=cfg||{};
   stageOff();
-  const USE=[0,1,2,3,4];                       // pentatonic: there is no wrong note in it
+  // One improvise screen per block, not one for the whole app. The set of notes it hands the child
+  // is the set the block they just finished taught: five after the pentatonic block, seven after the
+  // major scale, seven minor after the minor block. Same screen, same no-wrong-note rule, different
+  // vocabulary -- which is exactly how Orff moves a class on: new bars go ON the instrument, the
+  // game does not change.
+  const ID=cfg.id||'jam', TITLE=cfg.title||'u_jam';
+  const USE=cfg.use||[0,1,2,3,4];              // pentatonic default: there is no wrong note in it
+  const FREE=cfg.free||'jam_free';
   let mine=true, rounds=0, played=0, busy=false, raf=0, barAt=0;
   const BPM=96, BEAT=60/BPM, BAR=BEAT*4, CALL=BAR*2;
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
-  LAB.take({scale:'pentaMaj',octs:1,drums:false,band:false,touch:false});
+  LAB.take({scale:cfg.scale||'pentaMaj',octs:1,drums:false,band:false,touch:false});
   LAB.labels(null);LAB.clear();
   function name(d){let c=0;try{c=degCents(d);}catch(e){c=d*200;}return solfegeFor(c)||String(d+1);}
   function paint(){
@@ -1750,11 +1785,11 @@ function jamUnit(){
         '<span class="rgName">'+name(d)+'</span>'+
         '<span class="rgDeg">'+(i===0?'LOW':(i===USE.length-1?'HIGH':''))+'</span></button>').join('');
     stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
-        '<h3>'+t('g_jam')+'</h3><span class="lgCount">'+(played?t('jam_tally',{n:played}):'')+'</span>'+
+        '<h3>'+t(TITLE)+'</h3><span class="lgCount">'+(played?t('jam_tally',{n:played}):'')+'</span>'+
         '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
       '<div class="lgLadder'+(mine?' lgWait':'')+'" id="lgLadder">'+ladder+'</div>'+
       '<p class="lgSay">'+t(mine?'jam_mine':'jam_yours')+'</p>'+
-      '<div class="lgFeed" id="lgFeed">'+(mine?'':t('jam_free'))+'</div>'+
+      '<div class="lgFeed" id="lgFeed">'+(mine?'':t(FREE))+'</div>'+
       '<div class="lgHint">'+
         (rounds?'<button class="btn lgDoneJam" data-jam="done">'+t('jam_done')+'</button>':'')+
         '</div>');
@@ -1780,7 +1815,7 @@ function jamUnit(){
   const onDown=(e)=>{
     const dn=e.target.closest&&e.target.closest('[data-jam="done"]');
     if(dn){e.preventDefault();busy=true;cancelAnimationFrame(raf);
-      later(()=>{stageOff();finish('jam',t('jam_name'));},120);return;}
+      later(()=>{stageOff();finish(ID,t('jam_name'));},120);return;}
     const r=e.target.closest&&e.target.closest('.lgRung');if(!r||busy)return;
     e.preventDefault();
     const d=+r.dataset.deg;
@@ -1789,7 +1824,7 @@ function jamUnit(){
     // NOTHING IS CHECKED. not against the call, not against a target, not at all. The child can
     // play during the call too if they want to - interrupting is allowed, this is a jam.
     played++;
-    if(played===1)seen('jam');     // playing one note of your own IS the thing this teaches
+    if(played===1)seen(ID);        // playing one note of your own IS the thing this teaches
     const c=document.querySelector('.lgCount'); if(c)c.textContent=t('jam_tally',{n:played});
     if(played===1||played===4){const el=document.querySelector('.lgHint');if(el&&!el.children.length)paint();}
   };
@@ -1799,6 +1834,184 @@ function jamUnit(){
   later(call,600);
   _cleanup=()=>{_noteAnswer=null;busy=true;cancelAnimationFrame(raf);
     try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._lab_lgAgain=null;stageOff();LAB.clear();};
+}
+
+// ---------- IMPROVISE, BLOCK A: ON DRUMS ----------
+// The pitch jam hands a child five notes. A rhythm block has no notes to hand out, so this one hands
+// out three drums -- low, high, shaker -- which is the unpitched trio an Orff class is actually given
+// before anything with pitch on it. Same shape as the pitch jam: it plays two bars, the groove keeps
+// going, the child answers with whatever they like. Nothing is compared to the call. Nothing scored.
+const RJ_PADS=[{v:'c',k:'rj_low'},{v:'C',k:'rj_high'},{v:'h',k:'rj_shake'}];
+function rhythmJamUnit(){
+  stageOff();
+  const BPM=96, BEAT=60/BPM, SLOT=BEAT/2, SLOTS=8, LOOP=SLOT*SLOTS;   // one bar of eighth notes
+  let mine=true, rounds=0, played=0, busy=false, raf=0, loopAt=0, cur=-1;
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  LAB.take({scale:'pentaMaj',octs:1,drums:false,band:false,touch:false});
+  LAB.labels(null);LAB.clear();
+  function paint(){
+    const pads=RJ_PADS.map((p,i)=>
+      '<button class="mkPad rjPad" data-rj="'+p.v+'" style="--rc:'+degTint(i*2)+'">'+t(p.k)+'</button>').join('');
+    const dots=Array.from({length:SLOTS},(_,i)=>'<i class="mkSlot'+(i===cur?' now':'')+'"></i>').join('');
+    stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t('u_rjam')+'</h3><span class="lgCount">'+(played?t('rj_tally',{n:played}):'')+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="mkRing">'+dots+'</div>'+
+      '<p class="lgSay">'+t(mine?'rj_mine':'rj_yours')+'</p>'+
+      '<div class="lgFeed" id="lgFeed">'+(mine?'':t('rj_free'))+'</div>'+
+      '<div class="mkPads">'+pads+'</div>'+
+      '<div class="mkBtns">'+
+        (rounds?'<button class="btn mkDone" data-rj="done">'+t('jam_done')+'</button>':'')+'</div>');
+  }
+  // One bar at a time, scheduled just before it starts: sample-accurate without a per-frame
+  // scheduler fighting the browser. Same trick as Make a Loop.
+  function groove(t0){
+    for(let i=0;i<SLOTS;i++){const tt=t0+i*SLOT;
+      try{
+        if(i%4===0)dHit('K',tt,i===0?1.10:0.90,true);
+        if(i%2===1)dHit('h',tt,0.26+Math.random()*0.08);
+        if(i===4)dHit('s',tt,0.70,true);
+      }catch(e){}}
+  }
+  function tick(){
+    if(busy)return;
+    const now=AC.currentTime;
+    if(now>=loopAt-0.08){groove(loopAt);loopAt+=LOOP;}
+    const pos=Math.floor((now-(loopAt-LOOP))/SLOT)%SLOTS;
+    if(pos!==cur&&pos>=0){cur=pos;
+      document.querySelectorAll('.mkSlot').forEach((e,i)=>e.classList.toggle('now',i===cur));}
+    raf=requestAnimationFrame(tick);
+  }
+  function flash(v){const el=document.querySelector('.rjPad[data-rj="'+v+'"]');
+    if(!el)return;el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit');}
+  function call(){
+    mine=true;paint();
+    const t0=AC.currentTime+0.25, lead=(t0-AC.currentTime)*1000;
+    const n=5+((Math.random()*4)|0), used=[];
+    while(used.length<n){const k=(Math.random()*(SLOTS*2))|0;if(used.indexOf(k)<0)used.push(k);}
+    used.sort((a,b)=>a-b);
+    used.forEach(k=>{
+      const p=RJ_PADS[(Math.random()*RJ_PADS.length)|0];
+      try{dHit(p.v,t0+k*SLOT,1.0);}catch(e){}
+      later(()=>flash(p.v),lead+k*SLOT*1000);
+    });
+    later(()=>{mine=false;rounds++;paint();window._labJamTurn='child';
+      later(()=>{if(!busy)call();},LOOP*2*1000);      // their two bars, then it comes round again
+    },LOOP*2*1000+200);
+  }
+  const onDown=(e)=>{
+    const dn=e.target.closest&&e.target.closest('[data-rj="done"]');
+    if(dn){e.preventDefault();busy=true;cancelAnimationFrame(raf);
+      later(()=>{stageOff();finish('rjam',t('rj_name'));},120);return;}
+    const pd=e.target.closest&&e.target.closest('.rjPad');if(!pd||busy)return;
+    e.preventDefault();
+    const v=pd.dataset.rj;
+    try{dHit(v,AC.currentTime,1.05);}catch(err){}
+    flash(v);
+    // NOTHING IS CHECKED. Not against the call, not against the grid. Playing through the call is
+    // allowed too -- interrupting is allowed, this is a jam.
+    played++;
+    if(played===1)seen('rjam');          // making up one bar of your own IS the thing this teaches
+    const c=document.querySelector('.lgCount');if(c)c.textContent=t('rj_tally',{n:played});
+  };
+  ov.addEventListener('pointerdown',onDown,true);
+  window._labRJam=()=>({mine:mine,played:played,rounds:rounds});
+  window._lab_rjTap=(v)=>{const el=document.querySelector('.rjPad[data-rj="'+v+'"]');
+    if(el)el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));};
+  _render=paint;paint();
+  loopAt=AC.currentTime+0.25;raf=requestAnimationFrame(tick);
+  later(call,700);
+  _cleanup=()=>{_noteAnswer=null;busy=true;cancelAnimationFrame(raf);
+    try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._labRJam=null;window._lab_rjTap=null;stageOff();LAB.clear();};
+}
+
+// ---------- COMPOSE: ORFF'S FOURTH STAGE, AND THE OTHER HALF OF READING ----------
+// imitate -> explore -> improvise -> compose. The rhythm block composes (Make a Loop). Nothing in
+// the whole of pitch did, and the reading block only ever asked the child to READ -- which is half a
+// skill. So the last lesson is the other half: put the notes down yourself, hear back exactly what
+// you wrote, press it again and get the same tune. That repeatability is the entire difference
+// between improvising and composing, and the only reason notation was invented.
+// No quota, by the same rule as Make a Loop: the child decides when they are finished.
+const CMP_SLOTS=6;
+function composeUnit(){
+  stageOff();
+  let slots=[], kept=0, busy=false, playing=-1;
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  LAB.take({scale:'major',root:60,octs:1,drums:false,band:false,touch:false});
+  LAB.labels(null);LAB.clear();
+  const W=ST_X0+ST_DX*(CMP_SLOTS-1)+56;
+  function paint(){
+    let g='';
+    for(let i=0;i<CMP_SLOTS;i++){
+      const x=ST_X0+i*ST_DX, st=slots[i];
+      if(st==null){
+        // an empty slot is a hole on the middle line, and the one you are about to fill is dashed.
+        // A child needs to see WHERE the next note lands before they pick which note it is.
+        g+='<circle class="cmpHole'+(i===slots.length?' next':'')+'" cx="'+x+'" cy="'+staffY(3)+'" r="9"/>';
+      }else{
+        g+=staffNoteSVG(st,x,'stNote'+(i===playing?' now':' done'),i===playing?'#3f9e78':'#2f2a44');
+      }
+    }
+    const keys=STAFF_LTR.map((L,st)=>
+      '<button class="stKey" data-cmp="'+st+'" style="--rc:'+degTint(Math.min(st,6))+'">'+L+'</button>').join('');
+    stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t('u_compose')+'</h3><span class="lgCount">'+(kept?t('cm_tally',{n:kept}):(slots.length+' / '+CMP_SLOTS))+'</span>'+
+        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '<div class="stWrap">'+staffFrame(g,W)+'</div>'+
+      '<p class="lgSay">'+t(slots.length>=3?'cm_ready':'cm_do')+'</p>'+
+      '<div class="lgFeed" id="lgFeed"></div>'+
+      '<div class="stKeys">'+keys+'</div>'+
+      '<div class="mkBtns">'+
+        (slots.length?'<button class="btn cmpUndo" data-cmp2="undo">'+t('cm_undo')+'</button>':'')+
+        (slots.length?'<button class="btn cmpHear" data-cmp2="hear">'+EAR+' '+t('cm_hear')+'</button>':'')+
+        (slots.length>=3?'<button class="btn primary cmpKeep" data-cmp2="keep">'+t('cm_keep')+'</button>':'')+
+        (kept?'<button class="btn cmpDone" data-cmp2="done">'+t('jam_done')+'</button>':'')+'</div>');
+  }
+  function hear(after){
+    const n=slots.length;if(!n)return;
+    slots.forEach((st,i)=>later(()=>{playing=i;paint();
+      try{note(STAFF_SEMI[st]*100,94,0.40);}catch(e){}},i*460));
+    later(()=>{playing=-1;paint();if(after)after();},n*460+300);
+  }
+  window._lab_lgAgain=()=>{if(!busy)hear();};
+  const onDown=(e)=>{
+    const b2=e.target.closest&&e.target.closest('[data-cmp2]');
+    if(b2&&!busy){
+      e.preventDefault();
+      const a=b2.dataset.cmp2;
+      if(a==='undo'){slots.pop();paint();return;}
+      if(a==='hear'){hear();return;}
+      if(a==='done'){busy=true;later(()=>{stageOff();finish('compose',t('cm_name'));},120);return;}
+      if(a==='keep'){
+        if(slots.length<3)return;                 // too short to be a tune: ignore, never scold
+        busy=true;kept++;score('compose',true);
+        if(kept===1)seen('compose');              // one tune written down IS the lesson learned
+        const fd=document.getElementById('lgFeed');if(fd)fd.textContent=t('cm_kept');
+        hear(()=>{slots=[];busy=false;paint();});  // you hear the finished thing before it clears
+        return;}
+      return;
+    }
+    const k=e.target.closest&&e.target.closest('.stKey');if(!k||busy)return;
+    e.preventDefault();
+    if(slots.length>=CMP_SLOTS)return;            // the bar is full: ignore, never scold
+    const st=+k.dataset.cmp;
+    slots.push(st);
+    try{note(STAFF_SEMI[st]*100,98,0.44);}catch(err){}   // you hear the note as you write it
+    k.classList.remove('right');void k.offsetWidth;k.classList.add('right');
+    paint();
+  };
+  ov.addEventListener('pointerdown',onDown,true);
+  window._labCompose=()=>({slots:slots.slice(),kept:kept});
+  window._lab_cmpTap=(st)=>{const el=document.querySelector('.stKey[data-cmp="'+st+'"]');
+    if(el)el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));};
+  window._lab_cmpBtn=(a)=>{const el=document.querySelector('[data-cmp2="'+a+'"]');
+    if(el)el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));return !!el;};
+  _render=paint;paint();
+  _cleanup=()=>{_noteAnswer=null;busy=true;
+    try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._labCompose=null;window._lab_cmpTap=null;window._lab_cmpBtn=null;
     window._lab_lgAgain=null;stageOff();LAB.clear();};
 }
 

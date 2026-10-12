@@ -92,22 +92,36 @@ const studioRms=await p2.evaluate(async()=>{
 ok(studioRms>SILENT,'STUDIO mode actually makes a sound (peak RMS '+studioRms.toFixed(5)+')');
 
 // ---------- 3. EVERY LESSON ----------
-const LESSONS=['pulse','make','sayplay','howlong','countbar','rest','song','split','tempo','dynamic',
+// READ THE LIST, DO NOT KEEP ONE: a hand-typed array went stale the moment lessons were added.
+const SRC=require('fs').readFileSync('learn2.js','utf8');
+const LESSONS_AUTO=[...new Set([...SRC.matchAll(/\{id:'([a-z0-9]+)',\s*title:'[A-Za-z0-9_]+',\s*sub:'[A-Za-z0-9_]+',\s*tier:'(?:lesson|game)'/g)].map(m=>m[1]))];
+const LESSONS_OLD=['pulse','make','sayplay','howlong','countbar','rest','song','split','tempo','dynamic',
   'high','notes','home','steps','newhome','majorscale','brightdark','intervals',
   'minorscale','minorshapes','modes','staff','melody','echo','updown','findhome'];
+const LESSONS=LESSONS_AUTO.length>=25?LESSONS_AUTO:LESSONS_OLD;
 console.log('');
 const mute=[];
 for(const id of LESSONS){
   const pg=await ctx.newPage();
   pg.on('pageerror',e=>errs.push(id+': '+e.message));
   await pg.goto('http://127.0.0.1:8765/index.html?l='+id);
-  await pg.waitForTimeout(1500);
+  await pg.waitForTimeout(1600);
+  // A lesson opens on its EXPLORE screen now: the notes are playable and NOTHING plays at the child
+  // until they ask for a question. Measuring the explore screen and calling the lesson mute was the
+  // ruler's mistake, not the app's. Ask for the questions first, like a child does.
+  await pg.evaluate(()=>{try{if(window._lab_ready)window._lab_ready();}catch(e){}});
+  await pg.waitForTimeout(900);
   let rms=await pg.evaluate(()=>window.__rms(5000));
   if(rms<=SILENT){                       // ask it to play again before calling it mute
     await pg.evaluate(()=>{const b=document.querySelector('.lgListen');
       if(b)b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
       if(window._lab_lgAgain)window._lab_lgAgain();});
     rms=await pg.evaluate(()=>window.__rms(4000));
+  }
+  if(rms<=SILENT){                       // a sandbox (write a tune, your turn) sounds when touched
+    await pg.evaluate(()=>{const e=document.querySelector('.lgRung,[data-ch],.stKey,.mkPad,.rjPad,.stHit,[data-sp]');
+      if(e)e.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));});
+    rms=await pg.evaluate(()=>window.__rms(3000));
   }
   const good=rms>SILENT;
   if(!good)mute.push(id);

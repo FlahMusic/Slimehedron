@@ -42,12 +42,19 @@ const p=await ctx.newPage();
 const errs=[];p.on('pageerror',e=>errs.push(e.message));
 await p.goto('http://127.0.0.1:8765/index.html?m=studio');
 await p.waitForTimeout(3200);
+// STUDIO NO LONGER AUTO-PLAYS. It used to start the whole band at you the moment you opened it,
+// which was a real bug and got fixed - and this suite was written against the old behaviour, so it
+// was measuring a stopped transport and reading reverb tail. Press play, like a person does.
+await p.evaluate(()=>{const e=document.getElementById('playBtn');if(e&&!S.playing)e.click();});
+await p.waitForTimeout(1800);
+ok(await p.evaluate(()=>!!S.playing),'the transport is running, so there is something to measure');
 
 const wiring=await p.evaluate(()=>({hasPadBus:!!(window.padBus||typeof padBus!=='undefined'&&padBus)}));
 ok(wiring.hasPadBus,'the chords have a bus of their own');
 
-const full=await p.evaluate(async()=>{const iv=setInterval(()=>{try{drumSchedule();}catch(e){}},25);
-  const v=await window.__pk(5000);clearInterval(iv);return v;});
+// measured on the app's OWN scheduler, not a hand-pumped one: a pump that runs for the first
+// measurement and not the rest is how this suite came to read silence for the other three.
+const full=await p.evaluate(async()=>await window.__pk(5000));
 ok(full>AUDIBLE,'the full mix plays (peak RMS '+full.toFixed(5)+')');
 
 // strip everything but the chords

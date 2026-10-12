@@ -109,7 +109,7 @@ const probe=`(EX)=>{
    // state here; the hint gets its own assertion below (it must never block the transport).
    await p.addInitScript(()=>{try{localStorage.setItem('slimehedron-coach','1')}catch(e){}});
    const errs=[];p.on('pageerror',e=>errs.push(String(e).slice(0,90)));
-   await p.goto('file://'+__dirname+'/index.html');await p.waitForTimeout(420);
+   await p.goto('file://'+require('path').resolve(__dirname,'..','index.html'));await p.waitForTimeout(420);
    try{ touch?await p.tap(`.modeCard[data-m="${mode}"]`):await p.click(`.modeCard[data-m="${mode}"]`);}catch(e){}
    await p.waitForTimeout(1800);
    const r=await p.evaluate(eval('('+probe+')'),EXEMPT);
@@ -131,8 +131,17 @@ const probe=`(EX)=>{
  // ---- the first-run coach: a hint that eats a tap is a trap ----
  for(const [tag,w,h] of [['phone',393,852],['tiny',320,568],['landscape',852,393]]){
    const ctx=await b.newContext({viewport:{width:w,height:h},hasTouch:true,isMobile:true,deviceScaleFactor:2});
-   const p=await ctx.newPage();await p.goto('file://'+__dirname+'/index.html');await p.waitForTimeout(400);
-   await p.tap('.modeCard[data-m="play"]');await p.waitForTimeout(1600);
+   const p=await ctx.newPage();await p.goto('file://'+require('path').resolve(__dirname,'..','index.html'));await p.waitForTimeout(400);
+   await p.tap('.modeCard[data-m="play"]');await p.waitForTimeout(1200);
+   // THE COACH COMES AFTER THE CHILD'S FIRST SOUND, NOT ON ARRIVAL - play mode opens silent on
+   // purpose and a hint describing something that is not happening yet is just wrong. So it fires
+   // 2600ms after the first touch INSIDE play. Tapping the mode card is not that touch: this block
+   // tapped once, waited 1600ms and reported the coach missing on every phone for weeks.
+   {const box=await p.evaluate(()=>{const c=document.getElementById('cv');
+      if(!c)return null;const r=c.getBoundingClientRect();
+      return {x:Math.round(r.left+r.width*0.5),y:Math.round(r.top+r.height*0.45)};});
+    if(box)await p.tap('#cv',{position:{x:5,y:5}}).catch(()=>p.mouse.click(box.x,box.y));
+    await p.waitForTimeout(3400);}
    const r=await p.evaluate(()=>{const c=document.getElementById('coach');
      if(!c)return{shown:false};
      const cr=c.getBoundingClientRect(),cs=getComputedStyle(c);
