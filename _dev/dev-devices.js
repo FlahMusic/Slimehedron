@@ -126,6 +126,30 @@ const SCREENS=[
         // whose word is cut off, a heading overflowing its box - none of that trips a tap-size or
         // collision check, and all of it is what a person actually notices. Compare each text
         // element's content width to the box it has been given.
+        // A TOOLBAR YOU HAVE TO DRAG SIDEWAYS IS A TOOLBAR YOU CANNOT SEE. The studio strip used to
+        // scroll horizontally on a phone with 490px of it off the right edge - the key, the scale
+        // and the kit were, in practice, missing, and a fade on the edge is an apology for a layout
+        // rather than a layout. A long vertical list is fine; sideways is not. Pianos are exempt,
+        // because a keyboard wider than the screen is a keyboard, not a menu.
+        sideways:(()=>{
+          const bad=[];
+          for(const e of document.querySelectorAll('*')){
+            if(e.scrollWidth<=e.clientWidth+2)continue;
+            if(e.clientWidth<40)continue;
+            // ONLY things you can actually DRAG. An element whose content is wider than its box but
+            // whose overflow is visible is not a scroller - it is just overflowing, and the
+            // off-the-right-edge check above already owns that. Checking scrollWidth alone flagged
+            // every decorative slime on the page.
+            const ox=getComputedStyle(e).overflowX;
+            if(ox!=='auto'&&ox!=='scroll')continue;
+            const id=e.id||'';
+            if(/Keys$|Piano|kbMap|pxPiano/i.test(id+' '+String(e.className)))continue;  // a keyboard may be wider than the screen
+            const r=e.getBoundingClientRect();
+            if(r.width<40||r.height<10)continue;
+            bad.push(e.tagName.toLowerCase()+(id?'#'+id:(String(e.className)?'.'+String(e.className).split(' ')[0]:''))+' '+e.scrollWidth+'>'+e.clientWidth);
+          }
+          return bad.slice(0,4);
+        })(),
         clipped_text:(()=>{
           const bad=[];
           for(const e of document.querySelectorAll('button,.btn,.uCard,.psLbl,.lgSay,h1,h2,h3,label,.lgRung,.rgName')){
@@ -160,6 +184,7 @@ const SCREENS=[
     ok(r.tiny.length===0, tag+': every tap target is at least 44px'+(r.tiny.length?': '+r.tiny.slice(0,4).join(' · '):''));
     ok(r.clipped_text.length===0, tag+': no label is cut off'+(r.clipped_text.length?': '+r.clipped_text.join(' · '):''));
     ok(r.collisions.length===0, tag+': no control sits on top of another'+(r.collisions.length?': '+r.collisions.join(' · '):''));
+    ok(r.sideways.length===0, tag+': nothing has to be dragged sideways to be seen'+(r.sideways.length?': '+r.sideways.join(' · '):''));
   }
   ok(errs.length===0, s.n+': no page errors'+(errs.length?': '+errs.slice(0,2).join(' | '):''));
   await ctx.close();

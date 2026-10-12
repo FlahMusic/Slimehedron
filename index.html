@@ -232,12 +232,15 @@ header h1{flex-shrink:0}
 #triMixBar>*:not(#triMix){display:none!important}
 /* the strip itself: one row, always visible in studio, directly under the transport */
 #studioBar{display:none}
+/* IT WRAPS, IT NEVER SCROLLS SIDEWAYS. At any width: if the row does not fit, it becomes two rows.
+   This used to be overflow-x:auto, which on a landscape phone put 450px of the strip off the right
+   edge and did the same at 150% browser zoom on a desktop - the key, the scale and the kit were in
+   practice missing, and a fade on the edge is an apology for a layout rather than a layout. */
 .mode-studio #studioBar{display:flex;position:fixed;z-index:72;align-items:center;justify-content:flex-start;
+  flex-wrap:wrap;row-gap:4px;overflow:visible;
   gap:4px;padding:5px 9px;border-radius:14px;
   background:rgba(252,249,255,.9);border:1.5px solid var(--card-brd);box-shadow:var(--shadow);
-  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);overflow-x:auto;scrollbar-width:thin}
-#studioBar::-webkit-scrollbar{height:4px}
-#studioBar::-webkit-scrollbar-thumb{background:rgba(150,140,185,.4);border-radius:3px}
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
 #studioBar .sbGrp{display:flex;align-items:center;gap:5px;flex:none}
 #studioBar .sbSep{width:1px;height:22px;background:rgba(150,140,185,.3);flex:none;margin:0 3px}
 #studioBar .sbLbl{font:700 9.5px system-ui,sans-serif;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-soft);flex:none}
@@ -247,18 +250,37 @@ header h1{flex-shrink:0}
   font:800 var(--fs-xs)/1 inherit;color:#5a4f78;cursor:pointer;min-height:var(--tap);min-width:var(--tap);flex:none}
 #studioBar #sbTap:active{background:var(--mint)}
 #studioBar #drumCtl{opacity:1!important;pointer-events:auto!important} /* the strip is always live; the kit selects are useful even before drums are on */
-@media (max-width:820px){
+/* THE ARROW ONLY EXISTS WHERE THE ROOM RUNS OUT. On a desktop every control is on the strip and
+   .sbMore is just more of the row - there is nothing to expand and no arrow to wonder about. */
+#studioBar .sbMore{display:contents}
+#studioBar .sbExp{display:none}
+@media (max-width:1100px){
   .mode-studio #studioBar{top:calc(env(safe-area-inset-top) + 46px);padding:4px 7px;gap:3px;max-width:98vw;border-radius:12px}
   #studioBar select,#studioBar input[type=number]{font-size:var(--fs-xs);padding:4px 8px}
   #studioBar input[type=range]{height:6px;padding:19px 0;box-sizing:content-box}
-  /* The strip scrolls on a phone — nine controls do not fit 374px, and none of them are going in a menu.
-     But the cut used to land dead on the rounded right edge, so the strip read as "that is all there is":
-     seven controls visible, KEY / SCALE / KIT a secret. Two fixes, both about honesty rather than space:
-       1. a fade at the right edge, so the strip visibly CONTINUES past the screen;
-       2. the labels stay. An unlabelled "1/8" beside an unlabelled "4/4" is a guessing game. */
-  #studioBar{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);
-             mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
+  /* IT WRAPS NOW, IT DOES NOT SCROLL. Nine controls do not fit 374px, and the answer used to be a
+     sideways-scrolling strip with a fade on the right edge to admit there was more. 490px of it was
+     off screen: the key, the scale and the kit were, in practice, missing. A fade is an apology for
+     a layout, not a layout.
+     Each group keeps the control you actually reach for and folds its second one behind a ▾ that
+     opens IN PLACE - the row below grows, nothing moves sideways, and the thing you opened is next
+     to the label that names it. Two short rows beat one long one you have to drag. */
+  .mode-studio #studioBar{max-width:calc(100vw - 16px)}
   #studioBar .sbLbl{font-size:8.5px;letter-spacing:.3px}
+  #studioBar .sbSep{display:none}                 /* the wrap is the separation */
+  #studioBar .sbGrp{background:rgba(255,255,255,.55);border-radius:10px;padding:2px 5px}
+  #studioBar .sbMore{display:none}
+  #studioBar .sbGrp.open .sbMore{display:flex;align-items:center;gap:5px}
+  /* 44px, like everything else a finger has to hit. It was 28 because that is what looks right
+     next to a 34px select, and a control that looks right and cannot be tapped is not a control. */
+  #studioBar .sbExp{display:flex;align-items:center;justify-content:center;
+    width:44px;min-width:44px;height:44px;min-height:44px;padding:0;border:none;border-radius:10px;
+    background:rgba(190,178,230,.26);color:#5a4f78;cursor:pointer;flex:none;
+    transition:transform .14s, background .14s}
+  #studioBar .sbGrp.open .sbExp{transform:rotate(180deg);background:rgba(160,140,220,.34)}
+  #studioBar .sbExp:active{background:rgba(160,140,220,.45)}
+  /* the tempo slider is the one expandable that wants a whole line to itself */
+  #studioBar .sbGrp.open input[type=range]{flex:1 1 120px;min-width:110px}
 }
 .mode-studio #studioBar{top:var(--sbTop,60px);left:var(--sbLeft,8px);width:var(--sbW,auto);max-width:none}
 /* drop-ball, dice(new shape), and the drum/band mute buttons are gone from the header in every mode — you drop a
@@ -1362,7 +1384,11 @@ input[type=range]{-webkit-appearance:none;appearance:none;height:6px;padding:9px
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--accent);cursor:pointer;box-shadow:0 2px 6px rgba(120,110,160,.4)}
 select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);background:rgba(255,255,255,.7);border:1px solid var(--card-brd);border-radius:10px;padding:7px 9px;cursor:pointer;flex:1;min-width:0}
 .seg{display:flex;background:rgba(255,255,255,.45);border-radius:12px;padding:3px;gap:3px;flex:1}
-.seg button{flex:1;border:none;background:transparent;font-family:inherit;font-weight:600;font-size:12px;color:var(--ink-soft);padding:6px 4px;border-radius:9px;cursor:pointer;transition:.12s}
+/* flex:1 with the default auto basis only hands out SPARE room - it cannot take any back, because
+   a flex item will not shrink below its content. Five waveform buttons therefore pushed the
+   Instrument card 8px wider than the side panel and gave the whole panel a horizontal scrollbar.
+   flex:1 1 0 with min-width:0 makes them share the row and shrink into it. */
+.seg button{flex:1 1 0;min-width:0;border:none;background:transparent;font-family:inherit;font-weight:600;font-size:12px;color:var(--ink-soft);padding:6px 4px;border-radius:9px;cursor:pointer;transition:.12s}
 .seg button.active{background:#fff;color:var(--ink);box-shadow:0 2px 6px rgba(120,110,160,.18)}
 .toggle{position:relative;width:42px;height:24px;border-radius:14px;background:rgba(170,160,200,.35);cursor:pointer;transition:.15s;flex:none}
 .toggle.on{background:var(--accent)}
@@ -6775,10 +6801,29 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
 (function(){try{
   const bar=document.getElementById('studioBar');if(!bar)return;
   const grab=(sel)=>document.querySelector(sel);
-  function grp(label,nodes,title){
+  // EVERY GROUP IS "WHAT YOU REACH FOR" PLUS "THE REST BEHIND AN ARROW".
+  // The strip used to be one row that scrolled sideways: on a 390px phone 490px of it was off the
+  // right edge, with no hint it was there, so the key, the scale and the kit read as missing. A
+  // sideways-scrolling toolbar is a toolbar you cannot see. Each group now keeps its primary
+  // control on screen and folds its secondary one behind a ▾ that opens in place - the bar WRAPS
+  // instead of scrolling, so opening one just makes it a line taller. On a desktop there is room
+  // for all of it, so the arrows are not there and nothing is hidden.
+  function grp(label,nodes,title,more){
     const g=document.createElement('span');g.className='sbGrp';if(title)g.title=title;
     if(label){const l=document.createElement('span');l.className='sbLbl';l.textContent=label;g.appendChild(l);}
     nodes.forEach(n=>{if(n)g.appendChild(n);});
+    if(more&&more.filter(Boolean).length){
+      const m=document.createElement('span');m.className='sbMore';
+      more.forEach(n=>{if(n)m.appendChild(n);});
+      const b=document.createElement('button');b.type='button';b.className='sbExp';
+      b.setAttribute('aria-expanded','false');
+      b.setAttribute('aria-label','more '+(label||'options'));
+      b.title='more '+(label||'options');
+      b.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+      b.addEventListener('click',()=>{const on=!g.classList.contains('open');
+        g.classList.toggle('open',on);b.setAttribute('aria-expanded',on?'true':'false');});
+      g.appendChild(b);g.appendChild(m);
+    }
     return g;
   }
   function sep(){const d=document.createElement('span');d.className='sbSep';return d;}
@@ -6794,16 +6839,20 @@ addEventListener('input',e=>{if(!e._wob)queueSave();},true);addEventListener('cl
       if(n){n.value=bpm;n.dispatchEvent(new Event('change',{bubbles:true}));}
       if(r){r.value=bpm;r.dispatchEvent(new Event('input',{bubbles:true}));}
       S.bpm=bpm;}});
-  bar.appendChild(grp('tempo',[grab('#bpmNum'),grab('#bpmTop'),tap],'tempo in beats per minute'));
+  // the number and TAP are the tempo; the slider is the same value with a bigger grab handle
+  bar.appendChild(grp('tempo',[grab('#bpmNum'),tap],'tempo in beats per minute',[grab('#bpmTop')]));
   bar.appendChild(sep());
   // METER + STEP — a DAW never hides the time signature.
-  bar.appendChild(grp('time sig',[grab('#drumSig'),grab('#divSel')],'time signature and grid (step size)'));
+  // 4/4 is the decision; the step grid is a setting you touch once
+  bar.appendChild(grp('time sig',[grab('#drumSig')],'time signature and grid (step size)',[grab('#divSel')]));
   bar.appendChild(sep());
   // KEY — the app is scale-locked, so the key is the single biggest musical decision on screen.
-  bar.appendChild(grp('key',[grab('#keyTop'),grab('#scaleTop')],'key and scale'));
+  // the key moves far more often than the scale does
+  bar.appendChild(grp('key',[grab('#keyTop')],'key and scale',[grab('#scaleTop')]));
   bar.appendChild(sep());
   // KIT — two selects, and switching kit is a constant move while building a beat.
-  bar.appendChild(grp('kit',[grab('#kitStyle'),grab('#drumKit')],'drum kit'));
+  // which kit, not which family of kits
+  bar.appendChild(grp('kit',[grab('#drumKit')],'drum kit',[grab('#kitStyle')]));
   // the drum selects used to be gated behind a dimmed wrapper; in the strip they are always live
   const dc=document.getElementById('drumCtl');if(dc){dc.style.opacity='';dc.style.pointerEvents='';}
 }catch(e){console.warn('studio strip skipped:',e);}})();

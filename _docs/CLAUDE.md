@@ -829,3 +829,21 @@ and the frame gap once it is running — on a desktop and on a phone at 4x CPU t
   positioned. A zero-sized rect already means "not rendered", and the rect is read anyway.
   **The same mistake twice in one session**: a probe written to check the side columns reported them
   missing for the same reason.
+
+- **A toolbar you have to drag sideways is a toolbar you cannot see.** The studio strip was
+  `overflow-x:auto`: on a 390px phone 490px of it sat off the right edge, so the key, the scale and
+  the kit were in practice missing, and the earlier "fix" was a fade on the edge to admit there was
+  more. **A fade is an apology for a layout, not a layout.** It wraps now at every width, and below
+  1100px each group keeps the control you reach for and folds its second one behind a 44px arrow
+  that opens IN PLACE: tempo keeps the number and TAP (slider folds), time sig keeps 4/4 (grid
+  folds), key keeps the key (scale folds), kit keeps the kit (family folds). Two short rows instead
+  of one long one you have to drag. The same strip scrolled at 150% and 175% desktop zoom and in
+  landscape, which is why the rule is "wrap when it does not fit", not "phones get a special case".
+- **`flex:1` cannot take space back.** The default basis is `auto`, so it only hands out SPARE room
+  and a flex item will not shrink below its content - five waveform buttons pushed the Instrument
+  card 8px wider than the studio side panel and gave the whole panel a horizontal scrollbar on a
+  1920 desktop. `flex:1 1 0` with `min-width:0` is what people mean when they write `flex:1`.
+- `dev-devices.js` has a fifth check now: **nothing may require a sideways drag.** It looks only at
+  elements whose computed `overflow-x` is auto or scroll - checking `scrollWidth` alone flagged every
+  decorative slime on the page - and exempts pianos, because a keyboard wider than the screen is a
+  keyboard rather than a menu.

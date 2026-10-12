@@ -5,15 +5,15 @@
   },
   "play": {
     "controls": 20,
-    "words": 15
+    "words": 19
   },
   "studio": {
-    "controls": 17,
-    "words": 11
+    "controls": 21,
+    "words": 13
   },
   "learn-home": {
     "controls": 11,
-    "words": 122
+    "words": 121
   },
   "lesson": {
     "controls": 6,
