@@ -188,13 +188,19 @@ const LANG={
     md_name:'DORIAN is minor with a raised sixth and a low seventh. MIXOLYDIAN is major with a low seventh.',
     g_jam:'Your Turn',
     g_jamSub:'it plays a bit, then you play anything you want',
-    jam_mine:'Listen.',
+    jam_mine:'Listen. Then it is your turn.',   // "Listen." alone does not tell a child what is about to happen
     jam_yours:'Your turn. Play anything.',
     jam_free:'There is no wrong note here.',
     jam_tally:'{n} notes',
     jam_done:'all done',
     jam_name:'You made that up. Nothing you play here is wrong.',
+    u_chords:'Three at Once',
+    u_chordsSub:'notes stacked on each other \u2014 chords',
+    ch_hear:'Listen to the stack.',
+    ch_do:'How many notes?',
+    ch_name:'Notes stacked up make a chord. The band plays them behind you the whole time.',
     ex_do:'Play them. Any of them, as many as you like.',
+    exc_do:'Press them. Hear what each one sounds like.',
     ex_ready:'ask me questions',
     rev_do:'Play one again.',
     rev_name:'You still had it.',
@@ -567,6 +573,7 @@ const UNITS=[
   {id:'majorscale', title:'u_majorscale', sub:'u_majorscaleSub', tier:'lesson', block:'c', run:majorScaleUnit, tint:'#ffe0a8', use:[0,1,2,3,4,5,6]},
   {id:'brightdark', title:'u_brightdark', sub:'u_brightdarkSub', tier:'lesson', block:'c', run:brightDarkUnit, tint:'#f5b8c8', use:[0,1,2,3,4,5,6]},
   {id:'intervals',  title:'u_intervals',  sub:'u_intervalsSub',  tier:'lesson', block:'c', run:intervalUnit,   tint:'#bfe0f5', use:[0,1,2,3,4,5,6]},
+  {id:'chords',     title:'u_chords',     sub:'u_chordsSub',     tier:'lesson', block:'c', run:chordUnit,      tint:'#d4c4f5', use:[0,1,2,3,4,5,6]},
   // ---- block C: minor and modes ----
   {id:'minorscale', title:'u_minorscale', sub:'u_minorscaleSub', tier:'lesson', block:'d', run:minorScaleUnit, tint:'#b5a9f5', use:[0,1,2,3,4,5,6]},
   {id:'minorshapes',title:'u_minorshapes',sub:'u_minorshapesSub',tier:'lesson', block:'d', run:minorShapesUnit,tint:'#a9c4f5', use:[0,1,2,3,4,5,6]},
@@ -1795,6 +1802,30 @@ function jamUnit(){
     window._lab_lgAgain=null;stageOff();LAB.clear();};
 }
 
+// ---------- HOW MANY NOTES AT ONCE ----------
+// The biggest hole in the curriculum. The app plays chords behind the child in every mode - the
+// whole band is built on them - and twenty-three lessons never said what one is. "Two at Once"
+// teaches an interval; nothing teaches that you can stack a THIRD note on and that the stack has
+// a name. This is the lesson that connects what they have been hearing all along to what they know.
+// It asks by COUNT, not by name: a child can hear "more notes" long before they can hear "triad",
+// and counting is the thing their ear can actually do. The word lives in the subtitle for the
+// grown-ups, which is the rule the rest of the cards follow.
+function chordUnit(){
+  choiceUnit({id:'chords',title:'u_chords',hear:'ch_hear',doIt:'ch_do',name:'ch_name',
+    scale:'major',need:10,
+    opts:[{v:'1',label:'one',tint:'#a6c8ff'},{v:'2',label:'two',tint:'#ffd9a8'},{v:'3',label:'three',tint:'#c4a9f5'}],
+    pick:()=>['1','2','3'][(Math.random()*3)|0],
+    // the ruler shows what it was, AFTER they answer: one blob, two stacked, three stacked
+    art:(v)=>({'1':[0],'2':[0,4],'3':[0,2,4]})[v]||[0],
+    play:(v)=>{
+      // Always the same bottom note, so the only thing that changes is how much is stacked on it.
+      // Degrees, not cents: 0-2-4 of the major scale is do-mi-so, the plainest triad there is.
+      const sets={'1':[0],'2':[0,4],'3':[0,2,4]};
+      const ds=sets[v]||[0];
+      ds.forEach(d=>{try{sing(d,88,1.5);}catch(e){}});
+    }});
+}
+
 function reviewUnit(){
   stageOff();
   const list=due();
@@ -1865,6 +1896,13 @@ function choiceUnit(cfg){
   // a brute force, and it was being written into the progress file as mastery. `armed` is the real
   // gate: a question arms it, the first committed answer disarms it, the next question arms it again.
   let armed=false;
+  // ORFF STAGE TWO, FOR THE TWO-BUTTON SCREENS TOO.
+  // The ladder lessons got an explore screen (play the notes before anyone asks). These were left
+  // out on the grounds that "play the notes" is not their content - and that was right about the
+  // method and wrong about the principle. What a child needs to hear freely HERE is the two things
+  // being compared: press "bright", hear bright; press "dark", hear dark; as many times as they
+  // like, with nothing scored. Then they ask for the questions.
+  let exploring=(cfg.explore!==false);
 
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
   // PIN THE KEY, like ladderUnit does. A lesson that does not name a root inherits whatever the last
@@ -1883,8 +1921,10 @@ function choiceUnit(cfg){
       '<div class="lgLadder" style="justify-content:safe center;flex:1;flex-direction:column">'+
         '<p class="lgSay" style="font-size:18px">'+t(cfg.hear)+'</p>'+
         (cfg.art?'<div class="lgRuler" id="lgRuler">'+ruler(null)+'</div>':'')+'</div>'+
-      '<p class="lgSay">'+t(cfg.doIt)+'</p><div class="lgFeed" id="lgFeed"></div>'+
-      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>'+
+      '<p class="lgSay">'+t(exploring?'exc_do':cfg.doIt)+'</p><div class="lgFeed" id="lgFeed"></div>'+
+      (exploring
+        ? '<div class="lgHint"><button class="btn primary lgReady" data-lg="ready">'+t('ex_ready')+'</button></div>'
+        : '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>')+
       '<div class="lgChoice">'+cfg.opts.map(o=>
         '<button data-ch="'+o.v+'" style="--rc:'+o.tint+'">'+t(o.label)+'</button>').join('')+'</div>');
   }
@@ -1900,7 +1940,18 @@ function choiceUnit(cfg){
     LAB.labels(null);LAB.clear(); }
   window._labRoam=()=>roamAt;   // readable: dev-earwork proves the key actually moves
   function ask(){reKey();cur=cfg.pick();armed=true;window._labExpect=cur;showArt(null);cfg.play(cur);}
-  const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-ch]');if(!b||busy||!armed)return;
+  function startAsking(){ if(!exploring)return; exploring=false; paint(); later(ask,420); }
+  window._lab_ready=startAsking;
+  window._lab_exploring=()=>exploring;
+  const onDown=(e)=>{
+    const rdy=e.target.closest&&e.target.closest('[data-lg="ready"]');
+    if(rdy){e.preventDefault();startAsking();return;}
+    const b0=e.target.closest&&e.target.closest('[data-ch]');
+    if(b0&&exploring){ e.preventDefault();            // exploring: the button is a speaker, not an answer
+      try{cfg.play(b0.dataset.ch);}catch(err){}
+      try{showArt(b0.dataset.ch);}catch(err){}
+      return; }
+    const b=b0;if(!b||busy||!armed)return;
     e.preventDefault();armed=false;
     const ok=(b.dataset.ch===String(cur)); score(cfg.id,ok); if(ok)right++;
     showArt(cur);   // AFTER the answer, never before: show what that actually was
@@ -1910,7 +1961,8 @@ function choiceUnit(cfg){
     if(right>=need){busy=true;later(()=>{stageOff();finish(cfg.id,t(cfg.name));},760);return;}
     later(ask,ok?820:1050);};
   ov.addEventListener('pointerdown',onDown,true);
-  _render=paint;paint();later(ask,650);
+  _render=paint;paint();
+  if(!exploring)later(ask,650);   // exploring: their turn first
   _cleanup=()=>{_noteAnswer=null;busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
     window._lab_lgAgain=null;stageOff();LAB.clear();};
 }

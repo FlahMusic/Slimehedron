@@ -65,8 +65,23 @@ for(const h of HELPERS)
      "the shared helper "+h+"() runs on a controller that finishes, so everything it wraps reaches an ending");
 // readUnit is the FOURTH controller: the reading lessons (count the bar, play a song) are two thin
 // wrappers over it. Prove it finishes before accepting anything that runs on it.
+// Read the ACTUAL function body instead of guessing a character budget. This was
+// /function choiceUnit\([\s\S]{0,4200}?finish\(cfg\.id/ - adding an explore screen to choiceUnit
+// pushed finish() past 4200 characters and the guard failed on working code. A brace-matched body
+// cannot rot that way.
+const bodyOf=(name)=>{
+  const i=src.indexOf('function '+name+'(');
+  if(i<0)return '';
+  let d=0,started=false;
+  for(let k=i;k<src.length;k++){
+    const ch=src[k];
+    if(ch==='{'){d++;started=true;}
+    else if(ch==='}'){d--;if(started&&d===0)return src.slice(i,k+1);}
+  }
+  return src.slice(i);
+};
 for(const c of ['readUnit','choiceUnit'])
-  ok(new RegExp('function '+c+'\\([\\s\\S]{0,4200}?finish\\(cfg\\.id').test(src),
+  ok(/finish\(cfg\.id/.test(bodyOf(c)),
      'the shared controller '+c+'() calls finish(), so the lessons on it reach an ending');
 // and the engine every lesson USED to run on must stay gone -- two renderers means two sets of copy
 ok(!/function pitchUnit\(/.test(src),'the retired tank engine is not still in the file');
@@ -125,7 +140,7 @@ for(const id of ids){
  await p.goto('file://'+process.cwd()+'/index.html');await p.waitForTimeout(400);
  await p.click('.modeCard[data-m="learn"]');await p.waitForTimeout(1200);
 
- const open=async(id)=>{await p.click(`.uCard[data-u="${id}"]`);await p.waitForTimeout(900);await askQuestions(p);await askQuestions(p);};
+ const open=async(id)=>{await p.click(`.uCard[data-u="${id}"]`);await p.waitForTimeout(900);await askQuestions(p);};
  const doneUp=()=>p.evaluate(()=>!!document.querySelector('.lgDone'));  // the ending is on the lesson's own screen now
  const home=async()=>{await p.evaluate(()=>window.LEARN2.home());await p.waitForTimeout(500);};
 
@@ -171,11 +186,14 @@ for(const id of ids){
  // HOME + FIND HOME: land on the tonic (degree 0 in the pentatonic the lessons now use)
  for(const id of ['home','findhome']){
    await home();await open(id);
-   for(let i=0;i<90&&!(await doneUp());i++){
+   // These two ROAM: each question sounds the tonic first and only asks 820ms later, and the gap
+   // after an answer is another 780ms. Hammering every 260ms mostly hits a disarmed question, so
+   // the budget has to cover ten real answers at ~1.6s each, not ninety taps at 260ms.
+   for(let i=0;i<60&&!(await doneUp());i++){
      const onLadder=await p.evaluate(()=>{const r=document.querySelector('.lgRung[data-deg="0"]');
        if(!r)return false; r.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));return true;});
      if(!onLadder)await strikeDeg(0);
-     await p.waitForTimeout(260);}
+     await p.waitForTimeout(700);}
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
  // the new hint-driven pitch lessons: so-mi, +la, all five

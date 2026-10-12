@@ -51,7 +51,7 @@ the next unseen case beats a war story about one that already happened.
 
 # 5. REFERENCE — do not re-derive these
 
-**Learn-mode scale ramp.** 23 lessons, 5 blocks: Rhythm and Notation (1–6), Pitch (7–10), Scales and
+**Learn-mode scale ramp.** 24 lessons, 5 blocks: Rhythm and Notation (1–6), Pitch (7–10), Scales and
 Harmony (11–14), Minor and Modes (15–17). Order from the Kodály sequence (Holy Names University
 Kodály Center), cross-checked against Trinity College London and the DfE Model Music Curriculum.
 Three things look wrong and must not be "tidied":
@@ -647,3 +647,23 @@ matrix tests zoom by testing those sizes. No special emulation needed.
   Peaks matched (-6.7 vs -7.3), which is why it read as fine — a bass note *sustains*, so it wins on
   mean energy with a level peak. `BASS_TRIM=0.40` on the whole voice; now **-26.9dB, 2.3dB under the
   melody**, which is where a foundation belongs. **Judge a foundation by energy, not by peak.**
+
+- **An explore stage on the two-button screens.** `ladderUnit` let a child press the rungs before the
+  questions start; `choiceUnit` went straight to asking. Orff stage two was missing from half the
+  lessons. The option buttons now act as speakers first (`exc_do`), score nothing, and the questions
+  begin when the child presses the ready button. `dev-explore.js` asserts the answer counter stays at
+  zero while exploring.
+- **Three at Once** (`chordUnit`, block c, after intervals). Press *one* / *two* / *three* and hear
+  exactly that many notes stacked. `dev-chords.js` counts the note-ons inside a 150ms window rather
+  than trusting that the handler ran — **a test that proves a feature runs is not a test that it
+  works.** 11 assertions.
+- **`dev-lessons` ending guard used a 4200-char regex window** to find `finish()` inside a unit body.
+  Adding the explore stage to `choiceUnit` pushed `finish()` past the window and the guard "failed" a
+  lesson that was fine. Replaced with a brace-matched `bodyOf(name)` helper that reads the whole
+  function. **A fixed-width window is not a parser.**
+- **A clipped element reports its whole bounding box.** `dev-devices.js` called a half-scrolled card a
+  13px tap target and had it "colliding" with whatever sat under its hidden half. Two different
+  questions need two different rectangles: SIZE uses the element's own box (a card half past the
+  bottom of a scrolling list is a full-size target you scroll to), COLLISION uses the clipped box
+  (that is what is actually painted). Plus a clipped-text check. 13 viewports x 7 screens,
+  **559 PASS / 0 FAIL**.

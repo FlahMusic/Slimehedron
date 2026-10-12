@@ -40,7 +40,7 @@ const askQuestions=async(page)=>{
  await p.goto('file://'+process.cwd()+'/index.html');await p.waitForTimeout(400);
  await p.click('.modeCard[data-m="learn"]');await p.waitForTimeout(1200);
  const home=async()=>{await p.evaluate(()=>window.LEARN2.home());await p.waitForTimeout(500);};
- const open=async(id)=>{await p.click(`.uCard[data-u="${id}"]`);await p.waitForTimeout(1100);await askQuestions(p);await askQuestions(p);};
+ const open=async(id)=>{await p.click(`.uCard[data-u="${id}"]`);await p.waitForTimeout(1100);await askQuestions(p);};
  const count=()=>p.evaluate(()=>{const c=document.querySelector('.lgCount');
    return c?(parseInt(c.textContent,10)||0):0;});
  const doneUp=()=>p.evaluate(()=>!!document.querySelector('.lgDone'));
