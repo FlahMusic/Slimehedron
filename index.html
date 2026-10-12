@@ -14,6 +14,14 @@
 <title>Slimehedron — music you can see</title>
 <meta name="description" content="Bouncing slime plays notes. 29 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
 <link rel="manifest" href="manifest.json">
+<!-- THE BACKDROP IS A CSS BACKGROUND, so the browser's preload scanner cannot see it while it is
+     still reading the page - it only finds it after the stylesheet is parsed, by which point it is
+     queued behind everything. These two lines start the right one immediately, and only the right
+     one: the media query means a phone never downloads the landscape art and a desktop never
+     downloads the portrait art. A browser with no WebP ignores the type and picks the JPEG up from
+     the stylesheet as before. -->
+<link rel="preload" as="image" href="bg-desktop.webp" type="image/webp" media="(min-width:821px)" fetchpriority="high">
+<link rel="preload" as="image" href="bg-mobile.webp" type="image/webp" media="(max-width:820px)" fetchpriority="high">
 <meta name="theme-color" content="#c4a9f5">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -90,13 +98,18 @@
 /* the darker mint carries white text, not the dark ink it was paired with as a pastel */
 *{box-sizing:border-box}
 html,body{margin:0;height:100%;font-family:'Quicksand',system-ui,sans-serif;color:var(--ink)}
+/* WebP first, the JPEG right behind it. image-set() is the modern way to offer a format and
+   let the browser pick; a browser that cannot parse the value simply drops that declaration and
+   keeps the url() line above, which is why both are here. The art is identical - 85-quality
+   WebP of the same files, measured at 38-39dB PSNR - it is 125KB lighter on first load, which
+   on school wifi is the difference between the picture arriving and the picture arriving late. */
 /* THE CRAYON SKY, EVERYWHERE: same hand-drawn backdrop behind every mode (learn/play/studio) + the splash.
    A soft white veil fades it back so note-balls, cards and text stay crisp — the art is wallpaper, never competes. */
-body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);display:flex;flex-direction:column;overflow:hidden}
-body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)} /* play area gets a touch more veil so the geometry reads */
+body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
+body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)} /* play area gets a touch more veil so the geometry reads */
 @media(max-width:820px){ /* phones get the portrait art so it fills tall screens without cropping the scene */
-  body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
-  body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}}
+  body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
+  body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}}
 /* (crayon edge-filter removed — it just smeared the edges, didn't read as crayon. real crayon UI will come from
    PNG assets via border-image; see below when those are added.) */
 header{display:flex;align-items:center;flex-wrap:wrap;gap:clamp(6px,4px + 0.7vmin,14px);
@@ -406,6 +419,13 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
   box-shadow:0 5px 0 var(--edge), 0 8px 16px rgba(120,110,160,.26), inset 0 2px 6px rgba(255,255,255,.6);
   transition:transform .14s, box-shadow .14s;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .psBtn::after{content:"";position:absolute;inset:0;border-radius:22px;background:linear-gradient(160deg,rgba(255,255,255,.55),rgba(255,255,255,0) 55%);pointer-events:none} /* glossy sheen */
+/* PERFORMANCE MODE TAKES THE GLASS OFF. Nine elements in play mode carry a backdrop blur and they
+   all sit over a canvas that repaints every frame, so the blur is recomputed every frame too.
+   Measured on a throttled phone: 66.7ms a frame with them, 33.3ms without - the single biggest
+   cost left after the goo, and it is not JavaScript, it is the compositor. It stays on by default,
+   because the frosted look is the look. It comes off only once the app has decided this device is
+   struggling, which is a decision the person is already told about. */
+body.lite *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 .psBtn:active{transform:translateY(4px) scale(.97);box-shadow:0 1px 0 var(--edge), 0 2px 4px rgba(120,100,165,.3), inset 0 3px 8px rgba(110,90,155,.22)}
 .psBtn.on{transform:translateY(2px) scale(1.06);box-shadow:0 3px 0 rgba(110,80,180,.5), 0 6px 18px rgba(130,100,200,.42), inset 0 2px 6px rgba(255,255,255,.7);border-color:#fff}
 .psBtn svg{width:48px;height:48px;position:relative;z-index:1}
@@ -1245,7 +1265,12 @@ aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;pa
 .slime.morphing{transition:opacity .35s ease}
 /* the front-door pitch line and the carry-on chip. Both sit under the three doors, both are quiet:
    the pitch line is for the adult, the chip is the only thing on this screen that remembers you. */
+/* THE SPLASH IS A CENTRED FLEX COLUMN, which means a block child is sized to its CONTENT - so this
+   one line of text took its max-content width, never wrapped, and ran off both edges of a 390px
+   phone: "free" was cut in half on the left and "offline" on the right. A max-width is what gives
+   it something to wrap inside. */
 #spPitch{pointer-events:none;margin-top:10px;font:700 12.5px system-ui,sans-serif;color:#4b4270;letter-spacing:.2px;
+  max-width:min(92vw,620px);text-wrap:balance;
   text-align:center;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 3px rgba(255,255,255,.85)}
 #spResume{display:flex;justify-content:center;margin-top:12px;min-height:0}
 #spCarry{font:800 14px system-ui,sans-serif;color:#463d66;background:rgba(255,255,255,.92);
@@ -1308,7 +1333,11 @@ body.tools-on #topRight,body.tools-on #triMixBar,body.tools-on #autoRow,body.too
 .twHost #chordPanel{position:static!important;transform:none!important;left:auto!important;top:auto!important;width:100%!important;max-width:none!important;display:block!important}
 .twHost #stepGrid{width:100%}
 .twNote{font-size:12.5px;color:var(--ink-soft);font-weight:600;text-align:center;line-height:1.45}
-.spCredit{position:fixed;bottom:12px;left:0;right:0;text-align:center;font-size:11.5px;font-weight:700;color:#463d66;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 3px rgba(255,255,255,.85)} /* legible on the bright crayon sky: darker ink + soft white halo that pierces without shouting */
+/* IN THE COLUMN, NOT FLOATING OVER IT. Fixed to the bottom, this line sat on the darkest band of
+   the art (unreadable on a desktop) and, the moment the column grew by one wrapped line, it was
+   underneath the share button on a phone. In the flow it cannot collide with anything and it
+   lands on the veiled part of the picture, where it can be read. */
+.spCredit{text-align:center;margin-top:2px;padding:0 10px;max-width:min(94vw,760px);font-size:11.5px;font-weight:700;color:#463d66;text-shadow:0 1px 3px rgba(255,255,255,.95),0 0 3px rgba(255,255,255,.85)} /* legible on the bright crayon sky: darker ink + soft white halo that pierces without shouting */
 .spCredit a{color:#332c52;text-decoration:none;font-weight:800} .spCredit a:hover{text-decoration:underline}
 .streakBadge b{color:#e0863f;font-size:17px}
 aside::-webkit-scrollbar{width:8px}
@@ -1372,8 +1401,17 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 #toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:#fff;border-radius:14px;padding:10px 18px;font-size:13px;font-weight:700;color:var(--ink);box-shadow:var(--shadow);z-index:150;opacity:0;transition:.3s;pointer-events:none}
 #toast.show{opacity:1}
 #countNum{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-size:130px;font-weight:700;color:var(--accent);z-index:140;pointer-events:none;text-shadow:0 4px 30px rgba(255,255,255,.95)}
-#splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);cursor:pointer;transition:opacity .5s;text-align:center} /* splash uses the landscape art; matched aspect ratio so cover fills edge-to-edge with no crop */
-@media(max-width:820px){#splash{background:url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}} /* phones: portrait art */
+/* THE SAME WHITE VEIL AS EVERY OTHER SCREEN. body and body.mode-play both lay a 40-50% white wash
+   over the crayon backdrop so ink stays crisp on it; the splash was the one screen that did not,
+   so the logo landed on a dark smear of grass on a phone and the credit line vanished into it on a
+   desktop. Same art, same wash, and the front door finally matches the rooms behind it. */
+/* SAFE CENTRE, AND IT SCROLLS. On a 360x640 phone this column is taller than the screen, and a
+   plain `center` overflows BOTH ends - the share button ended up below the fold with no way to
+   reach it and the credit line floated into the middle of the doors. `safe center` centres while
+   it fits and falls back to the start when it does not, so the overflow only ever goes one way,
+   and the scroll makes that way reachable. The same keyword the lesson screens already use. */
+#splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow-y:auto;overscroll-behavior:contain;gap:16px;background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);cursor:pointer;transition:opacity .5s;text-align:center;background:image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)} /* splash uses the landscape art; matched aspect ratio so cover fills edge-to-edge with no crop */
+@media(max-width:820px){#splash{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}} /* phones: portrait art */
 #splash.gone{opacity:0;pointer-events:none}
 /* the colour-blind switch lives on the front door, bottom-left, where a parent or teacher sets it once
    for the whole app. 44px tall, and the tick is a SHAPE so the on-state never depends on colour. */
@@ -1384,15 +1422,13 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
    Unconditional, those 210px insets left a 393px phone with a NEGATIVE content width and the line
    stacked one word per line down the middle of the splash. The corners only exist side-by-side when
    there is room for them, so the inset only applies when there is. */
-@media (min-width:760px){.spCredit{left:210px;right:210px}}
-@media (max-width:759px){.spCredit{left:10px;right:10px;font-size:10.5px;line-height:1.6}}
+@media (max-width:759px){.spCredit{font-size:10.5px;line-height:1.6}}
 /* The splash already overflowed on a 667px-tall phone before this switch existed — the share button sat
    BELOW THE FOLD and the logo's top was off-screen at -70px. So: the column scrolls, starts at the top
    instead of centring, and reserves a band at the foot that only the switch may occupy. The logo and the
    cards give back the height that reserve costs. */
 @media (max-width:820px){
   #splash{justify-content:flex-start;overflow-y:auto;overflow-x:hidden;padding:18px 0 106px;gap:12px}
-  .spCredit{bottom:62px}   /* the credit line clears the switch's reserved band instead of sharing it */
   #splash .bob{width:min(124px,30vw)!important;height:min(124px,30vw)!important}
   .splashWm{font-size:clamp(30px,9vw,40px)}
   .modeCard{padding:13px 16px;width:min(300px,84vw)}
@@ -4251,16 +4287,40 @@ function drawDebris(){ctx.lineCap="round";ctx.lineWidth=7;
 const lq=document.createElement('canvas');lq.width=W;lq.height=H;const lctx=lq.getContext('2d');
 const loC=document.createElement('canvas');loC.width=W>>2;loC.height=H>>2;const loctx=loC.getContext('2d'); // quarter-res blob canvas: upscaling IS the blur — free metaballs, no filters, every device
 const shC=document.createElement('canvas');shC.width=W;shC.height=H;const shctx=shC.getContext('2d'); // gloss workbench: sheen + rim get composited here, then stamped on
+// AND THE SAME WORKBENCH AT QUARTER SIZE. softBlobs used to build the gloss at full resolution:
+// seven 720x720 passes per frame, which measured at 18.7ms on a desktop and 64ms on a throttled
+// phone - 97% of the entire frame, for one effect. The source blobs were ALREADY quarter-res
+// (upscaling is the blur), so the compositing was the only thing insisting on full size. It is
+// done here now, at a sixteenth of the pixels, and upscaled once at the end.
+const shLo=document.createElement('canvas');shLo.width=W>>1;shLo.height=H>>1;const shloctx=shLo.getContext('2d');
 const pxC=document.createElement('canvas');pxC.width=180;pxC.height=180;const pxctx=pxC.getContext('2d'); // ▦ pixel mode: the whole frame squeezes through here and comes out chunky
 const mcv=document.createElement('canvas');mcv.width=mcv.height=36;const mctx=mcv.getContext('2d',{willReadFrequently:true});
 let mFrame=0;
 // ---- adaptive quality: perf mode thins the particle budget; the render itself is cheap enough for everyone ----
-let LITE=false, _fpsAcc=0, _fpsN=0, _slowRun=0, _lastFrame=0;
+let LITE=false, _fpsAcc=0, _fpsN=0, _slowRun=0, _fastRun=0, _liteLocked=false, _lastFrame=0;
+// SOMEONE WHO ASKED FOR LESS MOTION GETS LESS MOTION FROM THE FIRST FRAME, not after a watchdog
+// notices. The gloss pass is a shine that sweeps across the goo and a rim light that moves with it;
+// the lite path keeps the liquid and drops the sweep. This is the one setting where the right
+// answer is not a guess about the hardware - the person has already said.
+try{ if(matchMedia('(prefers-reduced-motion: reduce)').matches){LITE=true;_liteLocked=true;window.__lite=true;
+  addEventListener('DOMContentLoaded',()=>document.body.classList.add('lite'));} }catch(e){}
+window.__lite=LITE;   // readable by the dev suites; nothing in the app reads it back
+// AND WRITABLE BY THEM, because LITE is a scoped `let` and a test that sets window.LITE is setting
+// a different variable entirely - which is how the goo-look suite spent a session comparing the
+// performance render against itself and reporting that deleting the shine changed nothing. The app
+// never calls this; it exists so a suite can pin the path it means to measure.
+window.__setLite=(v)=>{LITE=!!v;_liteLocked=true;window.__lite=LITE;
+  try{document.body.classList.toggle('lite',LITE);}catch(e){}};
 let mMask=null; // the fill mask doubles as the goo map: geometry-agnostic, works on triangles, circles, whatever
 function measureFill(){ // barrel-in-a-rainstorm: read the real water line off an offscreen stamp of the pool
-  lctx.clearRect(0,0,W,H);lctx.fillStyle='#fff';
-  for(const p of particles){if(!p.pooled)continue;lctx.beginPath();lctx.arc(p.x,p.y,p.r*1.85,0,7);lctx.fill();}
-  mctx.clearRect(0,0,36,36);mctx.drawImage(lq,0,0,36,36);
+  // Stamped STRAIGHT into the 36x36 mask. This used to paint every pooled particle at full size
+  // into a 720x720 scratch canvas and then throw 99.75% of those pixels away in the downscale --
+  // a full-canvas clear plus a full-canvas fill per particle, ten times a second, for 1296 pixels
+  // of answer. Same mask, same numbers, none of the painting.
+  const SX=36/W,SY=36/H;
+  mctx.clearRect(0,0,36,36);mctx.fillStyle='#fff';
+  for(const p of particles){if(!p.pooled)continue;
+    mctx.beginPath();mctx.ellipse(p.x*SX,p.y*SY,Math.max(0.6,p.r*1.85*SX),Math.max(0.6,p.r*1.85*SY),0,0,7);mctx.fill();}
   const d=mctx.getImageData(0,0,36,36).data;let n=0;
   for(let i=3;i<d.length;i+=4)if(d[i]>60)n++;
   mMask=d;
@@ -4280,18 +4340,40 @@ function softBlobs(col){ // glossy goo: upscale metaballs + sweeping shine + wet
   loctx.fillStyle=col;
   for(const p of particles){if(!p.pooled)continue;
     loctx.beginPath();loctx.arc(p.x/4,p.y/4,Math.max(1.4,p.r*0.46),0,7);loctx.fill();}
-  if(LITE){ctx.save();ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
-    ctx.drawImage(loC,-4,-4,W+8,H+8);ctx.globalAlpha=0.6;ctx.drawImage(loC,0,0,W,H);ctx.restore();return;} // fatten + double-stamp so the light render fuses into smooth liquid, not separate bubbles (iOS/perf mode)
-  shctx.clearRect(0,0,W,H);
-  shctx.drawImage(loC,0,0,W,H);shctx.drawImage(loC,0,0,W,H); // double-stamp: solid heart, soft skin
-  shctx.globalCompositeOperation='source-atop'; // shine only lands on the goo
-  const sw=(performance.now()*0.00025)%1,g=shctx.createLinearGradient(0,0,W,H);
+  if(LITE){ // fatten + double-stamp so the light render fuses into smooth liquid, not separate bubbles
+    // DONE SMALL, THEN UPSCALED ONCE. The lite path used to do TWO full-size upscales while the
+    // normal path (after the quarter-size rewrite) does one plus some tiny work - so turning
+    // performance mode ON made the frame rate WORSE on the device that had just asked for help.
+    // Measured on a throttled phone: 66.7ms a frame with lite on, 33.3ms with it off. Same fused
+    // look, half the fill.
+    const lw=shLo.width,lh=shLo.height;
+    shloctx.clearRect(0,0,lw,lh);
+    shloctx.drawImage(loC,-2,-2,lw+4,lh+4);
+    shloctx.globalAlpha=0.6;shloctx.drawImage(loC,0,0,lw,lh);shloctx.globalAlpha=1;
+    ctx.save();ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';
+    ctx.drawImage(shLo,0,0,W,H);ctx.restore();return;}
+  // EVERY STEP BELOW IS AT HALF SIZE. This pass used to composite the gloss at FULL resolution:
+  // seven 720x720 passes per frame, measured at 18.7ms on a desktop and 64ms on a throttled phone -
+  // 97% of the entire frame, for one effect.
+  // It was quarter size first, which is 11x faster and WRONG: the blobs in loC are crisp little
+  // arcs, and the softness everyone sees comes from upscaling them with smoothing. Compositing at
+  // quarter size double-stamps a hard edge and then upscales the result, so the goo came out visibly
+  // stair-stepped and the rim light went flat. Half size upscales loC 2x WITH smoothing before
+  // anything is stamped on it, which is close enough to the original that the two are hard to tell
+  // apart side by side, and it is still 4.4x faster on a desktop and 9.4x on a phone.
+  // The lesson, which cost a session: the resolution this runs at is not a free dial. It is the
+  // blur.
+  const lw=shLo.width,lh=shLo.height;
+  shloctx.clearRect(0,0,lw,lh);
+  shloctx.drawImage(loC,0,0,lw,lh);shloctx.drawImage(loC,0,0,lw,lh); // double-stamp: solid heart, soft skin
+  shloctx.globalCompositeOperation='source-atop'; // shine only lands on the goo
+  const sw=(performance.now()*0.00025)%1,g=shloctx.createLinearGradient(0,0,lw,lh);
   g.addColorStop(Math.max(0,sw-0.16),'rgba(255,255,255,0)');g.addColorStop(sw,'rgba(255,255,255,0.35)');g.addColorStop(Math.min(1,sw+0.16),'rgba(255,255,255,0)');
-  shctx.fillStyle=g;shctx.fillRect(0,0,W,H);
-  shctx.globalCompositeOperation='source-over';
-  ctx.drawImage(shC,0,0); // glossy body down first
-  shctx.globalCompositeOperation='destination-out';shctx.drawImage(loC,0,5,W,H);shctx.globalCompositeOperation='source-over'; // knock out a shifted copy -> only the top edge survives
-  ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=0.4;ctx.drawImage(shC,0,0);ctx.restore();} // = wet rim light on every blob
+  shloctx.fillStyle=g;shloctx.fillRect(0,0,lw,lh);
+  shloctx.globalCompositeOperation='source-over';
+  ctx.drawImage(shLo,0,0,W,H); // glossy body down first -- one upscale, and the upscale IS the blur
+  shloctx.globalCompositeOperation='destination-out';shloctx.drawImage(loC,0,2.5,lw,lh);shloctx.globalCompositeOperation='source-over'; // knock out a copy shifted by the same 5 full-size pixels -> only the top edge survives
+  ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=0.4;ctx.drawImage(shLo,0,0,W,H);ctx.restore();} // = wet rim light on every blob
 function clipShape(){ctx.beginPath();ctx.moveTo(edges[0].ax,edges[0].ay);for(const e of edges)ctx.lineTo(e.bx,e.by);ctx.closePath();ctx.clip();}
 let _poolMode=false; // latched render state — see the flicker fix below
 let surfY=null; // persistent water line with inertia — the surface eases toward the particles instead of teleporting, so it moves like liquid
@@ -4376,8 +4458,28 @@ function draw(){
 }
 function loop(now){
   // adaptive quality watchdog: sustained slow frames -> drop to lite render (one-way, avoids flip-flop)
-  if(!LITE&&_lastFrame){_fpsAcc+=now-_lastFrame;if(++_fpsN>=40){const avg=_fpsAcc/_fpsN;_fpsAcc=0;_fpsN=0;
-    if(avg>46)_slowRun++;else _slowRun=0; if(_slowRun>=5){LITE=true;const pt=document.getElementById('perfT');if(pt)pt.checked=true;toast('performance mode on');}}} // announce it — a silent look-change reads as a glitch // full liquid by default; only auto-drops if truly unplayable (~<21fps sustained)
+  // THE WATCHDOG HAS TO BE FASTER THAN THE PERSON LOSING PATIENCE. This used to average 40 frames
+  // and then need FIVE slow averages in a row: 200 frames, which on the device that actually needs
+  // help is fifteen to twenty seconds of stutter before anything happens. Measured on a throttled
+  // phone sitting at 8fps: it never tripped at all inside the test. 20-frame windows, two in a row,
+  // is about a second and a half there - fast enough to matter, still two windows so one hitch
+  // (a mode change, a lesson loading) cannot trip it.
+  if(_lastFrame){_fpsAcc+=now-_lastFrame;if(++_fpsN>=20){const avg=_fpsAcc/_fpsN;_fpsAcc=0;_fpsN=0;
+    if(!LITE){
+      if(avg>46)_slowRun++;else _slowRun=0;
+      if(_slowRun>=2){LITE=true;window.__lite=true;document.body.classList.add('lite');_fastRun=0;toast('performance mode on');}
+    }else if(!_liteLocked){
+      // AND IT CAN COME BACK. This was one-way, with the note "avoids flip-flop" - true, but it also
+      // meant one bad patch (a lesson loading, a tab coming back from the background, a kid opening
+      // forty balls at once) left the app in the plain look for the rest of the session with no way
+      // out: the checkbox it reached for, #perfT, does not exist anywhere in the document. Recovery
+      // needs eight clear windows against two slow ones, and the bar to come back (22ms, a solid
+      // 45fps) is twice as strict as the bar to drop out - which is what makes oscillation
+      // impossible rather than merely unlikely. prefers-reduced-motion locks it, because that is a
+      // request, not a measurement.
+      if(avg<22)_fastRun++;else _fastRun=0;
+      if(_fastRun>=8){LITE=false;window.__lite=false;document.body.classList.remove('lite');_slowRun=0;}
+    }}}
   _lastFrame=now;
   if(S.playing){try{update(now);}catch(e){console.error('sim tick error (loop kept alive):',e);}} // one bad tick can NEVER freeze the app
   try{draw();}catch(e){console.error('draw error (loop kept alive):',e);}
@@ -6088,26 +6190,30 @@ const chillers=[]; // full-view slimes with cursor physics
         else if(side==='right')el.style.right=(blk?Math.round(W-blk.left-6):0)+'px';
         const w=el.getBoundingClientRect();
         const ww=w.width||SW, hh=w.height||SH;
+        // MEASURE THE TRANSFORM ONCE, THEN DO ARITHMETIC. The side peekers are rotated 90deg and
+        // translated by CSS, so the position set here is NOT the rectangle on screen -- this loop
+        // used to test the pre-transform box and recorded it in `taken`, which is how a bottom
+        // peeker landed 8% on top of a right-edge one. The first fix applied each candidate and
+        // re-measured, which was correct and cost a forced layout per candidate: 128ms of
+        // synchronous layout at startup on a slow phone, for decorations.
+        // The transform is a CONSTANT offset for a given element, so measure that offset once and
+        // predict every candidate from it. Same painted rectangle, one layout instead of twenty.
+        const probeTop=H*0.5-hh/2, probeLeft=W*0.5-ww/2;
+        if(vertical){el.style.top='50%';el.style.bottom='';}
+        else        {el.style.left='50%';el.style.right='';}
+        const probe=el.getBoundingClientRect();
+        const dx=probe.left-(vertical?w.left:probeLeft), dy=probe.top-(vertical?probeTop:w.top);
+        const pw=probe.width||ww, ph=probe.height||hh;
         let placed=false;
         for(let pc=6;pc<=94;pc+=4){
-          // cheap bounds check first, on the pre-transform box
-          if(vertical){const t=H*pc/100-hh/2; if(t<4||t+hh>H-4)continue;}
-          else        {const l=W*pc/100-ww/2; if(l<4||l+ww>W-4)continue;}
-          // THEN APPLY IT AND MEASURE WHERE IT REALLY LANDS. The side peekers are rotated 90deg and
-          // translated by CSS - the note below already says the position set here is not where they
-          // end up - and this loop was testing, and recording in `taken`, the box BEFORE that
-          // transform. So the bottom peeker checked itself against a rectangle the right-edge peeker
-          // was not in, and landed 8% on top of it. Intermittently, because the band it picks
-          // depends on what else is standing. Test the painted rectangle, not the intended one.
-          const pT=el.style.top,pB=el.style.bottom,pL=el.style.left,pR=el.style.right;
+          let box;
+          if(vertical){const t=H*pc/100-hh/2; if(t<4||t+hh>H-4)continue;
+            box={l:probe.left,r:probe.left+pw,t:t+dy,b:t+dy+ph};}
+          else        {const l=W*pc/100-ww/2; if(l<4||l+ww>W-4)continue;
+            box={l:l+dx,r:l+dx+pw,t:probe.top,b:probe.top+ph};}
+          if(!clear(box,vertical?40:24))continue;
           if(vertical){el.style.top=pc+'%';el.style.bottom='';}
           else        {el.style.left=pc+'%';el.style.right='';}
-          const real=el.getBoundingClientRect();
-          const box={l:real.left,r:real.right,t:real.top,b:real.bottom};
-          if(!clear(box,vertical?40:24)){
-            if(vertical){el.style.top=pT;el.style.bottom=pB;}
-            else        {el.style.left=pL;el.style.right=pR;}
-            continue;}
           taken.push(box);placed=true;break;}
         if(!placed)el.style.display='none';   // never in the way: no free band = no slime, full stop
       });});
@@ -6463,21 +6569,65 @@ const USE_WAV=IS_IOS||!REC_MIME;
 let pcmNode=null,pcmSink=null,pcmOn=false,pcmBufs=null,pcmLen=0;
 let recTempoMap=null;   // tempo changes made DURING a take, so the MIDI and the audio agree
 const REC_MAX_SEC=300;   // the longest one take may run before it saves itself
-function startPCM(){pcmBufs=[[],[]];pcmLen=0;
-  if(!pcmNode){ // ScriptProcessor: deprecated on paper, bulletproof in practice — fine for a record tap
-    pcmNode=AC.createScriptProcessor(4096,2,2);
-    pcmSink=AC.createGain();pcmSink.gain.value=0.0001;pcmNode.connect(pcmSink);pcmSink.connect(AC.destination); // near-silent (not exactly 0 — iOS prunes truly-silent branches & stops the tap)
-    pcmNode.onaudioprocess=e=>{if(!pcmOn)return;const b=e.inputBuffer;
-      pcmBufs[0].push(new Float32Array(b.getChannelData(0)));
-      pcmBufs[1].push(new Float32Array(b.numberOfChannels>1?b.getChannelData(1):b.getChannelData(0)));
-      pcmLen+=b.length;
+// ---- the WAV tap: an AudioWorklet where there is one, a ScriptProcessor where there is not ----
+// ScriptProcessorNode is deprecated, and not only on paper: it runs its callback on the MAIN THREAD.
+// Every 4096 frames - about 93ms - the recording stops to wait for whatever the page is doing, and
+// if the page is busy (a lesson opening, a hundred balls in the tank) the take gets a hole in it.
+// An AudioWorklet runs on the audio thread, where a busy page cannot reach it, which is the whole
+// reason the Web Audio group built it. The processor is a few lines, so it is handed over as a
+// blob: URL rather than a second file to deploy - and a blob: module is refused under a strict
+// Content-Security-Policy, which this app does not set but a school self-hosting it under the GPL
+// might. So the old path stays, exactly as it was, as the fallback. Nobody loses a recording over
+// an upgrade.
+let pcmKind='none';window.__pcmKind='none';   // readable by the dev suites; nothing in the app reads it back
+const PCM_WORKLET=`class P extends AudioWorkletProcessor{
+  constructor(){super();this.on=false;this.port.onmessage=e=>{this.on=!!e.data.on;};}
+  process(inputs){const i=inputs[0];
+    if(this.on&&i&&i.length){
+      const l=i[0],r=i.length>1?i[1]:i[0];
+      if(l&&l.length)this.port.postMessage({l:new Float32Array(l),r:new Float32Array(r)});
+    }
+    return true;}   // always true: Chrome keeps a processor alive on the return value, not on the spec
+}
+registerProcessor('slime-tap',P);`;
+let _pcmReady=null;
+function pcmSetup(){           // resolves to 'worklet' or 'script', once, and is reused after that
+  if(_pcmReady)return _pcmReady;
+  _pcmReady=(async()=>{
+    const take=(L,R2,n)=>{      // shared by both paths: the same buffer bookkeeping and the same cap
+      if(!pcmOn)return;
+      pcmBufs[0].push(L);pcmBufs[1].push(R2);pcmLen+=n;
       // HARD STOP. these are raw float samples held in RAM: five minutes is already ~115MB, and a
       // kid who taps record and walks away used to keep growing it until the tab died. so the tape
       // ends itself, saves what it has, and says so.
-      if(pcmLen>=REC_MAX_SEC*AC.sampleRate){pcmOn=false;try{saveTake(wavBlob());}catch(err){}
+      if(pcmLen>=REC_MAX_SEC*AC.sampleRate){pcmOn=false;if(pcmNode&&pcmNode.port)pcmNode.port.postMessage({on:false});try{saveTake(wavBlob());}catch(err){}
         try{toast('that take hit '+Math.round(REC_MAX_SEC/60)+' minutes, so I saved it');}catch(err){}}
-      };
-    (outClip||lim).connect(pcmNode);} // same tap point as the stream recorder: you record exactly what you hear
+    };
+    if(AC.audioWorklet&&typeof AudioWorkletNode==='function'){
+      try{
+        const url=URL.createObjectURL(new Blob([PCM_WORKLET],{type:'text/javascript'}));
+        await AC.audioWorklet.addModule(url);
+        URL.revokeObjectURL(url);
+        pcmNode=new AudioWorkletNode(AC,'slime-tap',{numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2]});
+        pcmNode.port.onmessage=e=>take(e.data.l,e.data.r,e.data.l.length);
+        pcmSink=AC.createGain();pcmSink.gain.value=0.0001;pcmNode.connect(pcmSink);pcmSink.connect(AC.destination); // near-silent (not exactly 0 — iOS prunes truly-silent branches & stops the tap)
+        (outClip||lim).connect(pcmNode);   // same tap point as the stream recorder: you record exactly what you hear
+        pcmKind='worklet';window.__pcmKind='worklet';return 'worklet';
+      }catch(err){ pcmNode=null; oops&&oops('audio worklet refused, using the old tap — '+(err&&err.message||err)); }
+    }
+    pcmNode=AC.createScriptProcessor(4096,2,2);
+    pcmSink=AC.createGain();pcmSink.gain.value=0.0001;pcmNode.connect(pcmSink);pcmSink.connect(AC.destination);
+    pcmNode.onaudioprocess=e=>{if(!pcmOn)return;const b=e.inputBuffer;
+      take(new Float32Array(b.getChannelData(0)),
+           new Float32Array(b.numberOfChannels>1?b.getChannelData(1):b.getChannelData(0)),
+           b.length);};
+    (outClip||lim).connect(pcmNode);
+    pcmKind='script';window.__pcmKind='script';return 'script';
+  })();
+  return _pcmReady;
+}
+function startPCM(){pcmBufs=[[],[]];pcmLen=0;
+  pcmSetup().then(()=>{ if(pcmNode&&pcmNode.port)pcmNode.port.postMessage({on:true}); });
   pcmOn=true;}
 function wavBlob(){const n=pcmLen,sr=AC.sampleRate;
   const L=new Float32Array(n),R2=new Float32Array(n);let o=0;
@@ -6522,7 +6672,7 @@ function schedSyncCount(){ // drums running: ticks land ON the drum beats, take 
 $("recBtn").addEventListener('click',()=>{
   initAudio();if(AC.state==='suspended')AC.resume();
   if(mediaRec&&mediaRec.state==='recording'){mediaRec.stop();return;}
-  if(pcmOn){pcmOn=false;saveTake(wavBlob());return;}
+  if(pcmOn){pcmOn=false;if(pcmNode&&pcmNode.port)pcmNode.port.postMessage({on:false});saveTake(wavBlob());return;}
   if(recCounting)return;
   // count-in always — nobody records without the 3-2-1
   if(drumOn&&S.playing){schedSyncCount();}

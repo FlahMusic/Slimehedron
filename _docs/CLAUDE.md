@@ -738,3 +738,79 @@ matrix tests zoom by testing those sizes. No special emulation needed.
   per run. De-duped.
 - **29 lessons, 3 games, 1 practice.** Counts asserted in `manifest.json`, `index.html` and
   `teachers/index.html` by `dev-lessons`, which is the only reason they are right.
+
+# PHASE 11 — the engine, measured; and two pages that were lying
+
+**Everything here started with a number, not a hunch.** `_dev/dev-firstfive.js` is new and is the
+instrument: first paint, largest paint, long tasks, time from the tap to the first sample of sound,
+and the frame gap once it is running — on a desktop and on a phone at 4x CPU throttle.
+
+| | before | after |
+|---|---|---|
+| desktop frame gap | 33.3ms (**30fps**) | 16.7ms (**60fps**) |
+| phone frame gap (4x throttle) | 116.7ms (**8.5fps**) | 50ms |
+| desktop first paint | 340ms | 176ms |
+| phone first paint | 496ms | 280ms |
+| desktop long tasks on load | 383ms | 111ms |
+| tap to first sound (phone) | 237ms | 159ms |
+| bytes on first load (phone) | 797KB | 711KB |
+
+- **97% of every frame was one function.** `drawParticles` measured 18.7ms on a desktop and 64ms on
+  a throttled phone; everything else in `draw()` together came to half a millisecond. Inside it,
+  `softBlobs` was compositing the gloss at FULL resolution — about seven 720x720 passes per frame
+  (two upscales, a gradient fill, a knockout, two blits) — when the blobs it composites are drawn at
+  QUARTER resolution and the upscale is the entire blur effect.
+- **And the first fix was wrong, which is the part worth remembering.** Compositing at quarter size
+  is 11x faster and it came out visibly **stair-stepped**: the blobs in the small canvas are crisp
+  arcs, so double-stamping them before the upscale hardens the edge, and the rim light goes flat.
+  Half size upscales the blobs 2x WITH smoothing before anything is stamped on them, and the result
+  is hard to tell from the original side by side. Still **4.4x faster on a desktop, 9.4x on a
+  phone**. *The resolution this pass runs at is not a free dial — it IS the blur.*
+- **The look test was measuring the wrong render for an hour.** `dev-goolook.js` plants a fixed set
+  of particles, draws one frame and compares a 64x64 pooled signature against a committed reference.
+  Three deliberate sabotages — deleting the shine, dropping the double-stamp, turning smoothing off —
+  all came back **0% changed**. Two reasons, both mine: (1) `LITE` is a scoped `let`, so the suite's
+  `window.LITE=false` set a different variable and it was comparing the PERFORMANCE render against
+  itself (there is a `window.__setLite` test hook now, and the app never reads it); (2) it drew a
+  frame and screenshotted the element a moment later, but the rAF loop repaints whether the
+  transport is running or not, so it photographed a LATER frame — it reads the canvas out in the
+  same breath now. **A look test that cannot fail is worse than no look test: it is permission.**
+  All three sabotages fail it now, which is the only reason its PASS means anything.
+- **Performance mode made things slower, and could never be turned off.** It needed 200 slow frames
+  to notice (fifteen seconds of stutter on the device that needed it), it was one-way, and the
+  checkbox it reached for — `#perfT` — **does not exist anywhere in the document**. After the goo
+  rewrite its own path did MORE full-size work than the normal one, so switching it on cost 66.7ms a
+  frame against 33.3ms off. Now: 20-frame windows, two in a row (~1.5s), the lite path composites
+  small like the normal one, it takes the frosted glass off (nine backdrop-blurred panels over a
+  canvas that repaints every frame — the biggest cost left after the goo, and it is the compositor,
+  not JavaScript), and it **comes back** on eight clear windows at a stricter bar than it left on.
+  `prefers-reduced-motion` turns it on before the first frame and locks it, because that is a
+  request rather than a measurement.
+- **128ms of forced layout at startup, from my own fix.** Last pass the peeker placement started
+  applying each candidate position and re-measuring, to test the painted rectangle instead of the
+  pre-transform one. Correct, and a forced layout per candidate. The transform is a CONSTANT offset
+  per element, so it is measured ONCE now and every candidate is arithmetic. Same rectangle, one
+  layout instead of twenty.
+- **The splash was the only screen with no white veil over the art**, which is why the logo sat on a
+  dark smear of grass on a phone and the credit line vanished into the grass on a desktop. It also
+  centred a column that is taller than a 360x640 screen with a plain `center`, so it overflowed BOTH
+  ends — the share button below the fold with no way to reach it. `safe center` plus a scroll. And
+  `#spPitch` had no `max-width` in a centred flex column, so it took its max-content width and ran
+  off both edges of a 390px phone.
+- **Backgrounds are WebP with the JPEG behind them** via `image-set()`, preloaded with a `media`
+  query so a phone never downloads the landscape art. 125KB lighter, PSNR 38-39dB, and the pencil
+  texture is intact — checked by eye, not just by number.
+- **The WAV recorder runs off the main thread.** `ScriptProcessorNode` is deprecated and runs its
+  callback on the MAIN thread: every ~93ms the recording waits for whatever the page is doing, so a
+  busy moment punches a hole in the take — and this is the iOS path, which is where the school
+  tablets are. It is an `AudioWorklet` now, handed over as a `blob:` URL so there is no second file
+  to deploy. A blob module is refused under a strict Content-Security-Policy (this app sets none,
+  but a school self-hosting it under the GPL might), so the old path stays as the fallback and
+  `dev-wavtap.js` proves BOTH write a real WAV.
+- **Two pages were making checkable claims that had stopped being true.** privacy.html invites a
+  school's IT person to grep the source and promised no matches for `fetch` — `sw.js` has three.
+  They are all the offline cache re-requesting the app's own files, which is fine and worth saying;
+  promising zero and being caught is not. accessibility.html advertised 33 checks (35), 13
+  reduced-motion rules (16), and a layout drift of "0-1px" that was 6px. `dev-claims.js` now asserts
+  all of it against the code on every run. **A page that invites you to check it and fails is worse
+  than a page that says nothing.**

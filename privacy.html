@@ -114,7 +114,8 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-si
 
 <div class="note">
 <p><strong>3. Read the code.</strong></p>
-<p style="margin:0 0 8px">All of it is public, under the GPL-3.0-or-later, at <a href="https://github.com/FlahMusic/Slimehedron">github.com/FlahMusic/Slimehedron</a>. Search it for <code>fetch</code>, <code>XMLHttpRequest</code> or <code>sendBeacon</code> — the three ways a web page sends data out. There are no matches. Search it for <code>getUserMedia</code>, the only way a page can reach the microphone or camera. No matches there either.</p>
+<p style="margin:0 0 8px">All of it is public, under the GPL-3.0-or-later, at <a href="https://github.com/FlahMusic/Slimehedron">github.com/FlahMusic/Slimehedron</a>. Search it for <code>XMLHttpRequest</code> or <code>sendBeacon</code> — two of the three ways a web page sends data out. There are no matches. Search it for <code>getUserMedia</code>, the only way a page can reach the microphone or camera. No matches there either.</p>
+<p style="margin:0 0 8px">The third way is <code>fetch</code>, and that one you WILL find — three times, all of them in <code>sw.js</code>, which is the offline cache. Read them: each one re-requests a file of the app itself (<code>index.html</code>, the lesson script, the pictures) so the app keeps working with the network off. There is no address in that file but this one, and nothing is ever sent — a <code>fetch</code> that asks for a page can only pull, and a page can only be pulled from where it already lives. A privacy page that told you to search for a word and did not mention the one place it appears would be setting you up to stop trusting the rest of it.</p>
 <p style="margin:0">If you find something that contradicts this page, email it to us and we will fix the app or fix the page.</p>
 </div>
 
@@ -127,7 +128,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-si
 <li>Written answers for a procurement form, or a self-hosting walkthrough: <a href="mailto:flahobino@gmail.com">flahobino@gmail.com</a>.</li>
 </ul>
 
-<p class="stamp">Last updated 23 September 2026.</p>
+<p class="stamp">Last updated 12 October 2026.</p>
 
 <footer>
 &copy; 2026 FlahMusic &middot; free &amp; open source &middot;

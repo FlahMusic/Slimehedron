@@ -48,7 +48,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-si
 </header>
 
 <h2>What is tested automatically</h2>
-<p>The repository contains an accessibility test suite, <code>dev-a11y.js</code>, which drives a real browser against the real app. It is public and you can run it yourself. As of 30 September 2026 it runs 33 checks and all 33 pass.</p>
+<p>The repository contains an accessibility test suite, <code>dev-a11y.js</code>, which drives a real browser against the real app. It is public and you can run it yourself. As of 12 October 2026 it runs 35 checks and all 35 pass.</p>
 <p>Here is what those checks actually verify. Nothing outside this list is machine-tested, so nothing outside it is claimed as conformant.</p>
 
 <table>
@@ -83,7 +83,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-si
 <td><span class="tag pass">pass</span></td></tr>
 
 <tr><td><strong>Layout congruence</strong><br>SC 3.2.3</td>
-<td>The transport controls sit at the same horizontal position in play and in studio, so a control does not move when a child changes room. Measured drift: 0&ndash;1px.</td>
+<td>The transport controls sit at the same horizontal position in play and in studio, so a control does not move when a child changes room. Measured drift: 0px. It was 6px until October 2026 — the reserve that holds the two layouts in line was a hand-typed pixel count, and those buttons are sized in fluid units, so the number stopped being true the moment anything else changed size. It is measured at runtime now.</td>
 <td><span class="tag pass">pass</span></td></tr>
 </table>
 
@@ -96,7 +96,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-si
 <p>These are in the code and we believe they work. They are not covered by the automated suite, so treat them as claims to verify rather than as verified claims.</p>
 <ul>
 <li><strong>Pinch zoom is not blocked.</strong> The page allows scaling up to 5&times; (SC 1.4.4).</li>
-<li><strong>Reduced motion is respected</strong> in 13 places in the stylesheet. Card transitions, hover transforms and the lesson-complete animation stop when the operating system asks for less motion (SC 2.3.3).</li>
+<li><strong>Reduced motion is respected</strong> in 16 places in the stylesheet, and it also turns off the sweeping shine on the liquid before the first frame is drawn. Card transitions, hover transforms and the lesson-complete animation stop when the operating system asks for less motion (SC 2.3.3).</li>
 <li><strong>Visible focus.</strong> Ten <code>:focus-visible</code> rules draw a 3px outline with an offset.</li>
 <li><strong>Accessible names.</strong> Around 40 <code>aria-label</code> attributes across the app and the lesson engine.</li>
 <li><strong>Lesson instructions are read aloud</strong> using the browser's own speech synthesis, so a child who cannot read yet can start a lesson alone. There is a speaker button on every lesson to turn it off.</li>
@@ -141,7 +141,7 @@ footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);font-si
 <li>The app is GPL-3.0-or-later and the source is public, so any claim on this page can be checked against the code.</li>
 </ul>
 
-<p class="stamp">Last updated 30 September 2026. Test suite last run against the current build on the same date: 33 checks, 33 passing.</p>
+<p class="stamp">Last updated 12 October 2026. Test suite last run against the current build on the same date: 35 checks, 35 passing.</p>
 
 <footer>
 &copy; 2026 FlahMusic &middot; free &amp; open source &middot;
