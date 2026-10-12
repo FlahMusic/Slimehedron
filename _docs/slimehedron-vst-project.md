@@ -1,143 +1,222 @@
-# Slimehedron VST Port
+# Slimehedron VST — port plan
 
-## Overview
-Web-based gravity sequencer (single HTML file, Web Audio API) → native VST3 plugin via Rust + nih-plug
+**Status:** planning. Rust installed on the MSI (2026-10-12). Nothing scaffolded yet.
+**Last refreshed:** 2026-10-12. The previous version of this doc was written in July and is
+superseded — its line numbers pointed into a file that has since roughly doubled, it predated the
+chord brain, the per-kit drum tones, the groove engine and the goo-lag quantizer, and it assumed a
+GUI decision that has now been reversed.
 
-## Core Audio Architecture
+---
 
-### State Object (S)
-All parameters centralized in one object:
-- **Transport:** bpm, div (note length), triplet, dotted, swing, quantize
-- **Scale:** root, scale type, octave span
-- **Geometry:** shape (triangle-octagon), spin, chaos, speed, gravity
-- **Velocity:** velRand (randomize), velFix (fixed amount), velMin, velMax
-- **Synth Voice:** wave (sine/tri/saw/square), sub (sub-bass level)
-- **ADSR Envelope:** atk, dec, sus, rel (in seconds, 0.001-0.28 range)
-- **Filter:** type (lowpass/highpass/bandpass), cut (cutoff 0-1), res (resonance 0-1), fenv (filter envelope 0-1)
-- **Output:** vol (0.55), delay, warmth (tape saturation)
+## 1. Scope
 
-### Synth Voice Chain (per note)
-1. **Oscillator** - OscillatorNode (S.wave type)
-   - Frequency set from grid position + scale
-   - Slight random detune (±4 cents)
-   - Pitch ramp: settle onto target in 40ms
-2. **Sub-bass** (optional) - Triangle oscillator at freq/2
-3. **Filter** - BiquadFilterNode (S.filt type)
-   - Cutoff envelope: attack to S.fenv peak, then decay back to S.cut
-   - Q (resonance) = S.res * 12 (capped at 12 for safety)
-4. **ADSR Gain Envelope**
-   - Attack: S.atk (linear ramp to peak velocity)
-   - Decay: S.dec (linear ramp to sustain)
-   - Sustain: S.sus (level held)
-   - Release: S.rel (exponential decay to silence)
-   - Peak velocity varies by impact and physics
+**Studio mode, whole, inside a DAW — with the visual style intact.** Not a stripped-down synth with
+knobs. The crayon art, the slime tank, the layout: it looks like Slimehedron or it is not
+Slimehedron. UI may be adjusted where a DAW window genuinely needs it, but a person moving from the
+browser to the plugin should not feel they have changed app.
 
-### Master Audio Chain
+Out of scope: learn mode, play mode's kid-facing shell, the lesson engine, the splash.
+
+---
+
+## 2. The architecture decision that everything else follows from
+
+The app today is one thing: HTML that draws AND Web Audio that sounds, both on one thread, both
+driven by the same `requestAnimationFrame` loop. A plugin cannot work that way, for two reasons that
+are not negotiable:
+
+1. **A DAW can close the plugin window and the music must keep playing.** If the tank lives in the
+   UI, closing the window stops the sequencer.
+2. **The host owns the clock.** The DAW hands the plugin a block of samples and a transport
+   position. Timing has to come from that, not from a browser animation frame.
+
+So the line is drawn here:
+
 ```
-[Melody Bus] ─┐
-[Drums Bus]  ──→ [Master Gain] → [Delay FX] → [Master LP] → [Master HP] → [EQ] → [Compressor] → [Tape Stage] → [Limiter] → Output
-[Bass Bus]   ─┘
-```
-
-**Tape Stage** (subtle character, no AudioWorklet):
-- Waveshaper (tanh saturation, normalized curve)
-- Wow/flutter LFOs (0.5Hz + 6.3Hz modulating 4ms delay)
-- Hiss (white noise, filtered to 3.2kHz, quiet)
-
-## Implementation Strategy: Rust + nih-plug
-
-### Framework Stack
-- **Plugin SDK:** nih-plug (MIT licensed, zero cost)
-- **DSP:** `dasp` or `fundsp` for oscillators/filters
-- **GUI:** `vizia` (nih-plug's built-in UI framework)
-- **Build:** cargo + nih-plugin-template
-- **Target:** VST3, Windows x64 (WSL compatible)
-
-### Port Mapping: Web Audio API → Rust
-| Web Audio | Rust Equivalent |
-|-----------|-----------------|
-| OscillatorNode | wavetable synthesis or simple math (sin/tri/saw) |
-| BiquadFilterNode | biquad filter coefficients (cookbook equations) |
-| GainNode | simple multiplication |
-| DynamicsCompressor | peak detector + envelope follower |
-| WaveShaper curve | lookup table (same tanh curve, 1024 samples) |
-| DelayNode + feedback | circular buffer + interpolation |
-| BufferSource + loop | wavetable playback |
-
-### Phase 1: Core Synth Engine
-1. **State struct** matching S object (all params as floats 0-1 normalized)
-2. **Oscillator** - sine/tri/saw/square wavetables
-3. **Filter** - biquad lowpass/highpass/bandpass
-4. **ADSR envelope generator**
-5. **Voice allocator** - polyphony (max 8 voices)
-
-### Phase 2: Master Chain
-1. Delay line with feedback
-2. Master filters (LP + HP)
-3. Compressor (peak detection)
-4. Tape saturation (waveshaper)
-5. Limiter at output
-
-### Phase 3: Sequencer & Physics
-1. **Grid/geometry engine** - reproduce edge-building logic
-2. **Gravity simulation** - ball physics matching web version
-3. **Note trigger logic** - when ball hits grid edge, calc note from position
-4. **Tempo sync** - BPM-aware scheduling
-
-### Phase 4: UI & Parameters
-1. **nih-plug parameters** - expose all S values as VST params
-2. **Vizia UI** - recreate essential controls (not full visual clone)
-   - BPM, waveform, ADSR, filter, geometry
-   - Shape selector, gravity slider
-3. **MIDI I/O** - note in, CC for params
-
-## Code Organization (Current HTML)
-- **Lines 403-412:** State object definition
-- **Lines 419-459:** Audio context init, master chain setup
-- **Lines 489-517:** Single synth voice creation + envelope
-- **Lines 559-582:** Drum synthesis (separate kit)
-- **Lines 650-668:** Bass + chord pad synths
-- **Lines 470-476:** Frequency math, scale/root note calculations
-
-## Key Implementation Details
-
-### Pitch Calculation
-```
-- Root note: S.root (MIDI 0-127, default 60 = middle C)
-- Grid position → cents offset → frequency via log scale
-- freqFromCents(cents) = 440 * 2^((S.root + cents/100 - 69) / 12)
+      RUST (audio thread)                    WEBVIEW (UI thread)
+  ┌────────────────────────────┐        ┌──────────────────────────┐
+  │ synth voices, drums, band  │        │ the crayon art           │
+  │ effects, limiter           │        │ the tank canvas          │
+  │ THE TANK PHYSICS           │ ─────► │ the controls             │
+  │ note scheduling            │ state  │ (draws what Rust reports)│
+  │ host transport sync        │ ◄───── │                          │
+  └────────────────────────────┘ edits  └──────────────────────────┘
 ```
 
-### Envelope Timing
+**The physics moves to Rust.** That is the single biggest change from the web app and the thing most
+likely to be got wrong if nobody writes it down: the tank is not a visual effect that happens to
+make noise, it IS the sequencer, so it belongs on the side that owns time. The webview receives ball
+positions each frame and draws them. It sends user intent back (a tap, a slider move).
+
+This is also what makes the UI port cheap: the drawing code (`draw`, `drawBalls`, `drawParticles`,
+`softBlobs`, `drawShape`, the whole crayon CSS) is already a pure function of state. It stops
+*computing* the state and starts *being handed* it.
+
+---
+
+## 3. The stack — researched 2026-10-12, not assumed
+
+### Verdict
+
+| layer | choice | why |
+|---|---|---|
+| plugin format | **CLAP**, wrapped to VST3/AU/AAX by **clap-wrapper** | one implementation, every format |
+| GUI | **webview** (HTML/CSS/canvas) via **wxp** | the existing UI is already HTML/canvas — this is the only route that keeps the art |
+| template | **WRAC** (`novonotes/wrac-plugin-template`, MIT) | CLAP + wxp + clap-wrapper already wired, incl. the dev standalone host |
+| DSP + physics | **our own crates**, no framework dependency | so none of the above can strand us |
+
+### What was considered and why it lost
+
+- **nih-plug** — the July plan named it. It is now **in maintenance mode** per its own README.
+  Framework is ISC; its VST3 bindings are GPLv3 (fine — Slimehedron is GPL-3.0-or-later).
+- **nice-plug** (`RustAudio/nice-plug`, Codeberg) — the community fork of nih-plug, now the
+  recommended Rust plugin toolkit. ISC, active (last commit 2026-09-14, ~2.5k commits, 13 releases).
+  Its README calls itself **experimental** and says to expect bugs after recent large changes.
+  GUI-agnostic over baseview, with egui / iced / slint(WIP) / vizia integrations.
+  **Lost on one point only: none of those toolkits can render this app's look without redrawing the
+  entire thing by hand.** That is months of work to arrive somewhere worse.
+- **A native GUI toolkit (egui / iced / vizia)** — same problem. These draw boxes and knobs well.
+  They do not draw a hand-crayoned tank full of metaball goo without a full re-implementation.
+- **JUCE / C++** — the industry default, and a complete rewrite in a language this project has none
+  of. No.
+
+### The risks, named
+
+- **wxp is alpha** (`0.1.0-alpha.x`), API still stabilising, breaking changes expected between
+  releases. NovoNotes say they run it in production across 15k+ users of their own plugins.
+- **WRAC says plainly** it is "an implementation example and starting point, not a general-purpose
+  framework" and will not provide API backwards compatibility or migration support.
+- **Mitigation, and it is the whole reason for the crate split below:** wxp and WRAC touch nothing
+  but the window and the IPC. Every line of DSP, physics and musical logic lives in crates that do
+  not know a plugin exists. If wxp breaks or dies, we replace a window, not an app.
+- AUv3 support in WRAC is incomplete. AAX needs Avid's SDK. Neither is day-one.
+- Linux has no AU; macOS builds need a Mac. Windows VST3 + CLAP is the first target.
+
+### Licensing — clear now
+
+VST3 SDK was **relicensed by Steinberg to MIT** (Oct 2025, SDK 3.8), replacing the old
+GPLv3-or-proprietary dual licence. Nothing to sign, no conflict with GPL-3.0-or-later. CLAP is MIT.
+WRAC and wxp are MIT. nice-plug is ISC. There is no licensing obstacle anywhere on this path.
+
+---
+
+## 4. What is actually in the engine today
+
+Inventory taken from `index.html` on 2026-10-12 (~636KB, ~290 functions). **Function names, not line
+numbers** — the old doc's line numbers rotted within weeks.
+
+### Web Audio nodes in use (every one of these becomes hand-written DSP)
+
+| node | count | becomes |
+|---|---|---|
+| `createGain` | 45 | a multiply |
+| `createBiquadFilter` | 21 | RBJ cookbook biquad |
+| `createOscillator` | 17 | wavetable / polyblep |
+| `createBufferSource` | 7 | sample playback (noise, tick) |
+| `createDynamicsCompressor` | 3 | peak detector + envelope follower |
+| `createWaveShaper` | 2 | lookup table (tape sat + the output clamp) |
+| `createDelay` | 2 | circular buffer + interpolation |
+| `createConvolver` | 1 | the reverb — see note below |
+| `createStereoPanner` | 1 | equal-power pan |
+| `createPeriodicWave` | 1 | additive table |
+| `createScriptProcessor` | 1 | the WAV recorder tap — **not needed in a plugin**, the host records |
+
+**The convolver is the one to think about.** A convolution reverb is an FFT partitioned convolution
+in Rust — real work, and there are crates for it. Alternative: an algorithmic reverb (FDN) that
+sounds close enough. Decide when we get there; it is late in the order.
+
+### Subsystems, by the names they have in the code
+
+- **Voice:** `playSynth` (osc + sub + filter + ADSR + the `firm` flag), `freqFromCents`, `cutHz`,
+  `setOscWave`, `velForHit`, `trigger`. Polyphony cap `MAXBALLS=12`.
+- **Drums:** `dHit`, `initDrums`, `drumSchedule`, `drumSPB`/`drumBar`/`drumStepDur`, `humanVoice`
+  (per-instrument micro-timing + velocity feel), `DRUMN` (6 voices: K s h r C c),
+  **`KITTONE` — 11 kits** (pop, rock, disco, bossa, industrial, chip, conga, beep, march, samba,
+  jazz), each with its own synthesis constants.
+- **Band:** `bandPlan`, `genComp`, `genBass`, `genFill`, `pickOnsets`, `pickArtic`, `bandBar`,
+  `bassNote`, `padVoice`, `pluck`, `advanceHarmony`. Buses: `melBus`, `bandBus`, `padBus`, `drumBus`.
+- **Chord brain:** `pickChord`, `cmChordCents`, `chordDegrees`, `wallDegrees`, `pcToNearestDeg`,
+  `chordName`, `cmSave`/`cmLoad`/`cmActive`, `keyJourney`. This is the thing that makes it sound
+  musical and it is pure arithmetic — it ports almost literally.
+- **Scales:** `SCALES` — **25 of them**, including microtonal ones (maqamRast, maqamBayati, slendro,
+  pelog, neutral7, edo19). `centsForDegree`, `totalDegrees`, `snapToScale`. All cents-based, so it
+  survives the port unchanged; MPE already exists (`mpeSetup`, `mpeSend`) for true microtonal out.
+- **Groove:** `GROOVES`, `activeGroove`, `feelFor`, `drumTriplet`, swing + quantize in `S`.
+- **Physics:** `step`, `simTick`, `bounceInside`, `buildEdges`, `rebuild`, `computeSegs`, `segHit`,
+  `spawn`, `shootBall`, `fillPhysics`, `relaxParticles`, `sweepBadBalls`, `breakWall`/`repairWall`,
+  `explodeReform`. Fixed 60Hz timestep with render interpolation — **that design carries straight
+  over to a plugin**, it is already decoupled from the frame rate.
+- **The goo:** `measureFill`, `gooAt`, `settleAmt`, `feedLiquidHue` — the liquid both looks like
+  something and *damps the balls*, so it is physics, not decoration. It has to move to Rust with the
+  rest.
+- **Master chain:** `master` → `tapeShaper` (tanh + wow/flutter + hiss) → `lim`
+  (DynamicsCompressor) → `outClip` (hard clamp at 0.891) → out. Plus `rvb`, `dly`.
+- **MIDI:** `sendMidiAt`, `midiMsg`, `clockStart`/`clockStop`/`clockSchedule`, `mpeSetup`. In a
+  plugin most of this becomes the host's job — and MIDI **out** becomes a plugin note output, which
+  is a better version of the same feature.
+- **State:** `S` — ~40 keys (transport, scale, geometry, velocity, synth, ADSR, filter, mix, fx).
+  Every one of these is a candidate plugin parameter the DAW can automate.
+
+### What gets dropped
+
+Service worker / PWA, IndexedDB recordings (`recDB`, `wavBlob`, `startPCM` — the host records),
+the splash, mobile touch handling, the share sheet, browser detection, learn mode entirely.
+
+---
+
+## 5. Plan
+
+### Crates
+
 ```
-- A (attack) = (S.atk + random*0.1) * easing
-- D (decay) = (S.dec + random*0.2) * easing * shorten
-- S (sustain) = S.sus + random*0.2
-- R (release) = (S.rel + random*0.8) * easing * shorten
+vst/
+  Cargo.toml                  workspace
+  slimehedron-core/           NO plugin deps, NO webview deps
+    src/synth/                voice, drums, band, effects
+    src/music/                scales, chord brain, groove
+    src/tank/                 geometry, physics, goo
+    src/engine.rs             one struct: feed it a block, get samples + events
+  slimehedron-plugin/         CLAP. owns params, host transport, audio callback
+  slimehedron-ui/             the webview: HTML/CSS/canvas lifted from index.html
 ```
 
-### Filter Envelope
-```
-- If S.fenv > 0: start at cutoff+fenv, decay to cutoff over A+D time
-- Else: static at base cutoff
-- Resonance capped: Q = min(12, S.res * 12) for safety
-```
+`slimehedron-core` has no dependency on any plugin or GUI crate. Two reasons: the alpha-framework
+risk above, and **it compiles to WASM**, which means the website can eventually run the same engine.
+One synth, not two that drift.
 
-## Constraints & Notes
-- **Polyphony:** No hard limit, but ~8-12 simultaneous voices reasonable
-- **CPU:** Native audio code will be 10-100x faster than Web Audio
-- **Buffer size:** nih-plug handles this; use 256-512 sample blocks
-- **Thread safety:** All synth logic in audio thread, params synced via atomic floats
-- **No breaking changes:** Preserve all S parameter ranges and meanings
+### Order of work
 
-## What to Ignore (Web-Specific)
-- Canvas visualization (not needed for plugin)
-- IndexedDB recording
-- PWA/service worker stuff
-- Mobile touch handling
-- Browser detection
+1. **One note out of Reaper.** `slimehedron-core` with a single voice (osc + filter + ADSR), the
+   CLAP wrapper, no UI, no physics. The whole point is proving the chain end to end.
+2. **The tank, headless.** Physics + geometry + note triggering in `core`, driven by the host clock.
+   Still no UI — a test that renders 8 bars to a WAV and we listen to it.
+3. **The webview shows up.** wxp window, the existing canvas drawing code lifted over, state
+   streamed from Rust. First time it looks like Slimehedron.
+4. **The band and the kits.** Chord brain, bass, comp, 11 drum kits, grooves.
+5. **Effects and the master chain.** Tape, delay, reverb, limiter, the output clamp.
+6. **Parameters and automation.** `S` keys exposed as CLAP params so a DAW can automate them.
+7. **Formats.** clap-wrapper → VST3. Then AU on a Mac if we want it.
 
-## First Step
-Map the synth voice creation (lines 489-517) to Rust pseudo-code.
-Then implement a basic oscillator + ADSR in nih-plug template.
-Test with a VST host (reaper, ableton, etc) on Windows.
+Milestone 1 is a weekend. Milestones 2–3 are where the project is really decided.
+
+---
+
+## 6. Open decisions
+
+- **Does the plugin make its own notes, or can it also be played?** It is a generative instrument;
+  accepting MIDI in to seed or steer it is a design question, not a technical one.
+- **Reverb:** convolution (faithful, more work) or algorithmic (close, cheap).
+- **The goo:** full fluid in the audio thread, or simplified. It affects the sound (it damps balls),
+  so "turn it off" is not free.
+- **Mac?** Needs a Mac to build and sign. Windows-first either way.
+
+---
+
+## 7. Sources for the stack decision
+
+- Steinberg VST3 → MIT: <https://librearts.org/2025/11/steinberg-relicenses-vst3-and-asio/>
+- nih-plug (maintenance mode, per README): <https://github.com/robbert-vdh/nih-plug>
+- nice-plug: <https://codeberg.org/RustAudio/nice-plug>
+- WRAC plugin template (MIT): <https://github.com/novonotes/wrac-plugin-template>
+- wxp (MIT, alpha): <https://github.com/novonotes/wxp>
+- clap-wrapper: <https://crates.io/crates/clap-wrapper>
