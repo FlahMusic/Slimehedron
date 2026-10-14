@@ -1,7 +1,10 @@
 # Slimehedron VST — port plan
 
-**Status:** planning. Rust installed on the MSI (2026-10-12). Nothing scaffolded yet.
-**Last refreshed:** 2026-10-12. The previous version of this doc was written in July and is
+**Status:** milestone 1 in progress. `slimehedron-core` exists and passes 50 tests
+(`vst/slimehedron-core`): RNG, scales, pitch, chord follower, oscillator, biquad, envelope, voice,
+plus a `render` example that writes a WAV with no plugin tooling at all.
+**Platform:** **Windows only for now.** macOS is the last step, not a parallel one.
+**Last refreshed:** 2026-10-14. The previous version of this doc was written in July and is
 superseded — its line numbers pointed into a file that has since roughly doubled, it predated the
 chord brain, the per-kit drum tones, the groove engine and the goo-lag quantizer, and it assumed a
 GUI decision that has now been reversed.
@@ -14,6 +17,17 @@ GUI decision that has now been reversed.
 knobs. The crayon art, the slime tank, the layout: it looks like Slimehedron or it is not
 Slimehedron. UI may be adjusted where a DAW window genuinely needs it, but a person moving from the
 browser to the plugin should not feel they have changed app.
+
+**MIDI in is required, not optional.** The chord follower already exists in the web app
+(`manualRoot` / `manualActive` / `noteManual` / `noteFeed` / `pcToNearestDeg`). In the plugin it is
+driven by the host's note input: the player improvises chords on a controller, the follower reads
+the root, and **the band transposes to match** so the accompaniment stays harmonic under whatever
+they play. That is the headline feature of the plugin, not a side effect.
+
+**MIDI out is required too, per channel.** Everything the band plays — bass, comp, drums, melody —
+must be outputtable live as raw MIDI on its own channel, so the player can record it, re-voice it
+with their own instruments, or edit it in the DAW. The web app already has `sendMidiAt` / `midiMsg`
+/ `mpeSetup`; in a plugin this becomes a proper note output port.
 
 Out of scope: learn mode, play mode's kid-facing shell, the lesson engine, the splash.
 
@@ -186,13 +200,19 @@ One synth, not two that drift.
 
 ### Order of work
 
-1. **One note out of Reaper.** `slimehedron-core` with a single voice (osc + filter + ADSR), the
-   CLAP wrapper, no UI, no physics. The whole point is proving the chain end to end.
+1. **One note.** `slimehedron-core` with a single voice (osc + filter + ADSR), no plugin, no UI,
+   no physics — provable with `cargo test` and `cargo run --example render` on a machine with
+   nothing but Rust installed. **Done, 2026-10-14.** 50 tests; the example renders a phrase and
+   then the same phrase with the chord follower tracking C-Am-F-G, which is milestone 1's real
+   question: does the harmony move correctly before anything else is built on it.
+1b. **One note out of Reaper.** The same core behind the CLAP wrapper. Still no UI.
 2. **The tank, headless.** Physics + geometry + note triggering in `core`, driven by the host clock.
    Still no UI — a test that renders 8 bars to a WAV and we listen to it.
 3. **The webview shows up.** wxp window, the existing canvas drawing code lifted over, state
    streamed from Rust. First time it looks like Slimehedron.
 4. **The band and the kits.** Chord brain, bass, comp, 11 drum kits, grooves.
+4b. **MIDI in and out.** Host note input drives the chord follower, the band transposes live, and
+   every band part is emitted on its own MIDI channel through the plugin's note output port.
 5. **Effects and the master chain.** Tape, delay, reverb, limiter, the output clamp.
 6. **Parameters and automation.** `S` keys exposed as CLAP params so a DAW can automate them.
 7. **Formats.** clap-wrapper → VST3. Then AU on a Mac if we want it.
@@ -203,12 +223,14 @@ Milestone 1 is a weekend. Milestones 2–3 are where the project is really decid
 
 ## 6. Open decisions
 
-- **Does the plugin make its own notes, or can it also be played?** It is a generative instrument;
-  accepting MIDI in to seed or steer it is a design question, not a technical one.
+- ~~**Does the plugin make its own notes, or can it also be played?**~~ **Settled 2026-10-14: both.**
+  MIDI in, chord follower, band transposes to match, band parts out as raw MIDI per channel. See
+  scope above.
 - **Reverb:** convolution (faithful, more work) or algorithmic (close, cheap).
 - **The goo:** full fluid in the audio thread, or simplified. It affects the sound (it damps balls),
   so "turn it off" is not free.
-- **Mac?** Needs a Mac to build and sign. Windows-first either way.
+- ~~**Mac?**~~ **Settled 2026-10-14: Windows only for now.** macOS is the last step. There is no
+  Mac here to build or sign on, so nothing in the plan may assume one.
 
 ---
 

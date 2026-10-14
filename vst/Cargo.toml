@@ -1,0 +1,27 @@
+# Slimehedron — native plugin workspace.
+#
+# THREE crates, and the split is the whole insurance policy:
+#   slimehedron-core    the engine. DSP, physics, music theory. Knows nothing about plugins,
+#                       nothing about windows, nothing about a host. Compiles to WASM, so the
+#                       website can eventually run this same code instead of a second synth.
+#   slimehedron-plugin  the CLAP plugin. (not scaffolded yet)
+#   slimehedron-ui      the webview GUI. (not scaffolded yet)
+#
+# The GUI stack we are heading for (wxp) is alpha, and the template we start from says plainly it
+# offers no API compatibility. That is survivable only because neither of them can reach into
+# `core`. If the window library dies we replace a window, not an engine.
+[workspace]
+members = ["slimehedron-core"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+authors = ["FlahMusic (Flah)"]
+repository = "https://github.com/FlahMusic/Slimehedron"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

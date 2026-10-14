@@ -1,0 +1,12 @@
+[package]
+name = "slimehedron-core"
+description = "The Slimehedron engine: synth voices, music theory, the chord follower. No plugin, GUI or host dependencies."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+# DELIBERATELY EMPTY. Every dependency added here is one the WASM build and the plugin build both
+# inherit. Add one only when writing it ourselves would be worse than owning it.
+[dependencies]
