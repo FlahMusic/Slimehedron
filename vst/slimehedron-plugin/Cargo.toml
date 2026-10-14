@@ -1,0 +1,17 @@
+[package]
+name = "slimehedron-plugin"
+description = "Slimehedron as a CLAP instrument. The FFI glue around slimehedron-core and nothing else."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[lib]
+# cdylib = the .dll a DAW loads (renamed to .clap). rlib lets the tests below link against it.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+slimehedron-core = { path = "../slimehedron-core" }
+# Raw CLAP bindings, MIT/Apache-2.0. The same layer the WRAC template builds on, without the template.
+clap-sys = "0.5"

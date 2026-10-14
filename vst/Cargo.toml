@@ -4,14 +4,14 @@
 #   slimehedron-core    the engine. DSP, physics, music theory. Knows nothing about plugins,
 #                       nothing about windows, nothing about a host. Compiles to WASM, so the
 #                       website can eventually run this same code instead of a second synth.
-#   slimehedron-plugin  the CLAP plugin. (not scaffolded yet)
+#   slimehedron-plugin  the CLAP plugin. Raw CLAP via clap-sys; notes in, sound out (milestone 1b).
 #   slimehedron-ui      the webview GUI. (not scaffolded yet)
 #
 # The GUI stack we are heading for (wxp) is alpha, and the template we start from says plainly it
 # offers no API compatibility. That is survivable only because neither of them can reach into
 # `core`. If the window library dies we replace a window, not an engine.
 [workspace]
-members = ["slimehedron-core"]
+members = ["slimehedron-core", "slimehedron-plugin"]
 resolver = "2"
 
 [workspace.package]

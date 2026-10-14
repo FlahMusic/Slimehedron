@@ -205,7 +205,11 @@ One synth, not two that drift.
    nothing but Rust installed. **Done, 2026-10-14.** 50 tests; the example renders a phrase and
    then the same phrase with the chord follower tracking C-Am-F-G, which is milestone 1's real
    question: does the harmony move correctly before anything else is built on it.
-1b. **One note out of Reaper.** The same core behind the CLAP wrapper. Still no UI.
+1b. **One note out of Studio One** (Flah's DAW; it loads CLAP since 7.0). `slimehedron-plugin`:
+   raw CLAP through `clap-sys`, no framework yet, still no UI. **Built 2026-10-14**, waiting on a
+   listen in Studio One. 7 tests, one of which loads it through the CLAP entry point the way a DAW
+   does and checks the note lands on the right sample at the right pitch. clap-validator: 21
+   passed, 0 failed, 23 skipped (no params or state yet). A held key does not sustain yet.
 2. **The tank, headless.** Physics + geometry + note triggering in `core`, driven by the host clock.
    Still no UI — a test that renders 8 bars to a WAV and we listen to it.
 3. **The webview shows up.** wxp window, the existing canvas drawing code lifted over, state
@@ -242,3 +246,5 @@ Milestone 1 is a weekend. Milestones 2–3 are where the project is really decid
 - WRAC plugin template (MIT): <https://github.com/novonotes/wrac-plugin-template>
 - wxp (MIT, alpha): <https://github.com/novonotes/wxp>
 - clap-wrapper: <https://crates.io/crates/clap-wrapper>
+- clap-sys (MIT/Apache-2.0): <https://crates.io/crates/clap-sys>
+- Studio One added CLAP in 7.0 (Oct 2024): <https://en.wikipedia.org/wiki/Studio_Pro>
