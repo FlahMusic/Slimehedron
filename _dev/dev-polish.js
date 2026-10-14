@@ -51,7 +51,9 @@ const open=async(b,w,h)=>{const ctx=await b.newContext({viewport:{width:w,height
        const cut=kids.filter(c=>{const k=c.getBoundingClientRect();return k.right>box.right+1||k.left<box.left-1;}).length;
        const small=kids.filter(c=>c.getBoundingClientRect().width<20).length;
        return {n:kids.length,cut,small,scroll:cells.scrollWidth-Math.round(box.width)};});
-     return {rows:rows.length,out};});
+     // the bar wraps onto two lines on a phone, so count steps per DRUM, not per line
+     const per={};document.querySelectorAll('#stepGrid .sgCell').forEach(c=>{(per[c.dataset.v]=per[c.dataset.v]||new Set()).add(c.dataset.i);});
+     return {rows:rows.length,out,perDrum:Object.values(per).map(s=>s.size)};});
    ok(g.rows>0,'['+tag+'] the step grid rendered ('+g.rows+' voices)');
    if(g.rows){
      const cut=g.out.reduce((a,r)=>a+r.cut,0), small=g.out.reduce((a,r)=>a+r.small,0);
@@ -59,12 +61,8 @@ const open=async(b,w,h)=>{const ctx=await b.newContext({viewport:{width:w,height
      ok(cut===0,'['+tag+'] every one of the '+n+' steps is fully on screen'+(cut?' ('+cut+' clipped)':''));
      ok(small===0,'['+tag+'] no step cell is under 20px'+(small?' ('+small+' too small to tap)':''));
      ok(g.out.every(r=>r.scroll<=2),'['+tag+'] the grid does not hide steps behind a scroller');
+     ok(g.perDrum.length>0&&g.perDrum.every(n=>n===16),'['+tag+'] every drum has all 16 steps of the bar ('+g.perDrum.join(',')+')');
    }
-   // the last-step readout must not wrap into the slider
-   const lw=await p.evaluate(()=>{const e=document.getElementById('sgLastV');if(!e)return null;
-     const r=e.getBoundingClientRect();const fs=parseFloat(getComputedStyle(e).fontSize);
-     return {h:Math.round(r.height),fs:Math.round(fs),txt:e.textContent};});
-   if(lw)ok(lw.h<lw.fs*1.9,'['+tag+'] the last-step readout "'+lw.txt+'" fits on one line ('+lw.h+'px)');
    await ctx.close();}
 
  // ---- 3. FIVE RHYTHM BUTTONS, FIVE DIFFERENT PICTURES ----

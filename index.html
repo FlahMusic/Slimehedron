@@ -1144,22 +1144,25 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 #stepGrid{display:flex;flex-direction:column;gap:3px;margin:6px 0 2px}
 #stepGrid .sgRow{display:flex;align-items:center;gap:4px}
 #stepGrid .sgLbl{flex:none;width:44px;font:700 10px system-ui,sans-serif;color:#6b6090;text-align:right}
-#stepGrid .sgCell.past{opacity:.24;background:repeating-linear-gradient(135deg,rgba(150,140,185,.12) 0 3px,transparent 3px 6px)} /* beyond LAST STEP: the loop never reaches these */
-#stepGrid .sgLast{display:flex;align-items:center;gap:7px;margin-top:8px;font:700 11px system-ui,sans-serif;color:#6b6090}
-#stepGrid .sgLast input[type=range]{flex:1;height:6px;padding:9px 0}
-#stepGrid .sgLast b{min-width:58px;text-align:right;font-size:12px;color:#5a4f78;white-space:nowrap}
+#stepGrid .sgSys{display:flex;flex-direction:column;gap:3px}
+#stepGrid .sgSys+.sgSys{margin-top:12px}
+#stepGrid .sgBeats{display:flex;align-items:flex-end;gap:4px}
+#stepGrid .sgBeats .sgLbl{font-weight:600;opacity:.75}
+#stepGrid .sgNums{display:grid;grid-template-columns:repeat(var(--n,8),1fr);gap:3px;flex:1;min-width:0}
+#stepGrid .sgNums i{font:800 13px system-ui,sans-serif;font-style:normal;color:#5a4f78;padding-left:3px;line-height:1.2}
 /* 16 cells at 38px need 653px; the panel gives 254. It used to scroll, so seven steps were visible and
    nine were a secret - and the cut landed mid-cell at the panel edge, which reads as "that is the end".
    Two rows of eight instead: the whole bar is on screen, the split falls on the half-bar, and the cells
    stay finger-sized. Nothing hidden, nothing to scroll, nothing to discover. */
-#stepGrid .sgCells{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;flex:1;min-width:0;padding-bottom:2px}
+#stepGrid .sgCells{display:grid;grid-template-columns:repeat(var(--n,8),1fr);gap:3px;flex:1;min-width:0;padding-bottom:2px}
 /* aspect-ratio:1 with height:auto let a cell compute TALLER than its grid track, so rows sat on top
    of each other by 5-6px on every narrow screen. Bounding the height to the track stops that.
    These stay under 44px on purpose: sixteen steps across a phone cannot each be a thumb wide, and a
    dense editor grid is not a primary control - the transport above it is, and that one now wraps. */
 #stepGrid .sgCell{width:auto;height:auto;aspect-ratio:1;min-width:0;max-width:38px;max-height:38px;border-radius:6px;border:1px solid rgba(255,255,255,.7);
   background:rgba(150,140,185,.16);cursor:pointer;padding:0}
-#stepGrid .sgCell.beat{background:rgba(150,140,185,.28)}
+#stepGrid .sgCell.g2{background:rgba(150,140,185,.32)} /* beats 2 and 4 are shaded, so each beat's four steps read as one group */
+#stepGrid .sgCell.now{outline:2.5px solid #5a4f78;outline-offset:0;transform:scale(1.06)} /* the playhead */
 #stepGrid .sgCell.on{background:linear-gradient(160deg,var(--accent,#b388f0),var(--mint,#9fe6cf));border-color:#fff;box-shadow:0 1px 3px rgba(90,79,120,.3)}
 /* an ON step is marked by a DOT as well as by its fill — colour alone fails WCAG 1.4.1, and this grid
    is exactly the "specific colour must be perceived" case the spec calls out. */
@@ -1254,12 +1257,15 @@ canvas{background:none;border:0;box-shadow:none;border-radius:0;max-width:100%;m
 #chordPanel .cpHead button{border:none;background:rgba(200,190,225,.4);border-radius:8px;width:28px;height:26px;cursor:pointer;font-size:14px;color:#5a4f78;display:flex;align-items:center;justify-content:center}
 #chordPanel .cpHead button:hover{background:rgba(200,190,225,.7)}
 #cpChips{display:flex;flex-wrap:wrap;gap:6px;min-height:34px;align-items:center}
-.cpChip{position:relative;display:inline-flex;flex-direction:column;align-items:center;background:#fff;border:1.5px solid var(--card-brd);border-radius:10px;padding:5px 12px 5px;cursor:pointer;box-shadow:0 1px 4px rgba(120,110,160,.14);transition:transform .1s}
+.cpChip{position:relative;display:inline-flex;flex-direction:row;align-items:center;gap:2px;background:#fff;border:1.5px solid var(--card-brd);border-radius:10px;padding:2px 2px 2px 10px;cursor:pointer;box-shadow:0 1px 4px rgba(120,110,160,.14);transition:transform .1s}
+.cpNm{display:flex;flex-direction:column;align-items:center}
 .cpChip:hover{transform:translateY(-1px)}
 .cpChip b{font:800 15px system-ui,sans-serif;color:#5a4f78;line-height:1.05}
 .cpChip i{font:700 9px system-ui,sans-serif;font-style:normal;color:#9a8fc4}
-.cpChip .cpX{position:absolute;top:-6px;right:-6px;width:16px;height:16px;border-radius:50%;background:#f4a2b6;color:#fff;border:none;font-size:11px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(150,90,110,.4)}
-.cpChip .cpX:hover{background:#ec7f99}
+/* the remove cross sits INSIDE the chip. It was a 16px badge hung off the corner, and the 44px touch
+   floor inflated it into a pink disc that covered the chord name. */
+.cpChip .cpX{position:static;width:30px;min-width:30px;height:40px;min-height:40px;border-radius:8px;background:none;color:#c0607a;border:none;font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.cpChip .cpX:hover{background:rgba(244,162,182,.25)}
 .cpChip.active{border-color:#b79fe8;box-shadow:0 0 0 2px rgba(183,159,232,.4)}
 #chordPanel .cpAuto{display:flex;align-items:center;gap:8px;margin:2px 0 8px;font:700 12px system-ui,sans-serif;color:#5a4f78}
 #chordPanel .cpAuto select{flex:1;min-width:0;font:600 12px system-ui,sans-serif;padding:5px 7px;border-radius:9px;border:1.5px solid rgba(160,150,200,.5);background:rgba(255,255,255,.7);color:#5a4f78}
@@ -1350,8 +1356,9 @@ body.tools-on #topRight,body.tools-on #triMixBar,body.tools-on #autoRow,body.too
 #twBeats i.on{background:var(--accent);transform:scale(1.28)}
 #twBeats i.acc.on{background:#ff7fb0}
 .twHost{display:flex;justify-content:center;align-items:flex-start;min-height:120px}
-.twHost #cofWheel{position:static!important;transform:none!important;margin:0!important;display:block!important}
-.twHost #cofWheel svg{width:min(420px,78vw);height:min(420px,78vw)}
+.twHost #cofWheel{position:static!important;transform:none!important;margin:0!important;display:block!important;
+  width:auto!important;height:auto!important;opacity:1} /* its docked size (120-186px) used to cap the box while the svg drew 306px, so the wheel spilled out sideways and over the note */
+.twHost #cofWheel svg{display:block;width:min(420px,78vw);height:min(420px,78vw)}
 .twHost #chordPanel{position:static!important;transform:none!important;left:auto!important;top:auto!important;width:100%!important;max-width:none!important;display:block!important}
 .twHost #stepGrid{width:100%}
 .twNote{font-size:12.5px;color:var(--ink-soft);font-weight:600;text-align:center;line-height:1.45}
@@ -1382,6 +1389,13 @@ aside::-webkit-scrollbar-thumb{background:rgba(180,170,210,.5);border-radius:8px
 .row .val{font-size:12px;color:var(--ink-soft);font-weight:600;min-width:46px;text-align:right}
 input[type=range]{-webkit-appearance:none;appearance:none;height:6px;padding:9px 0;box-sizing:content-box;border-radius:6px;flex:1;background:linear-gradient(90deg,var(--lav),var(--mint));background-clip:content-box;outline:none} /* 6px visible bar, 24px touch target. background-clip MUST come after the background shorthand — the shorthand resets it. */
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--accent);cursor:pointer;box-shadow:0 2px 6px rgba(120,110,160,.4)}
+/* A 16px handle is fine for a mouse and too small for a thumb. On iPhone a range input only moves if
+   you land ON the handle (tapping the bar does nothing), so the handle grows on touch screens and
+   touchRanges() lets a press anywhere on the bar grab it. */
+@media (pointer:coarse){
+  input[type=range]{touch-action:pan-y}
+  input[type=range]::-webkit-slider-thumb{width:28px;height:28px;border-width:3px}
+}
 select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);background:rgba(255,255,255,.7);border:1px solid var(--card-brd);border-radius:10px;padding:7px 9px;cursor:pointer;flex:1;min-width:0}
 .seg{display:flex;background:rgba(255,255,255,.45);border-radius:12px;padding:3px;gap:3px;flex:1}
 /* flex:1 with the default auto basis only hands out SPARE room - it cannot take any back, because
@@ -1608,7 +1622,7 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
 }
 @media (pointer:coarse) and (min-height:521px){
   #studioBar select,#studioBar input[type=number],#studioBar button,#studioBar #sbTap,
-  #chordBtn,.labSpk,.labChip,#sgLastR,.grooveToggle{min-height:44px}
+  #chordBtn,.labSpk,.labChip,.grooveToggle{min-height:44px}
   #chordBtn,.labSpk,.labChip{min-width:44px}
 }
 .note{font-size:11px;color:var(--ink-soft);line-height:1.4;margin-top:8px}
@@ -2148,11 +2162,19 @@ let BURST_MS=6000; // how long the corners stay broken open before reforming
 
 // ---------- audio ----------
 let AC=null,master=null,delayNode=null,dlyFb=null,dlyWet=null,masterFilt=null,slimeEQ=null,slimeComp=null,activeVoices=0,recTap=null,masterHP=null,bandBus=null,melBus=null,bandMix=null,padBus=null,lim=null,outClip=null;
+let outVol=null; // THE master volume. see initAudio
+const VOL_REF=0.4675; // S.vol at the default slider position (55)
 let noiseBuf=null,tapeDry=null,tapeWet=null,tapeDrive=null,tapeShaper=null,tapeTone=null,tapeDly=null,wowDepth=null,flutDepth=null,hissG=null; // tape color stage
 function initAudio(){
   if(AC)return;
   AC=new (window.AudioContext||window.webkitAudioContext)();
-  master=AC.createGain();master.gain.value=S.vol;
+  // `master` only ever summed melody + band + chords. The drums, the reverb and the echo joined the
+  // signal AFTER it, so the volume fader (which drove master) left the drums and the effect tails
+  // playing at full level -- turn it down and what you lost was the lead. master now sits at a fixed
+  // gain and the fader drives outVol, which sits after everything and before the limiter.
+  // VOL_REF keeps the default mix identical: at slider 55, outVol is exactly 1.
+  master=AC.createGain();master.gain.value=VOL_REF;
+  outVol=AC.createGain();outVol.gain.value=S.vol/VOL_REF;
   bandBus=AC.createGain();bandBus.gain.value=1;bandMix=AC.createGain();bandMix.gain.value=1;
   // phone-friendly mid-bass lift: a gentle peak at ~120Hz (the lowest band small speakers actually reproduce) so
   // the bass has presence on laptops/phones without booming on headphones. sits before the mix/master stages.
@@ -2231,7 +2253,7 @@ function initAudio(){
   master.connect(masterFilt);dlyWet.connect(masterFilt);rvbWet.connect(masterFilt);
   masterFilt.connect(masterHP);masterHP.connect(slimeEQ);slimeEQ.connect(slimeComp);
   slimeComp.connect(tapeDry);slimeComp.connect(tapeDrive);tapeDrive.connect(tapeShaper);tapeShaper.connect(tapeWet); // dry/wet split is pre-delay, so no comb filtering
-  tapeDry.connect(tapeTone);tapeWet.connect(tapeTone);tapeTone.connect(tapeDly);tapeDly.connect(lim);lim.connect(outClip);outClip.connect(AC.destination);
+  tapeDry.connect(tapeTone);tapeWet.connect(tapeTone);tapeTone.connect(tapeDly);tapeDly.connect(outVol);outVol.connect(lim);lim.connect(outClip);outClip.connect(AC.destination);
   recTap=AC.createMediaStreamDestination();outClip.connect(recTap); // recorder hears exactly what you hear — same side of the ceiling
   setWarmth(S.warm);
 }
@@ -2499,13 +2521,6 @@ const PAD={x:0.5,y:0.5};
 // Presets are 4 authored bars; the moment you edit one, the kit becomes a plain 1-bar loop (FL's
 // default behaviour) so what you see is exactly what you hear. "revert" puts the 4 bars back.
 const KIT_EDITS={};
-// LAST STEP, per kit. 16 = a normal bar. Shorten it and the DRUM pattern loops early while the bar, the
-// bass, the chords and the melody keep their own 4/4 length -- so 12 gives you a 3-against-4 phase that
-// slides round and resolves every 4 bars, which is the actual musical point of the control (Elektron and
-// the TR-series call it "last step" for exactly this). It is a per-kit setting, so switching kit or
-// hitting revert restores 16.
-const KIT_LEN={};
-function kitLen(){const n=KIT_LEN[drumKit];return (n>=2&&n<=16)?n:16;}
 const VOICE_NAME={K:'Kick',s:'Snare',h:'Hi-Hat',r:'Rim',c:'Low Perc',C:'High Perc'};
 function activeKit(){return KIT_EDITS[drumKit]||KITS[drumKit];}
 function editableKit(){
@@ -2652,7 +2667,10 @@ const MAJSTEP=[0,2,4,5,7,9,11]; // major-scale semitone offsets per diatonic ste
 const CHORD_MODE={on:false,prog:[],idx:0,barsLeft:0}; // prog: [{pc:0-11, qual, bars}]
 function cmSave(){try{localStorage.setItem('slimehedron-chords',JSON.stringify({on:CHORD_MODE.on,prog:CHORD_MODE.prog}));}catch(e){}}
 function cmLoad(){try{const o=JSON.parse(localStorage.getItem('slimehedron-chords'));if(o&&Array.isArray(o.prog)){CHORD_MODE.prog=o.prog.filter(c=>c&&Number.isFinite(c.pc)&&CQUAL[c.qual]);CHORD_MODE.on=!!o.on&&CHORD_MODE.prog.length>0;}}catch(e){}}
-function cmActive(){return CHORD_MODE.on&&CHORD_MODE.prog.length>0;}
+// PLAY MODE NEVER FOLLOWS A SAVED PROGRESSION. It is saved to localStorage, and play mode has no chord
+// panel to show or switch it off, so one dice roll in the Tools window used to lock play mode onto
+// the same four chords, with no key changes, on every visit after that.
+function cmActive(){return CHORD_MODE.on&&CHORD_MODE.prog.length>0&&S.mode!=='play';}
 // the dice: pick a whole famous progression, transpose it to the CURRENT key's tonic pitch-class
 function cmRandomProg(){
   const rootPc=((S.root%12)+12)%12, minorKey=isMinorScale();
@@ -2704,14 +2722,31 @@ function pickChord(barI){const n=scaleObj().c.length;
     if(barI>0&&barI%8===0)progIdx=(progIdx+1+Math.floor(Math.random()*(pool.length-1)))%pool.length;
     const pr=pool[progIdx%pool.length];return pr[barI%pr.length]%n;}
   _following=true;
+  // THE MELODY ALONE PICKS THE SAME THREE CHORDS. The walls are pulled toward the home chord's notes
+  // (see wallDegrees), so the melody is mostly do-mi-sol, and the chords that hold those notes are I,
+  // iii and vi. Measured over 230 bars in play mode, iii was the 2nd most common chord and V barely
+  // showed up, which is backwards for pop, where I-V-vi-IV is the most used progression and iii
+  // almost always moves on to IV or vi (Hooktheory, 1300-song analysis). So the melody still votes,
+  // but each chord now also carries how often pop actually uses it and where it likes to go next.
+  // Only for 7-note major and minor keys; every other scale keeps the melody-only vote.
+  const fn=(n===7&&S.scale==='major')?CHORD_FN.major:(n===7&&S.scale==='minor')?CHORD_FN.minor:null;
   const sc=[];for(let r=0;r<n;r++){
     let s=noteHisto[r]*1.6+noteHisto[(r+2)%n]+noteHisto[(r+4)%n]+0.05; // how much of the recent melody lives inside this chord
+    if(fn){s*=fn.use[r];const nx=fn.next[curRootDeg];if(nx&&nx[r])s*=nx[r];}
     if(r===curRootDeg)s*=0.4;else if(r===_prevRootDeg)s*=0.7;          // keep it moving — no camping, no ping-pong
     if(barI%4===3&&r===0)s*=1.6;                                        // lean home at the end of each phrase
-    if(barI%4===2&&(r===4%n||r===3%n))s*=1.3;                           // set up the turnaround
+    if(barI%4===2&&(r===4%n||r===3%n))s*=fn?2:1.3;                      // set up the turnaround
     sc.push(s);}
   let sum=0;for(const v of sc)sum+=v;let pick=Math.random()*sum;        // weighted roulette: follows the melody, never a fixed loop
   for(let r=0;r<n;r++){pick-=sc[r];if(pick<=0)return r;}return 0;}
+// use: how much a chord gets used at all. next[from][to]: where a chord likes to go. Degrees are
+// 0-based scale steps. Major: I ii iii IV V vi vii. Minor: i ii III iv v VI VII.
+const CHORD_FN={
+  major:{use:[1,0.6,0.3,1,1,0.85,0.08],
+         next:{1:{4:1.8},2:{3:1.7,5:1.7},3:{0:1.3,4:1.4},4:{0:1.8,5:1.3},5:{3:1.4,1:1.3}}},
+  minor:{use:[1,0.12,0.8,0.9,0.7,0.95,0.85],
+         next:{3:{0:1.3,4:1.3},4:{0:1.6},5:{6:1.5,3:1.3},6:{0:1.5,2:1.5}}}
+};
 let nextRootDeg=null; // the brain decides one bar ahead so the pill can show where we're going
 function chordName(rd){const c0=centsForDegree(rd),a=((Math.round((centsForDegree(rd+2)-c0)/100))%12+12)%12,b=((Math.round((centsForDegree(rd+4)-c0)/100))%12+12)%12;
   const root=NOTE_NAMES[(((S.root+Math.round(c0/100))%12)+12)%12];
@@ -3512,7 +3547,11 @@ let _cmCur=null; // the custom chord this bar (set by the brain, voiced by bandB
 function advanceHarmony(barI){
   const man=(S.mode!=='play'&&manualActive())?manualRoot():null; // studio: a human playing OWNS the harmony. play: no chord chasing, kids just jam.
   // CUSTOM CHORD MODE overrides everything: no key-journey transpose, follow the user's progression instead.
-  if(man==null&&!cmActive()&&S.slimeMode&&!_keyPinned&&++_slimeBars>=keyJourneyBars()){_slimeBars=0;keyJourney();}
+  // THE KEY MOVES WHERE A CHORD ENDS, and the next chord is the NEW key's home chord, so the move is
+  // heard. It used to move on any bar: a chord still sounding was re-read in the new key and changed
+  // pitch halfway through, and the next chord was a random one, which hid the arrival.
+  if(man==null&&!cmActive()&&S.slimeMode&&!_keyPinned&&++_slimeBars>=keyJourneyBars()&&_autoHold<=0){
+    _slimeBars=0;keyJourney();nextRootDeg=0;}
   if(S.slimeMode&&fillState==='fill'){_wallBars++;
     if(_wallBars%8===0)breakWall();        // every 8 bars a wall opens up (notes pour out) — frequent enough to SEE it happening
     if(_wallBars%24===0)repairWall();      // every 24 bars an old gap magically fades back into a wall
@@ -3729,12 +3768,10 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
       // AUTO-MODE living swing: the tiny 2.5% swing slowly FADES between straight (0) and full over ~40s, so it feels
       // alive but never actually swung-out. mostly it sits near straight — just a breath of human timing.
       const swMod=S.slimeMode?(0.5+0.5*Math.sin(AC.currentTime*0.08)):0.6;
-      const kit=activeKit(),KL=kitLen(),
-        // LAST STEP: the kit's own loop can be shorter than the bar. Map the running step into it, keeping
-        // whole 4-bar phrasing when KL is a full 16 so nothing about the default behaviour changes.
-        pst=(KL>=16)?(inBar+16*barI):(((drumStep%KL)+KL)%KL),
+      const kit=activeKit(),pst=inBar+16*barI,
         gt=drumTime+(gr?gr.off[inBar]*swMod*_sDur():0),     // nudge the HIT off the grid by the (breathing) feel
         gv=(gr?gr.vel[inBar]:1);                                  // velocity accent from the feel
+      phPush(drumTime,inBar);                                     // the step grid's playhead
       // ---- DRUM FILL WINDOW ------------------------------------------------------------------
       // Nobody likes a fancy metronome. A loop with no fills reads as a machine, so the last few
       // 16ths of a phrase (every 8 or 16 bars, the kit's own choice — see FEELS) hand over to a
@@ -4642,7 +4679,7 @@ bindRange("vol","vol",v=>{const x=(v/100)*0.85;
   S.vol=x;applyMix();const vp=$("volPlay");if(vp&&vp.value!=v)vp.value=v;return x;}); // slider 0-100 maps to 0-0.85 gain: even "max" leaves headroom under the -8.5dB limiter (kid-safe ceiling). mirrors the top-bar fader.
 // top-bar master volume fader — drives the SAME kid-safe volume as the settings slider, kept in sync both ways.
 (function(){const vp=$("volPlay"),vs=$("vol");if(!vp)return;
-  const apply=(v)=>{const x=muted?0:(v/100)*0.85;S.vol=x;if(AC&&master)master.gain.setTargetAtTime(x,AC.currentTime,0.05);};
+  const apply=(v)=>{const x=muted?0:(v/100)*0.85;S.vol=x;if(AC&&outVol)outVol.gain.setTargetAtTime(x/VOL_REF,AC.currentTime,0.05);};
   vp.addEventListener('input',()=>{const v=+vp.value;
     if(muted)setMute(false);                       // grabbing the fader obviously means "I want to hear it"
     apply(v);if(vs&&vs.value!=v){vs.value=v;const vv=$("volV");if(vv)vv.textContent=v;}});
@@ -4958,7 +4995,7 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
 })();
 function applyMix(){if(!AC||!master)return;const t=AC.currentTime; // triangle mix: center = everyone full
   const c=x=>Math.min(1,x*3);S.wMg=c(S.wM);const T=0.09; // gentle ramp = no zipper/clicks when dragging fast or slow
-  master.gain.setTargetAtTime(S.vol,t,T);
+  if(outVol)outVol.gain.setTargetAtTime(S.vol/VOL_REF,t,T);
   if(melBus)melBus.gain.setTargetAtTime(c(S.wM),t,T);
   if(bandMix)bandMix.gain.setTargetAtTime(c(S.wK),t,T);
   if(drumBus)drumBus.gain.setTargetAtTime(0.88*c(S.wD),t,T);} // triangle mixer is the one true drum fader
@@ -5557,33 +5594,54 @@ addEventListener('keydown',e=>{
   d.addEventListener('click',e=>{if(e.target===d)d.close();});   // click the backdrop to dismiss
 })();
 // ---------- STEP SEQUENCER wiring ----------
+// LAID OUT LIKE A LINE OF MUSIC. Sixteen finger-sized steps do not fit across a phone, so the bar
+// wraps -- but it wraps the way sheet music does: the first line is beats 1-2 for EVERY drum, the
+// second line is beats 3-4. It used to wrap each drum onto two lines of its own, so Kick, Kick, Snare,
+// Snare... and you could not read across. The beat numbers sit over their steps, each beat's four
+// steps share a shade, and a playhead shows where the beat is. A wide window gets one line of 16.
+// (The "last step" slider that lived here is gone: a loop shorter than the bar is an Elektron trick,
+// and on a beginner's grid it only made steps go grey for no reason anyone could see.)
+var _phQ=[],_phRaf=0,_phOn=-1,_phClr=0; // var, not let: drumSchedule can reach phPush before this line has run
+function phPush(t,i){_phQ.push(t,i);if(_phQ.length>128)_phQ.splice(0,_phQ.length-128);
+  if(!_phRaf&&!document.hidden)_phRaf=requestAnimationFrame(phPaint);}
+function phPaint(){_phRaf=0;if(!AC)return;
+  const g=document.getElementById('stepGrid');
+  if(!g||!g.offsetWidth){_phQ.length=0;return;}              // nobody is looking at the grid
+  const now=AC.currentTime;let step=-2;
+  while(_phQ.length&&_phQ[0]<=now){_phQ.shift();step=_phQ.shift();}
+  if(step!==-2&&step!==_phOn){
+    g.querySelectorAll('.sgCell.now').forEach(c=>c.classList.remove('now'));
+    g.querySelectorAll('.sgCell[data-i="'+step+'"]').forEach(c=>c.classList.add('now'));
+    _phOn=step;}
+  clearTimeout(_phClr);
+  if(_phQ.length)_phRaf=requestAnimationFrame(phPaint);
+  else _phClr=setTimeout(()=>{if(!_phQ.length){g.querySelectorAll('.sgCell.now').forEach(c=>c.classList.remove('now'));_phOn=-1;}},600);}
 (function(){const g=$("stepGrid");if(!g)return;
-  function build(){const kit=activeKit();g.innerHTML='';
-    for(const v of ['K','s','h','r','c','C']){
-      const arr=kit[v]; if(!arr) continue;
+  let perLine=8;
+  const fits=()=>(g.clientWidth||0)>=560?16:8;
+  function build(){const kit=activeKit();g.innerHTML='';perLine=fits();
+    const voices=[];
+    for(const v of ['K','s','h','r','c','C']){const arr=kit[v];if(!arr)continue;
       const bar1=new Set(arr.filter(x=>x<16));
       if(!bar1.size&&!KIT_EDITS[drumKit])continue;              // hide voices this kit never uses
-      const row=document.createElement('div');row.className='sgRow';row.setAttribute('role','row');
-      row.innerHTML='<span class="sgLbl">'+(VOICE_NAME[v]||v)+'</span>';
-      const cells=document.createElement('div');cells.className='sgCells';
-      for(let i=0;i<16;i++){const b=document.createElement('button');
-        b.className='sgCell'+(i%4===0?' beat':'')+(bar1.has(i)?' on':'');
-        b.type='button';b.dataset.v=v;b.dataset.i=i;
-        b.setAttribute('aria-label',(VOICE_NAME[v]||v)+' step '+(i+1));
-        b.setAttribute('aria-pressed',bar1.has(i)?'true':'false');
-        cells.appendChild(b);}
-      row.appendChild(cells);g.appendChild(row);}
-    // LAST STEP control. Lives with the grid because it changes what the grid MEANS, not how it sounds.
-    const KL=kitLen();
-    const last=document.createElement('div');last.className='sgLast';
-    last.innerHTML='<label for="sgLastR" title="where the drum loop turns around. shorter than 16 and the beat '+
-      'slides against the bar - that is the fun part">last step</label>'+
-      '<input type="range" id="sgLastR" min="2" max="16" step="1" value="'+KL+'" aria-label="last step">'+
-      '<b id="sgLastV">'+(KL>=16?'16 · full':KL)+'</b>';   // "16 (full bar)" wrapped onto the slider
-    g.appendChild(last);
-    markPast();}
-  function markPast(){const KL=kitLen();
-    g.querySelectorAll('.sgCell').forEach(c=>c.classList.toggle('past',(+c.dataset.i)>=KL));}
+      voices.push([v,bar1]);}
+    for(let from=0;from<16;from+=perLine){
+      const sys=document.createElement('div');sys.className='sgSys';sys.style.cssText='--n:'+perLine;
+      let nums='';for(let i=from;i<from+perLine;i++)nums+='<i class="'+(((i>>2)&1)?'g2':'')+'">'+(i%4===0?(i/4+1):'')+'</i>';
+      sys.innerHTML='<div class="sgBeats" aria-hidden="true"><span class="sgLbl">beat</span><div class="sgNums">'+nums+'</div></div>';
+      for(const [v,bar1] of voices){
+        const row=document.createElement('div');row.className='sgRow';row.setAttribute('role','row');
+        row.innerHTML='<span class="sgLbl">'+(VOICE_NAME[v]||v)+'</span>';
+        const cells=document.createElement('div');cells.className='sgCells';
+        for(let i=from;i<from+perLine;i++){const b=document.createElement('button');
+          b.className='sgCell'+(((i>>2)&1)?' g2':'')+(bar1.has(i)?' on':'');
+          b.type='button';b.dataset.v=v;b.dataset.i=i;
+          b.setAttribute('aria-label',(VOICE_NAME[v]||v)+', beat '+((i>>2)+1)+', step '+(i%4+1));
+          b.setAttribute('aria-pressed',bar1.has(i)?'true':'false');
+          cells.appendChild(b);}
+        row.appendChild(cells);sys.appendChild(row);}
+      g.appendChild(sys);}
+    _phOn=-1;}
   g.addEventListener('click',e=>{const c=e.target.closest('.sgCell');if(!c)return;
     const kit=editableKit(),v=c.dataset.v,i=+c.dataset.i,on=!c.classList.contains('on');
     for(let b=0;b<4;b++){const st=i+16*b,at=kit[v].indexOf(st);
@@ -5591,14 +5649,10 @@ addEventListener('keydown',e=>{
     kit[v].sort((a,b)=>a-b);
     c.classList.toggle('on',on);c.setAttribute('aria-pressed',on?'true':'false');
     initAudio();if(AC&&AC.state==='suspended')AC.resume();});
-  g.addEventListener('input',e=>{if(e.target.id!=='sgLastR')return;
-    const v=Math.max(2,Math.min(16,+e.target.value||16));
-    KIT_LEN[drumKit]=v;
-    const lbl=document.getElementById('sgLastV');if(lbl)lbl.textContent=(v>=16?'16 · full':v);
-    markPast();});
-  const rv=$("stepRevert");if(rv)rv.addEventListener('click',()=>{delete KIT_EDITS[drumKit];delete KIT_LEN[drumKit];build();});
+  const rv=$("stepRevert");if(rv)rv.addEventListener('click',()=>{delete KIT_EDITS[drumKit];build();});
   const dk=$("drumKit");if(dk)dk.addEventListener('change',build);
   const ks=$("kitStyle");if(ks)ks.addEventListener('change',()=>setTimeout(build,0));
+  let _rt=0;addEventListener('resize',()=>{clearTimeout(_rt);_rt=setTimeout(()=>{if(g.clientWidth&&fits()!==perLine)build();},150);});
   window._rebuildStepGrid=build; build();})();
 // ---------- PERFORMANCE PAD wiring ----------
 (function(){const w=$("padWrap"),k=$("padPuck");if(!w||!k)return;
@@ -5697,6 +5751,28 @@ function enhanceKnobs(){
   });
 }
 enhanceKnobs();
+// TOUCH SLIDERS: press anywhere on the bar and the handle jumps there and follows your finger.
+// iPhone's own range input ignores a press that misses the handle. Touch only; a mouse keeps the
+// browser's behaviour. Vertical sliders (the ADSR column) are left alone.
+(function touchRanges(){
+  if(!matchMedia('(pointer:coarse)').matches)return;
+  const THUMB=28;                                     // matches the coarse-pointer handle size in the CSS
+  const setFrom=(inp,x)=>{const r=inp.getBoundingClientRect();
+    const min=parseFloat(inp.min)||0,max=parseFloat(inp.max===''?100:inp.max),st=parseFloat(inp.step)||1;
+    let f=(x-r.left-THUMB/2)/Math.max(1,r.width-THUMB);f=Math.max(0,Math.min(1,f));
+    const v=Math.round((min+f*(max-min))/st)*st;
+    if(+inp.value!==v){inp.value=v;inp.dispatchEvent(new Event('input',{bubbles:true}));}};
+  let cur=null;
+  document.addEventListener('pointerdown',e=>{
+    const inp=e.target;if(!inp||inp.tagName!=='INPUT'||inp.type!=='range'||inp.disabled)return;
+    if(e.pointerType==='mouse')return;
+    if(getComputedStyle(inp).writingMode.indexOf('vertical')===0)return;
+    cur=inp;e.preventDefault();try{inp.setPointerCapture(e.pointerId);}catch(err){}
+    setFrom(inp,e.clientX);},{capture:true,passive:false});
+  document.addEventListener('pointermove',e=>{if(cur){e.preventDefault();setFrom(cur,e.clientX);}},{capture:true,passive:false});
+  const end=()=>{if(!cur)return;cur.dispatchEvent(new Event('change',{bubbles:true}));cur=null;};
+  document.addEventListener('pointerup',end,true);document.addEventListener('pointercancel',end,true);
+})();
 
 // ---------- slime baby mode (gentle, half-speed; resonance untouched) ----------
 function setSliderValue(id,val){const inp=document.getElementById(id);if(!inp)return;inp.value=val;inp.dispatchEvent(new Event('input'));}
@@ -7055,7 +7131,8 @@ window.slimeStar=function(){}; // intentionally a no-op — a "win" is its own r
   let borrowed=null;            // {node, home, next} so the node goes back exactly where it was
 
   const giveBack=()=>{ if(!borrowed)return;
-    try{ borrowed.home.insertBefore(borrowed.node, borrowed.next); if(borrowed.wasHidden)borrowed.node.hidden=true; }catch(e){}
+    try{ borrowed.home.insertBefore(borrowed.node, borrowed.next); if(borrowed.wasHidden)borrowed.node.hidden=true;
+         if(borrowed.node.id==='stepGrid'&&window._rebuildStepGrid)window._rebuildStepGrid(); }catch(e){}
     borrowed=null; };
   const borrow=(sel,host)=>{ const n=document.querySelector(sel); if(!n)return false;
     borrowed={node:n, home:n.parentNode, next:n.nextSibling, wasHidden:n.hidden};
@@ -7122,12 +7199,13 @@ window.slimeStar=function(){}; // intentionally a no-op — a "win" is its own r
     stopMetro(); giveBack();
     if(k==='metro')return metroUI();
     if(k==='cof'){ hostUI(TOOLS.cof.name,'#cofWheel','',
-      'The key you are in sits at the top. Its closest neighbours are the two beside it.');
+      'The key you are in is lit up. Its closest neighbours are the two beside it.');
       try{updateWheel();}catch(e){} return; }
     if(k==='chord'){ hostUI(TOOLS.chord.name,'#chordPanel',tempoRow(),
       'Add chords, then press play. The dice rolls a new progression in this key.'); return; }
     if(k==='drums'){ hostUI(TOOLS.drums.name,'#stepGrid',tempoRow(),
-      'Each row is one drum. Tap a square to turn that hit on.');
+      'Each row is one drum. Tap a square to add a hit. The numbers are the beats.');
+      try{ window._rebuildStepGrid&&window._rebuildStepGrid(); }catch(e){}   // re-lay it out for this window's width
       try{ if(typeof drumOn!=='undefined'&&!drumOn&&$("drumBtn"))$("drumBtn").click(); }catch(e){}
       return; }
   }
@@ -7192,7 +7270,7 @@ function startCoach(){
     chips.innerHTML='';
     CHORD_MODE.prog.forEach((c,i)=>{
       const el=document.createElement('div');el.className='cpChip'+(i===editIdx?' active':'');
-      el.innerHTML=`<b>${PC_LBL[c.pc]}</b><i>${(CQUAL_LBL[c.qual]||c.qual)}${(c.bars>1?' · '+c.bars+'b':'')}</i><button class="cpX" title="remove">✕</button>`;
+      el.innerHTML=`<span class="cpNm"><b>${PC_LBL[c.pc]}</b><i>${(CQUAL_LBL[c.qual]||c.qual)}${(c.bars>1?' · '+c.bars+'b':'')}</i></span><button class="cpX" title="remove" aria-label="remove ${PC_LBL[c.pc]} ${(CQUAL_LBL[c.qual]||c.qual)}">✕</button>`;
       el.addEventListener('click',ev=>{if(ev.target.classList.contains('cpX')){ev.stopPropagation();CHORD_MODE.prog.splice(i,1);if(CHORD_MODE.prog.length===0){CHORD_MODE.on=false;follow.checked=false;}sync();return;}openEdit(i);});
       chips.appendChild(el);
     });

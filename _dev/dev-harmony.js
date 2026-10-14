@@ -24,6 +24,10 @@ const URL='http://127.0.0.1:8765/index.html';
    const errs=[];p.on('pageerror',e=>{if(!/ServiceWorker/.test(e.message))errs.push(e.message.slice(0,80))});
    await p.goto(URL);await p.waitForTimeout(500);
    await p.click(`.modeCard[data-m="${mode}"]`);await p.waitForTimeout(2000);
+   // TRANSPORT. Play opens silent and the band + slime arrive 400ms after the child's first touch;
+   // studio waits for play. This suite used to measure a stopped clock and fail on every run.
+   if(mode==='play'){await p.mouse.click(720,450);await p.waitForTimeout(1500);}
+   else{await p.click('#playBtn');await p.waitForTimeout(600);}
    return {ctx,p,errs};};
 
  for(const mode of ['play','studio']){
@@ -94,12 +98,14 @@ const URL='http://127.0.0.1:8765/index.html';
     const shows=document.body.classList.contains('keyPinned');
     document.getElementById('hdrChord').click();  // tap the chip to release
     const released=!_keyPinned;
-    for(let i=0;i<_keyJourneyBars()*3;i++)advanceHarmony(i);
-    return {start,held,shows,released,after:S.root};});
+    // count the moves, not start-vs-end: the walk is +-a fifth at random, so two moves can cancel out
+    const seen=new Set([S.root]);
+    for(let i=0;i<_keyJourneyBars()*3;i++){advanceHarmony(i);seen.add(S.root);}
+    return {start,held,shows,released,after:S.root,keys:seen.size};});
   ok(lock.held===lock.start,L+'locking the key actually holds it ('+lock.start+' -> '+lock.held+')');
   ok(lock.shows,L+'and the app SHOWS it is locked, instead of just going quiet');
   ok(lock.released,L+'tapping the chord chip releases the lock');
-  ok(lock.after!==lock.held,L+'after release the key travels again ('+lock.held+' -> '+lock.after+')');
+  ok(lock.keys>1,L+'after release the key travels again ('+lock.keys+' keys visited from '+lock.held+')');
 
   // ---- 4. the CHORD FOLLOWER still steers from hand-played notes ----
   if(mode==='studio'){

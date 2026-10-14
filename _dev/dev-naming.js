@@ -114,7 +114,7 @@ const HEADINGS=new Set(['pattern','timing','groove — human feel','key & scale'
    const ctx=await b.newContext({viewport:{width:w,height:h},hasTouch:true,isMobile:true,deviceScaleFactor:1});
    const p=await ctx.newPage();
    await p.addInitScript(()=>{try{localStorage.setItem('slimehedron-coach','1')}catch(e){}});
-   await p.goto('file://'+__dirname+'/index.html');await p.waitForTimeout(400);
+   await p.goto('file://'+require('path').resolve(__dirname,'..','index.html'));await p.waitForTimeout(400);
    await p.tap('.modeCard[data-m="play"]');await p.waitForTimeout(1600);
    const r=await p.evaluate(()=>{const out=[];
      document.querySelectorAll('.psLbl').forEach(e=>{const c=getComputedStyle(e),q=e.getBoundingClientRect();

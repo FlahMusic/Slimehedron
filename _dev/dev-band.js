@@ -152,7 +152,8 @@ for(const bars of [1,2,4]){
     S.chordBars=n;_chordIdx=0;_autoHold=0;nextRootDeg=null;curRootDeg=0;
     try{noteHisto.fill(0);}catch(e){}            // quiet tank = the auto progression path
     const degs=[];
-    for(let bar=0;bar<64;bar++){advanceHarmony(bar);degs.push(curRootDeg);}
+    // a chord is its KEY plus its degree: after a key change, I in the new key is a new chord
+    for(let bar=0;bar<64;bar++){advanceHarmony(bar);degs.push(S.root+':'+curRootDeg);}
     const runs=[];let last=null,r=0;
     for(const d of degs){if(d===last)r++;else{if(last!==null)runs.push(r);r=1;last=d;}}
     runs.push(r);
