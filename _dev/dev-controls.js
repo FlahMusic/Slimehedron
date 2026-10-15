@@ -66,7 +66,7 @@ async function sweep(ctx,label,url,skip){
       if(r.bottom<0||r.top>innerHeight||r.right<0||r.left>innerWidth)return false;
       const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
       return !!hit&&(hit===e||e.contains(hit));};   // reachable by a finger, not buried under an overlay
-    const sel='button:not([disabled]),.modeCard,.uCard,.psBtn,.mkPad,.stKey,.lgRung,.sgCell';
+    const sel='button:not([disabled]):not(.sgCell),.modeCard,.uCard,.psBtn,.mkPad,.stKey,.lgRung,.sgCell[data-i="0"]'; // one step per drum: the grid is now 10 drums x up to 64 steps, and every control here costs a page load
     return [...document.querySelectorAll(sel)].filter(vis).map((b,i)=>{
       b.setAttribute('data-sweep',i);
       return {i,name:b.id||b.getAttribute('aria-label')||b.dataset.u||b.dataset.a2||
@@ -88,7 +88,7 @@ async function sweep(ctx,label,url,skip){
           if(r.bottom<0||r.top>innerHeight||r.right<0||r.left>innerWidth)return false;
           const hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);
           return !!hit&&(hit===e||e.contains(hit));};
-        const sel='button:not([disabled]),.modeCard,.uCard,.psBtn,.mkPad,.stKey,.lgRung,.sgCell';
+        const sel='button:not([disabled]):not(.sgCell),.modeCard,.uCard,.psBtn,.mkPad,.stKey,.lgRung,.sgCell[data-i="0"]'; // one step per drum: the grid is now 10 drums x up to 64 steps, and every control here costs a page load
         const b=[...document.querySelectorAll(sel)].filter(vis)[i];
         if(!b)return {gone:true};
         // an option that is ALREADY selected staying selected is correct, not dead

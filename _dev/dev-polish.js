@@ -37,7 +37,10 @@ const open=async(b,w,h)=>{const ctx=await b.newContext({viewport:{width:w,height
    ok(icons.length===3&&icons.every(Boolean),'['+tag+'] every splash door carries an icon, not just a word ('+icons.filter(Boolean).length+'/3)');
    await ctx.close();}
 
- // ---- 2. THE STEP GRID must show the whole bar. No hidden steps, ever. ----
+ // ---- 2. THE STEP GRID: one row per drum, every step of the pattern in it, nothing cut off ----
+ // 2026-10-14: the grid now scrolls sideways when the pattern is wider than the panel (Flah asked for
+ // it to work like Studio One's pattern editor instead of wrapping). So "cut" is measured against the
+ // ROW, not the screen: a step may be scrolled out of view, but it may never be clipped or missing.
  for(const [tag,w,h] of [['desktop',1440,900],['phone',390,844]]){
    const {ctx,p}=await open(b,w,h);
    await p.click('.modeCard[data-m="studio"]');await p.waitForTimeout(1900);
@@ -47,21 +50,22 @@ const open=async(b,w,h)=>{const ctx=await b.newContext({viewport:{width:w,height
      const out=rows.map(r=>{const cells=r.querySelector('.sgCells');
        const kids=[...cells.querySelectorAll('.sgCell')];
        const box=cells.getBoundingClientRect();
-       // a cell is HIDDEN if any part of it falls outside its scroller
        const cut=kids.filter(c=>{const k=c.getBoundingClientRect();return k.right>box.right+1||k.left<box.left-1;}).length;
        const small=kids.filter(c=>c.getBoundingClientRect().width<20).length;
-       return {n:kids.length,cut,small,scroll:cells.scrollWidth-Math.round(box.width)};});
-     // the bar wraps onto two lines on a phone, so count steps per DRUM, not per line
+       const lines=new Set(kids.map(c=>Math.round(c.getBoundingClientRect().top))).size;
+       return {n:kids.length,cut,small,lines};});
      const per={};document.querySelectorAll('#stepGrid .sgCell').forEach(c=>{(per[c.dataset.v]=per[c.dataset.v]||new Set()).add(c.dataset.i);});
-     return {rows:rows.length,out,perDrum:Object.values(per).map(s=>s.size)};});
+     const sc=document.querySelector('#stepGrid .sgScroll');
+     return {rows:rows.length,out,perDrum:Object.values(per).map(s=>s.size),bars:kitBars(),scrollable:getComputedStyle(sc).overflowX};});
    ok(g.rows>0,'['+tag+'] the step grid rendered ('+g.rows+' voices)');
    if(g.rows){
      const cut=g.out.reduce((a,r)=>a+r.cut,0), small=g.out.reduce((a,r)=>a+r.small,0);
      const n=g.out[0].n;
-     ok(cut===0,'['+tag+'] every one of the '+n+' steps is fully on screen'+(cut?' ('+cut+' clipped)':''));
+     ok(cut===0,'['+tag+'] every one of the '+n+' steps sits whole inside its row'+(cut?' ('+cut+' clipped)':''));
      ok(small===0,'['+tag+'] no step cell is under 20px'+(small?' ('+small+' too small to tap)':''));
-     ok(g.out.every(r=>r.scroll<=2),'['+tag+'] the grid does not hide steps behind a scroller');
-     ok(g.perDrum.length>0&&g.perDrum.every(n=>n===16),'['+tag+'] every drum has all 16 steps of the bar ('+g.perDrum.join(',')+')');
+     ok(g.out.every(r=>r.lines===1),'['+tag+'] every drum is one row, never wrapped');
+     ok(g.scrollable==='auto','['+tag+'] and the grid scrolls sideways to reach the rest');
+     ok(g.perDrum.length>0&&g.perDrum.every(n=>n===16*g.bars),'['+tag+'] every drum has every step of its '+g.bars+'-bar pattern ('+g.perDrum.length+' drums)');
    }
    await ctx.close();}
 

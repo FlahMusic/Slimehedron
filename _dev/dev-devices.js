@@ -144,6 +144,9 @@ const SCREENS=[
             if(ox!=='auto'&&ox!=='scroll')continue;
             const id=e.id||'';
             if(/Keys$|Piano|kbMap|pxPiano/i.test(id+' '+String(e.className)))continue;  // a keyboard may be wider than the screen
+            // and so may a drum pattern: rows of drums with time running sideways, scrolling like a DAW's
+            // pattern editor, is what Flah asked for (2026-10-14). Its row names stay pinned on the left.
+            if(e.classList.contains('sgScroll'))continue;
             const r=e.getBoundingClientRect();
             if(r.width<40||r.height<10)continue;
             bad.push(e.tagName.toLowerCase()+(id?'#'+id:(String(e.className)?'.'+String(e.className).split(' ')[0]:''))+' '+e.scrollWidth+'>'+e.clientWidth);

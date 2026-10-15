@@ -81,12 +81,18 @@ const overlap=(a,b)=>!(a.right<=b.left||a.left>=b.right||a.bottom<=b.top||a.top>
   // 5. drum machine
   await pick('drums');await p.waitForTimeout(500);
   const g=await p.evaluate(()=>{const per={};document.querySelectorAll('#toolsOv .sgCell').forEach(c=>{(per[c.dataset.v]=per[c.dataset.v]||new Set()).add(c.dataset.i);});
-    const nums=[...document.querySelectorAll('#toolsOv .sgNums i')].map(i=>i.textContent).filter(Boolean);
+    const ticks=[...document.querySelectorAll('#toolsOv .sgRuler .sgTick')].slice(0,16).map(i=>{const s=i.querySelector('span');return s?s.textContent:'';}).filter(Boolean);
     const cells=[...document.querySelectorAll('#toolsOv .sgCell')].map(c=>c.getBoundingClientRect());
-    return {per:Object.values(per).map(s=>s.size),nums,minW:Math.min(...cells.map(c=>c.width)),
+    const rows=[...document.querySelectorAll('#toolsOv .sgRow')].map(r=>{const tops=new Set([...r.querySelectorAll('.sgCell')].map(c=>Math.round(c.getBoundingClientRect().top)));return {v:r.dataset.v,lines:tops.size};});
+    const sc=document.querySelector('#toolsOv .sgScroll');
+    return {per:Object.values(per).map(s=>s.size),bars:kitBars(),nums:ticks,minW:Math.min(...cells.map(c=>c.width)),rows,
+            scrolls:sc.scrollWidth>sc.clientWidth,
             last:!!document.getElementById('sgLastR'),past:document.querySelectorAll('.sgCell.past').length};});
-  ok(g.per.length>=3&&g.per.every(n=>n===16),'every drum shows all 16 steps ('+g.per.join(',')+')');
-  ok(g.nums.join('')==='1234','the beat numbers 1 2 3 4 are shown ('+g.nums.join(' ')+')');
+  ok(g.per.length>=10&&g.per.every(n=>n===16*g.bars),'every drum shows every step of its '+g.bars+'-bar pattern ('+g.per.length+' drums)');
+  ok(['K','s','h','o','y','x','ht','lt','cl','r'].every(v=>g.rows.some(r=>r.v===v)),'the kit has kick, snare, side stick, closed + open hat, ride, crash, two toms and clave');
+  ok(g.rows.every(r=>r.lines===1),'each drum is ONE row; the steps never wrap onto a second line');
+  ok(g.scrolls,'a pattern wider than the phone scrolls sideways');
+  ok(g.nums.join('')==='1234','the ruler counts 1 2 3 4 once, over the beats ('+g.nums.join(' ')+')');
   ok(g.minW>=24,'every step is at least 24px wide ('+g.minW.toFixed(1)+')');
   ok(!g.last&&g.past===0,'no last-step slider and no greyed-out steps');
   await p.evaluate(()=>{if(!S.playing)setPlaying(true);});await p.waitForTimeout(1200);
