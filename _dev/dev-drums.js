@@ -38,6 +38,10 @@ const URL='http://127.0.0.1:8765/index.html';
    const energy=d=>{let e=0;for(let i=Math.round(0.3*SR);i<Math.round(0.45*SR);i++)e+=d[i]*d[i];return e;};
    out.open=energy(await render(()=>dHit('o',0.05,1,true),1));
    out.choked=energy(await render(()=>{dHit('o',0.05,1,true);dHit('h',0.17,1,true);},1));
+   // the same hi-hat: a second open hit cuts the first, so two open hats ring like ONE, not two stacked
+   const late=d=>{let e=0;for(let i=Math.round(0.15*SR);i<Math.round(0.25*SR);i++)e+=d[i]*d[i];return e;};
+   out.oneOpen=late(await render(()=>dHit('o',0.12,1,true),1));
+   out.twoOpen=late(await render(()=>{dHit('o',0.05,1,true);dHit('o',0.12,1,true);},1));
    return out;});
  for(const v of ['K','s','r','h','o','y','x','ht','lt','cl'])ok(V[v].peak>0.02,v+' makes a sound (peak '+V[v].peak.toFixed(3)+')');
  ok(V.cl.hz>2000&&V.cl.hz<3200&&V.cl.decay<0.12,'the clave is a bright, short click ('+Math.round(V.cl.hz)+'Hz, '+(V.cl.decay*1000|0)+'ms)');
@@ -46,6 +50,7 @@ const URL='http://127.0.0.1:8765/index.html';
  ok(V.x.hz>2500&&V.y.hz>2500,'and they are cymbal-bright (crash '+Math.round(V.x.hz)+'Hz, ride '+Math.round(V.y.hz)+'Hz)');
  ok(V.o.decay>V.h.decay*4,'the open hat rings far longer than the closed one ('+V.o.decay.toFixed(2)+'s vs '+V.h.decay.toFixed(3)+'s)');
  ok(V.choked<V.open*0.05,'a closed hat shuts the open hat (tail energy '+(V.choked/V.open*100).toFixed(1)+'% of unchoked)');
+ ok(V.twoOpen<V.oneOpen*1.05,'open hat and open hat share the choke group too (two hits ring like one: '+(V.twoOpen/V.oneOpen).toFixed(2)+'x)');
 
  // ---- 3-6. play each style through the real scheduler and log every hit ----
  await p.click('.modeCard[data-m="studio"]');await p.waitForTimeout(1500);
@@ -104,12 +109,25 @@ const URL='http://127.0.0.1:8765/index.html';
  ok(ghosts(tight)===0,'ghost notes at 0: none ('+ghosts(tight)+')');
  ok(ghosts(hz)>=8,'ghost notes at 100: plenty ('+ghosts(hz)+' in 8 bars)');
 
- // FILLS + CRASH: pop fills every 8 bars, on the toms, and the crash lands on the next 1
+ // FILLS: pop fills every 8 bars, on the toms -- and NO crash after a fill any more
  const po=await run('pop',10);
  const fillToms=po.filter(h=>h.bar===7&&h.step>=12&&(h.v==='ht'||h.v==='lt')).length;
  ok(fillToms>0,'pop fills round the toms at the end of bar 8 ('+fillToms+' tom hits)');
- ok(po.some(h=>h.bar===8&&h.step===0&&h.v==='x'),'and the crash lands on the 1 of bar 9');
- ok(!po.some(h=>h.v==='x'&&h.bar<8),'no crash before the phrase ends');
+ ok(!po.some(h=>h.v==='x'),'no crash after the fill, or anywhere, while the key stays put');
+ // CRASH: one, on the downbeat where the key moves, and only in styles that crash
+ const keyRun=(kit)=>p.evaluate(async(kit)=>{
+   if(!S.playing)setPlaying(true);if(!drumOn)$("drumBtn").click();
+   const s=$("drumKit");s.value=kit;s.dispatchEvent(new Event('change'));drumKit=kit;delete KIT_EDITS[kit];loadHuman();
+   setBpm(220);S.groove=false;S.slimeMode=true;_keyPinned=false;_autoHold=0;_slimeBars=_keyJourneyBars()-2;
+   window.__log.length=0;drumStep=0;drumTime=AC.currentTime+0.05;const root0=S.root;
+   await new Promise(r=>setTimeout(r,6*4*60/220*1000+300));
+   return {log:window.__log.slice(),moved:S.root!==root0};},kit);
+ const pk=await keyRun('pop');
+ const crashes=pk.log.filter(h=>h.v==='x');
+ ok(pk.moved,'the key moved during the run');
+ ok(crashes.length===1&&crashes[0].step===0,'pop: exactly one crash, on the 1 where the key moved ('+crashes.length+')');
+ const jk=await keyRun('jazz');
+ ok(jk.moved&&!jk.log.some(h=>h.v==='x'),'jazz: the key moves, and no crash');
 
  ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
  await b.close();

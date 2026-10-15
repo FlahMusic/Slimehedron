@@ -57,7 +57,15 @@ async function launch(opts){
   const o=Object.assign({args},opts||{});
   if(EXEC)o.executablePath=EXEC;
   try{
-    return await chromium.launch(o);
+    const br=await chromium.launch(o);
+    // SLIME_VIEW=3d runs ANY suite against the 3D tank: every new page starts with the 3D view switched
+    // on, exactly as if the person had turned it on in Preferences. Unset = the 2D default.
+    //   SLIME_VIEW=3d node _dev/dev-devices.js
+    const view=(process.env.SLIME_VIEW||'').toLowerCase();
+    if(view==='3d'||view==='2d'){const nc=br.newContext.bind(br);
+      br.newContext=async(...a)=>{const c=await nc(...a);
+        await c.addInitScript(v=>{try{localStorage.setItem('slimehedron-view3d',v);}catch(e){}},view==='3d'?'1':'0');return c;};}
+    return br;
   }catch(err){
     console.error('\n  Could not start a browser for the tests.');
     console.error('  Tried: '+(EXEC||'Playwright\'s own default (nothing else was found)'));

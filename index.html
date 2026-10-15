@@ -85,7 +85,6 @@
   --cream:linear-gradient(180deg,#fefcff 0%,#f3ecfd 52%,#e6dbf8 100%);
   --panel:linear-gradient(180deg,rgba(245,239,254,.97),rgba(231,221,249,.97));
   --panel-solid:#ece4fa;
-  --veil:rgba(72,52,122,.34);           /* dusk over the crayon sky: dimmer, lilac, the art untouched underneath */
   --ring:rgba(160,150,200,.45);      /* the outline token — carries identification when fills cannot */
 }
 /* ================= COLOUR-BLIND MODE =========================================================
@@ -111,11 +110,11 @@ html,body{margin:0;height:100%;font-family:'Quicksand',system-ui,sans-serif;colo
    on school wifi is the difference between the picture arriving and the picture arriving late. */
 /* THE CRAYON SKY, EVERYWHERE: same hand-drawn backdrop behind every mode (learn/play/studio) + the splash.
    A soft white veil fades it back so note-balls, cards and text stay crisp — the art is wallpaper, never competes. */
-body{background:linear-gradient(var(--veil),var(--veil)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(var(--veil),var(--veil)),image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
-body.mode-play{background:linear-gradient(var(--veil),var(--veil)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(var(--veil),var(--veil)),image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)} /* play area gets a touch more veil so the geometry reads */
+body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
+body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)} /* play area gets a touch more veil so the geometry reads */
 @media(max-width:820px){ /* phones get the portrait art so it fills tall screens without cropping the scene */
-  body{background:linear-gradient(var(--veil),var(--veil)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(var(--veil),var(--veil)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
-  body.mode-play{background:linear-gradient(var(--veil),var(--veil)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(var(--veil),var(--veil)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}}
+  body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
+  body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}}
 /* (crayon edge-filter removed — it just smeared the edges, didn't read as crayon. real crayon UI will come from
    PNG assets via border-image; see below when those are added.) */
 header{display:flex;align-items:center;flex-wrap:wrap;gap:clamp(6px,4px + 0.7vmin,14px);
@@ -457,7 +456,18 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
    struggling, which is a decision the person is already told about. */
 body.lite *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 .psBtn:active{transform:translateY(4px) scale(.97);box-shadow:0 1px 0 var(--edge), 0 2px 4px rgba(120,100,165,.3), inset 0 3px 8px rgba(110,90,155,.22)}
-.psBtn.on{transform:translateY(2px) scale(1.06);box-shadow:0 3px 0 rgba(110,80,180,.5), 0 6px 18px rgba(130,100,200,.42), inset 0 2px 6px rgba(255,255,255,.7);border-color:#fff}
+.psBtn.on{transform:translateY(2px) scale(1.06);box-shadow:0 3px 0 rgba(110,80,180,.5), 0 6px 18px rgba(130,100,200,.42), 0 0 0 3px rgba(255,255,255,.55), 0 0 18px 4px rgba(190,150,255,.55), inset 0 2px 6px rgba(255,255,255,.7);border-color:#fff}
+/* THE CHOSEN ONE WEARS GLASS. A rainbow-glass rim runs round the inside edge of the selected sound and
+   rhythm, with a highlight that slowly travels round it, plus a soft outer glow -- so which one is on
+   reads at a glance, without relying on colour alone (the rim is a shape change too). */
+@property --rimA{syntax:'<angle>';inherits:false;initial-value:0deg}
+.psBtn.on::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:4px;z-index:3;pointer-events:none;
+  background:conic-gradient(from var(--rimA),rgba(255,255,255,.98),#c9a8ff 14%,#9fe6cf 30%,rgba(255,255,255,.95) 42%,#ffc7e4 58%,#a6c8ff 74%,rgba(255,255,255,.98));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
+  filter:drop-shadow(0 0 2px rgba(255,255,255,.9));animation:rimSpin 4.5s linear infinite}
+@keyframes rimSpin{to{--rimA:360deg}}
+@media (prefers-reduced-motion:reduce){.psBtn.on::before{animation:none}}
 .psBtn svg{width:48px;height:48px;position:relative;z-index:1}
 .psBtn.bandBtn img{width:100%;height:100%;object-fit:contain;position:relative;z-index:1;display:block;filter:drop-shadow(0 1px 1px rgba(120,100,160,.18))}
 .psBtn.bandBtn{padding:2px} /* a hair of the tile's own hue shows around the drawing */
@@ -1478,8 +1488,8 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
    reach it and the credit line floated into the middle of the doors. `safe center` centres while
    it fits and falls back to the start when it does not, so the overflow only ever goes one way,
    and the scroll makes that way reachable. The same keyword the lesson screens already use. */
-#splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow-y:auto;overscroll-behavior:contain;gap:16px;background:linear-gradient(var(--veil),var(--veil)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);cursor:pointer;transition:opacity .5s;text-align:center;background:linear-gradient(var(--veil),var(--veil)),image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)} /* splash uses the landscape art; matched aspect ratio so cover fills edge-to-edge with no crop */
-@media(max-width:820px){#splash{background:linear-gradient(var(--veil),var(--veil)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(var(--veil),var(--veil)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}} /* phones: portrait art */
+#splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow-y:auto;overscroll-behavior:contain;gap:16px;background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);cursor:pointer;transition:opacity .5s;text-align:center;background:image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)} /* splash uses the landscape art; matched aspect ratio so cover fills edge-to-edge with no crop */
+@media(max-width:820px){#splash{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}} /* phones: portrait art */
 #splash.gone{opacity:0;pointer-events:none}
 /* the colour-blind switch lives on the front door, bottom-left, where a parent or teacher sets it once
    for the whole app. 44px tall, and the tick is a SHAPE so the on-state never depends on colour. */
@@ -2154,8 +2164,9 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
 <dialog id="prefsDlg" aria-label="Preferences">
   <form method="dialog" style="margin:0">
     <div class="prefsHead"><h2 style="margin:0">Preferences</h2><button class="btn" value="close" title="close">✕</button></div>
-    <p class="prefsNote">MIDI setup lives here because you set it once, not per song.</p>
+    <p class="prefsNote">Things you set once, not per song: the tank view and MIDI.</p>
     <div class="prefsBody">
+        <div class="row"><label title="Testing: the tank as a 3D glass box. Turn it off for the flat tank, which is lighter on older devices.">3D tank (testing)</label><div class="toggle" id="view3dT" role="switch" tabindex="0" aria-label="3D tank"></div></div>
         <!-- TWO ROWS TO GET SOUND OUT. Everything under them is set once and never touched again, so
              it does not get to compete for attention: twelve rows of equal weight made wiring up a
              synth look like configuring a router. The master switch is mirrored here because this
@@ -2694,7 +2705,11 @@ function hiss(t,hpf,lvl,dur,dest,lpf){
   g.gain.setValueAtTime(lvl,t);g.gain.exponentialRampToValueAtTime(0.0006,t+dur);
   src.connect(hp);last.connect(g);g.connect(dest);
   const off=Math.min(nOff(),Math.max(0,1.95-dur));src.start(t,off);src.stop(t+dur+0.02);}
-let _ohChoke=null; // the open hat that is still ringing, so the next closed hat can shut it
+// ONE HI-HAT, ONE CHOKE GROUP. Closed and open are the same pair of cymbals: any new hit on it -- closed
+// or open, in play, studio, a lesson or a tapped step -- stops whatever open hat is still ringing.
+let _ohChoke=null; // the open hat that is still ringing
+function hatChoke(t){if(_ohChoke&&_ohChoke.end>t){const g=_ohChoke.g.gain;
+  g.setValueAtTime(1,t);g.setTargetAtTime(0.0001,t,0.012);}_ohChoke=null;}
 // EACH STYLE'S SIGNATURE PART. In play mode the picture on the chosen rhythm button hops on every hit
 // of the one drum that defines that style -- the backbeat in pop and rock, the four-on-the-floor kick
 // in disco, the clave in bossa nova, the ride in jazz -- so a child can SEE which sound to listen for.
@@ -2754,6 +2769,7 @@ function dHit(v,t,a,solid,inBar){a=Math.min(1.9,a||1);
     og.gain.setValueAtTime(0.16*a,t);og.gain.exponentialRampToValueAtTime(0.001,t+0.03);
     o.connect(og);og.connect(rimPan);o.start(t);o.stop(t+0.05);}
   else if(v==='o'){const T=KITTONE[drumKit]||KITTONE.pop;
+    hatChoke(t);                                  // a new hit on the same hi-hat stops the last one ringing
     // OPEN HAT: the same metal as the closed hat, left to ring. It runs through its own gain so the
     // next closed hat can shut it, which is what a real hi-hat does when the foot comes down.
     const ch=AC.createGain();ch.gain.value=1;ch.connect(panTo(drumBus,0.24+(Math.random()*0.1-0.05)));
@@ -2800,7 +2816,7 @@ function dHit(v,t,a,solid,inBar){a=Math.min(1.9,a||1);
     nb.type='bandpass';nb.frequency.value=3200;nb.Q.value=2;ng.gain.setValueAtTime(0.1*a,t);ng.gain.exponentialRampToValueAtTime(0.001,t+0.008);
     ns.connect(nb);nb.connect(ng);ng.connect(out);ns.start(t,nOff());ns.stop(t+0.02);}
   else if(v==='h'){const T=KITTONE[drumKit]||KITTONE.pop;
-    if(_ohChoke&&_ohChoke.end>t){_ohChoke.g.gain.setValueAtTime(1,t);_ohChoke.g.gain.setTargetAtTime(0.0001,t,0.012);_ohChoke=null;} // the foot closes the hat
+    hatChoke(t);                                  // the foot closes the hat
     // real 808/909-style hat: 6 detuned SQUARE oscillators through band+highpass = the metallic shimmer, blended
     // with a noise "tss" (T.hm sets how metallic vs airy). far richer than plain filtered noise = no more chiptune tick.
     const out=AC.createGain();out.gain.setValueAtTime(0.16*a,t);out.gain.exponentialRampToValueAtTime(0.001,t+T.hd);
@@ -3579,11 +3595,12 @@ function genFill(kit,barI,inBar){
   if(r()>=0.5+0.45*frac)return null;                   // sparse at the top, busy at the bottom
   const q=r();
   // rock, pop and disco fill round the toms, high to low, the way a drummer travels across the kit
-  if(TOM_FILL[kit])return {v:(q<0.3?vm.mid:(frac<0.5?'ht':'lt')), a:0.55+0.45*frac};
+  if(TOM_FILL[kit])return {v:(frac>=1?'lt':(q<0.3?vm.mid:(frac<0.5?'ht':'lt'))), a:0.55+0.45*frac}; // and it always lands on the floor tom
   return {v:(q<0.6?vm.mid:(q<0.85?vm.hi:vm.lo)), a:0.5+0.5*frac};
 }
 const TOM_FILL={pop:1,rock:1,disco:1,march:1};
-const CRASH_AFTER_FILL={pop:1,rock:1,disco:1,industrial:1,samba:1};
+const CRASH_ON_KEY={pop:1,rock:1,disco:1,industrial:1,samba:1};
+let _keyCrash=false; // set by the key journey, spent by the next downbeat
 window.__genFill=genFill;
 window.__bandPlan=bandPlan; // for dev-band.js
 window.__genComp=genComp;window.__feelFor=feelFor;window.__mul32=mulberry32; // so the suite can A/B the dodge on identical seeds
@@ -3756,7 +3773,7 @@ function advanceHarmony(barI){
   // heard. It used to move on any bar: a chord still sounding was re-read in the new key and changed
   // pitch halfway through, and the next chord was a random one, which hid the arrival.
   if(man==null&&!cmActive()&&S.slimeMode&&!_keyPinned&&++_slimeBars>=keyJourneyBars()&&_autoHold<=0){
-    _slimeBars=0;keyJourney();nextRootDeg=0;}
+    _slimeBars=0;keyJourney();nextRootDeg=0;_keyCrash=true;}
   if(S.slimeMode&&fillState==='fill'){_wallBars++;
     if(_wallBars%8===0)breakWall();        // every 8 bars a wall opens up (notes pour out) — frequent enough to SEE it happening
     if(_wallBars%24===0)repairWall();      // every 24 bars an old gap magically fades back into a wall
@@ -4040,9 +4057,10 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
       }
       if(inFill){const f=genFill(drumKit,gBar,inBar);
         if(f)dHit(f.v,gt,f.a*hum*padVel(),false,inBar);}
-      // the crash lands on the "1" right after a fill: the fill asks a question, the crash answers it
-      if(inBar===0&&gBar>0&&gBar%_fl.every===0&&CRASH_AFTER_FILL[drumKit]&&!(kit.x||[]).includes(pst))
-        dHit('x',gt,0.95*padVel(),true,0);
+      // THE CRASH IS RARE ON PURPOSE. It marks one thing: the key just moved (every 16+ bars, ~90s), and it
+      // lands on the new key's home chord. Only the styles that crash at all -- jazz and bossa never do.
+      if(inBar===0&&_keyCrash){_keyCrash=false;
+        if(CRASH_ON_KEY[drumKit]&&!(kit.x||[]).includes(pst))dHit('x',gt,0.95*padVel(),true,0);}
       // COMPLEX end of the pad: an extra off-beat hat, so the puck adds as well as removes
       if(PAD.x>0.72&&KITVOICE[drumKit].hi==='h'&&(inBar%2===1)&&!(kit.h||[]).includes(pst)&&Math.random()<(PAD.x-0.72)*2.6)
         dHit('h',gt,0.22*hum*padVel());
@@ -4261,10 +4279,14 @@ const balls=[];const BR=9;let hueIdx=0; // 12 chromatic hues like 12 notes, cycl
 function spawn(x,y){const ang=Math.random()*Math.PI*2, sp=ballSpeed();
   if(balls.length>=MAXBALLS+6)return; // hard safety only; the wall-drain (in step) is what keeps it from piling — no vanish-flash
   // px/py seeded to the spawn point, or the first interpolated frame streaks in from nowhere
-  balls.push({x,y,px:x,py:y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,hue:((hueIdx++)%12)/12,trail:[]});}
+  // z: 0 = the front glass, 1 = the back of the box. A new ball starts at the front, where it was dropped,
+  // and drifts into the box at its own speed (see THE THIRD DIMENSION in step()).
+  balls.push(Object.assign({x,y,px:x,py:y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,hue:((hueIdx++)%12)/12,trail:[]},zInit()));}
+function zInit(){return {z:0.02,pz:0.02,vz:0.003+Math.random()*0.004};} // every new ball starts at the front glass and drifts back
 function velForHit(){return S.velRand?Math.round(S.velMin+Math.random()*(S.velMax-S.velMin)):S.velFix;}
 let pendingNotes=[];
-function trigger(cents,imp,goo,now){noteFeed(cents);goo=goo||0;let vel=Math.round(velForHit()*(1-goo*0.3)); // gooed notes land softer too
+function trigger(cents,imp,goo,now,pane){if(!pane)noteFeed(cents);goo=goo||0;let vel=Math.round(velForHit()*(1-goo*0.3)); // gooed notes land softer too
+  if(pane)vel=Math.max(1,Math.round(vel*0.62)); // a glass pane is a soft chime under the walls, never a lead
   // A HAND GETS A FIRM NOTE. velForHit() can hand back 12 of 127 because the random range exists to
   // make rain sound like rain. A child who deliberately touches a wall and gets a note at 9% level
   // has been told the app is broken. Balls keep the full range; a press gets a floor.
@@ -4297,12 +4319,13 @@ function feedLiquidHue(h){let d=((h-liqHue)%1+1.5)%1-0.5;liqHue=(liqHue+d*0.035+
   d=((liqHue-liqHueOld)%1+1.5)%1-0.5;liqHueOld=(liqHueOld+d*0.02+1)%1;} // slow drift: the pool remembers the last ~30 notes, doesn't chase every hit
 let ripples=[]; // surface rings where things enter the goo
 function addRipple(x,y,s){if(ripples.length>=24)ripples.shift();ripples.push({x,y,r:5,vr:1.8+(s||1),a:0.5});}
+let _splashZ=0.5; // 3D: the depth the next splash happens at (the ball's own)
 function splash(x,y,inx,iny,hue){
   if(fillState!=="fill"||particles.length>=partCap())return; // no new fill while it's broken open
   if(hue==null)hue=Math.random();feedLiquidHue(hue);
   for(let i=0;i<5;i++){const sp=1.4+Math.random()*2.6, tx=-iny, ty=inx, tang=(Math.random()-0.5)*3.6; // 5 droplets/hit (was 10) — plenty of splash, far less pile-up
     const px=x+(Math.random()-0.5)*8, py=y+(Math.random()-0.5)*8;
-    particles.push({x:px,y:py,sx:px,sy:py,vx:inx*sp+tx*tang,vy:iny*sp+ty*tang,hue:(hue+(Math.random()-0.5)*0.05+1)%1,r:2,age:0,pooled:false});} // droplets wear the note's color
+    particles.push({x:px,y:py,z:_splashZ,sx:px,sy:py,vx:inx*sp+tx*tang,vy:iny*sp+ty*tang,hue:(hue+(Math.random()-0.5)*0.05+1)%1,r:2,age:0,pooled:false});} // droplets wear the note's color
 }
 // deflect a mover inward off the solid boundary
 function bounceInside(o){ // deflect inward off intact walls; broken walls let stuff spill through
@@ -4379,7 +4402,7 @@ function commitReform(){
 function fillPhysics(now){
   if(fillState==="fill"){
     const settle=settleAmt(),pg=gY*(0.12+0.88*settle); // young goo is nearly weightless; it gains weight as it grows and sinks to the floor
-    for(const p of particles){p.age++;
+    for(const p of particles){p.age++;if(p.z!=null&&p.z!==0.5)p.z+=(0.5-p.z)*0.045; // 3D: spray drifts in from the glass to the liquid sheet as it falls
       if(!p.pooled&&(p.age>50||(p.age>10&&Math.hypot(p.vx,p.vy)<1.2))){p.pooled=true;if(Math.random()<0.2)addRipple(p.x,p.y-3,0.4);} // fleck lands -> joins the liquid, little ring where it lands
       if(p.pooled&&p.r<PR)p.r+=0.12;
       p.vy+=(p.pooled?pg:gY);p.vx+=gX;
@@ -4487,14 +4510,14 @@ function step(){
             const vn=b.vx*e.nx+b.vy*e.ny;
             if(vn<0){hitWall=true;b.vx-=2*vn*e.nx;b.vy-=2*vn*e.ny;jitter(b);b.x+=(BR-dist)*e.nx;b.y+=(BR-dist)*e.ny;e.flash=1;
               const nw=performance.now();
-              if(b.mute){b.mute=0;e.flash=1;splash(b.x,b.y,e.nx,e.ny,e.hue);}else
+              if(b.mute){b.mute=0;e.flash=1;(_splashZ=VIEW.d3?(b.z||0):0.5,splash(b.x,b.y,e.nx,e.ny,e.hue));}else
               if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
                 const gd=gooAt(b.x,b.y),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
                 if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
                 const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0; // how gooed-up THIS ball is right now
                 trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1))*(1-goo*0.45),goo); // goo-slathered hits ring softer & rounder
                 if(LAB._hit){try{LAB._hit(e.deg,e.cents);}catch(err){}} // the lesson hears every wall the child rings
-                splash(b.x,b.y,e.nx,e.ny,e.hue);}}}} // splash carries the note's color into the pool
+                (_splashZ=VIEW.d3?(b.z||0):0.5,splash(b.x,b.y,e.nx,e.ny,e.hue));}}}} // splash carries the note's color into the pool
         // despawn only a ball that truly left the arena through an open corner (never bounced, wandered far off-screen)
         if(!hitWall&&!inPoly(b.x,b.y,edges._verts)&&(b.x<-80||b.x>W+80||b.y<-80||b.y>H+80)){balls.splice(bi,1);killed=true;break;}
       }else{ // broken open — bounce off the fragments, trickle out through the gaps
@@ -4504,7 +4527,28 @@ function step(){
       }
     }
     if(killed)continue;
-    b.trail.push([b.x,b.y]);if(b.trail.length>7)b.trail.shift();
+    // ---- THE THIRD DIMENSION ----
+    // The box has a front pane and a back pane, and a ball now travels between them as well as across.
+    // The side walls are the shape pushed straight back, so hitting one is the same 2D check as ever --
+    // which is why every wall keeps its note and every lesson still works. The panes are NEW things to
+    // hit, and they play the chord that is sounding right now: the BACK pane its root, low and warm, the
+    // FRONT pane a high chord tone. More notes, all of them in the chord, so more can never mean wrong.
+    // Lessons keep every ball on the front glass, exactly as before.
+    b.pz=b.z==null?0:b.z;
+    if(!VIEW.d3||(LAB&&LAB._on)){b.z=0;}
+    else if(fillState==="fill"&&b.vz){
+      if(g>0){const G=boxGravity();b.vx+=G[0]*gy;b.vz+=G[2]*gy/BOXD;}   // the tilted box: gravity leans balls toward a pane too
+      b.vz=Math.max(-0.012,Math.min(0.012,b.vz));
+      if(Math.abs(b.vz)<0.0015)b.vz=b.vz<0?-0.0015:0.0015;            // never parked against the glass
+      b.z+=b.vz;
+      const hitPane=(back)=>{const nw=performance.now();if(b.lastPane&&nw-b.lastPane<140)return;b.lastPane=nw;
+        if(b.mute||!inPoly(b.x,b.y,edges._verts))return;
+        const rd=curRootDeg||0,c=back?centsForDegree(rd):centsForDegree(rd+((b.paneN=(b.paneN||0)+1)%2?2:4))+1200;
+        _pane[back?'back':'front']=1;trigger(c,0.35,0,false,true);
+        _splashZ=back?0.97:0.03;splash(b.x,b.y,0,-1,b.hue);_splashZ=0.5;};
+      if(b.z<0){b.z=-b.z;b.vz=-b.vz;hitPane(false);}
+      else if(b.z>1){b.z=2-b.z;b.vz=-b.vz;hitPane(true);}}
+    b.trail.push([b.x,b.y,b.z||0]);if(b.trail.length>7)b.trail.shift();
     // no gravity = steady tempo speed; the more gravity, the more they free-fall & settle (smooth across the whole slider)
     if(b.mute&&(b.muteN=(b.muteN||0)+1)>40)b.mute=0; // safety: a shot that never lands rejoins normal physics
     if(!b.mute){ // shot balls fly TRUE — no tempo normalizer, no drag, no goo — until first impact. then they're citizens.
@@ -4694,7 +4738,7 @@ function softBlobs(col){ // glossy goo: upscale metaballs + sweeping shine + wet
 function clipShape(){ctx.beginPath();ctx.moveTo(edges[0].ax,edges[0].ay);for(const e of edges)ctx.lineTo(e.bx,e.by);ctx.closePath();ctx.clip();}
 let _poolMode=false; // latched render state — see the flicker fix below
 let surfY=null; // persistent water line with inertia — the surface eases toward the particles instead of teleporting, so it moves like liquid
-function drawParticles(){ // the goo: floats as a blob while young, settles into a gradient pool once heavy — colored by the chord it's made of
+function drawParticles(noDrops){ // the goo: floats as a blob while young, settles into a gradient pool once heavy — colored by the chord it's made of
   if(!particles.length){surfY=null;mMask=null;_poolMode=false;measuredFill=Math.max(0,measuredFill-0.02);drawRipples();return;} // empty tank = no ghost goo left in the mask
   const now=performance.now(),LC=liquidColor();
   let pooledN=0;for(const p of particles)if(p.pooled)pooledN++;
@@ -4734,12 +4778,12 @@ function drawParticles(){ // the goo: floats as a blob while young, settles into
       ctx.strokeStyle='rgba(255,255,255,0.45)';ctx.lineWidth=1.1;ctx.stroke();
     }else{surfY=null;softBlobs(LC.blob);} // young goo: a weightless blob hanging mid-shape, already slowing balls that pass through
     drawRipples();
-    for(const p of particles){if(p.pooled)continue; // fresh spray: crisp droplets in the note's own color, inside the glass
+    if(!noDrops)for(const p of particles){if(p.pooled)continue; // fresh spray: crisp droplets in the note's own color, inside the glass
       ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}
     ctx.restore();
   }else{ // broken open: goo spills free, no clip — it's escaping
     surfY=null;softBlobs(LC.mid);drawRipples();
-    for(const p of particles){if(p.pooled)continue;
+    if(!noDrops)for(const p of particles){if(p.pooled)continue;
       ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}}}
 function drawBalls(){ // every ball its own vivid hue; in the goo they wade — fat goopy wake, dimmer glow, visibly slower
   for(const b of balls){const tl=b.trail.length,bh=Math.round(b.hue*360),under=fillState==="fill"&&gooAt(b.x,b.y)>0.3;
@@ -4756,10 +4800,141 @@ function drawBalls(){ // every ball its own vivid hue; in the goo they wade — 
     ctx.fillStyle=under?`hsl(${bh},70%,52%)`:`hsl(${bh},88%,58%)`;ctx.beginPath();ctx.arc(bx,by,BR,0,7);ctx.fill();
     ctx.fillStyle=under?"rgba(255,255,255,.45)":"rgba(255,255,255,.75)";ctx.beginPath();ctx.arc(bx-BR*0.3,by-BR*0.35,BR*0.32,0,7);ctx.fill();}
 }
+// ================================================================================================
+//  TWO VIEWS OF ONE TANK: 2D (the one it has always had) and 3D (being built, opt-in for now).
+//  VIEW.d3 picks. Preferences > "3D tank", or ?view=3d / ?view=2d in the address, remembered per device.
+//  Rule for anything new: it must work in 2D. 3D may add to it, never replace it -- 2D is the
+//  fallback for slow devices once 3D becomes the default.
+//
+//  3D: the shape is the open front of a glass box. Physics lives in the BOX's own frame:
+//    x,y  exactly as in 2D -- the side walls are the shape pushed straight back, so a wall hit is the
+//         same 2D check as ever, every wall keeps its note and every lesson still works
+//    z    0 = front glass, 1 = back glass. Balls travel through the depth too, and the two panes are
+//         new things to hit (see THE THIRD DIMENSION in step()).
+//  The box spins on its own axis (rot, tempo-locked in play) and that axis is TILTED and slowly
+//  wanders round, like a planet's -- so gravity, which stays pointing down the screen, keeps leaning
+//  the balls toward different walls and panes. Taps are un-projected back onto the front glass, so a
+//  finger lands where it looks like it lands.
+// ================================================================================================
+const VIEW={d3:false};
+try{const q=new URLSearchParams(location.search).get('view');
+  if(q==='3d'||q==='2d')localStorage.setItem('slimehedron-view3d',q==='3d'?'1':'0');
+  VIEW.d3=localStorage.getItem('slimehedron-view3d')==='1';}catch(e){}
+window.setView3D=function(on){VIEW.d3=!!on;try{localStorage.setItem('slimehedron-view3d',on?'1':'0');}catch(e){}
+  if(!on)for(const b of balls){b.z=0;b.pz=0;}
+  const t=document.getElementById('view3dT');if(t)t.classList.toggle('on',VIEW.d3);};
+window.__view=VIEW;
+const BOXD=R*1.2;                        // how deep the box is, in the same units as the shape
+const CAM=1000;                          // camera distance: the back of the box shows at ~74% size
+const TILT=0.22;                         // ~13 degrees: how far the spin axis leans
+const _pane={front:0,back:0};           // how lit each glass pane is after a ball strikes it
+const _ptr={x:0,y:0};
+addEventListener('pointermove',e=>{_ptr.x=(e.clientX/innerWidth-0.5)*2;_ptr.y=(e.clientY/innerHeight-0.5)*2;},{passive:true});
+let _M=[1,0,0,0,1,0,0,0,1],_phi=0,_tiltNow=TILT,_ptrE={x:0,y:0};
+let _reduced=false;try{_reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+// the axis wanders round once every 16 bars in play (it speeds up with the tempo, like the spin),
+// slowly elsewhere; the pointer leans it a little more so the box turns toward your hand
+function viewTick(){
+  let secBar=4*60/(S.bpm||80);try{secBar=drumBar()*drumStepDur();}catch(e){}
+  if(!_reduced&&S.playing)_phi+=(2*Math.PI)/(16*Math.max(0.2,secBar)*60);
+  _ptrE.x+=(_ptr.x-_ptrE.x)*0.05;_ptrE.y+=(_ptr.y-_ptrE.y)*0.05;
+  const ax=Math.cos(_phi)+(_reduced?0:-_ptrE.y*0.6),ay=Math.sin(_phi)+(_reduced?0:_ptrE.x*0.6),al=Math.hypot(ax,ay)||1;
+  const ux=ax/al,uy=ay/al,th=_tiltNow,c=Math.cos(th),s=Math.sin(th),k=1-c;   // Rodrigues: tilt by th about (ux,uy,0)
+  _M=[c+ux*ux*k, ux*uy*k, uy*s,
+      ux*uy*k, c+uy*uy*k, -ux*s,
+      -uy*s, ux*s, c];}
+// box-local (x, y in tank units; z 0..1) -> [screen x, screen y, scale]
+function P3(x,y,z){const cx=x-CX,cy=y-CY,cz=z*BOXD-BOXD/2,M=_M;
+  const wx=M[0]*cx+M[1]*cy+M[2]*cz,wy=M[3]*cx+M[4]*cy+M[5]*cz,wz=M[6]*cx+M[7]*cy+M[8]*cz+BOXD/2;
+  const f=CAM/(CAM+wz);return [CX+wx*f,CY+wy*f,f];}
+// a point on the screen -> where it sits on the FRONT glass, in box-local x,y
+function screenToBox(sx,sy){const M=_M,ox=sx-CX,oy=sy-CY;
+  const n=[M[2],M[5],M[8]],p0=[M[2]*(-BOXD/2),M[5]*(-BOXD/2),M[8]*(-BOXD/2)+BOXD/2];
+  const B=[ox/CAM,oy/CAM,1],den=n[0]*B[0]+n[1]*B[1]+n[2]*B[2];if(Math.abs(den)<1e-6)return [sx,sy];
+  const wz=(n[0]*(p0[0]-ox)+n[1]*(p0[1]-oy)+n[2]*p0[2])/den;
+  const Q=[ox+wz*B[0],oy+wz*B[1],wz-BOXD/2];                 // back into the box's own frame (M is a rotation: inverse = transpose)
+  return [CX+M[0]*Q[0]+M[3]*Q[1]+M[6]*Q[2],CY+M[1]*Q[0]+M[4]*Q[1]+M[7]*Q[2]];}
+window.__screenToBox=screenToBox;window.__P3=P3;
+// a flat layer of the tank (goo, ripples, the front rim) drawn at one depth: the affine transform that
+// matches P3 at that depth. Exact at the middle, within ~2px at the corners at this tilt.
+function planeAt(z){const o=P3(CX,CY,z),a=P3(CX+100,CY,z),b=P3(CX,CY+100,z);
+  const A=(a[0]-o[0])/100,Bv=(a[1]-o[1])/100,C=(b[0]-o[0])/100,D=(b[1]-o[1])/100;
+  return [A,Bv,C,D,o[0]-A*CX-C*CY,o[1]-Bv*CX-D*CY];}
+// world gravity (down the screen) as the box feels it, given its tilt: [gx, gy, gz per unit]
+function boxGravity(){const M=_M;return [M[3],M[4],M[5]];}   // transpose row of (0,1,0)
+function draw3D(){viewTick();
+  const fill=fillState==="fill",list=fill?edges:(curSegs||computeSegs());
+  const ph=performance.now()*0.000012;
+  if(list&&list.length){const N=list.length;
+    ctx.save();ctx.lineJoin='round';
+    const F=list.map(e=>P3(e.ax,e.ay,0)),Bk=list.map(e=>P3(e.ax,e.ay,1)),Fb=list.map(e=>P3(e.bx,e.by,0)),Bb=list.map(e=>P3(e.bx,e.by,1));
+    // the back of the box: a soft lilac glass pane that brightens when a ball strikes it
+    if(fill){ctx.beginPath();Bk.forEach((p,i)=>{i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);});ctx.closePath();
+      const pb=_pane.back,c0=P3(CX,CY,1);
+      if(LITE)ctx.fillStyle='rgba(222,206,252,'+(0.2+pb*0.3).toFixed(3)+')';
+      else{const g=ctx.createRadialGradient(c0[0],c0[1],8,c0[0],c0[1],R*0.8);
+        g.addColorStop(0,'rgba(255,255,255,'+(0.30+pb*0.4).toFixed(3)+')');g.addColorStop(1,'rgba(205,186,248,'+(0.20+pb*0.25).toFixed(3)+')');ctx.fillStyle=g;}
+      ctx.fill();}
+    _pane.back*=0.88;
+    // ball shadows on the back pane: how far each ball is from the back is what makes the box a volume
+    if(fill){ctx.fillStyle='rgba(60,36,110,.15)';
+      for(const b of balls){const s=P3(lerpX(b),lerpY(b),1);ctx.beginPath();ctx.ellipse(s[0]+3,s[1]+5,BR*s[2]*1.05,BR*s[2]*0.8,0,0,7);ctx.fill();}}
+    // the side walls, one per edge, each in its wall's colour, lit along their length by a strike
+    for(let i=0;i<N;i++){const e=list[i];if(fill&&e.broken&&!e.reform)continue;
+      const lit=Math.min(1,(e.flash||0)*1.4);
+      ctx.beginPath();ctx.moveTo(F[i][0],F[i][1]);ctx.lineTo(Fb[i][0],Fb[i][1]);ctx.lineTo(Bb[i][0],Bb[i][1]);ctx.lineTo(Bk[i][0],Bk[i][1]);ctx.closePath();
+      ctx.fillStyle=aurora(e.hue+ph,LITE?72:78,(LITE?0.10:0.14)+lit*0.3);ctx.fill();}
+    // two faint depth rings, then the corner rails and the back rim
+    if(fill&&!LITE){ctx.setLineDash([3,9]);ctx.lineWidth=1.2;ctx.strokeStyle='rgba(255,255,255,.32)';
+      for(const d of [0.33,0.66]){ctx.beginPath();list.forEach((e,i)=>{const p=P3(e.ax,e.ay,d);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);});ctx.closePath();ctx.stroke();}
+      ctx.setLineDash([]);}
+    ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,.55)';ctx.beginPath();
+    for(let i=0;i<N;i++){ctx.moveTo(F[i][0],F[i][1]);ctx.lineTo(Bk[i][0],Bk[i][1]);}ctx.stroke();
+    ctx.lineWidth=2.5;
+    for(let i=0;i<N;i++){const e=list[i];if(fill&&e.broken&&!e.reform)continue;
+      ctx.strokeStyle=aurora(e.hue+ph,80,0.55);ctx.beginPath();ctx.moveTo(Bk[i][0],Bk[i][1]);ctx.lineTo(Bb[i][0],Bb[i][1]);ctx.stroke();}
+    ctx.restore();}
+  // the goo is a liquid sheet through the middle of the box; spray droplets fly at their own depth
+  ctx.save();ctx.transform(...planeAt(0.5));drawParticles(true);ctx.restore();
+  drawDroplets3D();
+  // balls, back to front, so a near ball passes in front of a far one
+  drawBalls3D();
+  // the front glass: a faint flash when struck, then the rim (the walls' own glowing edges) and debris
+  ctx.save();ctx.transform(...planeAt(0));
+  if(fill&&_pane.front>0.02&&list&&list.length){ctx.beginPath();list.forEach((e,i)=>{i?ctx.lineTo(e.ax,e.ay):ctx.moveTo(e.ax,e.ay);});ctx.closePath();
+    ctx.fillStyle='rgba(255,255,255,'+(0.16*_pane.front).toFixed(3)+')';ctx.fill();}
+  drawShape();drawDebris();ctx.restore();
+  _pane.front*=0.86;}
+function drawDroplets3D(){for(const p of particles){if(p.pooled)continue;const s=P3(p.x,p.y,p.z==null?0.5:p.z);
+  ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(s[0],s[1],2.2*s[2],0,7);ctx.fill();}}
+// each ball is a pre-painted sprite (glow + lit sphere + highlight), one per colour, painted once and
+// stamped every frame: a gradient built per ball per frame was what made 3D dearer than 2D on slow phones
+const _ballSpr=new Map();
+function ballSprite(bh,under){const k=bh+(under?'u':'');let c=_ballSpr.get(k);if(c)return c;
+  const S2=96,r=S2/2/2.2,cx=S2/2;c=document.createElement('canvas');c.width=c.height=S2;const x=c.getContext('2d');
+  const g=x.createRadialGradient(cx,cx,1,cx,cx,cx);g.addColorStop(0,under?"rgba(255,255,255,.7)":"#fff");g.addColorStop(1,`hsla(${bh},90%,62%,0)`);
+  x.fillStyle=g;x.beginPath();x.arc(cx,cx,under?r*1.5:cx,0,7);x.fill();
+  const sg=x.createRadialGradient(cx-r*0.35,cx-r*0.4,r*0.1,cx,cx,r);
+  sg.addColorStop(0,under?`hsl(${bh},70%,66%)`:`hsl(${bh},92%,74%)`);sg.addColorStop(0.7,under?`hsl(${bh},70%,52%)`:`hsl(${bh},88%,58%)`);
+  sg.addColorStop(1,under?`hsl(${bh},65%,40%)`:`hsl(${bh},80%,44%)`);x.fillStyle=sg;x.beginPath();x.arc(cx,cx,r,0,7);x.fill();
+  x.fillStyle=under?"rgba(255,255,255,.45)":"rgba(255,255,255,.75)";x.beginPath();x.arc(cx-r*0.3,cx-r*0.35,r*0.32,0,7);x.fill();
+  _ballSpr.set(k,c);return c;}
+function drawBalls3D(){
+  const order=balls.slice().sort((a,b)=>(b.z||0)-(a.z||0));
+  for(const b of order){const tl=b.trail.length,bh=Math.round(b.hue*360),under=fillState==="fill"&&gooAt(b.x,b.y)>0.3;
+    let bx=lerpX(b),by=lerpY(b),bz=(b.pz==null?(b.z||0):b.pz+((b.z||0)-b.pz)*_alpha);
+    if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR*2.2){bx=b.x;by=b.y;bz=b.z||0;}
+    const s=P3(bx,by,bz),X=s[0],Y=s[1],r=BR*s[2];
+    ctx.globalAlpha=1-0.3*bz;                                              // further back = a little hazier
+    for(let i=0;i<tl;i++){const t=b.trail[i],f=i/tl,q=P3(t[0],t[1],t[2]||0);
+      ctx.fillStyle=under?`hsla(${bh},65%,58%,${(f*0.4).toFixed(3)})`:`hsla(${bh},90%,64%,${(f*0.25).toFixed(3)})`;
+      ctx.beginPath();ctx.arc(q[0],q[1],r*(under?(0.4+0.95*f):(0.2+0.55*f)),0,7);ctx.fill();}
+    const R2=r*2.2;ctx.drawImage(ballSprite(bh,under),X-R2,Y-R2,R2*2,R2*2);}
+  ctx.globalAlpha=1;}
 function draw(){
   ctx.clearRect(0,0,W,H);
-  drawParticles();
-  drawShape();drawDebris();drawBalls();
+  if(VIEW.d3)draw3D();                  // the glass box (see TWO VIEWS OF ONE TANK)
+  else{drawParticles();drawShape();drawDebris();drawBalls();}  // the flat tank, exactly as it has always been
   // The chord readout is the header chip (#hdrChord) now: it rides in the transport row, so it cannot be
   // covered by the studio strip and it is the only readout play mode has left. This floating pill is
   // retired - it is still wired (updateChordPill) but never shown. NOTE: this line used to re-show it on
@@ -4811,7 +4986,13 @@ function loop(now){
 // ONE physics tick. Everything that MOVES lives here so it can run on a fixed clock (below).
 function simTick(now){
   if(S.slimeMode)slimeModStep(now);
-  if(S.spin!==0){rot+=S.spin*0.0003;rebuild();}
+  if(S.spin!==0){
+    // PLAY MODE TURNS WITH THE TEMPO: one full turn every 8 bars at the slime's own spin, so speeding the
+    // tempo up spins the whole shape faster with it, and the shape comes home at the top of every phrase.
+    let d=S.spin*0.0003;
+    if(S.mode==='play'){let secBar=4*60/(S.bpm||80);try{secBar=drumBar()*drumStepDur();}catch(e){}
+      if(secBar>0.05)d=(S.spin/14)*(2*Math.PI)/(8*secBar*60);}
+    rot+=d;rebuild();}
   curSegs=(fillState==="fill")?null:computeSegs();
   step();fillPhysics(now);
 }
@@ -5246,6 +5427,11 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
     if(wasOn){if(drumOn)$("drumBtn").click();return;} // tap the lit one again = stop the beat
     b.classList.add('on');drumKit=b.dataset.kit;const dk=$("drumKit");if(dk)dk.value=drumKit;
     if(!drumOn)$("drumBtn").click();});
+  // the lit rhythm always tells the truth: when the band starts by itself (play mode's first touch),
+  // the rhythm that is actually playing lights up too, instead of none of them
+  const syncKits=()=>{if(!dl)return;dl.querySelectorAll('.psBtn').forEach(x=>x.classList.toggle('on',!!drumOn&&x.dataset.kit===drumKit));};
+  const db=$("drumBtn");if(db)db.addEventListener('click',()=>setTimeout(syncKits,0));
+  const dsel=$("drumKit");if(dsel)dsel.addEventListener('change',()=>setTimeout(syncKits,0));
 })();
 function applyMix(){if(!AC||!master)return;const t=AC.currentTime; // triangle mix: center = everyone full
   const c=x=>Math.min(1,x*3);S.wMg=c(S.wM);const T=0.09; // gentle ramp = no zipper/clicks when dragging fast or slow
@@ -5563,7 +5749,7 @@ function shootBall(cents){ // fire a ball AT the wall that owns this pitch — t
   let dx=tx-CX,dy=ty-CY;const L=Math.hypot(dx,dy)||1;dx/=L;dy/=L;
   const sp=R/7;
   if(balls.length>=MAXBALLS+6)return; // the note already SOUNDED via playNote; if the tank's truly full just skip the visual ball (no vanish-flash — the wall-drain clears room)
-  balls.push({x:CX,y:CY,vx:dx*sp,vy:dy*sp,hue:((hueIdx++)%12)/12,trail:[],mute:1});} // mute: the wall hit won't re-trigger — you already heard the press
+  balls.push(Object.assign({x:CX,y:CY,vx:dx*sp,vy:dy*sp,hue:((hueIdx++)%12)/12,trail:[],mute:1},zInit()));} // mute: the wall hit won't re-trigger — you already heard the press
 // ============ THE VOCALIST: intelligent auto-melody (used by BOTH play & studio) ============
 // Built from how great composers actually write singable tunes (Bach/Mozart/pop songwriting):
 //  • MOSTLY stepwise (2nds), some 3rd skips, rare leaps that resolve by stepping back the opposite way
@@ -5685,7 +5871,7 @@ function autoMelodyNote(strong){
   // spawn a touch off-center in the aim direction so it eases outward, floating, instead of teleport-shooting from the middle
   const r0=R*0.14*Math.random(), sx=CX+Math.cos(ang)*r0, sy=CY+Math.sin(ang)*r0;
   if(balls.length>=MAXBALLS)return; // full? just skip this note — the wall-drain releases old ones; never a vanish-flash
-  balls.push({x:sx,y:sy,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,hue:((hueIdx++)%12)/12,trail:[]}); // NO mute: it floats & sings on wall hits exactly like a normal ball
+  balls.push(Object.assign({x:sx,y:sy,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,hue:((hueIdx++)%12)/12,trail:[]},zInit())); // NO mute: it floats & sings on wall hits exactly like a normal ball
 }
 function playNote(midi,vel){ // one door for every performance: computer keyboard, MIDI, anything later
   initAudio();if(AC&&AC.state==='suspended')AC.resume();
@@ -5842,6 +6028,10 @@ addEventListener('keydown',e=>{
   else if(e.code==='ArrowUp'||e.code==='ArrowDown'){e.preventDefault();
     setBpm(S.bpm+(e.code==='ArrowUp'?2:-2));}
 });
+// ---------- 3D tank switch ----------
+(function(){const t=$("view3dT");if(!t)return;t.classList.toggle('on',VIEW.d3);
+  const flip=()=>window.setView3D(!VIEW.d3);
+  t.addEventListener('click',flip);t.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip();}});})();
 // ---------- PREFERENCES dialog ----------
 (function(){const b=$("prefsBtn"),d=$("prefsDlg");if(!b||!d)return;
   b.addEventListener('click',()=>{if(d.showModal)d.showModal();else d.setAttribute('open','');});
@@ -5961,7 +6151,9 @@ function phPaint(){_phRaf=0;if(!AC)return;
   const dot=document.createElement('div');dot.id='aimDot';dot.hidden=true;dot.setAttribute('aria-hidden','true');
   document.body.appendChild(dot);
   let ax=0.5,ay=0.3,on=false;
-  function place(){const r=cv.getBoundingClientRect();dot.style.left=(r.left+ax*r.width)+'px';dot.style.top=(r.top+ay*r.height)+'px';}
+  function place(){const r=cv.getBoundingClientRect();let px=ax,py=ay;
+    if(VIEW.d3){const q=P3(ax*W,ay*H,0);px=q[0]/W;py=q[1]/H;}   // 3D: show the marker where that spot on the front glass is drawn
+    dot.style.left=(r.left+px*r.width)+'px';dot.style.top=(r.top+py*r.height)+'px';}
   function show(v){on=v;dot.hidden=!v;if(v)place();}
   // :focus-visible is true for keyboard focus and false for a tap/click, which is precisely the rule we want.
   // (Older engines without it fall back to matches() throwing -> treat as keyboard, never worse than before.)
@@ -5991,7 +6183,8 @@ function phPaint(){_phRaf=0;if(!AC)return;
 cv.addEventListener('pointerdown',e=>{initAudio();if(AC.state==="suspended")AC.resume();
   const r=cv.getBoundingClientRect();
   if(!(r.width>0&&r.height>0))return;                 // canvas not laid out (hidden): any maths here yields NaN/Infinity
-  const x=(e.clientX-r.left)*(W/r.width),y=(e.clientY-r.top)*(H/r.height);
+  let x=(e.clientX-r.left)*(W/r.width),y=(e.clientY-r.top)*(H/r.height);
+  if(VIEW.d3)[x,y]=screenToBox(x,y);                 // 3D: where the finger lands on the front glass of the tilted box
   if(!Number.isFinite(x)||!Number.isFinite(y))return; // belt and braces: a NaN ball never despawns and kills the renderer
   // LEARN: the tank is an INSTRUMENT you touch, not a ball dispenser. Nearest wall, so a small finger
   // anywhere near a wall still gets that note. PLAY/STUDIO keep the original drop-a-ball behaviour.

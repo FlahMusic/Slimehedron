@@ -32,6 +32,9 @@ const PLANT=()=>{
   // variable and this suite happily compared the performance render against itself - three
   // deliberate sabotages of the full render came back as 0% changed. __setLite is the app's own
   // test hook and actually moves the flag.
+  // THE FLAT TANK. The reference is the 2D goo; the 3D view draws the same goo through a tilted plane,
+  // which would 'change' every pixel. This suite guards the goo renderer itself, so it pins 2D.
+  if(window.setView3D)window.setView3D(false);
   S.playing=false; window.PIX=false;
   if(window.__setLite)window.__setLite(false); else window.LITE=false;
   if(typeof mFrame!=='undefined')mFrame=0;
