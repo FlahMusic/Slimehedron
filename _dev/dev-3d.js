@@ -1,6 +1,6 @@
 // ============================================================================================
-//  3D TANK TEST — two views of one tank. 2D is the default and must be exactly the old tank; 3D is
-//  opt-in (?view=3d, or Preferences) while it is built, and its depth has to MEAN something:
+//  3D TANK TEST — two views of one tank. 3D is the default (dev-space checks that); 2D must be exactly
+//  the old flat tank (?view=2d, or the tank's corner menu), and 3D's depth has to MEAN something:
 //    1. balls really travel front-to-back, not just get drawn smaller
 //    2. the front and back glass are things to hit: they play notes, and those notes are the
 //       chord that is sounding (back = root, front = a high chord tone), so more notes are never wrong
@@ -19,11 +19,11 @@ const URL='http://127.0.0.1:8765/index.html';
  const ctx=await b.newContext({viewport:{width:1280,height:860}});const p=await ctx.newPage();
  const errs=[];p.on('pageerror',e=>{if(!/ServiceWorker/.test(e.message))errs.push(e.message);});
  await p.addInitScript(()=>{try{localStorage.setItem('slimehedron-coach','1')}catch(e){}});
- // ---- 0. the default is still the flat tank ----
+ // ---- 0. 2D is still exactly the flat tank ----
  await p.goto(URL+'?m=play&view=2d');await p.waitForTimeout(1200);
  await p.mouse.click(640,430);await p.waitForTimeout(3000);
  const flat2d=await p.evaluate(()=>({d3:window.__view.d3,z:balls.map(b=>b.z||0)}));
- ok(!flat2d.d3,'2D is the default view');
+ ok(!flat2d.d3,'?view=2d gives the flat tank');
  ok(flat2d.z.every(v=>v===0),'in 2D every ball stays flat, exactly as before ('+flat2d.z.length+' balls)');
  await p.goto(URL+'?m=play&view=3d');await p.waitForTimeout(1500);
  await p.evaluate(()=>{window.__notes=[];const t=trigger;trigger=function(c,i,g,n,pane){window.__notes.push({c,pane:!!pane,root:curRootDeg,

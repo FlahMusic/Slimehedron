@@ -59,12 +59,14 @@ async function launch(opts){
   try{
     const br=await chromium.launch(o);
     // SLIME_VIEW=3d runs ANY suite against the 3D tank: every new page starts with the 3D view switched
-    // on, exactly as if the person had turned it on in Preferences. Unset = the 2D default.
-    //   SLIME_VIEW=3d node _dev/dev-devices.js
-    const view=(process.env.SLIME_VIEW||'').toLowerCase();
-    if(view==='3d'||view==='2d'){const nc=br.newContext.bind(br);
+    // on, exactly as if the person had picked it in the tank's corner menu. Unset = the 3D default.
+    // SLIME_SPACE=portal|curved|normal does the same for the space.
+    //   SLIME_VIEW=2d node _dev/dev-devices.js     SLIME_SPACE=curved node _dev/dev-band.js
+    const view=(process.env.SLIME_VIEW||'').toLowerCase(),space=(process.env.SLIME_SPACE||'').toLowerCase();
+    if(view==='3d'||view==='2d'||['normal','portal','curved'].includes(space)){const nc=br.newContext.bind(br);
       br.newContext=async(...a)=>{const c=await nc(...a);
-        await c.addInitScript(v=>{try{localStorage.setItem('slimehedron-view3d',v);}catch(e){}},view==='3d'?'1':'0');return c;};}
+        await c.addInitScript(([v,sp])=>{try{if(v)localStorage.setItem('slimehedron-view3d',v);if(sp)localStorage.setItem('slimehedron-space',sp);}catch(e){}},
+          [view==='3d'?'1':view==='2d'?'0':'',['normal','portal','curved'].includes(space)?space:'']);return c;};}
     return br;
   }catch(err){
     console.error('\n  Could not start a browser for the tests.');

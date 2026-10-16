@@ -186,9 +186,19 @@ body.keyPinned #hcKey::before{content:"\1F512\FE0E";margin-right:3px;font-size:9
 .mode-learn #hdrChord,.mode-learn .hdrSep,body.lab-on #hdrChord,body.lab-on .hdrSep{display:none}
 /* the auto-play switch, sized against the 30px transport row it now lives in.
    ID-scoped so it beats the base .slimeswitch rules that appear later in the file. */
-.btngroup #slimeBig{width:62px;height:30px;border-radius:15px;flex:none}
-.btngroup #slimeBig .ss-knob{width:24px;height:24px;top:2px;left:2px}
-.btngroup #slimeBig.on .ss-knob{left:36px}
+/* THE PILL IS DRAWN, THE BUTTON IS THE HIT BOX. The 2026-10-11 tap floor (every button >= --tap tall)
+   stretched the 30px pill into a 47px rounded square with the knob stuck in its top corner. So the
+   button itself is now an invisible 44px-tall hit box, and the 30px pill is its ::before, centred.
+   A child gets a full-size target; the switch keeps the shape it always had. */
+.btngroup #slimeBig{width:62px;height:44px;min-height:44px;min-width:0;padding:0;flex:none;
+  background:none;border:0;border-radius:0;box-shadow:none}
+.btngroup #slimeBig::before{content:"";position:absolute;left:0;right:0;top:calc(50% - 15px);height:30px;box-sizing:border-box;
+  border-radius:15px;background:rgba(170,160,200,.32);border:2px solid rgba(255,255,255,.7);
+  box-shadow:0 4px 14px rgba(120,110,160,.28), inset 0 2px 5px rgba(255,255,255,.5);transition:.2s}
+.btngroup #slimeBig.on{background:none;box-shadow:none}
+.btngroup #slimeBig.on::before{background:linear-gradient(135deg,var(--mint),var(--sky));box-shadow:0 0 20px rgba(159,230,207,.7), 0 6px 18px rgba(120,110,160,.35)}
+.btngroup #slimeBig .ss-knob{width:24px;height:24px;top:calc(50% - 12px);left:3px}
+.btngroup #slimeBig.on .ss-knob{left:35px}
 .btngroup #slimeBig .sic{width:20px;height:19px}
 .mode-learn #slimeBig,body.lab-on #slimeBig{display:none}
 #autoRow{display:none} /* emptied: its one child moved into the header */
@@ -1583,11 +1593,9 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
      268px - a third of a phone screen - before the tank got a single pixel. The toggle now rides in
      the transport row, the wheel is studio-only, and the chord readout is the header chip. What is
      left is ONE bar and then the tank. */
-  /* the switch keeps its slim pill LOOK but gets a 44px-tall hit box, via padding rather than size */
-  .btngroup #slimeBig{width:52px;height:30px;box-sizing:content-box;padding:7px 0;background-clip:content-box}
-  .btngroup #slimeBig .ss-knob{width:24px;height:24px;top:10px;left:3px}
-  .btngroup #slimeBig.on .ss-knob{left:28px}
-  .btngroup #slimeBig .sic{width:20px;height:19px}
+  /* phone: same drawn pill, a little narrower */
+  .btngroup #slimeBig{width:52px}
+  .btngroup #slimeBig.on .ss-knob{left:25px}
   .hdrSep{display:none} /* phone: the gap is the separator */
   /* it is a BUTTON now (tap to lock/release the key), so it needs 44 on both axes, not just height */
   #hdrChord{min-width:54px;min-height:44px;padding:1px 4px;background:none;border:0;box-shadow:none;justify-content:center} /* wide enough for the longest chord name, so the row never shifts */
@@ -1839,6 +1847,28 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
   body.mode-play #volTop,body.mode-play #tempoDial,body.mode-studio #volTop{background:rgba(242,235,254,.82)!important;border-radius:999px!important;
     box-shadow:0 3px 0 rgba(98,72,156,.28),0 6px 14px rgba(54,36,104,.18),inset 0 1.5px 0 #fff!important;padding-right:10px!important}
 }
+
+/* THE TANK'S CORNER MENU — small cream chip, opens upward. */
+#spaceChip{position:fixed;z-index:30;left:8px;top:8px}
+#spaceChip.open{z-index:80} /* open: above the side columns (76), so every choice can be pressed */
+#spaceBtn{display:inline-flex;align-items:center;gap:6px;min-height:44px;min-width:0;padding:0 14px;border-radius:22px;
+  font:800 13px/1 system-ui,sans-serif;color:var(--ink,#4a4170);background:rgba(255,255,255,.82);border:1.5px solid rgba(255,255,255,.95);
+  box-shadow:0 3px 0 rgba(150,130,200,.35),0 6px 14px rgba(120,110,160,.2);cursor:pointer;letter-spacing:.2px}
+#spaceBtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(150,130,200,.35),0 2px 6px rgba(120,110,160,.2)}
+#spaceMenu{position:absolute;left:0;bottom:calc(100% + 8px);display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:18px;
+  background:rgba(246,240,255,.96);border:1.5px solid #fff;box-shadow:0 10px 28px rgba(110,90,170,.28);width:max-content;max-width:calc(100vw - 24px)}
+#spaceMenu[hidden]{display:none}
+#spaceMenu.down{bottom:auto;top:calc(100% + 8px)}
+#spaceMenu .smRow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#spaceMenu .smLab{font:800 11px/1 system-ui,sans-serif;color:var(--ink-soft,#7a7098);text-transform:uppercase;letter-spacing:.6px;width:46px}
+#spaceMenu button{min-height:44px;min-width:44px;padding:0 12px;border-radius:14px;border:1.5px solid rgba(255,255,255,.95);
+  background:linear-gradient(#fff,#f1eafe);font:800 13px/1 system-ui,sans-serif;color:var(--ink,#4a4170);cursor:pointer;
+  box-shadow:0 3px 0 rgba(160,140,210,.35)}
+#spaceMenu button[aria-pressed="true"]{background:linear-gradient(135deg,#c9b3f0,#b388f0);color:#fff;border-color:#a992e0;box-shadow:0 2px 0 rgba(110,80,180,.5),0 0 12px rgba(190,150,255,.55)}
+#spaceMenu button[hidden]{display:none}
+#smNote{margin:0;font:600 12px/1.3 system-ui,sans-serif;color:var(--ink-soft,#7a7098);max-width:260px}
+#smNote[hidden]{display:none}
+.mode-learn #spaceChip,body.lab-on #spaceChip{display:none}
 </style>
 </head>
 <body>
@@ -2004,6 +2034,14 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
 <main>
   <div id="stage">
     <canvas id="cv" width="720" height="720"></canvas>
+    <div id="spaceChip">
+      <button id="spaceBtn" aria-expanded="false" aria-controls="spaceMenu" title="tank view and space"><span id="spaceTxt">3D</span><svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <div id="spaceMenu" role="group" aria-label="tank view and space" hidden>
+        <div class="smRow"><span class="smLab">view</span><button data-view="3d" aria-pressed="false">3D</button><button data-view="2d" aria-pressed="false">2D</button></div>
+        <div class="smRow"><span class="smLab">space</span><button data-space="auto" aria-pressed="false">auto</button><button data-space="normal" aria-pressed="false">normal</button><button data-space="portal" aria-pressed="false">portal</button><button data-space="curved" aria-pressed="false">curved</button></div>
+        <p id="smNote"></p>
+      </div>
+    </div>
     <div id="chordPill" hidden>
       <div class="cpMain"><b id="chordNow">—</b><i id="chordNowType"></i></div>
       <div class="cpNext"><span class="cpArrow">→</span><span id="chordNext">—</span></div>
@@ -2164,9 +2202,8 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
 <dialog id="prefsDlg" aria-label="Preferences">
   <form method="dialog" style="margin:0">
     <div class="prefsHead"><h2 style="margin:0">Preferences</h2><button class="btn" value="close" title="close">✕</button></div>
-    <p class="prefsNote">Things you set once, not per song: the tank view and MIDI.</p>
+    <p class="prefsNote">Things you set once, not per song: MIDI.</p>
     <div class="prefsBody">
-        <div class="row"><label title="Testing: the tank as a 3D glass box. Turn it off for the flat tank, which is lighter on older devices.">3D tank (testing)</label><div class="toggle" id="view3dT" role="switch" tabindex="0" aria-label="3D tank"></div></div>
         <!-- TWO ROWS TO GET SOUND OUT. Everything under them is set once and never touched again, so
              it does not get to compete for attention: twelve rows of equal weight made wiring up a
              synth look like configuring a router. The master switch is mirrored here because this
@@ -4237,8 +4274,84 @@ function wallDegrees(N,td){
   }
   return out;
 }
-function buildEdges(shapeVal){
-  const edges=[],td=totalDegrees(),verts=shapeVerts(shapeVal),N=verts.length,DEGMAP=wallDegrees(N,td);
+// ================================================================================================
+//  THREE SPACES. The tank can be one of three kinds of space, and each one follows its own maths:
+//    normal  the tank it has always been. Every shape, every lesson.
+//    portal  opposite walls are glued together (a torus, or for 8+ sides a many-holed one). A ball
+//            that crosses a wall plays that wall's note and comes out of the opposite wall with the
+//            same speed and heading. Only shapes whose opposite sides are equal and parallel can be
+//            glued like that (square, hexagon, octagon... rhombus, parallelogram); any other shape
+//            keeps its solid walls. The goo stays held by the walls: only balls go through.
+//    curved  the hyperbolic plane, drawn as a Poincare disk. Walls are true straight lines of that
+//            space, which on screen are arcs that meet the rim at right angles. Balls fly along the
+//            space's own straight lines, look smaller and slower toward the rim (the rim is infinitely
+//            far away), and bounce with exact reflections. Physics runs on the hyperboloid, where a
+//            straight line is cosh/sinh and a mirror is a Lorentz reflection, then is drawn in the disk.
+//            Only convex shapes. In 3D it is curved across and straight front to back (H2 x R).
+//  Lessons are always normal and always flat.
+//  TSPACE.pick is what the person chose (auto = play mode mixes it in when it picks a new shape);
+//  TSPACE.cur is the space the tank is in now. A shape that cannot be that space falls back to normal.
+// ================================================================================================
+const SPACES=['normal','portal','curved'];
+const TSPACE={pick:'auto',cur:'normal'};
+try{const q=new URLSearchParams(location.search).get('space');
+  if(q==='auto'||SPACES.includes(q))localStorage.setItem('slimehedron-space',q);
+  const v=localStorage.getItem('slimehedron-space');if(v==='auto'||SPACES.includes(v))TSPACE.pick=v;}catch(e){}
+if(TSPACE.pick!=='auto')TSPACE.cur=TSPACE.pick;
+const HYP={RD:R*1.18,UV:0.74};          // the disk's radius on screen, and how far out the corners sit in it
+// A REGULAR shape is sized so that copies of it tile the curved plane exactly: k of them meet at every
+// corner (interior angle 2pi/k), which is what makes the mirrored echoes beyond the walls fit together
+// like an Escher circle print instead of overlapping. cosh(circumradius) = cot(pi/N) cot(pi/k); k is
+// whichever whole number puts the corners nearest UV of the way to the rim.
+function hypCorner(N){let best=HYP.UV,bd=9,bk=0;
+  for(let k=3;k<=24;k++){const c=1/Math.tan(Math.PI/N)/Math.tan(Math.PI/k);if(c<=1.0001)continue;
+    const u=Math.tanh(Math.acosh(c)/2),d=Math.abs(u-HYP.UV);if(d<bd){bd=d;best=u;bk=k;}}
+  return {u:best,k:bk};}
+function _labOn(){try{return !!(LAB&&LAB._on);}catch(e){return false;}}   // LAB is a const declared further down
+function polyCentral(v){const N=v.length;if(N%2)return false;let cx=0,cy=0;for(const p of v){cx+=p[0];cy+=p[1];}cx/=N;cy/=N;
+  for(let i=0;i<N/2;i++){const a=v[i],b=v[i+N/2];if(Math.abs(a[0]+b[0]-2*cx)>0.5||Math.abs(a[1]+b[1]-2*cy)>0.5)return false;}return true;}
+function polyConvex(v){const N=v.length;let sg=0;for(let i=0;i<N;i++){const a=v[i],b=v[(i+1)%N],c=v[(i+2)%N];
+  const cr=(b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]);if(Math.abs(cr)<1e-6)continue;const s=cr>0?1:-1;if(sg&&s!==sg)return false;sg=s;}return true;}
+function spaceFits(shapeVal,sp,verts){if(sp==='normal')return true;const v=verts||shapeVerts(shapeVal);
+  return sp==='portal'?polyCentral(v):sp==='curved'?polyConvex(v):false;}
+// hyperboloid helpers: a screen point -> its point on the hyperboloid; the Minkowski product
+function hP(x,y){const ux=(x-CX)/HYP.RD,uy=(y-CY)/HYP.RD,r2=ux*ux+uy*uy,D=1-r2;return [(1+r2)/D,2*ux/D,2*uy/D];}
+function mdot(a,b){return -a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+// how big a ball is drawn where it is: a fixed size in the curved space shrinks toward the rim
+function ballScale(x,y){if(!edges||edges._space!=='curved')return 1;const ux=(x-CX)/HYP.RD,uy=(y-CY)/HYP.RD;return Math.max(0.08,1-ux*ux-uy*uy);}
+// the drawn path of one wall: a straight line, or (curved) its arc
+function edgePath(e,move){if(e.cr){if(move!==false)ctx.moveTo(e.ax,e.ay);ctx.arc(e.ccx,e.ccy,e.cr,e.a0,e.a1,e.ccw);}
+  else{if(move!==false)ctx.moveTo(e.ax,e.ay);ctx.lineTo(e.bx,e.by);}}
+// curved walls as short straight pieces, for the 3D side walls and anything else that wants chords
+function wallPieces(list){if(!list||!list.length||!list[0].cr)return list;const out=[];
+  for(const e of list){const pts=e.pts;for(let k=0;k<pts.length-1;k++)out.push({ax:pts[k][0],ay:pts[k][1],bx:pts[k+1][0],by:pts[k+1][1],hue:e.hue,flash:e.flash,broken:e.broken,reform:e.reform,twin:e.twin,piece:k>0});}
+  return out;}
+function curveEdges(edges,verts){
+  let cx=0,cy=0;for(const[x,y]of verts){cx+=x;cy+=y;}cx/=verts.length;cy/=verts.length;const Pc=hP(cx,cy),RD=HYP.RD;
+  const all=[];
+  for(const e of edges){const A=hP(e.ax,e.ay),B=hP(e.bx,e.by);
+    const c0=A[1]*B[2]-A[2]*B[1],c1=A[2]*B[0]-A[0]*B[2],c2=A[0]*B[1]-A[1]*B[0];   // Euclidean cross, then J: Minkowski normal
+    let Nv=[-c0,c1,c2];const n=Math.sqrt(Math.max(1e-12,mdot(Nv,Nv)));Nv=Nv.map(v=>v/n);
+    if(mdot(Pc,Nv)<0)Nv=Nv.map(v=>-v);e.N=Nv;
+    // the wall's circle in the disk: centre (N1,N2)/N0, radius sqrt(|c|^2-1); a diameter if N0 is ~0
+    if(Math.abs(Nv[0])>1e-6){const ccx=Nv[1]/Nv[0],ccy=Nv[2]/Nv[0],rr=Math.sqrt(Math.max(0,ccx*ccx+ccy*ccy-1));
+      e.ccx=CX+ccx*RD;e.ccy=CY+ccy*RD;e.cr=rr*RD;
+      e.a0=Math.atan2(e.ay-e.ccy,e.ax-e.ccx);let a1=Math.atan2(e.by-e.ccy,e.bx-e.ccx),d=a1-e.a0;
+      while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;e.a1=e.a0+d;e.ccw=d<0;
+      const K=10;e.pts=[];for(let k=0;k<=K;k++){const a=e.a0+d*k/K;e.pts.push([e.ccx+Math.cos(a)*e.cr,e.ccy+Math.sin(a)*e.cr]);}
+      const am=e.a0+d/2;e.mx=e.ccx+Math.cos(am)*e.cr;e.my=e.ccy+Math.sin(am)*e.cr;}
+    else{e.pts=[[e.ax,e.ay],[e.bx,e.by]];e.mx=(e.ax+e.bx)/2;e.my=(e.ay+e.by)/2;}
+    for(let k=0;k<e.pts.length-1;k++)all.push(e.pts[k]);}
+  let ar=0;for(let i=0;i<all.length;i++){const[ax,ay]=all[i],[bx,by]=all[(i+1)%all.length];ar+=ax*by-bx*ay;}
+  edges._verts=all;edges._area=Math.abs(ar)/2;edges._corners=verts;
+  return edges;}
+function buildEdges(shapeVal,sp){
+  if(sp==null)sp=TSPACE.cur;
+  let verts=shapeVerts(shapeVal);
+  if(_labOn()||!spaceFits(shapeVal,sp,verts))sp='normal';
+  if(sp==='curved'){const u=/^\d+$/.test(String(shapeVal))?hypCorner(verts.length).u:HYP.UV;   // corners into the disk
+    verts=verts.map(([x,y])=>[CX+(x-CX)/R*u*HYP.RD,CY+(y-CY)/R*u*HYP.RD]);}
+  const edges=[],td=totalDegrees(),N=verts.length,DEGMAP=wallDegrees(N,td);
   let cx=0,cy=0;for(const[x,y]of verts){cx+=x;cy+=y;}cx/=N;cy/=N; // centroid = a point known to be inside
   for(let i=0;i<N;i++){const[ax,ay]=verts[i],[bx,by]=verts[(i+1)%N];
     let nx=-(by-ay),ny=(bx-ax);const len=Math.hypot(nx,ny)||1;nx/=len;ny/=len;
@@ -4246,7 +4359,11 @@ function buildEdges(shapeVal){
     const deg=DEGMAP[i];
     edges.push({ax,ay,bx,by,nx,ny,deg,cents:centsForDegree(deg),hue:deg/td,flash:0,broken:false});}
   let ar=0;for(let i=0;i<N;i++){const[ax,ay]=verts[i],[bx,by]=verts[(i+1)%N];ar+=ax*by-bx*ay;} // shoelace: real area of ANY shape (heart, star…)
-  edges._verts=verts;edges._area=Math.abs(ar)/2;return edges; // stash corners + area so goo budget & ball-inside test work for every shape
+  edges._verts=verts;edges._area=Math.abs(ar)/2; // stash corners + area so goo budget & ball-inside test work for every shape
+  edges._space=sp;
+  if(sp==='portal')for(let i=0;i<N;i++){const e=edges[i];e.twin=edges[(i+N/2)%N];}   // each wall is glued to the one opposite
+  if(sp==='curved')curveEdges(edges,verts);
+  return edges;
 }
 let edges=buildEdges(S.shape);
 function rebuild(){edges=buildEdges(S.shape);_brokenOrder=[];}
@@ -4275,7 +4392,7 @@ function explodeReform(){ // every 128 bars: burst the WHOLE shape (any remainin
 }
 
 // ---------- balls ----------
-const balls=[];const BR=9;let hueIdx=0; // 12 chromatic hues like 12 notes, cycling so no two in a row match
+const balls=[];const BR=9,BR0=BR;let hueIdx=0; // 12 chromatic hues like 12 notes, cycling so no two in a row match
 function spawn(x,y){const ang=Math.random()*Math.PI*2, sp=ballSpeed();
   if(balls.length>=MAXBALLS+6)return; // hard safety only; the wall-drain (in step) is what keeps it from piling — no vanish-flash
   // px/py seeded to the spawn point, or the first interpolated frame streaks in from nowhere
@@ -4329,6 +4446,10 @@ function splash(x,y,inx,iny,hue){
 }
 // deflect a mover inward off the solid boundary
 function bounceInside(o){ // deflect inward off intact walls; broken walls let stuff spill through
+  if(edges._space==='curved'){ // curved walls: the inside of the tank is OUTSIDE each wall's circle
+    for(const e of edges){if(e.broken||!e.cr)continue;const dx=o.x-e.ccx,dy=o.y-e.ccy,d=Math.hypot(dx,dy)||1,m=e.cr+o.r;
+      if(d<m){const nx=dx/d,ny=dy/d;o.x=e.ccx+nx*m;o.y=e.ccy+ny*m;const vn=o.vx*nx+o.vy*ny;if(vn<0){o.vx-=1.7*vn*nx;o.vy-=1.7*vn*ny;}}}
+    return;}
   for(const e of edges){if(e.broken)continue;const dist=(o.x-e.ax)*e.nx+(o.y-e.ay)*e.ny;
     if(dist<o.r){o.x+=(o.r-dist)*e.nx;o.y+=(o.r-dist)*e.ny;const vn=o.vx*e.nx+o.vy*e.ny;if(vn<0){o.vx-=1.7*vn*e.nx;o.vy-=1.7*vn*e.ny;}}}
 }
@@ -4388,12 +4509,23 @@ function beginReform(now){ // last drop fell — pick the next shape, every shar
     else{const pool=["3","4","5","6","7","8","9","10","11","12","rhombus","trapezoid","parallelogram"].filter(v=>v!==String(S.shape)&&v!==prevShape);
       nextShape=pool[Math.floor(Math.random()*pool.length)];prevShape=String(S.shape);}}
   else nextShape=String(S.shape);
-  const tE=buildEdges(nextShape); // clone shards so EVERY edge of the new shape has a piece to grow from
+  _nextSpace=rollSpace(nextShape);
+  const tE=buildEdges(nextShape,_nextSpace); // clone shards so EVERY edge of the new shape has a piece to grow from
   if(frags.length<tE.length){const base=frags.slice();let bi=0;
     while(frags.length<tE.length){const f=base[bi++%base.length];
       frags.push({mx:f.mx+(Math.random()-0.5)*36,my:f.my+(Math.random()-0.5)*36,ang:f.ang,len:f.len*0.7,vx:0,vy:0,va:0,cents:f.cents,hue:f.hue,flash:0});}}
 }
+// which space the next shape lands in. A space the person picked always holds. On auto, play mode mixes
+// it up: about one new shape in three goes portal or curved (whichever that shape can be).
+let _nextSpace='normal';
+function rollSpace(shapeVal){
+  if(TSPACE.pick!=='auto')return TSPACE.pick;
+  if(S.mode!=='play')return 'normal';
+  if(Math.random()>=1/3)return 'normal';
+  const v=shapeVerts(String(shapeVal)),ok=['portal','curved'].filter(sp=>spaceFits(shapeVal,sp,v));
+  return ok.length?ok[(Math.random()*ok.length)|0]:'normal';}
 function commitReform(){
+  TSPACE.cur=_nextSpace;if(window._spaceChip)window._spaceChip();
   S.shape=/^\d+$/.test(nextShape)?parseInt(nextShape,10):nextShape; // keep named shapes as-is — parseInt('heart') was NaN → broke the shape + froze bursts
   const sl=document.getElementById('shape');if(sl)sl.value=String(nextShape);
   rebuild();particles=[];frags=null;fillState="fill";pressure=0;formGlow=1;measuredFill=0;nextRain=0; // fresh shape = empty barrel, instant pluck
@@ -4422,7 +4554,7 @@ function fillPhysics(now){
         f.vx+=(dx/d*rest-dx)*pull;f.vy+=(dy/d*rest-dy)*pull;}
       if(now-breakAt>=BURST_MS)beginReform(now); // knob-accurate: wreckage stays exactly this long
     }else{ // reform: shards spring smoothly from wreckage into the new geometry (tracks spin too)
-      const tE=buildEdges(nextShape);let done=true;
+      const tE=buildEdges(nextShape,_nextSpace);let done=true;
       for(let i=0;i<frags.length;i++){const f=frags[i],e=tE[i%tE.length];
         const tmx=(e.ax+e.bx)/2,tmy=(e.ay+e.by)/2,tang=Math.atan2(e.by-e.ay,e.bx-e.ax),thl=Math.hypot(e.bx-e.ax,e.by-e.ay)/2;
         f.mx+=(tmx-f.mx)*0.11;f.my+=(tmy-f.my)*0.11;f.ang+=segAngDiff(tang,f.ang)*0.13;f.len+=(thl-f.len)*0.11;f.flash*=0.9;
@@ -4477,6 +4609,57 @@ function sweepBadBalls(){
     try{console.warn('[slimehedron] threw out '+n+' ball(s) with broken numbers (total '+_nanDrops+') — something upstream produced NaN/Infinity');}catch(e){}}
   return n;
 }
+// PORTAL CROSSING. Opposite sides of these shapes are equal and parallel, so sliding one onto the other
+// is a plain translation (midpoint to midpoint): position shifts, speed and heading do not change at all.
+function portalCross(b,e,vn,ts){const t=e.twin;
+  b.x+=(t.ax+t.bx-e.ax-e.bx)/2;b.y+=(t.ay+t.by-e.ay-e.by)/2;b.px=b.x;b.py=b.y;b.trail.length=0;
+  e.flash=1;t.flash=1;
+  const nw=performance.now();
+  if(b.mute){b.mute=0;}else if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
+    const gd=gooAt(b.x,b.y),under=gd>0.3,goo=under?Math.min(1,0.35+0.65*Math.min(1,(gd-0.3)/0.6)):0;
+    trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1))*(1-goo*0.45),goo);}
+  _splashZ=VIEW.d3?(b.z||0):0.5;splash(b.x,b.y,t.nx,t.ny,e.hue);}
+// ONE STEP ALONG A STRAIGHT LINE OF THE CURVED SPACE. (vx,vy) is the ball's heading and its speed as it
+// would be at the centre; the hyperbolic distance it covers is 2|v|/RD per tick (so at the centre it
+// moves exactly as fast as in the normal tank, and on screen it slows toward the rim). The move is exact:
+// on the hyperboloid a straight line is P cosh s + V sinh s. A wall is a plane through the origin with a
+// spacelike normal N; sinh(distance to it) = P.N, and the bounce is the Lorentz mirror V - 2(V.N)N.
+function hypSub(b,isub,ts){
+  const RD=HYP.RD,sp=Math.hypot(b.vx,b.vy);
+  const ux=(b.x-CX)/RD,uy=(b.y-CY)/RD,r2=ux*ux+uy*uy;
+  if(!(r2<0.995))return true;                                  // at the rim: it has gone to infinity
+  const D=1-r2;let P=[(1+r2)/D,2*ux/D,2*uy/D],V;
+  if(sp>1e-9){const wx=b.vx/sp,wy=b.vy/sp,uw=ux*wx+uy*wy;V=[2*uw/D,wx+2*ux*uw/D,wy+2*uy*uw/D];
+    const ds=2*sp*isub/RD,ch=Math.cosh(ds),sh=Math.sinh(ds);
+    const P2=[ch*P[0]+sh*V[0],ch*P[1]+sh*V[1],ch*P[2]+sh*V[2]];V=[sh*P[0]+ch*V[0],sh*P[1]+ch*V[1],sh*P[2]+ch*V[2]];P=P2;}
+  else V=[0,1,0];
+  const sr=Math.sinh(2*BR/RD);let hit=null,hvn=0,outside=false;
+  for(const e of edges){if(e.broken&&(e.reform||0)<0.55){if(mdot(P,e.N)<-sr)outside=true;continue;}
+    const d=mdot(P,e.N);if(d<-sr)outside=true;
+    if(d>=sr||d<-3*sr)continue;
+    let inSpan=true;for(const f of edges){if(f===e||(f.broken&&(f.reform||0)<0.55))continue;if(mdot(P,f.N)<-sr){inSpan=false;break;}}
+    if(!inSpan)continue;
+    const vn=mdot(V,e.N);if(vn>=0)continue;
+    V=[V[0]-2*vn*e.N[0],V[1]-2*vn*e.N[1],V[2]-2*vn*e.N[2]];
+    if(d<0)P=[P[0]-2*d*e.N[0],P[1]-2*d*e.N[1],P[2]-2*d*e.N[2]];
+    hit=e;hvn=vn;outside=false;}
+  P[0]=Math.sqrt(1+P[1]*P[1]+P[2]*P[2]);                       // back onto the hyperboloid (rounding drift)
+  const pv=mdot(P,V);V=[V[0]+pv*P[0],V[1]+pv*P[1],V[2]+pv*P[2]];   // and the heading back onto its tangent plane
+  const q=1+P[0],nx=P[1]/q,ny=P[2]/q;
+  if(outside&&nx*nx+ny*ny>0.9)return true;                     // left through a gap and nearly at the rim: gone
+  const dx=V[1]/q-P[1]*V[0]/(q*q),dy=V[2]/q-P[2]*V[0]/(q*q),dl=Math.hypot(dx,dy)||1;
+  b.x=CX+nx*RD;b.y=CY+ny*RD;if(sp>1e-9){b.vx=sp*dx/dl;b.vy=sp*dy/dl;}
+  if(hit){const e=hit;e.flash=1;jitter(b);
+    let inx=e.nx,iny=e.ny;if(e.cr){const ax=b.x-e.ccx,ay=b.y-e.ccy,al=Math.hypot(ax,ay)||1;inx=ax/al;iny=ay/al;}   // inward at the point hit
+    const nw=performance.now();_splashZ=VIEW.d3?(b.z||0):0.5;
+    if(b.mute){b.mute=0;splash(b.x,b.y,inx,iny,e.hue);}
+    else if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
+      const gd=gooAt(b.x,b.y),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
+      if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
+      const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0;
+      trigger(e.cents,Math.min(1,Math.abs(hvn)*sp/(ts||1))*(1-goo*0.45),goo);
+      splash(b.x,b.y,inx,iny,e.hue);}}
+  return false;}
 function step(){
   sweepBadBalls();           // before any maths touches them this frame
   if(LAB&&LAB._hold)return; // a lesson has frozen the world to explain what just happened
@@ -4495,6 +4678,7 @@ function step(){
     const dist0=Math.hypot(b.vx,b.vy),sub=Math.max(1,Math.min(8,Math.ceil(dist0/(BR*0.5)))),isub=1/sub;
     let killed=false;
     for(let s=0;s<sub;s++){
+      if(fillState==="fill"&&edges._space==='curved'){if(hypSub(b,isub,ts)){balls.splice(bi,1);killed=true;break;}continue;}  // see THREE SPACES
       b.x+=b.vx*isub;b.y+=b.vy*isub;
       if(fillState==="fill"){
         // WALL BOUNCE runs UNCONDITIONALLY (not gated behind inPoly): any wall within BR that the ball is moving
@@ -4508,6 +4692,9 @@ function step(){
             const ex=e.bx-e.ax,ey=e.by-e.ay,L2=ex*ex+ey*ey||1,t=((b.x-e.ax)*ex+(b.y-e.ay)*ey)/L2;
             if(t<-0.05||t>1.05)continue;
             const vn=b.vx*e.nx+b.vy*e.ny;
+            if(e.twin){ // PORTAL: no bounce. Once the ball's centre is through, it comes out of the opposite wall
+              if(dist<0&&vn<0&&t>=0&&t<=1){hitWall=true;portalCross(b,e,vn,ts);}
+              continue;}
             if(vn<0){hitWall=true;b.vx-=2*vn*e.nx;b.vy-=2*vn*e.ny;jitter(b);b.x+=(BR-dist)*e.nx;b.y+=(BR-dist)*e.ny;e.flash=1;
               const nw=performance.now();
               if(b.mute){b.mute=0;e.flash=1;(_splashZ=VIEW.d3?(b.z||0):0.5,splash(b.x,b.y,e.nx,e.ny,e.hue));}else
@@ -4615,7 +4802,10 @@ function strokeSeg(e,i,N,extra){
   grad.addColorStop(0,aurora(e.hue+ph,68+formGlow*15));grad.addColorStop(1,aurora(((i+1)%N)/N+ph,68+formGlow*15));
   ctx.strokeStyle=grad;ctx.lineWidth=7+e.flash*7;
   ctx.shadowBlur=e.flash>0.02?20*e.flash:(extra>0.02?20*extra:0);ctx.shadowColor=aurora(e.hue+ph,72);
-  ctx.beginPath();ctx.moveTo(e.ax,e.ay);ctx.lineTo(e.bx,e.by);ctx.stroke();e.flash*=0.86;
+  if(e.twin){ // a portal wall: a moving dashed line, a door rather than a wall
+    ctx.setLineDash([12,11]);ctx.lineDashOffset=-(performance.now()*0.02)%23;ctx.lineWidth=5+e.flash*7;}
+  ctx.beginPath();edgePath(e);ctx.stroke();e.flash*=0.86;
+  if(e.twin)ctx.setLineDash([]);
   // a lesson can write on the walls (solfège, scale numbers, note names). Drawn just inside the wall so it
   // never leaves the tank, and only while a lesson asked for it.
   if(LAB&&LAB._labels&&e.deg!=null){
@@ -4735,7 +4925,7 @@ function softBlobs(col){ // glossy goo: upscale metaballs + sweeping shine + wet
   ctx.drawImage(shLo,0,0,W,H); // glossy body down first -- one upscale, and the upscale IS the blur
   shloctx.globalCompositeOperation='destination-out';shloctx.drawImage(loC,0,2.5,lw,lh);shloctx.globalCompositeOperation='source-over'; // knock out a copy shifted by the same 5 full-size pixels -> only the top edge survives
   ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=0.4;ctx.drawImage(shLo,0,0,W,H);ctx.restore();} // = wet rim light on every blob
-function clipShape(){ctx.beginPath();ctx.moveTo(edges[0].ax,edges[0].ay);for(const e of edges)ctx.lineTo(e.bx,e.by);ctx.closePath();ctx.clip();}
+function clipShape(){const v=edges._verts;ctx.beginPath();ctx.moveTo(v[0][0],v[0][1]);for(const p of v)ctx.lineTo(p[0],p[1]);ctx.closePath();ctx.clip();}  // _verts is the outline: the corners, or the sampled arcs in curved space
 let _poolMode=false; // latched render state — see the flicker fix below
 let surfY=null; // persistent water line with inertia — the surface eases toward the particles instead of teleporting, so it moves like liquid
 function drawParticles(noDrops){ // the goo: floats as a blob while young, settles into a gradient pool once heavy — colored by the chord it's made of
@@ -4790,7 +4980,8 @@ function drawBalls(){ // every ball its own vivid hue; in the goo they wade — 
     // interpolated draw position. A bounce moves a ball a long way in one tick, so anything that big
     // is a direction change rather than travel -- snap to the true position instead of smearing across it.
     let bx=lerpX(b), by=lerpY(b);
-    if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR*2.2){bx=b.x;by=b.y;}
+    if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR0*2.2){bx=b.x;by=b.y;}
+    const BR=BR0*ballScale(bx,by);   // curved space: a ball shrinks toward the rim (1 everywhere else)
     for(let i=0;i<tl;i++){const [tx,ty]=b.trail[i];const f=i/tl;
       if(under){ctx.fillStyle=`hsla(${bh},65%,58%,${(f*0.4).toFixed(3)})`;ctx.beginPath();ctx.arc(tx,ty,BR*(0.4+0.95*f),0,7);ctx.fill();} // thick wake dragging through the goo
       else{ctx.fillStyle=`hsla(${bh},90%,64%,${(f*0.25).toFixed(3)})`;ctx.beginPath();ctx.arc(tx,ty,BR*(0.2+0.55*f),0,7);ctx.fill();}}
@@ -4801,10 +4992,10 @@ function drawBalls(){ // every ball its own vivid hue; in the goo they wade — 
     ctx.fillStyle=under?"rgba(255,255,255,.45)":"rgba(255,255,255,.75)";ctx.beginPath();ctx.arc(bx-BR*0.3,by-BR*0.35,BR*0.32,0,7);ctx.fill();}
 }
 // ================================================================================================
-//  TWO VIEWS OF ONE TANK: 2D (the one it has always had) and 3D (being built, opt-in for now).
-//  VIEW.d3 picks. Preferences > "3D tank", or ?view=3d / ?view=2d in the address, remembered per device.
-//  Rule for anything new: it must work in 2D. 3D may add to it, never replace it -- 2D is the
-//  fallback for slow devices once 3D becomes the default.
+//  TWO VIEWS OF ONE TANK: 3D (the default) and 2D (the flat tank it always had, one tap away).
+//  VIEW.d3 picks. The tank's corner menu, or ?view=3d / ?view=2d in the address, remembered per device.
+//  Rule for anything new: it must work in both. They cost the same per frame (measured), so 2D is a
+//  look, not a speed setting; slow devices are handled by the silent auto-thinning (LITE) in either.
 //
 //  3D: the shape is the open front of a glass box. Physics lives in the BOX's own frame:
 //    x,y  exactly as in 2D -- the side walls are the shape pushed straight back, so a wall hit is the
@@ -4816,13 +5007,23 @@ function drawBalls(){ // every ball its own vivid hue; in the goo they wade — 
 //  the balls toward different walls and panes. Taps are un-projected back onto the front glass, so a
 //  finger lands where it looks like it lands.
 // ================================================================================================
-const VIEW={d3:false};
+const VIEW={d3:true};                     // 3D is the default; 2D is one tap away in the tank's corner menu
 try{const q=new URLSearchParams(location.search).get('view');
   if(q==='3d'||q==='2d')localStorage.setItem('slimehedron-view3d',q==='3d'?'1':'0');
-  VIEW.d3=localStorage.getItem('slimehedron-view3d')==='1';}catch(e){}
+  VIEW.d3=localStorage.getItem('slimehedron-view3d')!=='0';}catch(e){}
 window.setView3D=function(on){VIEW.d3=!!on;try{localStorage.setItem('slimehedron-view3d',on?'1':'0');}catch(e){}
   if(!on)for(const b of balls){b.z=0;b.pz=0;}
-  const t=document.getElementById('view3dT');if(t)t.classList.toggle('on',VIEW.d3);};
+  else for(const b of balls)if(!b.vz)Object.assign(b,zInit());       // balls from the flat tank get a depth to travel
+  if(window._spaceChip)window._spaceChip();};
+// pick a space from the corner menu ('auto' | 'normal' | 'portal' | 'curved')
+window.setSpace=function(pick){if(pick!=='auto'&&!SPACES.includes(pick))return;TSPACE.pick=pick;
+  try{localStorage.setItem('slimehedron-space',pick);}catch(e){}
+  TSPACE.cur=pick==='auto'?(edges&&edges._space)||'normal':pick;
+  if(pick==='auto'&&S.mode!=='play')TSPACE.cur='normal';
+  rebuild();for(const b of balls){if(!inPoly(b.x,b.y,edges._verts)){b.x=CX;b.y=CY;b.px=CX;b.py=CY;b.trail.length=0;}}   // nobody gets left outside the new walls
+  particles=particles.filter(p=>inPoly(p.x,p.y,edges._verts));
+  if(window._spaceChip)window._spaceChip();};
+window.__space=TSPACE;
 window.__view=VIEW;
 const BOXD=R*1.2;                        // how deep the box is, in the same units as the shape
 const CAM=1000;                          // camera distance: the back of the box shows at ~74% size
@@ -4863,7 +5064,8 @@ function planeAt(z){const o=P3(CX,CY,z),a=P3(CX+100,CY,z),b=P3(CX,CY+100,z);
 // world gravity (down the screen) as the box feels it, given its tilt: [gx, gy, gz per unit]
 function boxGravity(){const M=_M;return [M[3],M[4],M[5]];}   // transpose row of (0,1,0)
 function draw3D(){viewTick();
-  const fill=fillState==="fill",list=fill?edges:(curSegs||computeSegs());
+  const fill=fillState==="fill",list=fill?wallPieces(edges):(curSegs||computeSegs());   // curved walls come as short pieces
+  if(fill&&edges._space==='curved')drawHorizon(0);
   const ph=performance.now()*0.000012;
   if(list&&list.length){const N=list.length;
     ctx.save();ctx.lineJoin='round';
@@ -4883,13 +5085,13 @@ function draw3D(){viewTick();
     for(let i=0;i<N;i++){const e=list[i];if(fill&&e.broken&&!e.reform)continue;
       const lit=Math.min(1,(e.flash||0)*1.4);
       ctx.beginPath();ctx.moveTo(F[i][0],F[i][1]);ctx.lineTo(Fb[i][0],Fb[i][1]);ctx.lineTo(Bb[i][0],Bb[i][1]);ctx.lineTo(Bk[i][0],Bk[i][1]);ctx.closePath();
-      ctx.fillStyle=aurora(e.hue+ph,LITE?72:78,(LITE?0.10:0.14)+lit*0.3);ctx.fill();}
+      ctx.fillStyle=aurora(e.hue+ph,LITE?72:78,(e.twin?0.05:(LITE?0.10:0.14))+lit*0.3);ctx.fill();}   // a portal wall is a door: barely there
     // two faint depth rings, then the corner rails and the back rim
     if(fill&&!LITE){ctx.setLineDash([3,9]);ctx.lineWidth=1.2;ctx.strokeStyle='rgba(255,255,255,.32)';
       for(const d of [0.33,0.66]){ctx.beginPath();list.forEach((e,i)=>{const p=P3(e.ax,e.ay,d);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);});ctx.closePath();ctx.stroke();}
       ctx.setLineDash([]);}
     ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,.55)';ctx.beginPath();
-    for(let i=0;i<N;i++){ctx.moveTo(F[i][0],F[i][1]);ctx.lineTo(Bk[i][0],Bk[i][1]);}ctx.stroke();
+    for(let i=0;i<N;i++){if(list[i].piece)continue;ctx.moveTo(F[i][0],F[i][1]);ctx.lineTo(Bk[i][0],Bk[i][1]);}ctx.stroke();   // rails at the real corners only
     ctx.lineWidth=2.5;
     for(let i=0;i<N;i++){const e=list[i];if(fill&&e.broken&&!e.reform)continue;
       ctx.strokeStyle=aurora(e.hue+ph,80,0.55);ctx.beginPath();ctx.moveTo(Bk[i][0],Bk[i][1]);ctx.lineTo(Bb[i][0],Bb[i][1]);ctx.stroke();}
@@ -4905,6 +5107,31 @@ function draw3D(){viewTick();
     ctx.fillStyle='rgba(255,255,255,'+(0.16*_pane.front).toFixed(3)+')';ctx.fill();}
   drawShape();drawDebris();ctx.restore();
   _pane.front*=0.86;}
+// THE CURVED SPACE'S RIM AND ITS ECHOES. The rim is the circle at infinity. The faint shapes beyond the
+// walls are the tank mirrored in each wall (inversion in that wall's circle), then mirrored once more:
+// what the tank would look like reflected across its own walls, shrinking toward the rim like an Escher
+// print. Each first echo wears the colour of the wall that made it. Built once per shape in a frame that
+// does not turn, then drawn rotated, so it costs a few path fills a frame. Skipped in the lighter look.
+let _echo=null;
+function invPts(pts,e){return pts.map(([x,y])=>{const dx=x-e.ccx,dy=y-e.ccy,d2=dx*dx+dy*dy||1,k=e.cr*e.cr/d2;return [e.ccx+dx*k,e.ccy+dy*k];});}
+function buildEcho(){
+  const c=Math.cos(-rot),sn=Math.sin(-rot),un=([x,y])=>[CX+(x-CX)*c-(y-CY)*sn,CY+(x-CX)*sn+(y-CY)*c];
+  const W0=edges.map(e=>({ccx:un([e.ccx,e.ccy])[0],ccy:un([e.ccx,e.ccy])[1],cr:e.cr,hue:e.hue})),base=edges._verts.map(un);
+  const lvl1=[],lvl2=new Path2D();
+  const toPath=(pts,P)=>{P.moveTo(pts[0][0]-CX,pts[0][1]-CY);for(const p of pts)P.lineTo(p[0]-CX,p[1]-CY);P.closePath();};
+  W0.forEach((e,i)=>{if(!e.cr)return;const g=invPts(base,e),P=new Path2D();toPath(g,P);lvl1.push({P,hue:e.hue});
+    W0.forEach((f,j)=>{if(j===i||!f.cr)return;toPath(invPts(invPts(base,f),e),lvl2);});});
+  return {key:String(S.shape)+'|'+edges.length+'|'+HYP.RD,lvl1,lvl2};}
+function drawHorizon(z){
+  const key=String(S.shape)+'|'+edges.length+'|'+HYP.RD;if(!_echo||_echo.key!==key)_echo=buildEcho();
+  ctx.save();if(z!=null)ctx.transform(...planeAt(z));ctx.translate(CX,CY);
+  const g=ctx.createRadialGradient(0,0,HYP.RD*0.55,0,0,HYP.RD);g.addColorStop(0,'rgba(236,226,255,0)');g.addColorStop(1,'rgba(214,196,252,.32)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,HYP.RD,0,7);ctx.fill();
+  ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,.7)';ctx.stroke();
+  ctx.rotate(rot);const ph=performance.now()*0.000012;
+  if(!LITE){ctx.lineWidth=1.2;ctx.strokeStyle='rgba(170,140,230,.22)';ctx.stroke(_echo.lvl2);}
+  ctx.lineWidth=1.8;for(const L of _echo.lvl1){ctx.fillStyle=aurora(L.hue+ph,80,0.11);ctx.fill(L.P);ctx.strokeStyle=aurora(L.hue+ph,72,0.5);ctx.stroke(L.P);}
+  ctx.restore();}
 function drawDroplets3D(){for(const p of particles){if(p.pooled)continue;const s=P3(p.x,p.y,p.z==null?0.5:p.z);
   ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(s[0],s[1],2.2*s[2],0,7);ctx.fill();}}
 // each ball is a pre-painted sprite (glow + lit sphere + highlight), one per colour, painted once and
@@ -4924,7 +5151,7 @@ function drawBalls3D(){
   for(const b of order){const tl=b.trail.length,bh=Math.round(b.hue*360),under=fillState==="fill"&&gooAt(b.x,b.y)>0.3;
     let bx=lerpX(b),by=lerpY(b),bz=(b.pz==null?(b.z||0):b.pz+((b.z||0)-b.pz)*_alpha);
     if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR*2.2){bx=b.x;by=b.y;bz=b.z||0;}
-    const s=P3(bx,by,bz),X=s[0],Y=s[1],r=BR*s[2];
+    const s=P3(bx,by,bz),X=s[0],Y=s[1],r=BR*s[2]*ballScale(bx,by);
     ctx.globalAlpha=1-0.3*bz;                                              // further back = a little hazier
     for(let i=0;i<tl;i++){const t=b.trail[i],f=i/tl,q=P3(t[0],t[1],t[2]||0);
       ctx.fillStyle=under?`hsla(${bh},65%,58%,${(f*0.4).toFixed(3)})`:`hsla(${bh},90%,64%,${(f*0.25).toFixed(3)})`;
@@ -4934,7 +5161,8 @@ function drawBalls3D(){
 function draw(){
   ctx.clearRect(0,0,W,H);
   if(VIEW.d3)draw3D();                  // the glass box (see TWO VIEWS OF ONE TANK)
-  else{drawParticles();drawShape();drawDebris();drawBalls();}  // the flat tank, exactly as it has always been
+  else{if(fillState==="fill"&&edges._space==='curved')drawHorizon();
+    drawParticles();drawShape();drawDebris();drawBalls();}  // the flat tank, exactly as it has always been
   // The chord readout is the header chip (#hdrChord) now: it rides in the transport row, so it cannot be
   // covered by the studio strip and it is the only readout play mode has left. This floating pill is
   // retired - it is still wired (updateChordPill) but never shown. NOTE: this line used to re-show it on
@@ -4959,7 +5187,7 @@ function loop(now){
   if(_lastFrame){_fpsAcc+=now-_lastFrame;if(++_fpsN>=20){const avg=_fpsAcc/_fpsN;_fpsAcc=0;_fpsN=0;
     if(!LITE){
       if(avg>46)_slowRun++;else _slowRun=0;
-      if(_slowRun>=2){LITE=true;window.__lite=true;document.body.classList.add('lite');_fastRun=0;toast('performance mode on');}
+      if(_slowRun>=2){LITE=true;window.__lite=true;document.body.classList.add('lite');_fastRun=0;}   // silent: it just thins the goo, nobody needs a name for it
     }else if(!_liteLocked){
       // AND IT CAN COME BACK. This was one-way, with the note "avoids flip-flop" - true, but it also
       // meant one bad patch (a lesson loading, a tab coming back from the background, a kid opening
@@ -5177,6 +5405,7 @@ $("shape").addEventListener('change',e=>{const v=e.target.value;S.shape=/^\d+$/.
 $("newShapeBtn").addEventListener('click',()=>{ // kids' dice: always a DIFFERENT shape, instantly
   const sel=$("shape"),n=sel.options.length;
   sel.selectedIndex=(sel.selectedIndex+1+Math.floor(Math.random()*(n-1)))%n;
+  if(TSPACE.pick==='auto'){TSPACE.cur=rollSpace(sel.value);if(window._spaceChip)window._spaceChip();}   // the dice can land in a new space too
   sel.dispatchEvent(new Event('change'));});
 let _keyProgrammatic=false; // true only while keyJourney() moves the key itself, so its own change doesn't trip the pin
 $("scale").addEventListener('change',e=>{S.scale=e.target.value;rebuild();updateScaleNote();if(!_keyProgrammatic)_keyPinned=true;updateWheel();}); // human picks a scale = pin it
@@ -5255,6 +5484,8 @@ $("dlyTop").addEventListener('input',e=>{const x=Math.pow(e.target.value/100,2)*
 $("dly").addEventListener('input',()=>{const t=$("dlyTop");if(t&&!dlyGrab)t.value=$("dly").value;}); // card slider keeps the top fader honest
 // ---------- modes: one engine, three doors — the class on <body> decides what shows ----------
 function applyMode(m){S.mode=m;
+  if(TSPACE.pick==='auto'&&m!=='play'&&TSPACE.cur!=='normal'){TSPACE.cur='normal';try{rebuild();}catch(e){}}   // auto only mixes spaces in play
+  if(window._spaceChip)window._spaceChip();
   document.body.classList.remove('mode-play','mode-learn','mode-studio');
   document.body.classList.add('mode-'+m);
   try{localStorage.setItem('slimehedron-mode',m);}catch(e){}
@@ -6029,9 +6260,45 @@ addEventListener('keydown',e=>{
     setBpm(S.bpm+(e.code==='ArrowUp'?2:-2));}
 });
 // ---------- 3D tank switch ----------
-(function(){const t=$("view3dT");if(!t)return;t.classList.toggle('on',VIEW.d3);
-  const flip=()=>window.setView3D(!VIEW.d3);
-  t.addEventListener('click',flip);t.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip();}});})();
+// ---------- THE TANK'S CORNER MENU: view (3D / 2D) and space (auto / normal / portal / curved) ----------
+// It sits on the tank's bottom-left corner, or the nearest free corner if a control is already there.
+(function(){const chip=$("spaceChip"),btn=$("spaceBtn"),menu=$("spaceMenu"),txt=$("spaceTxt"),note=$("smNote");if(!chip)return;
+  document.body.appendChild(chip);   // fixed to the viewport, so no panel's stacking can trap its menu
+  const why={portal:'portal needs a shape with matching opposite sides',curved:'curved needs a shape with no dents'};
+  function paint(){
+    const sp=edges?edges._space:'normal';
+    txt.textContent=(VIEW.d3?'3D':'2D')+' \u00b7 '+(TSPACE.pick==='auto'&&sp==='normal'&&S.mode==='play'?'auto':sp);
+    menu.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.view==='3d')===VIEW.d3)));
+    const autoBtn=menu.querySelector('[data-space="auto"]');if(autoBtn)autoBtn.hidden=S.mode!=='play';
+    menu.querySelectorAll('[data-space]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.space===TSPACE.pick)));
+    const want=TSPACE.pick==='auto'?null:TSPACE.pick;
+    note.textContent=(want&&want!==sp&&why[want])?why[want]:'';note.hidden=!note.textContent;}
+  window._spaceChip=paint;
+  // place it: bottom-left of the tank, else bottom-right, else just under the tank; never on top of a control
+  function place(){
+    const c=cv.getBoundingClientRect(),w=btn.offsetWidth||90,h=btn.offsetHeight||44,m=8;
+    const cands=[[c.left+m,c.bottom-h-m],[c.left+m,c.bottom-h-m-36],[c.right-w-m,c.bottom-h-m],[c.right-w-m,c.bottom-h-m-36],[c.left+m,c.bottom+m],[c.right-w-m,c.bottom+m],[c.left+m,c.top+m],[c.right-w-m,c.top+m],
+      [c.left+c.width/2-w/2,c.top-h-m],[c.left+c.width/2-w/2,c.top+m]];   // small phones: the side columns and the mixer take the corners
+    const ctrls=[...document.querySelectorAll('button,select,input,[role="button"],.psBtn,#triMix')].filter(e=>!chip.contains(e)&&e.offsetWidth&&getComputedStyle(e).visibility!=='hidden').map(e=>e.getBoundingClientRect());
+    const free=([x,y])=>x>=0&&y>=0&&x+w<=innerWidth&&y+h<=innerHeight&&!ctrls.some(r=>x<r.right+4&&x+w>r.left-4&&y<r.bottom+4&&y+h>r.top-4);
+    const at=cands.find(free)||cands[0];
+    chip.style.left=at[0]+'px';chip.style.top=at[1]+'px';}
+  function open(v){menu.hidden=!v;chip.classList.toggle('open',v);btn.setAttribute('aria-expanded',String(v));
+    if(v){menu.classList.remove('down');menu.style.left='0px';let r=menu.getBoundingClientRect();   // keep the whole menu on screen
+      if(r.top<8){menu.classList.add('down');r=menu.getBoundingClientRect();}
+      const dx=Math.max(8-r.left,Math.min(0,innerWidth-8-r.right));menu.style.left=dx+'px';}
+    if(v){paint();const f=menu.querySelector('[aria-pressed="true"]');if(f)f.focus();}}
+  btn.addEventListener('click',e=>{e.stopPropagation();open(menu.hidden);});
+  menu.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;e.stopPropagation();
+    if(b.dataset.view)window.setView3D(b.dataset.view==='3d');
+    if(b.dataset.space)window.setSpace(b.dataset.space);
+    paint();});
+  addEventListener('pointerdown',e=>{if(!menu.hidden&&!chip.contains(e.target))open(false);},true);
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&!menu.hidden){open(false);btn.focus();}});
+  chip.addEventListener('pointerdown',e=>e.stopPropagation());
+  try{new ResizeObserver(place).observe(cv);}catch(e){}
+  addEventListener('resize',place);setInterval(()=>{if(!document.hidden)place();},1500);   // controls move with mode changes; a cheap re-check
+  paint();setTimeout(place,0);})();
 // ---------- PREFERENCES dialog ----------
 (function(){const b=$("prefsBtn"),d=$("prefsDlg");if(!b||!d)return;
   b.addEventListener('click',()=>{if(d.showModal)d.showModal();else d.setAttribute('open','');});
