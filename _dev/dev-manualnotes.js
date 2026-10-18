@@ -8,7 +8,7 @@
 // ============================================================================================
 const {chromium}=require('playwright');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
-(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+(async()=>{const b=await require('./browser').launch();   // the shared launcher: finds Chrome anywhere, and keeps the 3D tank on the canvas renderer here
  for(const mode of ['play','studio']){
   console.log('\n== '+mode+' ==');
   const ctx=await b.newContext({viewport:{width:1440,height:900}});const p=await ctx.newPage();

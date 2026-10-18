@@ -180,7 +180,8 @@ header .spacer{flex:1}
    and the symptom was "it stays in one scale forever". Now the chip says so, and tapping it releases. */
 body.keyPinned #hdrChord{border-color:var(--accent);background:rgba(179,136,240,.16)}
 body.keyPinned #hcKey::before{content:"\1F512\FE0E";margin-right:3px;font-size:9px}
-#hdrChord b{font:800 17px system-ui,sans-serif;color:var(--ink);letter-spacing:.2px}
+#hdrChord b{font:800 17px system-ui,sans-serif;color:var(--ink);letter-spacing:.2px;white-space:nowrap;max-width:118px;overflow:hidden;text-overflow:ellipsis}
+#hdrChord{width:122px;overflow:hidden} /* a FIXED width: "E minor" and "F\266f drone" must not slide the transport row sideways */
 #hdrChord i{font:600 9px system-ui,sans-serif;font-style:normal;color:var(--ink-soft);letter-spacing:.5px;text-transform:uppercase;margin-top:1px}
 .hdrSep{width:1px;height:24px;background:rgba(150,140,185,.28);flex:none;margin:0 2px}
 .mode-learn #hdrChord,.mode-learn .hdrSep,body.lab-on #hdrChord,body.lab-on .hdrSep{display:none}
@@ -1065,7 +1066,8 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 #stage{flex:1;display:flex;align-items:center;justify-content:center;position:relative;min-width:0}
 /* FLUID TANK: the 720×720 canvas scales DOWN to fit whatever room the stage has (any zoom / window size),
    staying a perfect square. This is the core of "always fits" — no more clipping off the edge at 125%+ zoom. */
-#cv{max-width:100%;max-height:100%;width:auto;height:auto;aspect-ratio:1/1}
+#cv{max-width:100%;max-height:100%;width:auto;height:auto;aspect-ratio:1/1;position:relative;z-index:1}
+#cvGL{position:absolute;z-index:0;pointer-events:none;display:none}  /* the 3D tank on the graphics card sits under the canvas */
 /* the MIXER + auto-toggle FLOAT (absolute) so they don't steal vertical height from the tank — the shapes+notes
    are the whole point, so the canvas gets to be the biggest thing on screen. */
 /* STUDIO: mixer bottom-left (the left gutter is empty there). PLAY: the left column holds the Sound buttons, so the
@@ -1598,8 +1600,9 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   .btngroup #slimeBig.on .ss-knob{left:25px}
   .hdrSep{display:none} /* phone: the gap is the separator */
   /* it is a BUTTON now (tap to lock/release the key), so it needs 44 on both axes, not just height */
-  #hdrChord{min-width:54px;min-height:44px;padding:1px 4px;background:none;border:0;box-shadow:none;justify-content:center} /* wide enough for the longest chord name, so the row never shifts */
-  #hdrChord b{font-size:16px} #hdrChord i{display:none} /* the chord is the news; the key label is desktop-only */
+  #hdrChord{width:88px;min-width:88px;min-height:44px;padding:1px 2px;background:none;border:0;box-shadow:none;justify-content:center;overflow:hidden} /* a FIXED width: the row never shifts as the name changes */
+  #hdrChord b{font-size:15px;white-space:nowrap;max-width:86px;overflow:hidden;text-overflow:ellipsis}
+  #hdrChord i{display:block;font-size:8.5px;letter-spacing:.3px;white-space:nowrap;max-width:86px;overflow:hidden;text-overflow:ellipsis} /* which scale: "G major", "E hirajoshi" */
   /* FADERS on their own line: full width, centred, and finally long enough to actually aim at.
      A 30px-wide volume slider was not a control, it was a rumour. */
   .btngroup{flex-wrap:wrap;justify-content:center}
@@ -1850,8 +1853,12 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
 
 /* THE TANK'S CORNER MENU — small cream chip, opens upward. */
 #spaceChip{position:fixed;z-index:30;left:8px;top:8px}
+#spaceChip .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+#growBar[hidden]{display:none}
+#growBar button{background:linear-gradient(135deg,#efe6ff,#dff7ef)}
+#growBar button:disabled{opacity:.4;cursor:default}
 #spaceChip.open{z-index:80} /* open: above the side columns (76), so every choice can be pressed */
-#spaceBtn{display:inline-flex;align-items:center;gap:6px;min-height:44px;min-width:0;padding:0 14px;border-radius:22px;
+#spaceBtn{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;min-height:44px;min-width:44px;padding:0;border-radius:50%;opacity:.88;
   font:800 13px/1 system-ui,sans-serif;color:var(--ink,#4a4170);background:rgba(255,255,255,.82);border:1.5px solid rgba(255,255,255,.95);
   box-shadow:0 3px 0 rgba(150,130,200,.35),0 6px 14px rgba(120,110,160,.2);cursor:pointer;letter-spacing:.2px}
 #spaceBtn:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(150,130,200,.35),0 2px 6px rgba(120,110,160,.2)}
@@ -2035,12 +2042,14 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
   <div id="stage">
     <canvas id="cv" width="720" height="720"></canvas>
     <div id="spaceChip">
-      <button id="spaceBtn" aria-expanded="false" aria-controls="spaceMenu" title="tank view and space"><span id="spaceTxt">3D</span><svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 4.5 6 8l4-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-      <div id="spaceMenu" role="group" aria-label="tank view and space" hidden>
+      <button id="spaceBtn" aria-expanded="false" aria-controls="spaceMenu" aria-label="3D, space and shape" title="3D, space and shape"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 2.8 20.2 7.4v9.2L12 21.2 3.8 16.6V7.4z"/><path d="M3.8 7.4 12 12l8.2-4.6M12 12v9.2"/></svg><span id="spaceTxt" class="sr">3D</span></button>
+      <div id="spaceMenu" role="group" aria-label="3D, space and shape" hidden>
         <div class="smRow"><span class="smLab">view</span><button data-view="3d" aria-pressed="false">3D</button><button data-view="2d" aria-pressed="false">2D</button></div>
         <div class="smRow"><span class="smLab">space</span><button data-space="auto" aria-pressed="false">auto</button><button data-space="normal" aria-pressed="false">normal</button><button data-space="portal" aria-pressed="false">portal</button><button data-space="curved" aria-pressed="false">curved</button></div>
+        <div class="smRow" id="growBar" hidden><span class="smLab">shape</span><button data-grow="cut" aria-label="cut the corners off">cut</button><button data-grow="puff" aria-label="puff out the faces">puff</button><button data-grow="flip" aria-label="swap the faces and the corners">flip</button></div>
         <p id="smNote"></p>
       </div>
+    </div>
     </div>
     <div id="chordPill" hidden>
       <div class="cpMain"><b id="chordNow">—</b><i id="chordNowType"></i></div>
@@ -2125,6 +2134,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
           <option value="9">nonagon</option><option value="10">decagon</option>
           <option value="11">hendecagon</option><option value="12">dodecagon</option>
           <option value="rhombus">◆ rhombus</option><option value="trapezoid">▱ trapezoid</option><option value="parallelogram">▰ parallelogram</option>
+          <optgroup label="solids (3D)"><option value="tetra">tetrahedron</option><option value="cube">cube</option><option value="octa">octahedron</option><option value="dodeca">dodecahedron</option><option value="icosa">icosahedron</option></optgroup>
         </select>
       </div>
       <div class="row"><label>spin</label><input type="range" id="spin" min="-100" max="100" value="0"><span class="val" id="spinV">0</span></div>
@@ -2256,15 +2266,15 @@ const SCALES={
   locrian:{n:"Locrian",c:[0,100,300,500,600,800,1000]},
   pentaMaj:{n:"Major Pentatonic",c:[0,200,400,700,900]},
   pentaMin:{n:"Minor Pentatonic",c:[0,300,500,700,1000]},
-  blues:{n:"Blues",c:[0,300,500,600,700,1000]},
+  blues:{n:"Blues",c:[0,300,500,600,700,1000],harm:'blues'},
   harmMin:{n:"Harmonic Minor",c:[0,200,300,500,700,800,1100]},
   melMin:{n:"Melodic Minor",c:[0,200,300,500,700,900,1100]},
   wholeTone:{n:"Whole Tone",c:[0,200,400,600,800,1000]},
-  hirajoshi:{n:"Hirajoshi (Japan)",c:[0,200,300,700,800]},
-  inSen:{n:"In Sen (Japan)",c:[0,100,500,700,1000]},
+  hirajoshi:{n:"Hirajoshi (Japan)",c:[0,200,300,700,800],harm:'drone'},   // koto music: notes framed by fourths, not chord changes
+  inSen:{n:"In Sen (Japan)",c:[0,100,500,700,1000],harm:'drone'},
   iwato:{n:"Iwato (Japan)",c:[0,100,500,600,1000],harm:'drone'}, // semitone+tritone flavor: drone/fifths keep it from clashing
   hijaz:{n:"Hijaz (Arabic)",c:[0,100,400,500,700,800,1000]},
-  bhairav:{n:"Bhairav (India)",c:[0,100,400,500,700,800,1100]},
+  bhairav:{n:"Bhairav (India)",c:[0,100,400,500,700,800,1100],harm:'drone'},   // a raga floats over the tanpura's Sa and Pa: no chord changes
   maqamRast:{n:"Maqam Rast ¼-tone",c:[0,200,350,500,700,900,1050],harm:'neutral'},
   maqamBayati:{n:"Maqam Bayati ¼-tone",c:[0,150,300,500,700,800,1000],harm:'drone'},
   slendro:{n:"Slendro (5-EDO ~Java)",c:[0,240,480,720,960],harm:'drone'},
@@ -3001,6 +3011,50 @@ const CHORD_FN={
   minor:{use:[1,0.12,0.8,0.9,0.7,0.95,0.85],
          next:{3:{0:1.3,4:1.3},4:{0:1.6},5:{6:1.5,3:1.3},6:{0:1.5,2:1.5}}}
 };
+// ===== EVERY SCALE HAS ITS OWN WAY OF HARMONIZING =====
+// A ii-V-I belongs to major and minor keys. Most of the world does something else, and forcing those
+// changes onto a mode or a Japanese scale is what makes "other scales" sound like wrong notes. So each
+// scale here moves the way its own tradition moves:
+//   major, minor      the melody-following chord brain with pop's own odds (Hooktheory, see CHORD_FN)
+//   dorian            the dorian shuttle i-IV (funk, disco: "Get Lucky")           [Open Music Theory 7.12]
+//   mixolydian        the subtonic shuttle I-bVII, and the double plagal bVII-IV-I [Open Music Theory 7.12]
+//   lydian            the lydian shuttle I-II                                       [Open Music Theory 7.12]
+//   phrygian          i-bII, the half-step that IS phrygian (no tidy textbook schema for this one)
+//   harmonic minor    i-iv-V-i: the raised 7th exists to make that V major
+//   hijaz             I, bII, iv and vii are its chords (flamenco, klezmer, Arabic)   [Wikipedia: Phrygian dominant]
+//   whole tone        only two chords exist, both augmented, a step apart; no home  [Wikipedia: Whole-tone scale]
+//   blues             the twelve-bar: I7 I7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7, dominant sevenths under
+//                     the blues scale's minor third -- that rub IS the blues
+//   hirajoshi, in sen, iwato   no chord changes: a drone framed by fourths and fifths. Japanese melody is
+//                     organised around "nuclear tones a fourth apart" (Koizumi), not around triads
+//   bhairav           a raga floats over the tanpura's Sa and Pa, and never changes chord
+//                     [swarganga.org: "the absence of chord changes in Hindustani music"]
+// Pentatonics keep the melody vote: stacking every other note of a pentatonic already gives open,
+// chord-less sounds (stacked fourths, sixths), which is how that music is voiced anyway.
+const SCALE_VAMPS={
+  dorian:[[0,3],[0,3,0,6]], mixolydian:[[0,6],[6,3,0,0]], lydian:[[0,1],[0,1,0,4]], phrygian:[[0,1],[0,1,0,6]],
+  harmMin:[[0,3,4,0],[0,5,3,4]], hijaz:[[0,1],[3,1,0,0],[0,3,1,0],[0,6,1,0]], wholeTone:[[0,1]]};
+const BLUES12=[0,0,0,0,5,5,0,0,7,5,0,7];          // semitones above the key, one chord per bar
+let _vampIdx=0,_bluesBar=0;
+// the chord a vamp scale plays next: walk its pattern, and try another of its patterns every 8 chords
+function vampChord(peek){const P=SCALE_VAMPS[S.scale],n=scaleObj().c.length;
+  if(!peek&&_chordIdx>0&&_chordIdx%8===0&&P.length>1)_vampIdx=(_vampIdx+1+Math.floor(Math.random()*(P.length-1)))%P.length;
+  const pr=P[_vampIdx%P.length];return pr[_chordIdx%pr.length]%n;}
+function bluesDeg(semi){const sc=scaleObj().c;let best=0,bd=1e9;sc.forEach((c,i)=>{const d=Math.abs(c-semi*100);if(d<bd){bd=d;best=i;}});return best;}
+// WHAT THE CHIP SAYS. The chord in words ("E minor", "C7", "E drone") and the scale it lives in
+// ("G major", "E hirajoshi"), so the letter on screen actually tells a kid something.
+function scaleWord(){const k=S.scale,sc=SCALES[k];if(!sc)return '';
+  const plain={major:'major',minor:'minor',pentaMaj:'major pentatonic',pentaMin:'minor pentatonic',harmMin:'harmonic minor',melMin:'melodic minor',wholeTone:'whole tone',inSen:'in sen'};
+  return (plain[k]||sc.n.replace(/\s*\(.*\)\s*/,'').replace(/\s*¼-tones?/,'').toLowerCase()).trim();}
+function keyNameNow(){const pc=((Math.round(S.root)%12)+12)%12;return (NOTE_NAMES[pc]||'C').replace('#','\u266f');}
+function chordReadout(){
+  if(cmActive()&&_cmCur)return {name:(PC_LBL[_cmCur.pc]||'')+' '+(CQUAL_LBL[_cmCur.qual]||_cmCur.qual),sub:keyNameNow()+' '+scaleWord()};
+  const harm=scaleObj().harm||'triad',f=chordFull(curRootDeg);let name;
+  if(harm==='drone')name=f.root+' drone';
+  else if(harm==='blues')name=f.root+'7';
+  else if(harm==='neutral')name=f.root+' neutral';
+  else{const w={major:'major',minor:'minor',diminished:'dim',augmented:'aug',suspended:'sus'}[f.word];name=w?f.root+' '+w:f.root;}
+  return {name,sub:keyNameNow()+' '+scaleWord()};}
 let nextRootDeg=null; // the brain decides one bar ahead so the pill can show where we're going
 function chordName(rd){const c0=centsForDegree(rd),a=((Math.round((centsForDegree(rd+2)-c0)/100))%12+12)%12,b=((Math.round((centsForDegree(rd+4)-c0)/100))%12+12)%12;
   const root=NOTE_NAMES[(((S.root+Math.round(c0/100))%12)+12)%12];
@@ -3189,9 +3243,9 @@ function keyShortNow(){
 // painted on every bar from paintHarmony() - never nested inside another function's early-return.
 function paintChordChip(){
   const n=document.getElementById('hcName');if(!n)return;
-  const txt=chordShortNow();
-  n.textContent=txt||'-';
-  const k=document.getElementById('hcKey');if(k)k.textContent='key '+keyShortNow();
+  let R0=null;try{R0=chordReadout();}catch(e){}
+  n.textContent=(R0&&R0.name)||chordShortNow()||'-';
+  const k=document.getElementById('hcKey');if(k)k.textContent=R0?R0.sub:'key '+keyShortNow();
   try{
     const pinned=(typeof _keyPinned!=='undefined')&&_keyPinned&&S.slimeMode;
     document.body.classList.toggle('keyPinned',!!pinned);
@@ -3384,15 +3438,28 @@ function keyJourneyBars(){
   const want=Math.round(90/sec/8)*8;              // ~90s, snapped to an 8-bar phrase
   return Math.max(16,Math.min(64,want||32));}
 window._keyJourneyBars=keyJourneyBars;
+// THE PLAY-MODE JOURNEY GOES ROUND THE WORLD, AND COMES HOME. Every other move leaves home (major or
+// minor) for one of these, on the SAME home note, so the ear keeps its footing while the colour changes:
+// the same pop beat heard through a mode, a Japanese scale, a raga, the blues. Then it comes back home
+// (minor if the trip was dark, major if it was bright) and the home key can step round the circle of
+// fifths. Never microtonal in play: those stay in studio, where someone chose them.
+const PLAY_HOME=['major','minor'];
+const PLAY_AWAY=['dorian','mixolydian','lydian','pentaMaj','pentaMin','blues','harmMin','hirajoshi','inSen','hijaz','bhairav','phrygian','wholeTone'];
+let _awayLog=[];
+function playScaleStep(){const cur=S.scale;
+  if(PLAY_HOME.includes(cur)){let pool=PLAY_AWAY.filter(k=>!_awayLog.includes(k));if(!pool.length){_awayLog=[];pool=PLAY_AWAY.slice();}
+    const k=pool[Math.floor(Math.random()*pool.length)];_awayLog.push(k);if(_awayLog.length>6)_awayLog.shift();return {scale:k,move:false};}
+  return {scale:isMinorScale()?'minor':'major',move:Math.random()<0.6};}
+window.__playScaleStep=playScaleStep;
 function keyJourney(){ // ear-friendly walk: every 16 bars the root moves exactly ONE step on the circle of fifths
   // (up OR down a fifth) — always a neighbour, never a random/atonal jump.
   const step=Math.random()<0.5?7:-7; // +a fifth (A→E) or −a fifth (A→D)
   let nr=S.root+step;while(nr<52)nr+=12;while(nr>64)nr-=12; // keep the root in a comfy octave
-  // play mode: sometimes ALSO flip between minor & major pentatonic to keep it fresh (they share the same 5-note
-  // "no wrong notes" family, so it stays kid-safe — just a brighter/darker mood). ~40% of moves flip the tonality.
   const rootEl=$("root"),scaleEl=$("scale"); // guard: never let a missing control crash the audio loop
-  if(S.mode==='play'&&Math.random()<0.3&&scaleEl){const flip=isMinorScale()?'major':'minor'; // play stays in FULL diatonic scales (chord diversity); ~30% of key moves flip major<->minor for mood range, both kid-safe under scale-lock
-    _keyProgrammatic=true;scaleEl.value=flip;scaleEl.dispatchEvent(new Event('change'));_keyProgrammatic=false;}
+  if(S.mode==='play'&&scaleEl){const st=playScaleStep();   // see THE PLAY-MODE JOURNEY
+    _keyProgrammatic=true;scaleEl.value=st.scale;scaleEl.dispatchEvent(new Event('change'));_keyProgrammatic=false;
+    _vampIdx=0;_bluesBar=0;_chordIdx=0;_autoHold=0;nextRootDeg=0;
+    if(!st.move)nr=S.root;}             // a trip abroad keeps the home note
   if(rootEl){_keyProgrammatic=true;rootEl.value=nr;rootEl.dispatchEvent(new Event('change'));_keyProgrammatic=false;} // auto-move: don't trip the pin
   updateWheel(); // the wheel is the star: glow the new key (Am/C…) + trace the fifth-step arc
   if(S.mode!=='play')toast('→ '+NOTE_NAMES[((nr%12)+12)%12]+' '+SCALES[S.scale].n.toLowerCase());} // play: silent, the wheel says it all
@@ -3809,7 +3876,7 @@ function advanceHarmony(barI){
   // THE KEY MOVES WHERE A CHORD ENDS, and the next chord is the NEW key's home chord, so the move is
   // heard. It used to move on any bar: a chord still sounding was re-read in the new key and changed
   // pitch halfway through, and the next chord was a random one, which hid the arrival.
-  if(man==null&&!cmActive()&&S.slimeMode&&!_keyPinned&&++_slimeBars>=keyJourneyBars()&&_autoHold<=0){
+  if(man==null&&!cmActive()&&S.slimeMode&&!_keyPinned&&++_slimeBars>=keyJourneyBars()&&_autoHold<=0&&(S.scale!=='blues'||_bluesBar%12===0)){   // the blues finishes its twelve bars first
     _slimeBars=0;keyJourney();nextRootDeg=0;_keyCrash=true;}
   if(S.slimeMode&&fillState==='fill'){_wallBars++;
     if(_wallBars%8===0)breakWall();        // every 8 bars a wall opens up (notes pour out) — frequent enough to SEE it happening
@@ -3835,7 +3902,14 @@ function advanceHarmony(barI){
   }
   _cmCur=null;
   if(man!=null){rd=man%n;nextRootDeg=man%n;} // hold YOUR chord — no roulette, no lag
+  else if(harm==='drone'&&(S.scale==='bhairav')){rd=0;nextRootDeg=0;}   // a raga never leaves the tanpura's Sa
   else if(harm==='drone'){rd=(Math.random()<0.8?0:degNear(sc,700))%n;nextRootDeg=rd;} // 80% tonic, else drift to the 5th degree
+  else if(harm==='blues'){rd=bluesDeg(BLUES12[_bluesBar%12]);nextRootDeg=bluesDeg(BLUES12[(_bluesBar+1)%12]);_bluesBar++;_chordLastBar=true;}   // twelve bars, one chord each
+  else if(SCALE_VAMPS[S.scale]&&!man){   // a mode / world scale: its own vamp, one chord per S.chordBars
+    const hold=Math.max(1,Math.min(8,S.chordBars||2));
+    if(_autoHold>0){_autoHold--;rd=curRootDeg;}
+    else{rd=vampChord();_chordIdx++;nextRootDeg=vampChord(true);_autoHold=hold-1;}
+    _chordLastBar=(_autoHold===0);}
   else{ // auto only when hands are off — and a chord now LASTS, instead of flipping every bar
     // COUNT CHORDS, NOT BARS. pickChord()'s quiet-tank fallback indexes a 4-chord loop by the number
     // you hand it, so asking it for bar+4 every 4 bars returned the SAME chord forever — a chord set
@@ -3877,7 +3951,10 @@ function bandBar(t,barI){ // RENDERS the chord the brain picked. Audio only — 
   const barDur=drumBar()*drumStepDur();
   // BUILD THE CHORD by harmony mode — the microtonal GUARDRAIL (research: don't force Western triads on these scales):
   let rawDegs;
-  if(harm==='drone'){          // fifths + pedal only. the safest, warmest sound; the arp does the melodic work.
+  let rawCents=null;
+  if(harm==='blues'){          // a dominant 7th on the root: its major 3rd under the blues scale's minor 3rd is the blue note
+    const c0=centsForDegree(rd);rawCents=[c0,c0+400,c0+700,c0+1000];rawDegs=[rd];
+  }else if(harm==='drone'){          // fifths + pedal only. the safest, warmest sound; the arp does the melodic work.
     rawDegs=[rd,(rd+degNear(sc,700))%n]; // root + the scale degree nearest a pure 5th (3:2) above it
   }else if(harm==='neutral'){  // maqam/neutral: root + the scale's own (neutral) 3rd + 5th — its native colour, no forced maj/min 3rd
     rawDegs=[rd,(rd+degNear(sc,350,150))%n,(rd+degNear(sc,700))%n];
@@ -3901,7 +3978,7 @@ function bandBar(t,barI){ // RENDERS the chord the brain picked. Audio only — 
   }
   // voice leading: each pad voice moves to its NEAREST octave of the new chord tone — chords glide instead of leaping
   if(!window._padV)window._padV=null;
-  const degs=rawDegs.map((d,i)=>{const base=centsForDegree(d);
+  const degs=(rawCents||rawDegs.map(d=>centsForDegree(d))).map((base,i)=>{
     if(!window._padV)return base;
     const prev=window._padV[i];let best=base,bd=1e9;
     for(const off of [-1200,0,1200]){const c2=base+off;if(c2<-1300)continue;
@@ -4150,6 +4227,9 @@ const AURORA=[20,34,48,72,96,150,170,188,205,232,270,312,338];
 function _auroraFrom(tbl,t){const n=tbl.length,x=t*n,i=Math.floor(x)%n,fr=x-Math.floor(x);
   let h0=tbl[i],h1=tbl[(i+1)%n];let d=h1-h0;if(d>180)d-=360;if(d<-180)d+=360;return (h0+d*fr+360)%360;}
 function auroraHue(t){t=(t%1+1)%1;return _auroraFrom(AURORA,t);}
+// 3D GLASS: clear (pearl, a breath of the note's colour) at rest, the full note colour only while struck
+function glassTint(t,lit,a){const h=_auroraFrom(AURORA,(t%1+1)%1),k=Math.max(0,Math.min(1,lit));
+  return `hsla(${h},${(16+70*k).toFixed(0)}%,${(91-29*k).toFixed(0)}%,${a})`;}
 function aurora(t,l,a){const h=_auroraFrom(AURORA,(t%1+1)%1);
   return a==null?`hsl(${h},74%,${l}%)`:`hsla(${h},74%,${l}%,${a})`;}
 
@@ -4170,6 +4250,9 @@ function degNear(sc,target,tol){const len=sc.length;let best=0,bd=1e9;
 // shapeVerts returns the corner points. numbers "3".."12" = regular polygons; names = special shapes.
 // want to invent one? add a case here returning [x,y] points around (0,0) at radius ~R and it just works.
 function shapeVerts(shapeVal){
+  if(isSolidName(String(shapeVal))){   // a solid: its middle slice, each corner tagged with the face its wall belongs to
+    const P=String(shapeVal)===SOLID.name?SOLID.planes:solidPlanes(String(shapeVal)),sl=solidSlice(P,rot);
+    const V=sl.map(v=>[CX+v.p[0],CY+v.p[1]]);V._tags=sl.map(v=>v.t);return V;}
   const V=[],c=Math.cos(rot),s=Math.sin(rot); // rot = the spin slider, so shapes turn as a whole
   const put=(px,py)=>V.push([CX+(px*c-py*s),CY+(px*s+py*c)]); // place a point, rotated by the spin
   if(/^\d+$/.test(shapeVal)){const N=parseInt(shapeVal,10); // a plain number → that many equal sides
@@ -4275,6 +4358,116 @@ function wallDegrees(N,td){
   return out;
 }
 // ================================================================================================
+//  REAL SOLIDS. A solid is a set of face PLANES; the shape is everything inside all of them. That one
+//  rule means a solid is always convex and every face is flat, whatever the grow buttons do to it, and
+//  the physics never needs more than "which plane did the ball cross". Every face is a note.
+//    plane {n:[x,y,z] unit outward normal, d: its distance from the middle}; inside means n.p <= d
+//    seeds  the five Platonic solids (from their face normals) and the prism of any flat shape
+//    grow   cut  = truncate: a new face at every corner, a third of the way down each edge
+//           flip = dual: corners become faces and faces become corners (polar reciprocation)
+//           puff = kis: a low pyramid on every face (flip, cut, flip: Conway's k = dtd)
+//  Solid-local coordinates are px, centred, y DOWN like the screen, z toward the back of the box.
+//  A shape name is the seed plus the grow steps in order: "cube", "icosa.cut", "octa.flip.puff".
+//  In 2D (and to hold the goo, which is 2D) the tank is the solid's middle slice, and each wall of that
+//  slice plays the note of the face it is cut from.
+// ================================================================================================
+const SOLID_SEEDS=['tetra','cube','octa','dodeca','icosa'];
+const SOLID_R=R*0.95,SOLID_MAXF=62;
+function v3(a,b,c){return [a,b,c];}
+function vlen(a){return Math.hypot(a[0],a[1],a[2]);}
+function vnorm(a){const l=vlen(a)||1;return [a[0]/l,a[1]/l,a[2]/l];}
+function vdot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
+function vcross(a,b){return [a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];}
+function isSolidName(v){return typeof v==='string'&&/^(tetra|cube|octa|dodeca|icosa|prism\d+)(\.(cut|puff|flip))*$/.test(v);}
+function seedPlanes(name){const P=PHI_,ns=[];
+  if(name==='tetra')ns.push([1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]);
+  else if(name==='cube')ns.push([1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]);
+  else if(name==='octa'){for(const a of [1,-1])for(const b of [1,-1])for(const c of [1,-1])ns.push([a,b,c]);}
+  else if(name==='dodeca'){for(const a of [1,-1])for(const b of [P,-P]){ns.push([0,a,b],[a,b,0],[b,0,a]);}}
+  else if(name==='icosa'){for(const a of [1,-1])for(const b of [1,-1])for(const c of [1,-1])ns.push([a,b,c]);
+    for(const a of [1/P,-1/P])for(const b of [P,-P])ns.push([0,a,b],[a,b,0],[b,0,a]);}
+  else{const m=/^prism(\d+)$/.exec(name);const N=m?+m[1]:6;   // the flat shape pushed into a box: N sides, a front and a back
+    for(let i=0;i<N;i++){const a=-Math.PI/2+(i+0.5)*2*Math.PI/N;ns.push([Math.cos(a),Math.sin(a),0]);}
+    return [...ns.map(n=>({n:vnorm(n),d:Math.cos(Math.PI/N)*R})),{n:[0,0,1],d:BOXD/2},{n:[0,0,-1],d:BOXD/2}];}   // exactly the box the 3D tank already is
+  return scaleSolid(ns.map(n=>({n:vnorm(n),d:1})),SOLID_R);}
+const PHI_=(1+Math.sqrt(5))/2;
+// one face's outline: a big square in the plane, clipped by every other plane. Each edge of the result
+// remembers which plane cut it (t), which is how a slice knows which face each of its walls belongs to.
+function clipPoly(poly,n,d,tag){const out=[],N=poly.length;if(!N)return out;
+  for(let i=0;i<N;i++){const A=poly[i],B=poly[(i+1)%N],da=vdot(n,A.p)-d,db=vdot(n,B.p)-d;
+    if(da<=1e-7){out.push(A);if(db>1e-7){const t=da/(da-db);out.push({p:[A.p[0]+(B.p[0]-A.p[0])*t,A.p[1]+(B.p[1]-A.p[1])*t,A.p[2]+(B.p[2]-A.p[2])*t],t:tag});}}
+    else if(db<=1e-7){const t=da/(da-db);out.push({p:[A.p[0]+(B.p[0]-A.p[0])*t,A.p[1]+(B.p[1]-A.p[1])*t,A.p[2]+(B.p[2]-A.p[2])*t],t:A.t});}}
+  return out;}
+function planeSquare(n,d,size){const u=vnorm(Math.abs(n[0])<0.9?vcross(n,[1,0,0]):vcross(n,[0,1,0])),w=vcross(n,u),c=[n[0]*d,n[1]*d,n[2]*d];
+  const q=(a,b)=>({p:[c[0]+u[0]*a+w[0]*b,c[1]+u[1]*a+w[1]*b,c[2]+u[2]*a+w[2]*b],t:-1});
+  return [q(size,size),q(-size,size),q(-size,-size),q(size,-size)];}   // counter-clockwise seen from outside
+function solidFaces(planes){const big=R*8;
+  return planes.map((pl,i)=>{let poly=planeSquare(pl.n,pl.d,big);
+    for(let j=0;j<planes.length&&poly.length;j++)if(j!==i)poly=clipPoly(poly,planes[j].n,planes[j].d,j);
+    // drop the slivers clipping leaves where three or more planes meet at one corner
+    const out=[];for(const v of poly){const l=out[out.length-1];if(!l||Math.hypot(l.p[0]-v.p[0],l.p[1]-v.p[1],l.p[2]-v.p[2])>0.05)out.push(v);else out[out.length-1]={p:l.p,t:v.t};}
+    while(out.length>1&&Math.hypot(out[0].p[0]-out[out.length-1].p[0],out[0].p[1]-out[out.length-1].p[1],out[0].p[2]-out[out.length-1].p[2])<=0.05)out.pop();
+    return out.length>=3?out:[];});}
+function solidVerts(faces){const V=[],at=(p)=>{for(let i=0;i<V.length;i++)if(Math.hypot(V[i].p[0]-p[0],V[i].p[1]-p[1],V[i].p[2]-p[2])<0.5)return i;V.push({p,nb:new Set()});return V.length-1;};
+  for(const f of faces){const ids=f.map(v=>at(v.p));for(let k=0;k<ids.length;k++){const a=ids[k],b=ids[(k+1)%ids.length];if(a!==b){V[a].nb.add(b);V[b].nb.add(a);}}}
+  return V;}
+function scaleSolid(planes,Rt,raw){const V=solidVerts(solidFaces(planes.map(p=>({n:p.n,d:raw?p.d*R:p.d}))));
+  let r=0;for(const v of V)r=Math.max(r,vlen(v.p));const k=r>0?Rt/r:1;
+  return planes.map(p=>({n:p.n,d:(raw?p.d*R:p.d)*k}));}
+function solidFlip(planes){const V=solidVerts(solidFaces(planes));const rho=SOLID_R;
+  return scaleSolid(V.map(v=>({n:vnorm(v.p),d:rho*rho/vlen(v.p)})),SOLID_R);}
+function solidCut(planes){const V=solidVerts(solidFaces(planes)),out=planes.slice();
+  for(const v of V){const n=vnorm(v.p);let s=0,c=0;for(const j of v.nb){const u=V[j].p;s+=vdot(n,[v.p[0]+(u[0]-v.p[0])/3,v.p[1]+(u[1]-v.p[1])/3,v.p[2]+(u[2]-v.p[2])/3]);c++;}
+    if(c)out.push({n,d:s/c});}
+  return scaleSolid(out,SOLID_R);}
+function solidPuff(planes){return solidFlip(solidCut(solidFlip(planes)));}
+const _solidCache=new Map();
+function solidPlanes(name){if(_solidCache.has(name))return _solidCache.get(name);
+  const parts=name.split('.');let P=seedPlanes(parts[0]);
+  for(const op of parts.slice(1))P=op==='cut'?solidCut(P):op==='flip'?solidFlip(P):solidPuff(P);
+  // keep only planes that actually make a face (a cut can leave some exactly on a corner)
+  const F=solidFaces(P);P=P.filter((p,i)=>F[i].length>=3);
+  if(_solidCache.size>40)_solidCache.clear();_solidCache.set(name,P);return P;}
+function solidFaceCount(name){try{return solidPlanes(name).length;}catch(e){return 999;}}
+// which note each face plays: ordered bottom to top (low notes low, high notes high), then round the middle
+function solidFaceDegrees(planes){const td=totalDegrees(),idx=planes.map((p,i)=>i);
+  idx.sort((a,b)=>{const A=planes[a].n,B=planes[b].n;return (B[1]-A[1])||(Math.atan2(A[2],A[0])-Math.atan2(B[2],B[0]));});   // y is DOWN: big y = low
+  const D=wallDegrees(planes.length,td),out=new Array(planes.length);idx.forEach((k,j)=>out[k]=D[j]);return out;}
+// opposite faces that are the same shape slid across the middle can be glued (a portal); null if any face has no partner
+function solidTwins(planes){const F=solidFaces(planes),tw=new Array(planes.length).fill(-1);
+  const cen=f=>{const c=[0,0,0];for(const v of f){c[0]+=v.p[0];c[1]+=v.p[1];c[2]+=v.p[2];}return c.map(x=>x/f.length);};
+  for(let i=0;i<planes.length;i++){if(tw[i]>=0||!F[i].length)continue;
+    for(let j=0;j<planes.length;j++){if(j===i||tw[j]>=0||vdot(planes[i].n,planes[j].n)>-0.9999||F[j].length!==F[i].length)continue;
+      const ci=cen(F[i]),cj=cen(F[j]),T=[cj[0]-ci[0],cj[1]-ci[1],cj[2]-ci[2]];
+      const match=F[i].every(v=>F[j].some(u=>Math.hypot(v.p[0]+T[0]-u.p[0],v.p[1]+T[1]-u.p[1],v.p[2]+T[2]-u.p[2])<0.5));
+      if(match){tw[i]=j;tw[j]=i;break;}}}
+  return tw.every((t,i)=>t>=0||!F[i].length)?tw:null;}
+// the middle slice (z = 0) of the solid turned by rot: the flat tank, each wall tagged with its face
+function solidSlice(planes,rotA){const c=Math.cos(rotA),s=Math.sin(rotA);
+  const P=planes.map(p=>({n:[p.n[0]*c-p.n[1]*s,p.n[0]*s+p.n[1]*c,p.n[2]],d:p.d}));
+  let poly=planeSquare([0,0,1],0,R*8);for(let j=0;j<P.length&&poly.length;j++)poly=clipPoly(poly,P[j].n,P[j].d,j);
+  // a corner clipped twice leaves a zero-length edge; dropping it must keep the LATER edge's face tag
+  const out=[];for(const v of poly){const l=out[out.length-1];if(!l||Math.hypot(l.p[0]-v.p[0],l.p[1]-v.p[1])>0.05)out.push(v);else out[out.length-1]={p:l.p,t:v.t};}
+  return out;}
+// THE SOLID IN PLAY: its planes (with a morph between two solids in progress), each face's note and flash
+const SOLID={name:null,planes:[],deg:[],flash:[],twin:null,from:null,to:null,t0:0,dur:900,fromDeg:null,toDeg:null};
+function solidSet(name,morph){const P=solidPlanes(name),D=solidFaceDegrees(P);
+  if(morph&&SOLID.planes.length){SOLID.from=SOLID.planes.slice();SOLID.fromDeg=SOLID.deg.slice();SOLID.to=P;SOLID.toDeg=D;SOLID.t0=performance.now();}
+  else{SOLID.from=null;SOLID.planes=P;SOLID.deg=D;SOLID.flash=P.map(()=>0);}
+  SOLID.name=name;SOLID.twin=solidTwins(P);SOLID.T=null;
+  if(SOLID.twin){const F=solidFaces(P),cen=f=>{const q=[0,0,0];for(const v of f){q[0]+=v.p[0];q[1]+=v.p[1];q[2]+=v.p[2];}return q.map(x=>x/f.length);};
+    SOLID.T=P.map((p,i)=>{const j=SOLID.twin[i];if(j<0)return null;const a=cen(F[i]),b2=cen(F[j]);return [b2[0]-a[0],b2[1]-a[1],b2[2]-a[2]];});}}
+// a morph is the old planes sliding out while the new ones slide in; in between, the shape is everything
+// inside all of them, so every in-between frame is itself a real, closed, convex solid
+function solidMorphTick(){if(!SOLID.from)return false;
+  let t=(performance.now()-SOLID.t0)/SOLID.dur;if(t>=1){SOLID.planes=SOLID.to;SOLID.deg=SOLID.toDeg;SOLID.flash=SOLID.to.map(()=>0.6);SOLID.from=null;return true;}
+  const e=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2,out=4;   // ease in-out; "out" pushes a plane past every corner
+  const P=[],D=[],Fl=[];
+  SOLID.from.forEach((p,i)=>{P.push({n:p.n,d:p.d*(1+(out-1)*e)});D.push(SOLID.fromDeg[i]);Fl.push(SOLID.flash[i]||0);});
+  SOLID.to.forEach((p,i)=>{P.push({n:p.n,d:p.d*(1+(out-1)*(1-e))});D.push(SOLID.toDeg[i]);Fl.push(0);});
+  SOLID.planes=P;SOLID.deg=D;if(SOLID.flash.length!==P.length)SOLID.flash=Fl;return true;}
+window.__solid=SOLID;
+// ================================================================================================
 //  THREE SPACES. The tank can be one of three kinds of space, and each one follows its own maths:
 //    normal  the tank it has always been. Every shape, every lesson.
 //    portal  opposite walls are glued together (a torus, or for 8+ sides a many-holed one). A ball
@@ -4312,13 +4505,16 @@ function polyCentral(v){const N=v.length;if(N%2)return false;let cx=0,cy=0;for(c
   for(let i=0;i<N/2;i++){const a=v[i],b=v[i+N/2];if(Math.abs(a[0]+b[0]-2*cx)>0.5||Math.abs(a[1]+b[1]-2*cy)>0.5)return false;}return true;}
 function polyConvex(v){const N=v.length;let sg=0;for(let i=0;i<N;i++){const a=v[i],b=v[(i+1)%N],c=v[(i+2)%N];
   const cr=(b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]);if(Math.abs(cr)<1e-6)continue;const s=cr>0?1:-1;if(sg&&s!==sg)return false;sg=s;}return true;}
-function spaceFits(shapeVal,sp,verts){if(sp==='normal')return true;const v=verts||shapeVerts(shapeVal);
+function spaceFits(shapeVal,sp,verts){if(sp==='normal')return true;
+  if(isSolidName(String(shapeVal)))return sp==='curved'||(sp==='portal'&&!!solidTwins(solidPlanes(String(shapeVal))));   // every solid is convex: it can be curved
+  const v=verts||shapeVerts(shapeVal);
   return sp==='portal'?polyCentral(v):sp==='curved'?polyConvex(v):false;}
 // hyperboloid helpers: a screen point -> its point on the hyperboloid; the Minkowski product
 function hP(x,y){const ux=(x-CX)/HYP.RD,uy=(y-CY)/HYP.RD,r2=ux*ux+uy*uy,D=1-r2;return [(1+r2)/D,2*ux/D,2*uy/D];}
 function mdot(a,b){return -a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
 // how big a ball is drawn where it is: a fixed size in the curved space shrinks toward the rim
-function ballScale(x,y){if(!edges||edges._space!=='curved')return 1;const ux=(x-CX)/HYP.RD,uy=(y-CY)/HYP.RD;return Math.max(0.08,1-ux*ux-uy*uy);}
+function ballScale(x,y,z){if(!edges||edges._space!=='curved')return 1;const ux=(x-CX)/HYP.RD,uy=(y-CY)/HYP.RD,
+  uz=(z!=null&&VIEW.d3&&edges._solid&&!_labOn())?(z-0.5)*BOXD/HYP.RD:0;return Math.max(0.08,1-ux*ux-uy*uy-uz*uz);}
 // the drawn path of one wall: a straight line, or (curved) its arc
 function edgePath(e,move){if(e.cr){if(move!==false)ctx.moveTo(e.ax,e.ay);ctx.arc(e.ccx,e.ccy,e.cr,e.a0,e.a1,e.ccw);}
   else{if(move!==false)ctx.moveTo(e.ax,e.ay);ctx.lineTo(e.bx,e.by);}}
@@ -4347,11 +4543,17 @@ function curveEdges(edges,verts){
   return edges;}
 function buildEdges(shapeVal,sp){
   if(sp==null)sp=TSPACE.cur;
+  if(isSolidName(String(shapeVal))&&String(shapeVal)!==SOLID.name&&!SOLID.from&&String(shapeVal)===String(S.shape))solidSet(String(shapeVal));
   let verts=shapeVerts(shapeVal);
   if(_labOn()||!spaceFits(shapeVal,sp,verts))sp='normal';
-  if(sp==='curved'){const u=/^\d+$/.test(String(shapeVal))?hypCorner(verts.length).u:HYP.UV;   // corners into the disk
+  if(sp==='curved'&&isSolidName(String(shapeVal))){const tags=verts._tags;   // a curved solid's slice: its corners, Klein -> Poincare
+    verts=verts.map(([x,y])=>{const u=kleinToBall([(x-CX)/HKR(),(y-CY)/HKR(),0]);return [CX+u[0]*HYP.RD,CY+u[1]*HYP.RD];});verts._tags=tags;}
+  else if(sp==='curved'){const u=/^\d+$/.test(String(shapeVal))?hypCorner(verts.length).u:HYP.UV;   // corners into the disk
     verts=verts.map(([x,y])=>[CX+(x-CX)/R*u*HYP.RD,CY+(y-CY)/R*u*HYP.RD]);}
-  const edges=[],td=totalDegrees(),N=verts.length,DEGMAP=wallDegrees(N,td);
+  const edges=[],td=totalDegrees(),N=verts.length;let DEGMAP=wallDegrees(N,td);
+  const solidName=isSolidName(String(shapeVal))?String(shapeVal):null;
+  if(solidName&&verts._tags){const D=solidName===SOLID.name?SOLID.deg:solidFaceDegrees(solidPlanes(solidName));
+    DEGMAP=verts._tags.map(t=>D[t]!=null?D[t]:0);}   // each wall of the slice plays its face's note
   let cx=0,cy=0;for(const[x,y]of verts){cx+=x;cy+=y;}cx/=N;cy/=N; // centroid = a point known to be inside
   for(let i=0;i<N;i++){const[ax,ay]=verts[i],[bx,by]=verts[(i+1)%N];
     let nx=-(by-ay),ny=(bx-ax);const len=Math.hypot(nx,ny)||1;nx/=len;ny/=len;
@@ -4360,7 +4562,7 @@ function buildEdges(shapeVal,sp){
     edges.push({ax,ay,bx,by,nx,ny,deg,cents:centsForDegree(deg),hue:deg/td,flash:0,broken:false});}
   let ar=0;for(let i=0;i<N;i++){const[ax,ay]=verts[i],[bx,by]=verts[(i+1)%N];ar+=ax*by-bx*ay;} // shoelace: real area of ANY shape (heart, star…)
   edges._verts=verts;edges._area=Math.abs(ar)/2; // stash corners + area so goo budget & ball-inside test work for every shape
-  edges._space=sp;
+  edges._space=sp;edges._solid=solidName;if(solidName&&verts._tags)edges.forEach((e,i)=>e.face=verts._tags[i]);
   if(sp==='portal')for(let i=0;i<N;i++){const e=edges[i];e.twin=edges[(i+N/2)%N];}   // each wall is glued to the one opposite
   if(sp==='curved')curveEdges(edges,verts);
   return edges;
@@ -4500,13 +4702,14 @@ function startBreak(now){
 }
 // play-mode shape order: round/high-sided & culturally-loved first (heart, near-round dodecagon, star),
 // so a kid's eye is rewarded early and they stay. tweak this list to change what shows and when!
-const KIDCYCLE=['12','8','6','10','5','rhombus','4','trapezoid'];let kidIdx=0; // rounded/fundamental shapes only — no concave gimmicks that trap balls
+const KIDCYCLE=['12','8','6','10','5','rhombus','4','trapezoid'];let kidIdx=0;
+const KIDCYCLE3D=['icosa','12','cube','8','dodeca','6','octa','10','tetra','5','rhombus','4'];   // in 3D the real solids come round too // rounded/fundamental shapes only — no concave gimmicks that trap balls
 function beginReform(now){ // last drop fell — pick the next shape, every shard springs home from the wreckage
   fillState="reform";reformStart=now;
   if(S.randomShape){
     if(S.mode==='play'){ // KIDS: lead with the rounded & beloved shapes (research: kids favor round/curved/symmetric + heart/star) to hold attention
-      nextShape=KIDCYCLE[kidIdx%KIDCYCLE.length];kidIdx++;prevShape=String(S.shape);}
-    else{const pool=["3","4","5","6","7","8","9","10","11","12","rhombus","trapezoid","parallelogram"].filter(v=>v!==String(S.shape)&&v!==prevShape);
+      const cyc=VIEW.d3?KIDCYCLE3D:KIDCYCLE;nextShape=cyc[kidIdx%cyc.length];kidIdx++;prevShape=String(S.shape);}
+    else{const pool=["3","4","5","6","7","8","9","10","11","12","rhombus","trapezoid","parallelogram"].concat(VIEW.d3?SOLID_SEEDS:[]).filter(v=>v!==String(S.shape)&&v!==prevShape);
       nextShape=pool[Math.floor(Math.random()*pool.length)];prevShape=String(S.shape);}}
   else nextShape=String(S.shape);
   _nextSpace=rollSpace(nextShape);
@@ -4609,6 +4812,85 @@ function sweepBadBalls(){
     try{console.warn('[slimehedron] threw out '+n+' ball(s) with broken numbers (total '+_nanDrops+') — something upstream produced NaN/Infinity');}catch(e){}}
   return n;
 }
+// A CURVED SOLID lives in hyperbolic 3-space, drawn as the Poincare ball (radius HYP.RD on screen).
+// The trick that keeps it exact: in the KLEIN model of the same space every face of the solid is a flat
+// plane, so the solid's own planes still define it. Klein coordinates are the solid's px / HKR(), sized
+// so its corners sit where a 2D curved shape's would; on screen a point is drawn at Klein -> Poincare.
+// Physics runs on the hyperboloid in R^{3,1}, exactly as hypSub does in 2D: a straight line is
+// P cosh s + V sinh s, a face is the plane with Minkowski normal (d, n), a bounce is the Lorentz mirror.
+function HKR(){return SOLID_R/0.954;}                       // corners at Klein radius 0.954 = Poincare 0.74
+function kleinToBall(k){const r2=k[0]*k[0]+k[1]*k[1]+k[2]*k[2],f=1/(1+Math.sqrt(Math.max(0,1-r2)));return [k[0]*f,k[1]*f,k[2]*f];}
+function mdot4(a,b){return -a[0]*b[0]+a[1]*b[1]+a[2]*b[2]+a[3]*b[3];}
+function hypSolidSub(b,isub,ts){
+  if(b.z==null)b.z=0.5;
+  if(!b.s3){b.s3=1;const a=(Math.random()-0.5)*1.6,sp=Math.hypot(b.vx,b.vy)||ts,c=Math.cos(a);b.vx*=c;b.vy*=c;b.vz=Math.sin(a)*sp/BOXD;if(b.z<0.08||b.z>0.92)b.z=0.5;}
+  const RB=HYP.RD,K=HKR(),c=Math.cos(rot),s=Math.sin(rot),P_=SOLID.planes;
+  const vZ=(b.vz||0)*BOXD,sp=Math.hypot(b.vx,b.vy,vZ);
+  const u=[(b.x-CX)/RB,(b.y-CY)/RB,(b.z-0.5)*BOXD/RB],r2=u[0]*u[0]+u[1]*u[1]+u[2]*u[2];
+  if(!(r2<0.995))return true;
+  const D=1-r2;let P=[(1+r2)/D,2*u[0]/D,2*u[1]/D,2*u[2]/D],V;
+  if(sp>1e-9){const w=[b.vx/sp,b.vy/sp,vZ/sp],uw=u[0]*w[0]+u[1]*w[1]+u[2]*w[2];V=[2*uw/D,w[0]+2*u[0]*uw/D,w[1]+2*u[1]*uw/D,w[2]+2*u[2]*uw/D];
+    const ds=2*sp*isub/RB,ch=Math.cosh(ds),sh=Math.sinh(ds),P2=P.map((x,i)=>ch*x+sh*V[i]);V=V.map((x,i)=>sh*P[i]+ch*x);P=P2;}
+  else V=[0,1,0,0];
+  const sr=Math.sinh(2*BR/RB);let hit=-1,hvn=0,outside=false;
+  for(let k=0;k<P_.length;k++){const n=P_[k].n,nx=n[0]*c-n[1]*s,ny=n[0]*s+n[1]*c;
+    let N=[P_[k].d/K,nx,ny,n[2]];const nl=Math.sqrt(Math.max(1e-12,mdot4(N,N)));N=N.map(x=>x/nl);   // outward: mdot(P,N) > 0 is outside
+    const d=mdot4(P,N);if(d>sr)outside=true;
+    if(_solidOpen.has(k)||d<=-sr)continue;
+    const vn=mdot4(V,N);if(vn<=0){if(d>0)P=P.map((x,i)=>x-2*d*N[i]);continue;}   // a face sliding in (a grow) carries the ball in
+    V=V.map((x,i)=>x-2*vn*N[i]);if(d>0)P=P.map((x,i)=>x-2*d*N[i]);hit=k;hvn=vn;outside=false;}
+  P[0]=Math.sqrt(1+P[1]*P[1]+P[2]*P[2]+P[3]*P[3]);
+  const pv=mdot4(P,V);V=V.map((x,i)=>x+pv*P[i]);
+  const q=1+P[0],nu=[P[1]/q,P[2]/q,P[3]/q];
+  if(outside&&nu[0]*nu[0]+nu[1]*nu[1]+nu[2]*nu[2]>0.9)return true;
+  const du=[V[1]/q-P[1]*V[0]/(q*q),V[2]/q-P[2]*V[0]/(q*q),V[3]/q-P[3]*V[0]/(q*q)],dl=Math.hypot(...du)||1;
+  b.x=CX+nu[0]*RB;b.y=CY+nu[1]*RB;b.z=nu[2]*RB/BOXD+0.5;
+  if(sp>1e-9){b.vx=sp*du[0]/dl;b.vy=sp*du[1]/dl;b.vz=sp*du[2]/dl/BOXD;}
+  if(hit>=0){const k=hit,n=P_[k].n,nx=n[0]*c-n[1]*s,ny=n[0]*s+n[1]*c,td=totalDegrees(),hue=(SOLID.deg[k]||0)/(td||1);
+    SOLID.flash[k]=1;for(const e of edges)if(e.face===k)e.flash=1;jitter(b);
+    _splashZ=Math.max(0,Math.min(1,b.z));const nw=performance.now();
+    if(b.mute){b.mute=0;splash(b.x,b.y,-nx,-ny,hue);}
+    else if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
+      const gd=gooAt(b.x,b.y),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
+      if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
+      const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0;
+      trigger(centsForDegree(SOLID.deg[k]||0),Math.min(1,Math.abs(hvn)*sp/(ts||1))*(1-goo*0.45),goo);splash(b.x,b.y,-nx,-ny,hue);}
+    _splashZ=0.5;}
+  return false;}
+// ONE STEP INSIDE A SOLID. The ball moves in all three directions; any face it is pushing out through
+// reflects it (a true 3D mirror, v - 2(v.n)n) and plays that face's note. A portal face hands the ball
+// to its glued twin instead (a plain slide across the middle: same velocity). An open face lets it out.
+const _solidOpen=new Set();
+function solid3D(){return VIEW.d3&&!!edges&&!!edges._solid&&!_labOn();}
+function solidSub(b,isub,ts){
+  if(b.z==null)b.z=0.5;
+  if(!b.s3){b.s3=1;const a=(Math.random()-0.5)*1.6,sp=Math.hypot(b.vx,b.vy)||ts,c=Math.cos(a);   // first tick in a solid: a real 3D heading
+    b.vx*=c;b.vy*=c;b.vz=Math.sin(a)*sp/BOXD;if(b.z<0.08||b.z>0.92)b.z=0.5;}   // born on the box's front glass: start mid-solid instead
+  const c=Math.cos(rot),s=Math.sin(rot),P=SOLID.planes,portal=edges._space==='portal'&&SOLID.twin&&!SOLID.from&&SOLID.T;
+  let x=b.x-CX+b.vx*isub,y=b.y-CY+b.vy*isub,vx=b.vx,vy=b.vy,vz=(b.vz||0)*BOXD,z=(b.z-0.5)*BOXD+vz*isub,hit=-1,hvn=0,cross=-1;
+  for(let k=0;k<P.length;k++){const n=P[k].n,nx=n[0]*c-n[1]*s,ny=n[0]*s+n[1]*c,nz=n[2],dist=nx*x+ny*y+nz*z-P[k].d;
+    if(dist<=-BR)continue;const vn=nx*vx+ny*vy+nz*vz;
+    if(_solidOpen.has(k))continue;
+    if(portal&&SOLID.twin[k]>=0){if(vn>0&&dist>0&&cross<0){const T=SOLID.T[k];x+=T[0]*c-T[1]*s;y+=T[0]*s+T[1]*c;z+=T[2];cross=k;hvn=vn;}continue;}
+    if(vn>0){vx-=2*vn*nx;vy-=2*vn*ny;vz-=2*vn*nz;x-=(dist+BR)*nx;y-=(dist+BR)*ny;z-=(dist+BR)*nz;hit=k;hvn=vn;}
+    else if(dist>-BR*0.5){x-=(dist+BR)*nx;y-=(dist+BR)*ny;z-=(dist+BR)*nz;}}   // a face sliding in (a grow) carries the ball in with it
+  b.x=x+CX;b.y=y+CY;b.z=z/BOXD+0.5;b.vx=vx;b.vy=vy;b.vz=vz/BOXD;
+  if(cross>=0){b.px=b.x;b.py=b.y;b.pz=b.z;b.trail.length=0;}
+  if(Math.hypot(x,y,z)>SOLID_R*2.5)return true;                 // left through an open face
+  const k=hit>=0?hit:cross;
+  if(k>=0){const n=P[k].n,nx=n[0]*c-n[1]*s,ny=n[0]*s+n[1]*c,td=totalDegrees(),hue=(SOLID.deg[k]||0)/(td||1);
+    SOLID.flash[k]=1;if(cross>=0&&SOLID.twin[k]>=0)SOLID.flash[SOLID.twin[k]]=1;
+    for(const e of edges)if(e.face===k)e.flash=1;
+    _splashZ=Math.max(0,Math.min(1,b.z));const nw=performance.now();
+    if(b.mute){b.mute=0;splash(b.x,b.y,-nx,-ny,hue);}
+    else if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
+      const gd=gooAt(b.x,b.y),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
+      if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
+      const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0;
+      trigger(centsForDegree(SOLID.deg[k]||0),Math.min(1,Math.abs(hvn)/(ts||1))*(1-goo*0.45),goo);
+      if(hit>=0)jitter(b);splash(b.x,b.y,-nx,-ny,hue);}
+    _splashZ=0.5;}
+  return false;}
 // PORTAL CROSSING. Opposite sides of these shapes are equal and parallel, so sliding one onto the other
 // is a plain translation (midpoint to midpoint): position shifts, speed and heading do not change at all.
 function portalCross(b,e,vn,ts){const t=e.twin;
@@ -4667,17 +4949,20 @@ function step(){
   // on their own (the off-screen cleanup removes them) — NO more instant despawn-flash. walls reform later so it breathes.
   if(fillState==='fill'&&balls.length>MAXBALLS&&!edges.some(e=>e.broken))breakWall();
   // AUTO gravity: a WHISPER — just enough drift so a full tank feels a touch heavier, never a fall.
-  const g=settleAmt()*0.09, ts=ballSpeed(), gy=g*0.55;
+  const g=settleAmt()*0.09, ts=ballSpeed(), gy=g*0.55, s3=solid3D();
+  if(s3){_solidOpen.clear();for(const e of edges)if(e.broken&&(e.reform||0)<0.55&&e.face!=null)_solidOpen.add(e.face);}   // an open wall of the slice opens its face
   for(let bi=balls.length-1;bi>=0;bi--){
     const b=balls[bi];
     b.r=BR;
     b.px=b.x; b.py=b.y;   // where it was when this tick began — the draw interpolates from here
+    if(s3)b.pz=b.z==null?0.5:b.z;
     b.vy+=gy; if(b.vy>ts*1.6)b.vy=ts*1.6; // clamp: gravity can't accelerate a ball past a gentle terminal speed → no slamming/spazzing
     // SUBSTEP the move so a fast ball (esp. high-octave shots at sp=R/7) can never leap past a wall in one frame.
     // move at most ~half a radius per micro-step, re-checking geometry each time = zero tunneling, ever.
     const dist0=Math.hypot(b.vx,b.vy),sub=Math.max(1,Math.min(8,Math.ceil(dist0/(BR*0.5)))),isub=1/sub;
     let killed=false;
     for(let s=0;s<sub;s++){
+      if(fillState==="fill"&&s3){if((edges._space==='curved'?hypSolidSub:solidSub)(b,isub,ts)){balls.splice(bi,1);killed=true;break;}continue;}  // see REAL SOLIDS
       if(fillState==="fill"&&edges._space==='curved'){if(hypSub(b,isub,ts)){balls.splice(bi,1);killed=true;break;}continue;}  // see THREE SPACES
       b.x+=b.vx*isub;b.y+=b.vy*isub;
       if(fillState==="fill"){
@@ -4721,8 +5006,9 @@ function step(){
     // hit, and they play the chord that is sounding right now: the BACK pane its root, low and warm, the
     // FRONT pane a high chord tone. More notes, all of them in the chord, so more can never mean wrong.
     // Lessons keep every ball on the front glass, exactly as before.
-    b.pz=b.z==null?0:b.z;
+    if(!s3)b.pz=b.z==null?0:b.z;
     if(!VIEW.d3||(LAB&&LAB._on)){b.z=0;}
+    else if(s3){if(fillState==="fill"&&g>0){const G=boxGravity();b.vx+=G[0]*gy;b.vz=(b.vz||0)+G[2]*gy/BOXD;}}   // a solid: depth is handled in solidSub
     else if(fillState==="fill"&&b.vz){
       if(g>0){const G=boxGravity();b.vx+=G[0]*gy;b.vz+=G[2]*gy/BOXD;}   // the tilted box: gravity leans balls toward a pane too
       b.vz=Math.max(-0.012,Math.min(0.012,b.vz));
@@ -4739,7 +5025,8 @@ function step(){
     // no gravity = steady tempo speed; the more gravity, the more they free-fall & settle (smooth across the whole slider)
     if(b.mute&&(b.muteN=(b.muteN||0)+1)>40)b.mute=0; // safety: a shot that never lands rejoins normal physics
     if(!b.mute){ // shot balls fly TRUE — no tempo normalizer, no drag, no goo — until first impact. then they're citizens.
-    const sp=Math.hypot(b.vx,b.vy)||1;const k=(ts/sp)*(1-g)+g;b.vx*=k;b.vy*=k;
+    if(s3){const sp=Math.hypot(b.vx,b.vy,(b.vz||0)*BOXD)||1;const k=(ts/sp)*(1-g)+g;b.vx*=k;b.vy*=k;b.vz=(b.vz||0)*k;}   // a solid: steady speed in all three directions
+    else{const sp=Math.hypot(b.vx,b.vy)||1;const k=(ts/sp)*(1-g)+g;b.vx*=k;b.vy*=k;}
     if(g>0){b.vx*=(1-g*0.06);b.vy*=(1-g*0.015);} // drag grows with gravity so they land & settle instead of skating forever
     }
     // slime is thick: balls wading through the pool drag at their own per-ball rate, and deeper = thicker —
@@ -4798,9 +5085,10 @@ function transport(now){
 // ---------- draw ----------
 function strokeSeg(e,i,N,extra){
   const ph=performance.now()*0.000012; // geometry color slowly phases around the wheel
-  const grad=ctx.createLinearGradient(e.ax,e.ay,e.bx,e.by);
+  if(VIEW.d3&&!_labOn())ctx.strokeStyle=glassTint(e.hue+ph,Math.min(1,e.flash*1.4+formGlow*0.5),0.95);
+  else{const grad=ctx.createLinearGradient(e.ax,e.ay,e.bx,e.by);
   grad.addColorStop(0,aurora(e.hue+ph,68+formGlow*15));grad.addColorStop(1,aurora(((i+1)%N)/N+ph,68+formGlow*15));
-  ctx.strokeStyle=grad;ctx.lineWidth=7+e.flash*7;
+  ctx.strokeStyle=grad;}ctx.lineWidth=7+e.flash*7;
   ctx.shadowBlur=e.flash>0.02?20*e.flash:(extra>0.02?20*extra:0);ctx.shadowColor=aurora(e.hue+ph,72);
   if(e.twin){ // a portal wall: a moving dashed line, a door rather than a wall
     ctx.setLineDash([12,11]);ctx.lineDashOffset=-(performance.now()*0.02)%23;ctx.lineWidth=5+e.flash*7;}
@@ -4848,7 +5136,7 @@ const pxC=document.createElement('canvas');pxC.width=180;pxC.height=180;const px
 const mcv=document.createElement('canvas');mcv.width=mcv.height=36;const mctx=mcv.getContext('2d',{willReadFrequently:true});
 let mFrame=0;
 // ---- adaptive quality: perf mode thins the particle budget; the render itself is cheap enough for everyone ----
-let LITE=false, _fpsAcc=0, _fpsN=0, _slowRun=0, _fastRun=0, _liteLocked=false, _lastFrame=0;
+let LITE=false, _fpsAcc=0, _fpsN=0, _slowRun=0, _fastRun=0, _liteLocked=false, _lastFrame=0, _glSlow=0;
 // SOMEONE WHO ASKED FOR LESS MOTION GETS LESS MOTION FROM THE FIRST FRAME, not after a watchdog
 // notices. The gloss pass is a shine that sweeps across the goo and a rim light that moves with it;
 // the lite path keeps the liquid and drops the sweep. This is the one setting where the right
@@ -5063,7 +5351,25 @@ function planeAt(z){const o=P3(CX,CY,z),a=P3(CX+100,CY,z),b=P3(CX,CY+100,z);
   return [A,Bv,C,D,o[0]-A*CX-C*CY,o[1]-Bv*CX-D*CY];}
 // world gravity (down the screen) as the box feels it, given its tilt: [gx, gy, gz per unit]
 function boxGravity(){const M=_M;return [M[3],M[4],M[5]];}   // transpose row of (0,1,0)
+// A SOLID ON THE CANVAS (no WebGL): faces projected with P3, the far ones first, then the goo and the
+// balls, then the near faces' edges on top. Flat shading, but the same solid, notes and colours.
+function drawSolidCanvas(){wallUpkeep(true);const F=solidFaces(SOLID.planes),c=Math.cos(rot),s=Math.sin(rot),td=totalDegrees()||1,ph=performance.now()*0.000012;
+  const M=_M,items=[];
+  const curved=edges._space==='curved',K=HKR(),RB=HYP.RD;
+  const mp=(p)=>{if(!curved)return p;const u=kleinToBall([p[0]/K,p[1]/K,p[2]/K]);return [u[0]*RB,u[1]*RB,u[2]*RB];};
+  F.forEach((f,i)=>{if(f.length<3)return;const ring=[];
+    for(let k=0;k<f.length;k++){const a=f[k].p,b=f[(k+1)%f.length].p,ES=curved?6:1;for(let e=0;e<ES;e++){const t=e/ES;ring.push(mp([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]));}}
+    const pts=ring.map(p=>{const x=p[0]*c-p[1]*s,y=p[0]*s+p[1]*c;return P3(CX+x,CY+y,p[2]/BOXD+0.5);});
+    const n=SOLID.planes[i].n,nx=n[0]*c-n[1]*s,ny=n[0]*s+n[1]*c,wz=M[6]*nx+M[7]*ny+M[8]*n[2];   // toward the camera = negative
+    let dz=0;for(const p of ring){const x=p[0]*c-p[1]*s,y=p[0]*s+p[1]*c;dz+=M[6]*x+M[7]*y+M[8]*p[2];}items.push({i,pts,front:wz<0,dz:dz/ring.length});});
+  items.sort((a,b)=>b.dz-a.dz);
+  const face=(it,a)=>{const fl=Math.min(1,(SOLID.flash[it.i]||0)*1.4);ctx.beginPath();it.pts.forEach((q,k)=>k?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath();
+    ctx.fillStyle=glassTint((SOLID.deg[it.i]||0)/td+ph,fl,(a+fl*0.3).toFixed(3));ctx.fill();ctx.lineWidth=2.4;ctx.strokeStyle=glassTint((SOLID.deg[it.i]||0)/td+ph,fl,(0.7+fl*0.3).toFixed(3));ctx.stroke();};
+  for(const it of items)if(!it.front)face(it,0.12);
+  ctx.save();ctx.transform(...planeAt(0.5));drawParticles(true);ctx.restore();drawDroplets3D();drawBalls3D();
+  for(const it of items)if(it.front)face(it,0.07);}
 function draw3D(){viewTick();
+  if(fillState==="fill"&&edges._solid&&!_labOn()){drawSolidCanvas();return;}
   const fill=fillState==="fill",list=fill?wallPieces(edges):(curSegs||computeSegs());   // curved walls come as short pieces
   if(fill&&edges._space==='curved')drawHorizon(0);
   const ph=performance.now()*0.000012;
@@ -5085,7 +5391,7 @@ function draw3D(){viewTick();
     for(let i=0;i<N;i++){const e=list[i];if(fill&&e.broken&&!e.reform)continue;
       const lit=Math.min(1,(e.flash||0)*1.4);
       ctx.beginPath();ctx.moveTo(F[i][0],F[i][1]);ctx.lineTo(Fb[i][0],Fb[i][1]);ctx.lineTo(Bb[i][0],Bb[i][1]);ctx.lineTo(Bk[i][0],Bk[i][1]);ctx.closePath();
-      ctx.fillStyle=aurora(e.hue+ph,LITE?72:78,(e.twin?0.05:(LITE?0.10:0.14))+lit*0.3);ctx.fill();}   // a portal wall is a door: barely there
+      ctx.fillStyle=glassTint(e.hue+ph,lit,((e.twin?0.05:(LITE?0.12:0.16))+lit*0.3).toFixed(3));ctx.fill();}   // glass; a portal wall is a door: barely there
     // two faint depth rings, then the corner rails and the back rim
     if(fill&&!LITE){ctx.setLineDash([3,9]);ctx.lineWidth=1.2;ctx.strokeStyle='rgba(255,255,255,.32)';
       for(const d of [0.33,0.66]){ctx.beginPath();list.forEach((e,i)=>{const p=P3(e.ax,e.ay,d);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);});ctx.closePath();ctx.stroke();}
@@ -5094,7 +5400,7 @@ function draw3D(){viewTick();
     for(let i=0;i<N;i++){if(list[i].piece)continue;ctx.moveTo(F[i][0],F[i][1]);ctx.lineTo(Bk[i][0],Bk[i][1]);}ctx.stroke();   // rails at the real corners only
     ctx.lineWidth=2.5;
     for(let i=0;i<N;i++){const e=list[i];if(fill&&e.broken&&!e.reform)continue;
-      ctx.strokeStyle=aurora(e.hue+ph,80,0.55);ctx.beginPath();ctx.moveTo(Bk[i][0],Bk[i][1]);ctx.lineTo(Bb[i][0],Bb[i][1]);ctx.stroke();}
+      ctx.strokeStyle=glassTint(e.hue+ph,Math.min(1,(e.flash||0)*1.4),0.55);ctx.beginPath();ctx.moveTo(Bk[i][0],Bk[i][1]);ctx.lineTo(Bb[i][0],Bb[i][1]);ctx.stroke();}
     ctx.restore();}
   // the goo is a liquid sheet through the middle of the box; spray droplets fly at their own depth
   ctx.save();ctx.transform(...planeAt(0.5));drawParticles(true);ctx.restore();
@@ -5114,13 +5420,20 @@ function draw3D(){viewTick();
 // does not turn, then drawn rotated, so it costs a few path fills a frame. Skipped in the lighter look.
 let _echo=null;
 function invPts(pts,e){return pts.map(([x,y])=>{const dx=x-e.ccx,dy=y-e.ccy,d2=dx*dx+dy*dy||1,k=e.cr*e.cr/d2;return [e.ccx+dx*k,e.ccy+dy*k];});}
-function buildEcho(){
+// the echoes as plain point lists, in the frame that does not turn (the 3D renderer draws them too)
+function echoPolys(){
   const c=Math.cos(-rot),sn=Math.sin(-rot),un=([x,y])=>[CX+(x-CX)*c-(y-CY)*sn,CY+(x-CX)*sn+(y-CY)*c];
   const W0=edges.map(e=>({ccx:un([e.ccx,e.ccy])[0],ccy:un([e.ccx,e.ccy])[1],cr:e.cr,hue:e.hue})),base=edges._verts.map(un);
-  const lvl1=[],lvl2=new Path2D();
+  const lvl1=[],lvl2=[];
+  W0.forEach((e,i)=>{if(!e.cr)return;lvl1.push({pts:invPts(base,e),hue:e.hue});
+    W0.forEach((f,j)=>{if(j===i||!f.cr)return;lvl2.push(invPts(invPts(base,f),e));});});
+  return {lvl1,lvl2};}
+window.__echoPolys=echoPolys;
+function buildEcho(){
+  const E=echoPolys(),lvl1=[],lvl2=new Path2D();
   const toPath=(pts,P)=>{P.moveTo(pts[0][0]-CX,pts[0][1]-CY);for(const p of pts)P.lineTo(p[0]-CX,p[1]-CY);P.closePath();};
-  W0.forEach((e,i)=>{if(!e.cr)return;const g=invPts(base,e),P=new Path2D();toPath(g,P);lvl1.push({P,hue:e.hue});
-    W0.forEach((f,j)=>{if(j===i||!f.cr)return;toPath(invPts(invPts(base,f),e),lvl2);});});
+  for(const L of E.lvl1){const P=new Path2D();toPath(L.pts,P);lvl1.push({P,hue:L.hue});}
+  for(const pts of E.lvl2)toPath(pts,lvl2);
   return {key:String(S.shape)+'|'+edges.length+'|'+HYP.RD,lvl1,lvl2};}
 function drawHorizon(z){
   const key=String(S.shape)+'|'+edges.length+'|'+HYP.RD;if(!_echo||_echo.key!==key)_echo=buildEcho();
@@ -5130,7 +5443,8 @@ function drawHorizon(z){
   ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,.7)';ctx.stroke();
   ctx.rotate(rot);const ph=performance.now()*0.000012;
   if(!LITE){ctx.lineWidth=1.2;ctx.strokeStyle='rgba(170,140,230,.22)';ctx.stroke(_echo.lvl2);}
-  ctx.lineWidth=1.8;for(const L of _echo.lvl1){ctx.fillStyle=aurora(L.hue+ph,80,0.11);ctx.fill(L.P);ctx.strokeStyle=aurora(L.hue+ph,72,0.5);ctx.stroke(L.P);}
+  ctx.lineWidth=1.8;for(const L of _echo.lvl1){   // in 3D the echoes are glass too; the flat view keeps their colours
+    ctx.fillStyle=z!=null?glassTint(L.hue+ph,0,0.1):aurora(L.hue+ph,80,0.11);ctx.fill(L.P);ctx.strokeStyle=z!=null?glassTint(L.hue+ph,0.15,0.5):aurora(L.hue+ph,72,0.5);ctx.stroke(L.P);}
   ctx.restore();}
 function drawDroplets3D(){for(const p of particles){if(p.pooled)continue;const s=P3(p.x,p.y,p.z==null?0.5:p.z);
   ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(s[0],s[1],2.2*s[2],0,7);ctx.fill();}}
@@ -5151,16 +5465,44 @@ function drawBalls3D(){
   for(const b of order){const tl=b.trail.length,bh=Math.round(b.hue*360),under=fillState==="fill"&&gooAt(b.x,b.y)>0.3;
     let bx=lerpX(b),by=lerpY(b),bz=(b.pz==null?(b.z||0):b.pz+((b.z||0)-b.pz)*_alpha);
     if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR*2.2){bx=b.x;by=b.y;bz=b.z||0;}
-    const s=P3(bx,by,bz),X=s[0],Y=s[1],r=BR*s[2]*ballScale(bx,by);
+    const s=P3(bx,by,bz),X=s[0],Y=s[1],r=BR*s[2]*ballScale(bx,by,bz);
     ctx.globalAlpha=1-0.3*bz;                                              // further back = a little hazier
     for(let i=0;i<tl;i++){const t=b.trail[i],f=i/tl,q=P3(t[0],t[1],t[2]||0);
       ctx.fillStyle=under?`hsla(${bh},65%,58%,${(f*0.4).toFixed(3)})`:`hsla(${bh},90%,64%,${(f*0.25).toFixed(3)})`;
       ctx.beginPath();ctx.arc(q[0],q[1],r*(under?(0.4+0.95*f):(0.2+0.55*f)),0,7);ctx.fill();}
     const R2=r*2.2;ctx.drawImage(ballSprite(bh,under),X-R2,Y-R2,R2*2,R2*2);}
   ctx.globalAlpha=1;}
+// ===== THE 3D TANK ON THE GRAPHICS CARD (tank3d.js + vendor/three-slime.js) =====
+// When 3D is on and the device has WebGL, three.js draws the tank as real glass and a real volume of
+// goo; the canvas then only carries the burst flash on top. It is loaded the first time 3D is shown,
+// from this site, so the first load is no heavier and nothing comes from anywhere else. No WebGL, a
+// failed load, a lost GPU context, a lesson, or ?gl=0: the canvas draws the 3D tank exactly as before.
+const GLV={api:null,loading:false,want:true};
+try{if(new URLSearchParams(location.search).get('gl')==='0'||window.__noGL)GLV.want=false;}catch(e){}
+function glCan(){try{const c=document.createElement('canvas');return !!(c.getContext('webgl2')||c.getContext('webgl'));}catch(e){return false;}}
+function glEnsure(){if(GLV.api||GLV.loading||!GLV.want||!VIEW.d3)return;if(!glCan()){GLV.want=false;return;}
+  GLV.loading=true;
+  import('./tank3d.js').then(m=>{GLV.api=m.start();GLV.loading=false;})
+    .catch(e=>{console.warn('3D renderer unavailable, the canvas draws the tank:',e&&e.message);GLV.want=false;GLV.loading=false;});}
+window.__glLost=()=>{GLV.want=false;if(GLV.api)GLV.api.show(false);GLV.api=null;};
+window.__gl=GLV;
+// what the canvas views do inside their drawing that the physics depends on, done here for the GL view
+// the wall upkeep drawShape() does for the flat views: a gap grows back, a struck wall fades
+function wallUpkeep(decay){if(fillState==="fill")for(const e of edges){if(e.broken&&e.reform){e.reform=Math.min(1,e.reform+0.007);if(e.reform>=1){e.broken=false;e.reform=0;}}}
+  if(decay)for(const e of edges)e.flash*=0.86;}
+function glFrame(){viewTick();
+  wallUpkeep(false);
+  if(!particles.length){surfY=null;mMask=null;_poolMode=false;measuredFill=Math.max(0,measuredFill-0.02);}
+  else{liquidColor();if(fillState==="fill"&&(++mFrame%10===0||!mMask))measureFill();}
+  for(let i=ripples.length-1;i>=0;i--){const r=ripples[i];r.r+=r.vr;r.a*=0.92;if(r.a<0.03)ripples.splice(i,1);}
+  GLV.api.setLite(LITE);GLV.api.render();
+  for(const e of edges)e.flash*=0.86;_pane.back*=0.88;_pane.front*=0.86;}
 function draw(){
   ctx.clearRect(0,0,W,H);
-  if(VIEW.d3)draw3D();                  // the glass box (see TWO VIEWS OF ONE TANK)
+  const useGL=VIEW.d3&&!!GLV.api&&!_labOn()&&!window.PIX;
+  if(GLV.api)GLV.api.show(useGL);
+  if(useGL)glFrame();
+  else if(VIEW.d3){glEnsure();draw3D();}   // the glass box on the canvas (see TWO VIEWS OF ONE TANK)
   else{if(fillState==="fill"&&edges._space==='curved')drawHorizon();
     drawParticles();drawShape();drawDebris();drawBalls();}  // the flat tank, exactly as it has always been
   // The chord readout is the header chip (#hdrChord) now: it rides in the transport row, so it cannot be
@@ -5169,6 +5511,7 @@ function draw(){
   // EVERY FRAME, which quietly undid applyMode's attempt to hide it.
   const cp=document.getElementById('chordPill');
   if(cp&&!cp.hidden)cp.hidden=true;
+  for(let i=0;i<SOLID.flash.length;i++)SOLID.flash[i]*=0.86;   // a struck face fades, whichever view drew it
   if(burstFlash>0.01){const g=ctx.createRadialGradient(CX,CY,10,CX,CY,R*1.35);
     g.addColorStop(0,`rgba(255,255,255,${0.45*burstFlash})`);g.addColorStop(0.5,`rgba(255,225,245,${0.28*burstFlash})`);g.addColorStop(1,"rgba(255,255,255,0)");
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(CX,CY,R*1.35,0,7);ctx.fill();}
@@ -5188,7 +5531,12 @@ function loop(now){
     if(!LITE){
       if(avg>46)_slowRun++;else _slowRun=0;
       if(_slowRun>=2){LITE=true;window.__lite=true;document.body.classList.add('lite');_fastRun=0;}   // silent: it just thins the goo, nobody needs a name for it
-    }else if(!_liteLocked){
+      _glSlow=0;
+    }else if(GLV.api&&!window.__glKeep&&avg>46){
+      // THE GRAPHICS CARD CANNOT KEEP UP EVEN IN THE LIGHTER LOOK: four slow windows in a row (about five
+      // seconds of it) and the canvas takes the tank back for the rest of the visit. Same tank, same notes.
+      if(++_glSlow>=4){window.__glLost();_glSlow=0;}
+    }else if(!_liteLocked){_glSlow=0;
       // AND IT CAN COME BACK. This was one-way, with the note "avoids flip-flop" - true, but it also
       // meant one bad patch (a lesson loading, a tab coming back from the background, a kid opening
       // forty balls at once) left the app in the plain look for the rest of the session with no way
@@ -5221,6 +5569,7 @@ function simTick(now){
     if(S.mode==='play'){let secBar=4*60/(S.bpm||80);try{secBar=drumBar()*drumStepDur();}catch(e){}
       if(secBar>0.05)d=(S.spin/14)*(2*Math.PI)/(8*secBar*60);}
     rot+=d;rebuild();}
+  if(solidMorphTick())rebuild();    // a solid growing into the next one: the slice follows it
   curSegs=(fillState==="fill")?null:computeSegs();
   step();fillPhysics(now);
 }
@@ -6260,6 +6609,19 @@ addEventListener('keydown',e=>{
     setBpm(S.bpm+(e.code==='ArrowUp'?2:-2));}
 });
 // ---------- 3D tank switch ----------
+// ---------- GROW: cut / puff / flip turn the 3D shape into the next solid, smoothly ----------
+// A flat shape's box is a prism, so it can grow too. Capped so a solid never has more faces than
+// SOLID_MAXF: past that the notes stop being tellable apart.
+function growBase(){const b=String(S.shape);if(/^\d+$/.test(b))return 'prism'+b;return isSolidName(b)?b:null;}
+function growNext(op){const b=growBase();return b?b+'.'+op:null;}
+function growSolid(op){const base=growBase(),name=growNext(op);if(!name||SOLID.from||fillState!=="fill")return false;
+  if(solidFaceCount(name)>SOLID_MAXF)return false;
+  if(base!==SOLID.name)solidSet(base);
+  solidSet(name,true);S.shape=name;rebuild();formGlow=1;   // the edges glow while it grows
+  initAudio();if(AC&&AC.state==='suspended')AC.resume();
+  const rd=curRootDeg||0;[0,2,4].forEach((k,i)=>setTimeout(()=>{try{trigger(centsForDegree(rd+k)+1200,0.35,0,true,true);}catch(e){}},i*90));   // a little rising chord: it grew
+  if(window._spaceChip)window._spaceChip();return true;}
+window.growSolid=growSolid;
 // ---------- THE TANK'S CORNER MENU: view (3D / 2D) and space (auto / normal / portal / curved) ----------
 // It sits on the tank's bottom-left corner, or the nearest free corner if a control is already there.
 (function(){const chip=$("spaceChip"),btn=$("spaceBtn"),menu=$("spaceMenu"),txt=$("spaceTxt"),note=$("smNote");if(!chip)return;
@@ -6272,24 +6634,30 @@ addEventListener('keydown',e=>{
     const autoBtn=menu.querySelector('[data-space="auto"]');if(autoBtn)autoBtn.hidden=S.mode!=='play';
     menu.querySelectorAll('[data-space]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.space===TSPACE.pick)));
     const want=TSPACE.pick==='auto'?null:TSPACE.pick;
-    note.textContent=(want&&want!==sp&&why[want])?why[want]:'';note.hidden=!note.textContent;}
+    note.textContent=(want&&want!==sp&&why[want])?why[want]:'';note.hidden=!note.textContent;
+    const gb=$("growBar"),canGrow=VIEW.d3&&!_labOn()&&!!growBase()&&(S.mode==='play'||S.mode==='studio');
+    gb.hidden=!canGrow;
+    if(canGrow)gb.querySelectorAll('button').forEach(b=>{const n=growNext(b.dataset.grow);b.disabled=!!SOLID.from||!n||solidFaceCount(n)>SOLID_MAXF;});}
   window._spaceChip=paint;
-  // place it: bottom-left of the tank, else bottom-right, else just under the tank; never on top of a control
+  // OUT OF THE WAY: a small round button in a corner of the SCREEN, never in the middle of things.
+  // Bottom-right first, then along the bottom edge, then the bottom-left; never on top of a control.
   function place(){
-    const c=cv.getBoundingClientRect(),w=btn.offsetWidth||90,h=btn.offsetHeight||44,m=8;
-    const cands=[[c.left+m,c.bottom-h-m],[c.left+m,c.bottom-h-m-36],[c.right-w-m,c.bottom-h-m],[c.right-w-m,c.bottom-h-m-36],[c.left+m,c.bottom+m],[c.right-w-m,c.bottom+m],[c.left+m,c.top+m],[c.right-w-m,c.top+m],
-      [c.left+c.width/2-w/2,c.top-h-m],[c.left+c.width/2-w/2,c.top+m]];   // small phones: the side columns and the mixer take the corners
-    const ctrls=[...document.querySelectorAll('button,select,input,[role="button"],.psBtn,#triMix')].filter(e=>!chip.contains(e)&&e.offsetWidth&&getComputedStyle(e).visibility!=='hidden').map(e=>e.getBoundingClientRect());
+    const w=44,h=44,m=12,W2=innerWidth,H2=innerHeight,cands=[];
+    for(let k=0;k<6;k++)cands.push([W2-w-m-k*52,H2-h-m]);          // bottom edge, walking in from the right
+    for(let k=0;k<6;k++)cands.push([m+k*52,H2-h-m]);               // then from the left
+    for(let k=1;k<6;k++)cands.push([W2-w-m,H2-h-m-k*52]);          // then up the right edge
+    const ctrls=[...document.querySelectorAll('button,select,input,[role="button"],.psBtn,#triMix,.card,#studioBar,#cofWheel')].filter(e=>!chip.contains(e)&&e.offsetWidth&&getComputedStyle(e).visibility!=='hidden').map(e=>e.getBoundingClientRect());
     const free=([x,y])=>x>=0&&y>=0&&x+w<=innerWidth&&y+h<=innerHeight&&!ctrls.some(r=>x<r.right+4&&x+w>r.left-4&&y<r.bottom+4&&y+h>r.top-4);
     const at=cands.find(free)||cands[0];
     chip.style.left=at[0]+'px';chip.style.top=at[1]+'px';}
   function open(v){menu.hidden=!v;chip.classList.toggle('open',v);btn.setAttribute('aria-expanded',String(v));
-    if(v){menu.classList.remove('down');menu.style.left='0px';let r=menu.getBoundingClientRect();   // keep the whole menu on screen
+    if(v){paint();menu.classList.remove('down');menu.style.left='0px';let r=menu.getBoundingClientRect();   // keep the whole menu on screen
       if(r.top<8){menu.classList.add('down');r=menu.getBoundingClientRect();}
       const dx=Math.max(8-r.left,Math.min(0,innerWidth-8-r.right));menu.style.left=dx+'px';}
     if(v){paint();const f=menu.querySelector('[aria-pressed="true"]');if(f)f.focus();}}
   btn.addEventListener('click',e=>{e.stopPropagation();open(menu.hidden);});
-  menu.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;e.stopPropagation();
+  menu.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;e.stopPropagation();
+    if(b.dataset.grow){growSolid(b.dataset.grow);paint();setTimeout(paint,1000);return;}
     if(b.dataset.view)window.setView3D(b.dataset.view==='3d');
     if(b.dataset.space)window.setSpace(b.dataset.space);
     paint();});
@@ -6297,7 +6665,7 @@ addEventListener('keydown',e=>{
   addEventListener('keydown',e=>{if(e.key==='Escape'&&!menu.hidden){open(false);btn.focus();}});
   chip.addEventListener('pointerdown',e=>e.stopPropagation());
   try{new ResizeObserver(place).observe(cv);}catch(e){}
-  addEventListener('resize',place);setInterval(()=>{if(!document.hidden)place();},1500);   // controls move with mode changes; a cheap re-check
+  addEventListener('resize',place);setInterval(()=>{if(!document.hidden){paint();place();}},1000);   // controls move with mode changes; a cheap re-check
   paint();setTimeout(place,0);})();
 // ---------- PREFERENCES dialog ----------
 (function(){const b=$("prefsBtn"),d=$("prefsDlg");if(!b||!d)return;
@@ -8092,6 +8460,7 @@ function startCoach(){
         const edge=r.left<vw*0.28||r.right>vw*0.72;      // only where the columns actually sit
         if(!edge)continue;
         if(e.closest('.psCol'))continue;                 // the columns themselves do not count
+        if(e.closest('#spaceChip'))continue;             // nor the tank's corner menu: it finds its own free spot
         const c=getComputedStyle(e);
         if(c.visibility==='hidden')continue;
         if(r.top<=vh*0.3){ if(r.bottom>low)low=r.bottom; }        // the top strip
@@ -8119,7 +8488,7 @@ function startCoach(){
         const gaps=(parseFloat(getComputedStyle(col).rowGap)||0)*Math.max(0,items.length-1);
         // ...but never below a 44px button: past that point the column scrolls instead of shrinking
         const bt=col.querySelector('.psBtn'),bh=bt?bt.getBoundingClientRect().height:0;
-        const zMin=bh>0?Math.min(1,44/bh):0.6;
+        const zMin=bh>0?Math.min(1,Math.ceil(44/bh*1000)/1000):0.6;   // rounded UP: toFixed(3) below must never land at 43.99px
         if(need>have+1&&have>gaps){const z=Math.max(zMin,(have-gaps-2)/(need-gaps));if(z<0.999)items.forEach(it=>{it.style.zoom=z.toFixed(3);});}
       }
     }

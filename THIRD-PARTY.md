@@ -77,5 +77,15 @@ browser.
 
 ---
 
+## three.js (the 3D tank)
+
+`vendor/three-slime.js` is a subset of **three.js r186 (0.186.1)** — © 2010-2026 three.js authors,
+**MIT License** · https://threejs.org · https://github.com/mrdoob/three.js — bundled with esbuild from
+the build recipe in `_dev/three-build/`. The full MIT notice is kept at the top of the file. MIT is
+compatible with Slimehedron's GPL-3.0-or-later. It is served from this site only; nothing is fetched
+from anywhere else.
+
+---
+
 *Corrections welcome. If you are a rights holder listed above and want an entry changed or
 removed, open an issue.*

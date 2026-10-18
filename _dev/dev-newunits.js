@@ -8,7 +8,7 @@ const {chromium}=require('playwright');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 // the ramp after consolidation: nineteen lessons became twelve, so this is the set above the pentatonic
 const NEW=['newhome','majorscale','brightdark','minorscale','minorshapes','modes'];
-(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+(async()=>{const b=await require('./browser').launch();   // the shared launcher: finds Chrome anywhere, and keeps the 3D tank on the canvas renderer here
  for(const id of NEW){
   const ctx=await b.newContext({viewport:{width:1100,height:860}});
   const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(String(e).slice(0,110)));

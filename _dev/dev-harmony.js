@@ -19,7 +19,7 @@ const {chromium}=require('playwright');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 const URL='http://127.0.0.1:8765/index.html';
 
-(async()=>{const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--autoplay-policy=no-user-gesture-required']});
+(async()=>{const b=await require('./browser').launch();   // the shared launcher: finds Chrome anywhere, and keeps the 3D tank on the canvas renderer here
  const open=async(mode)=>{const ctx=await b.newContext({viewport:{width:1440,height:900}});const p=await ctx.newPage();
    const errs=[];p.on('pageerror',e=>{if(!/ServiceWorker/.test(e.message))errs.push(e.message.slice(0,80))});
    await p.goto(URL);await p.waitForTimeout(500);
@@ -70,11 +70,13 @@ const URL='http://127.0.0.1:8765/index.html';
   // ---- 2. the KEY must travel, and travel by fifths ----
   const journey=await p.evaluate(()=>{
     const want=_keyJourneyBars();
-    const roots=[S.root];_slimeBars=0;
-    // drive whole bars through the real brain; 6 journeys' worth
-    for(let i=0;i<want*6;i++){advanceHarmony(i);if(S.root!==roots[roots.length-1])roots.push(S.root);}
-    return {want,roots,pinned:_keyPinned};});
-  ok(journey.roots.length>=4,L+'the key travels ('+(journey.roots.length-1)+' moves over '+(journey.want*6)+' bars, expected ~6)');
+    const roots=[S.root];_slimeBars=0;let moves=0,last=S.root+'|'+S.scale;
+    // drive whole bars through the real brain; 8 journeys' worth. A journey step moves the KEY, or (in play)
+    // takes the same home note to another scale and back, so count both kinds of move.
+    for(let i=0;i<want*8;i++){advanceHarmony(i);if(S.root!==roots[roots.length-1])roots.push(S.root);
+      const now=S.root+'|'+S.scale;if(now!==last){moves++;last=now;}}
+    return {want,roots,moves,pinned:_keyPinned};});
+  ok(journey.moves>=5,L+'the music travels ('+journey.moves+' key or scale moves over '+(journey.want*8)+' bars, expected ~8)');
   const steps=[];for(let i=1;i<journey.roots.length;i++){
     let d=Math.abs(journey.roots[i]-journey.roots[i-1])%12;d=Math.min(d,12-d);steps.push(d);}
   ok(steps.length>0&&steps.every(d=>d===5||d===7),
@@ -99,13 +101,13 @@ const URL='http://127.0.0.1:8765/index.html';
     document.getElementById('hdrChord').click();  // tap the chip to release
     const released=!_keyPinned;
     // count the moves, not start-vs-end: the walk is +-a fifth at random, so two moves can cancel out
-    const seen=new Set([S.root]);
-    for(let i=0;i<_keyJourneyBars()*3;i++){advanceHarmony(i);seen.add(S.root);}
+    const seen=new Set([S.root+'|'+S.scale]);
+    for(let i=0;i<_keyJourneyBars()*3;i++){advanceHarmony(i);seen.add(S.root+'|'+S.scale);}
     return {start,held,shows,released,after:S.root,keys:seen.size};});
   ok(lock.held===lock.start,L+'locking the key actually holds it ('+lock.start+' -> '+lock.held+')');
   ok(lock.shows,L+'and the app SHOWS it is locked, instead of just going quiet');
   ok(lock.released,L+'tapping the chord chip releases the lock');
-  ok(lock.keys>1,L+'after release the key travels again ('+lock.keys+' keys visited from '+lock.held+')');
+  ok(lock.keys>1,L+'after release the music travels again ('+lock.keys+' keys or scales visited from '+lock.held+')');
 
   // ---- 4. the CHORD FOLLOWER still steers from hand-played notes ----
   if(mode==='studio'){

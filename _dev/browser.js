@@ -53,7 +53,10 @@ const EXEC=findExecutable();
 
 async function launch(opts){
   const {chromium}=require('playwright');
-  const args=['--autoplay-policy=no-user-gesture-required'];
+  // WebGL in software (SwiftShader) is ALLOWED, so a suite can switch the graphics-card tank on. It is OFF by
+  // default (see SLIME_GL below): drawn in software it takes ~240ms a frame here, which would turn every
+  // suite's physics into slow motion, and that slowness is this machine, not the app.
+  const args=['--autoplay-policy=no-user-gesture-required','--enable-unsafe-swiftshader'];
   const o=Object.assign({args},opts||{});
   if(EXEC)o.executablePath=EXEC;
   try{
@@ -62,11 +65,13 @@ async function launch(opts){
     // on, exactly as if the person had picked it in the tank's corner menu. Unset = the 3D default.
     // SLIME_SPACE=portal|curved|normal does the same for the space.
     //   SLIME_VIEW=2d node _dev/dev-devices.js     SLIME_SPACE=curved node _dev/dev-band.js
-    const view=(process.env.SLIME_VIEW||'').toLowerCase(),space=(process.env.SLIME_SPACE||'').toLowerCase();
-    if(view==='3d'||view==='2d'||['normal','portal','curved'].includes(space)){const nc=br.newContext.bind(br);
+    // SLIME_GL=1 lets the 3D tank load its graphics-card renderer (dev-gl.js sets it); otherwise every page
+    // gets window.__noGL and the canvas draws the 3D tank, which is the same tank and the same physics.
+    const view=(process.env.SLIME_VIEW||'').toLowerCase(),space=(process.env.SLIME_SPACE||'').toLowerCase(),gl=process.env.SLIME_GL==='1';
+    {const nc=br.newContext.bind(br);
       br.newContext=async(...a)=>{const c=await nc(...a);
-        await c.addInitScript(([v,sp])=>{try{if(v)localStorage.setItem('slimehedron-view3d',v);if(sp)localStorage.setItem('slimehedron-space',sp);}catch(e){}},
-          [view==='3d'?'1':view==='2d'?'0':'',['normal','portal','curved'].includes(space)?space:'']);return c;};}
+        await c.addInitScript(([v,sp,g])=>{try{if(!g)window.__noGL=true;if(v)localStorage.setItem('slimehedron-view3d',v);if(sp)localStorage.setItem('slimehedron-space',sp);}catch(e){}},
+          [view==='3d'?'1':view==='2d'?'0':'',['normal','portal','curved'].includes(space)?space:'',gl]);return c;};}
     return br;
   }catch(err){
     console.error('\n  Could not start a browser for the tests.');
