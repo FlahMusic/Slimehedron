@@ -4228,8 +4228,9 @@ function _auroraFrom(tbl,t){const n=tbl.length,x=t*n,i=Math.floor(x)%n,fr=x-Math
   let h0=tbl[i],h1=tbl[(i+1)%n];let d=h1-h0;if(d>180)d-=360;if(d<-180)d+=360;return (h0+d*fr+360)%360;}
 function auroraHue(t){t=(t%1+1)%1;return _auroraFrom(AURORA,t);}
 // 3D GLASS: clear (pearl, a breath of the note's colour) at rest, the full note colour only while struck
-function glassTint(t,lit,a){const h=_auroraFrom(AURORA,(t%1+1)%1),k=Math.max(0,Math.min(1,lit));
-  return `hsla(${h},${(16+70*k).toFixed(0)}%,${(91-29*k).toFixed(0)}%,${a})`;}
+function glassTint(t,lit,a,edge){const h=_auroraFrom(AURORA,(t%1+1)%1),k=Math.max(0,Math.min(1,lit));   // pastel glass, its note's full colour when struck
+  if(edge)return `hsla(${h},${(68+20*k).toFixed(0)}%,${(66-6*k).toFixed(0)}%,${a})`;   // an edge: a deeper shade of the same pastel, so the shape reads
+  return `hsla(${h},${(60+28*k).toFixed(0)}%,${(80-18*k).toFixed(0)}%,${a})`;}
 function aurora(t,l,a){const h=_auroraFrom(AURORA,(t%1+1)%1);
   return a==null?`hsl(${h},74%,${l}%)`:`hsla(${h},74%,${l}%,${a})`;}
 
@@ -4736,6 +4737,8 @@ function commitReform(){
 }
 function fillPhysics(now){
   if(fillState==="fill"){
+    if(goo3D())gooStep3D(now);   // the 3D tank: a lava lamp inside the real shape (see THE GOO IN 3D)
+    else{
     const settle=settleAmt(),pg=gY*(0.12+0.88*settle); // young goo is nearly weightless; it gains weight as it grows and sinks to the floor
     for(const p of particles){p.age++;if(p.z!=null&&p.z!==0.5)p.z+=(0.5-p.z)*0.045; // 3D: spray drifts in from the glass to the liquid sheet as it falls
       if(!p.pooled&&(p.age>50||(p.age>10&&Math.hypot(p.vx,p.vy)<1.2))){p.pooled=true;if(Math.random()<0.2)addRipple(p.x,p.y-3,0.4);} // fleck lands -> joins the liquid, little ring where it lands
@@ -4744,7 +4747,7 @@ function fillPhysics(now){
       if(p.pooled&&settle<1){p.vx+=(CX-p.x)*0.0009*(1-settle);p.vy+=((CY-R*0.05)-p.y)*0.0011*(1-settle);} // cohesion: the young blob hangs mid-shape where the balls fly
       p.x+=p.vx;p.y+=p.vy;p.vx*=0.985;p.vy*=0.992;bounceInside(p);}
     relaxParticles();relaxParticles(); // double pass = stiffer, calmer liquid
-    for(const p of particles)bounceInside(p);
+    for(const p of particles)bounceInside(p);}
     if(!_hype&&fillFrac()>0.85){_hype=true;slimeParty(1600,'bigeye');} // it's almost full — the crowd leans in
     if(fillFrac()>=0.9||particles.length>=partCap()*0.98)pressure++;else pressure=Math.max(0,pressure-2);
     if(pressure>40)startBreak(now); // burst only when the barrel is visually brimming
@@ -4792,6 +4795,109 @@ function fillPhysics(now){
     dlyFb.gain.setTargetAtTime(Math.min(0.35,0.14+wash*0.21),t,0.5);} // feedback hard-capped at 0.35
 }
 
+// ===== THE GOO IN 3D: A LAVA LAMP =====
+// In the 3D tank the goo is a real volume, not a sheet through the middle: every drop has its own depth,
+// and all of it is held inside the actual shape - the solid's faces, or the prism's walls and its two
+// panes - a little way in from the glass, so it can never poke through it.
+// It gathers into soft hearts (one to start, a second buds off as it grows, a third when there is
+// plenty) that drift round the middle on slow cycles of their own, rising and sinking like wax in a lava
+// lamp. Every beat squeezes each heart along a fresh direction and lets it spring back - harder on the
+// downbeat, and harder the fuller the tank - so a ball crossing the middle meets goo in a different
+// place, at a different moment, every bar. A ball pushes the goo aside as it passes and the goo slows the
+// ball down: one physics, both ways. The flat 2D tank keeps its own goo, untouched.
+function goo3D(){return VIEW.d3&&!_labOn();}
+// where the music is, in beats, read off the audio clock; the plain tempo when the band is not playing
+function beatNow(){
+  try{if((drumOn||bandOn)&&AC&&S.playing){const sd=drumStepDur();if(sd>0)return (drumStep-(drumTime-AC.currentTime)/sd)/drumSPB();}}catch(e){}
+  return performance.now()/60000*(S.bpm||80);}
+function beatsPerBar(){try{return Math.max(1,Math.round(drumBar()/drumSPB()));}catch(e){return 4;}}
+const GOO_IN=10;   // the goo keeps this far inside the glass (px), so its soft surface meets the glass instead of crossing it
+const LAVA={beat:null,phase:0,kick:[0,0,0],ax:[[1,0,0],[0,1,0],[0,0,1]],hearts:[[0,0,0],[0,0,0],[0,0,0]],room:[1,1,1],n:1};
+// how far a heart may wander from the middle on each axis (px): the solid's inradius, or the prism's
+function gooRoom(){
+  if(edges._solid&&SOLID.planes.length){let m=1e9;for(const pl of SOLID.planes)m=Math.min(m,pl.d);
+    if(edges._space==='curved'){const k=Math.min(0.95,m/HKR());m=k/(1+Math.sqrt(1-k*k))*HYP.RD;}
+    return [m,m,m];}
+  let m=1e9;for(const e of edges)m=Math.min(m,Math.hypot((e.ax+e.bx)/2-CX,(e.ay+e.by)/2-CY));
+  if(!(m<1e9))m=R*0.5;if(edges._space==='curved')m*=0.75;   // a curved wall bows in past its chord
+  return [m,m,BOXD/2];}
+function randUnit(){const z=Math.random()*2-1,a=Math.random()*Math.PI*2,s=Math.sqrt(1-z*z);return [s*Math.cos(a),s*Math.sin(a),z];}
+function lavaTick(pooledN){
+  const b=beatNow(),fb=Math.floor(b),room=gooRoom(),bpb=beatsPerBar();
+  if(fb!==LAVA.beat){const first=LAVA.beat==null;LAVA.beat=fb;
+    if(!first){const down=((fb%bpb)+bpb)%bpb===0,fill=Math.min(1,pooledN/Math.max(1,partCap()*0.9));
+      for(let j=0;j<3;j++){LAVA.ax[j]=randUnit();LAVA.kick[j]=(0.5+0.5*fill)*(down?1.35:1)*(0.8+Math.random()*0.4);}}}
+  for(let j=0;j<3;j++){const a=j*2.39996,w=0.09+0.031*j;   // golden-angle apart, each on its own slow cycle
+    const H=LAVA.hearts[j];H[0]=room[0]*0.42*Math.sin(b*w+a);H[1]=room[1]*0.5*Math.sin(b*w*0.63+a*1.7);H[2]=room[2]*0.42*Math.sin(b*w*1.21+a*2.3);}
+  LAVA.phase=b-fb;LAVA.room=room;return LAVA;}
+function nearestHeart(p,nh){const H=LAVA.hearts,x=p.x-CX,y=p.y-CY,z=(p.z-0.5)*BOXD;let best=0,bd=1e18;
+  for(let j=0;j<nh;j++){const d=(x-H[j][0])**2+(y-H[j][1])**2+(z-H[j][2])**2;if(d<bd){bd=d;best=j;}}return best;}
+// keep one drop inside the tank, GOO_IN in from the glass
+function gooContain3D(p){
+  const r=p.r+GOO_IN;
+  if(edges._solid&&SOLID.planes.length){const c=Math.cos(rot),s=Math.sin(rot),P=SOLID.planes;
+    if(edges._space==='curved'){   // a curved solid's faces are flat in Klein coordinates: hold the drop there
+      const RB=HYP.RD,K=HKR();let u=[(p.x-CX)/RB,(p.y-CY)/RB,(p.z-0.5)*BOXD/RB],r2=u[0]*u[0]+u[1]*u[1]+u[2]*u[2];
+      if(r2>0.98){const f=Math.sqrt(0.98/r2);u=u.map(x=>x*f);r2=0.98;}
+      const k=u.map(x=>2*x/(1+r2)),mk=2*r/RB;let moved=r2>=0.98;
+      for(let pass=0;pass<6;pass++)for(const pl of P){const n=pl.n,nx=n[0]*c-n[1]*s,ny=n[0]*s+n[1]*c,nz=n[2],v=nx*k[0]+ny*k[1]+nz*k[2]-(pl.d/K-mk);
+        if(v>0){k[0]-=v*nx;k[1]-=v*ny;k[2]-=v*nz;moved=true;const vn=p.vx*nx+p.vy*ny+p.vz*nz;if(vn>0){p.vx-=1.5*vn*nx;p.vy-=1.5*vn*ny;p.vz-=1.5*vn*nz;}}}
+      if(moved){const k2=k[0]*k[0]+k[1]*k[1]+k[2]*k[2],f=1/(1+Math.sqrt(Math.max(0,1-k2)));p.x=CX+k[0]*f*RB;p.y=CY+k[1]*f*RB;p.z=0.5+k[2]*f*RB/BOXD;}
+      return;}
+    let x=p.x-CX,y=p.y-CY,z=(p.z-0.5)*BOXD;
+    for(let pass=0;pass<6;pass++){let moved=false;   // a sharp corner (a tetrahedron's) can take a few rounds to settle
+      for(const pl of P){const n=pl.n,nx=n[0]*c-n[1]*s,ny=n[0]*s+n[1]*c,nz=n[2],dist=nx*x+ny*y+nz*z-(pl.d-r);
+        if(dist>1e-6){moved=true;x-=dist*nx;y-=dist*ny;z-=dist*nz;const vn=p.vx*nx+p.vy*ny+p.vz*nz;if(vn>0){p.vx-=1.5*vn*nx;p.vy-=1.5*vn*ny;p.vz-=1.5*vn*nz;}}}
+      if(!moved)break;}
+    p.x=x+CX;p.y=y+CY;p.z=z/BOXD+0.5;return;}
+  const r0=p.r;p.r=r;bounceInside(p);bounceInside(p);bounceInside(p);p.r=r0;   // the prism: its walls (three passes: in a corner, leaving one wall can mean entering the next)...
+  const m=r/BOXD;if(p.z<m){p.z=m;if(p.vz<0)p.vz*=-0.4;}else if(p.z>1-m){p.z=1-m;if(p.vz>0)p.vz*=-0.4;}}   // ...and its two panes
+const gk=(x,y,z)=>((x+512)*2048+(y+512))*2048+(z+512);
+const _rg=new Map();
+function relax3D(){const cell=2*PR,g=_rg;g.clear();const N=particles.length;
+  for(let i=0;i<N;i++){const p=particles[i],k=gk(Math.floor(p.x/cell),Math.floor(p.y/cell),Math.floor((p.z-0.5)*BOXD/cell));let a=g.get(k);if(!a){a=[];g.set(k,a);}a.push(i);}
+  for(let i=0;i<N;i++){const p=particles[i],cx=Math.floor(p.x/cell),cy=Math.floor(p.y/cell),cz=Math.floor((p.z-0.5)*BOXD/cell);
+    for(let gx=cx-1;gx<=cx+1;gx++)for(let gy=cy-1;gy<=cy+1;gy++)for(let gz=cz-1;gz<=cz+1;gz++){const a=g.get(gk(gx,gy,gz));if(!a)continue;
+      for(const j of a){if(j<=i)continue;const q=particles[j];let dx=q.x-p.x,dy=q.y-p.y,dz=(q.z-p.z)*BOXD;const d2=dx*dx+dy*dy+dz*dz,min=p.r+q.r;
+        if(d2<min*min&&d2>1e-8){const d=Math.sqrt(d2),push=(min-d)/2;dx/=d;dy/=d;dz/=d;
+          p.x-=dx*push;p.y-=dy*push;p.z-=dz*push/BOXD;q.x+=dx*push;q.y+=dy*push;q.z+=dz*push/BOXD;
+          const rvx=(p.vx-q.vx)*0.25,rvy=(p.vy-q.vy)*0.25,rvz=(p.vz-q.vz)*0.25;p.vx-=rvx;p.vy-=rvy;p.vz-=rvz;q.vx+=rvx;q.vy+=rvy;q.vz+=rvz;}}}}}
+// a ball moving through the goo shoves it aside and drags a little of it along
+function gooWake(){if(!balls.length)return;const reach=BR+PR+6;
+  for(const b of balls){if(b.mute)continue;const bz=b.z==null?0.5:b.z,vz=(b.vz||0)*BOXD;
+    for(const p of particles){if(!p.pooled)continue;const dx=p.x-b.x;if(dx>reach||dx<-reach)continue;const dy=p.y-b.y;if(dy>reach||dy<-reach)continue;
+      const dz=(p.z-bz)*BOXD;if(dz>reach||dz<-reach)continue;const d=Math.sqrt(dx*dx+dy*dy+dz*dz)||1;if(d>=reach)continue;const f=1-(d/reach)*(d/reach);
+      p.vx+=b.vx*0.22*f+dx/d*f*1.2;p.vy+=b.vy*0.22*f+dy/d*f*1.2;p.vz+=vz*0.22*f+dz/d*f*1.2;}}}
+// how thick the goo is round a point, 0..1, from the drops themselves (so depth counts: a ball in front of the goo is not in it)
+const GOOC=24,_gooD=new Map();
+function buildGooHash(){_gooD.clear();for(const p of particles){if(!p.pooled)continue;
+  const k=gk(Math.floor(p.x/GOOC),Math.floor(p.y/GOOC),Math.floor((p.z-0.5)*BOXD/GOOC));_gooD.set(k,(_gooD.get(k)||0)+p.r*p.r*p.r);}}
+function gooAt3(x,y,z){if(!_gooD.size)return 0;const cx=Math.floor(x/GOOC),cy=Math.floor(y/GOOC),cz=Math.floor((z-0.5)*BOXD/GOOC);let s=0;
+  for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)for(let k=-1;k<=1;k++)s+=_gooD.get(gk(cx+i,cy+j,cz+k))||0;
+  return Math.min(1,s*4.18879/(27*GOOC*GOOC*GOOC)*1.9);}   // packed drops read about 1, the skin of a heart about 0.5
+function gooStep3D(now){
+  let pooledN=0;for(const p of particles)if(p.pooled)pooledN++;
+  const L=lavaTick(pooledN),H=L.hearts,nh=1+(pooledN>140?1:0)+(pooledN>420&&!LITE?1:0);LAVA.n=nh;
+  const env=S.playing?Math.exp(-L.phase*10):0,cnt=[0,0,0],t=now*0.001;
+  for(const p of particles)if(p.pooled&&p.h!=null&&p.h<nh)cnt[p.h]++;
+  const core=cnt.map(c=>8.5*Math.cbrt(Math.max(1,c)));   // how big a packed heart of that many drops is
+  for(const p of particles){p.age++;if(p.vz==null)p.vz=0;if(p.z==null)p.z=0.5;
+    if(!p.pooled&&(p.age>40||(p.age>10&&Math.hypot(p.vx,p.vy,p.vz)<1.2))){p.pooled=true;p.h=nearestHeart(p,nh);}
+    if(p.pooled){if(p.r<PR)p.r+=0.12;
+      if(p.h==null||p.h>=nh||Math.random()<0.004)p.h=nearestHeart(p,nh);   // matter drifts between hearts that pass close
+      const A=H[p.h],rx=p.x-CX-A[0],ry=p.y-CY-A[1],rz=(p.z-0.5)*BOXD-A[2],d=Math.sqrt(rx*rx+ry*ry+rz*rz)||1,c=core[p.h]*0.75;
+      if(d>c){const k=0.012*(d-c)/d;p.vx-=rx*k;p.vy-=ry*k;p.vz-=rz*k;}
+      if(env>0.01){const a=LAVA.ax[p.h],ka=LAVA.kick[p.h]*env,al=rx*a[0]+ry*a[1]+rz*a[2],sx=a[0]*al,sy=a[1]*al,sz=a[2]*al;
+        // the beat: a sharp stretch along its axis, a squeeze across it, a breath out - then the spring pulls it home before the next one
+        p.vx+=ka*(0.045*sx-0.024*(rx-sx)+0.01*rx);p.vy+=ka*(0.045*sy-0.024*(ry-sy)+0.01*ry);p.vz+=ka*(0.045*sz-0.024*(rz-sz)+0.01*rz);}
+      p.vx+=0.035*Math.sin(t*1.3+p.y*0.035+p.h);p.vy+=0.035*Math.sin(t*1.1+p.z*BOXD*0.035);p.vz+=0.035*Math.sin(t*0.9+p.x*0.035);   // a slow shimmer: never a perfect ball
+      p.vx+=gX*0.1;p.vy+=gY*0.1;   // nearly afloat, like wax in warm oil
+      p.vx*=0.88;p.vy*=0.88;p.vz*=0.88;}
+    else{p.vx+=gX;p.vy+=gY;p.vx*=0.985;p.vy*=0.992;p.vz*=0.96;}   // spray still flies and falls
+    p.x+=p.vx;p.y+=p.vy;p.z+=p.vz/BOXD;gooContain3D(p);}
+  gooWake();relax3D();relax3D();
+  for(const p of particles)gooContain3D(p);
+  buildGooHash();}
 // ---------- ball stepping ----------
 // THE REVIVE SWEEP.
 // Guards at the entry points only stop the bad numbers you thought of. One that gets in anywhere else
@@ -4851,7 +4957,7 @@ function hypSolidSub(b,isub,ts){
     _splashZ=Math.max(0,Math.min(1,b.z));const nw=performance.now();
     if(b.mute){b.mute=0;splash(b.x,b.y,-nx,-ny,hue);}
     else if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
-      const gd=gooAt(b.x,b.y),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
+      const gd=gooAt(b.x,b.y,b.z),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
       if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
       const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0;
       trigger(centsForDegree(SOLID.deg[k]||0),Math.min(1,Math.abs(hvn)*sp/(ts||1))*(1-goo*0.45),goo);splash(b.x,b.y,-nx,-ny,hue);}
@@ -4884,7 +4990,7 @@ function solidSub(b,isub,ts){
     _splashZ=Math.max(0,Math.min(1,b.z));const nw=performance.now();
     if(b.mute){b.mute=0;splash(b.x,b.y,-nx,-ny,hue);}
     else if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
-      const gd=gooAt(b.x,b.y),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
+      const gd=gooAt(b.x,b.y,b.z),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
       if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
       const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0;
       trigger(centsForDegree(SOLID.deg[k]||0),Math.min(1,Math.abs(hvn)/(ts||1))*(1-goo*0.45),goo);
@@ -4898,7 +5004,7 @@ function portalCross(b,e,vn,ts){const t=e.twin;
   e.flash=1;t.flash=1;
   const nw=performance.now();
   if(b.mute){b.mute=0;}else if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
-    const gd=gooAt(b.x,b.y),under=gd>0.3,goo=under?Math.min(1,0.35+0.65*Math.min(1,(gd-0.3)/0.6)):0;
+    const gd=gooAt(b.x,b.y,b.z),under=gd>0.3,goo=under?Math.min(1,0.35+0.65*Math.min(1,(gd-0.3)/0.6)):0;
     trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1))*(1-goo*0.45),goo);}
   _splashZ=VIEW.d3?(b.z||0):0.5;splash(b.x,b.y,t.nx,t.ny,e.hue);}
 // ONE STEP ALONG A STRAIGHT LINE OF THE CURVED SPACE. (vx,vy) is the ball's heading and its speed as it
@@ -4936,7 +5042,7 @@ function hypSub(b,isub,ts){
     const nw=performance.now();_splashZ=VIEW.d3?(b.z||0):0.5;
     if(b.mute){b.mute=0;splash(b.x,b.y,inx,iny,e.hue);}
     else if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
-      const gd=gooAt(b.x,b.y),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
+      const gd=gooAt(b.x,b.y,b.z),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
       if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
       const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0;
       trigger(e.cents,Math.min(1,Math.abs(hvn)*sp/(ts||1))*(1-goo*0.45),goo);
@@ -4984,7 +5090,7 @@ function step(){
               const nw=performance.now();
               if(b.mute){b.mute=0;e.flash=1;(_splashZ=VIEW.d3?(b.z||0):0.5,splash(b.x,b.y,e.nx,e.ny,e.hue));}else
               if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
-                const gd=gooAt(b.x,b.y),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
+                const gd=gooAt(b.x,b.y,b.z),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
                 if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
                 const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0; // how gooed-up THIS ball is right now
                 trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1))*(1-goo*0.45),goo); // goo-slathered hits ring softer & rounder
@@ -5031,11 +5137,11 @@ function step(){
     }
     // slime is thick: balls wading through the pool drag at their own per-ball rate, and deeper = thicker —
     // arrival times smear apart naturally, so a full tank plays looser than an empty one
-    if(fillState==="fill"&&mMask&&!b.mute){
-      const gd=gooAt(b.x,b.y),under=gd>0.3;
+    if(fillState==="fill"&&(mMask||goo3D())&&!b.mute){
+      const gd=gooAt(b.x,b.y,b.z),under=gd>0.3;
       if(under){if(!b.visc)b.visc=0.68+Math.random()*0.16; // each ball has its OWN thickness tolerance — wider spread = more organic variation as they wade
         const depth=Math.min(1,(gd-0.3)/0.6),drag=1-(1-b.visc)*(0.8+1.3*depth); // STRONGER, deeper drag: balls visibly slow & smear through the goo (the user wanted the slime to shape their motion more)
-        b.vx*=Math.max(0.55,drag);b.vy*=Math.max(0.55,drag);}
+        b.vx*=Math.max(0.55,drag);b.vy*=Math.max(0.55,drag);if(b.vz)b.vz*=Math.max(0.55,drag);}
       if(under&&!b._under)addRipple(b.x,b.y-BR,1.2); // plunk — ring exactly where it actually enters the goo
       b._under=under;
     }else b._under=false;
@@ -5085,7 +5191,7 @@ function transport(now){
 // ---------- draw ----------
 function strokeSeg(e,i,N,extra){
   const ph=performance.now()*0.000012; // geometry color slowly phases around the wheel
-  if(VIEW.d3&&!_labOn())ctx.strokeStyle=glassTint(e.hue+ph,Math.min(1,e.flash*1.4+formGlow*0.5),0.95);
+  if(VIEW.d3&&!_labOn())ctx.strokeStyle=glassTint(e.hue+ph,Math.min(1,e.flash*1.4+formGlow*0.5),0.95,1);
   else{const grad=ctx.createLinearGradient(e.ax,e.ay,e.bx,e.by);
   grad.addColorStop(0,aurora(e.hue+ph,68+formGlow*15));grad.addColorStop(1,aurora(((i+1)%N)/N+ph,68+formGlow*15));
   ctx.strokeStyle=grad;}ctx.lineWidth=7+e.flash*7;
@@ -5164,8 +5270,10 @@ function measureFill(){ // barrel-in-a-rainstorm: read the real water line off a
   for(let i=3;i<d.length;i+=4)if(d[i]>60)n++;
   mMask=d;
   measuredFill=Math.min(1,n/Math.max(1,shapeArea()/((W/36)*(W/36))));
+  if(goo3D()){let k=0;for(const p of particles)if(p.pooled)k++;measuredFill=Math.min(1,k/Math.max(1,partCap()*0.92));}   // a volume is full when the drops are all in, not when its shadow covers the floor
 }
-function gooAt(x,y){ // 0..1 goo density at a point, sampled from the mask's 3×3 neighborhood — floating blob or settled pool, same answer
+function gooAt(x,y,z){ // 0..1 goo density at a point, sampled from the mask's 3×3 neighborhood — floating blob or settled pool, same answer
+  if(z!=null&&goo3D())return fillState==='fill'?gooAt3(x,y,z):0;   // the 3D tank: the goo has depth, so the ball's depth counts
   if(!mMask)return 0;
   const gx=Math.max(1,Math.min(34,(x/W*36)|0)),gy=Math.max(1,Math.min(34,(y/H*36)|0));
   let a=0;for(let j=-1;j<=1;j++)for(let i=-1;i<=1;i++)a+=mMask[((gy+j)*36+gx+i)*4+3];
@@ -5174,11 +5282,21 @@ function drawRipples(){for(let i=ripples.length-1;i>=0;i--){const r=ripples[i];
   ctx.strokeStyle=`rgba(255,255,255,${r.a.toFixed(3)})`;ctx.lineWidth=1.6;
   ctx.beginPath();ctx.ellipse(r.x,r.y,r.r,r.r*0.32,0,0,7);ctx.stroke();
   r.r+=r.vr;r.a*=0.92;if(r.a<0.03)ripples.splice(i,1);}}
-function softBlobs(col){ // glossy goo: upscale metaballs + sweeping shine + wet top rim — dust ball no more (perf mode keeps just the base)
+function softBlobs(col,in3D){ // glossy goo: upscale metaballs + sweeping shine + wet top rim — dust ball no more (perf mode keeps just the base)
   loctx.clearRect(0,0,loC.width,loC.height);
   loctx.fillStyle=col;
   for(const p of particles){if(!p.pooled)continue;
+    if(in3D){const q=P3(p.x,p.y,p.z==null?0.5:p.z);loctx.beginPath();loctx.arc(q[0]/4,q[1]/4,Math.max(1.4,p.r*0.46*q[2]),0,7);loctx.fill();continue;}   // 3D: each drop where it really is
     loctx.beginPath();loctx.arc(p.x/4,p.y/4,Math.max(1.4,p.r*0.46),0,7);loctx.fill();}
+  if(in3D){const lw=shLo.width,lh=shLo.height;shloctx.clearRect(0,0,lw,lh);shloctx.drawImage(loC,0,0,lw,lh);shloctx.drawImage(loC,0,0,lw,lh);
+    // the 3D goo is wax, not wet glass: no white shine or rim, just a lighter top and a deeper underside on each heart, so it reads as a lump
+    shloctx.globalCompositeOperation='source-atop';
+    for(let j=0;j<LAVA.n;j++){const Hh=LAVA.hearts[j],q=P3(CX+Hh[0],CY+Hh[1],0.5+Hh[2]/BOXD),sx=q[0]*lw/W,sy=q[1]*lh/H,rr=110*q[2]*lw/W;
+      const g=shloctx.createRadialGradient(sx-rr*0.3,sy-rr*0.35,rr*0.05,sx,sy,rr*1.3);
+      g.addColorStop(0,'rgba(255,246,255,.3)');g.addColorStop(0.6,'rgba(255,246,255,0)');g.addColorStop(1,'rgba(150,110,210,.14)');
+      shloctx.fillStyle=g;shloctx.fillRect(0,0,lw,lh);}
+    shloctx.globalCompositeOperation='source-over';
+    ctx.drawImage(shLo,0,0,W,H);return;}
   if(LITE){ // fatten + double-stamp so the light render fuses into smooth liquid, not separate bubbles
     // DONE SMALL, THEN UPSCALED ONCE. The lite path used to do TWO full-size upscales while the
     // normal path (after the quarter-size rewrite) does one plus some tiny work - so turning
@@ -5264,7 +5382,7 @@ function drawParticles(noDrops){ // the goo: floats as a blob while young, settl
     if(!noDrops)for(const p of particles){if(p.pooled)continue;
       ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}}}
 function drawBalls(){ // every ball its own vivid hue; in the goo they wade — fat goopy wake, dimmer glow, visibly slower
-  for(const b of balls){const tl=b.trail.length,bh=Math.round(b.hue*360),under=fillState==="fill"&&gooAt(b.x,b.y)>0.3;
+  for(const b of balls){const tl=b.trail.length,bh=Math.round(b.hue*360),under=fillState==="fill"&&gooAt(b.x,b.y,b.z)>0.3;
     // interpolated draw position. A bounce moves a ball a long way in one tick, so anything that big
     // is a direction change rather than travel -- snap to the true position instead of smearing across it.
     let bx=lerpX(b), by=lerpY(b);
@@ -5364,9 +5482,9 @@ function drawSolidCanvas(){wallUpkeep(true);const F=solidFaces(SOLID.planes),c=M
     let dz=0;for(const p of ring){const x=p[0]*c-p[1]*s,y=p[0]*s+p[1]*c;dz+=M[6]*x+M[7]*y+M[8]*p[2];}items.push({i,pts,front:wz<0,dz:dz/ring.length});});
   items.sort((a,b)=>b.dz-a.dz);
   const face=(it,a)=>{const fl=Math.min(1,(SOLID.flash[it.i]||0)*1.4);ctx.beginPath();it.pts.forEach((q,k)=>k?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath();
-    ctx.fillStyle=glassTint((SOLID.deg[it.i]||0)/td+ph,fl,(a+fl*0.3).toFixed(3));ctx.fill();ctx.lineWidth=2.4;ctx.strokeStyle=glassTint((SOLID.deg[it.i]||0)/td+ph,fl,(0.7+fl*0.3).toFixed(3));ctx.stroke();};
+    ctx.fillStyle=glassTint((SOLID.deg[it.i]||0)/td+ph,fl,(a+fl*0.3).toFixed(3));ctx.fill();ctx.lineWidth=2.4;ctx.strokeStyle=glassTint((SOLID.deg[it.i]||0)/td+ph,fl,(0.8+fl*0.2).toFixed(3),1);ctx.stroke();};
   for(const it of items)if(!it.front)face(it,0.12);
-  ctx.save();ctx.transform(...planeAt(0.5));drawParticles(true);ctx.restore();drawDroplets3D();drawBalls3D();
+  drawGoo3D();drawDroplets3D();drawBalls3D();
   for(const it of items)if(it.front)face(it,0.07);}
 function draw3D(){viewTick();
   if(fillState==="fill"&&edges._solid&&!_labOn()){drawSolidCanvas();return;}
@@ -5400,10 +5518,10 @@ function draw3D(){viewTick();
     for(let i=0;i<N;i++){if(list[i].piece)continue;ctx.moveTo(F[i][0],F[i][1]);ctx.lineTo(Bk[i][0],Bk[i][1]);}ctx.stroke();   // rails at the real corners only
     ctx.lineWidth=2.5;
     for(let i=0;i<N;i++){const e=list[i];if(fill&&e.broken&&!e.reform)continue;
-      ctx.strokeStyle=glassTint(e.hue+ph,Math.min(1,(e.flash||0)*1.4),0.55);ctx.beginPath();ctx.moveTo(Bk[i][0],Bk[i][1]);ctx.lineTo(Bb[i][0],Bb[i][1]);ctx.stroke();}
+      ctx.strokeStyle=glassTint(e.hue+ph,Math.min(1,(e.flash||0)*1.4),0.7,1);ctx.beginPath();ctx.moveTo(Bk[i][0],Bk[i][1]);ctx.lineTo(Bb[i][0],Bb[i][1]);ctx.stroke();}
     ctx.restore();}
   // the goo is a liquid sheet through the middle of the box; spray droplets fly at their own depth
-  ctx.save();ctx.transform(...planeAt(0.5));drawParticles(true);ctx.restore();
+  drawGoo3D();
   drawDroplets3D();
   // balls, back to front, so a near ball passes in front of a far one
   drawBalls3D();
@@ -5446,6 +5564,13 @@ function drawHorizon(z){
   ctx.lineWidth=1.8;for(const L of _echo.lvl1){   // in 3D the echoes are glass too; the flat view keeps their colours
     ctx.fillStyle=z!=null?glassTint(L.hue+ph,0,0.1):aurora(L.hue+ph,80,0.11);ctx.fill(L.P);ctx.strokeStyle=z!=null?glassTint(L.hue+ph,0.15,0.5):aurora(L.hue+ph,72,0.5);ctx.stroke(L.P);}
   ctx.restore();}
+// the canvas 3D views: the goo as a volume (each drop at its own depth), or the old sheet while it spills out
+function drawGoo3D(){if(fillState==="fill"&&goo3D()){
+    if(!particles.length){mMask=null;measuredFill=Math.max(0,measuredFill-0.02);return;}
+    liquidColor();if(++mFrame%10===0||!mMask)measureFill();
+    const m=(liqRGB[0]+liqRGB[1]+liqRGB[2])/3,c=liqRGB.map(v=>Math.max(0,Math.min(255,m+(v-m)*2.2)));   // the chord's colour, pushed to a clear pastel: the flat blend reads grey through tinted glass
+    softBlobs(`rgba(${c.map(v=>(v+(255-v)*0.25)|0).join(',')},.9)`,true);return;}
+  ctx.save();ctx.transform(...planeAt(0.5));drawParticles(true);ctx.restore();}
 function drawDroplets3D(){for(const p of particles){if(p.pooled)continue;const s=P3(p.x,p.y,p.z==null?0.5:p.z);
   ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(s[0],s[1],2.2*s[2],0,7);ctx.fill();}}
 // each ball is a pre-painted sprite (glow + lit sphere + highlight), one per colour, painted once and
@@ -5453,8 +5578,9 @@ function drawDroplets3D(){for(const p of particles){if(p.pooled)continue;const s
 const _ballSpr=new Map();
 function ballSprite(bh,under){const k=bh+(under?'u':'');let c=_ballSpr.get(k);if(c)return c;
   const S2=96,r=S2/2/2.2,cx=S2/2;c=document.createElement('canvas');c.width=c.height=S2;const x=c.getContext('2d');
-  const g=x.createRadialGradient(cx,cx,1,cx,cx,cx);g.addColorStop(0,under?"rgba(255,255,255,.7)":"#fff");g.addColorStop(1,`hsla(${bh},90%,62%,0)`);
-  x.fillStyle=g;x.beginPath();x.arc(cx,cx,under?r*1.5:cx,0,7);x.fill();
+  // a soft halo in the ball's OWN colour (a white one read as a white ring round every note on the pale page)
+  const g=x.createRadialGradient(cx,cx,r*0.9,cx,cx,r*1.55);g.addColorStop(0,`hsla(${bh},90%,66%,${under?0.25:0.4})`);g.addColorStop(1,`hsla(${bh},90%,66%,0)`);
+  x.fillStyle=g;x.beginPath();x.arc(cx,cx,r*1.55,0,7);x.fill();
   const sg=x.createRadialGradient(cx-r*0.35,cx-r*0.4,r*0.1,cx,cx,r);
   sg.addColorStop(0,under?`hsl(${bh},70%,66%)`:`hsl(${bh},92%,74%)`);sg.addColorStop(0.7,under?`hsl(${bh},70%,52%)`:`hsl(${bh},88%,58%)`);
   sg.addColorStop(1,under?`hsl(${bh},65%,40%)`:`hsl(${bh},80%,44%)`);x.fillStyle=sg;x.beginPath();x.arc(cx,cx,r,0,7);x.fill();
@@ -5462,7 +5588,7 @@ function ballSprite(bh,under){const k=bh+(under?'u':'');let c=_ballSpr.get(k);if
   _ballSpr.set(k,c);return c;}
 function drawBalls3D(){
   const order=balls.slice().sort((a,b)=>(b.z||0)-(a.z||0));
-  for(const b of order){const tl=b.trail.length,bh=Math.round(b.hue*360),under=fillState==="fill"&&gooAt(b.x,b.y)>0.3;
+  for(const b of order){const tl=b.trail.length,bh=Math.round(b.hue*360),under=fillState==="fill"&&gooAt(b.x,b.y,b.z)>0.3;
     let bx=lerpX(b),by=lerpY(b),bz=(b.pz==null?(b.z||0):b.pz+((b.z||0)-b.pz)*_alpha);
     if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR*2.2){bx=b.x;by=b.y;bz=b.z||0;}
     const s=P3(bx,by,bz),X=s[0],Y=s[1],r=BR*s[2]*ballScale(bx,by,bz);

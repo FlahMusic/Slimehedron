@@ -65,15 +65,19 @@ const ARGS=['--autoplay-policy=no-user-gesture-required','--enable-unsafe-swifts
   // ---- 3. glows add light, never a dark disk ----
   const glow=await p.evaluate(()=>{balls.length=0;spawn(CX,CY);const B=balls[0];B.z=B.pz=0.1;B.vx=B.vy=0;B.trail.length=0;B.hue=0.6;draw();
     const q=__P3(B.x,B.y,0.1),r=cv.getBoundingClientRect();return {x:r.left+q[0]*r.width/W,y:r.top+q[1]*r.height/H,rad:BR*q[2]*r.width/W};});
-  const before=await p.evaluate(()=>{balls.length=0;draw();return 1;});
+  // over a mid-tone backdrop, so a white ring would show (on a near-white page it hides, which is how it slipped by)
+  const before=await p.evaluate(()=>{document.getElementById('cvGL').style.background='rgb(90,140,110)';balls.length=0;draw();return 1;});
   const bgPng=await p.screenshot({clip:{x:glow.x-30,y:glow.y-30,width:60,height:60}});
   await p.evaluate(()=>{spawn(CX,CY);const B=balls[0];B.z=B.pz=0.1;B.vx=B.vy=0;B.trail.length=0;B.hue=0.6;draw();});
   const glPng=await p.screenshot({clip:{x:glow.x-30,y:glow.y-30,width:60,height:60}});
   {const A=await decode(bgPng),Bm=await decode(glPng),L=(im,x,y)=>{const i=(y*im.width+x)*4;return (im.data[i]+im.data[i+1]+im.data[i+2])/3;};
-    let worst=0;for(let y=0;y<60;y+=2)for(let x=0;x<60;x+=2){const d=Math.hypot(x-30,y-30);if(d<glow.rad*1.3||d>28)continue;worst=Math.max(worst,L(A,x,y)-L(Bm,x,y));}
-    ok(worst<12,'around a ball the glow only ever brightens the page behind (worst darkening '+worst.toFixed(1)+' of 255)');}
+    let worst=0,white=0;for(let y=0;y<60;y+=2)for(let x=0;x<60;x+=2){const d=Math.hypot(x-30,y-30);if(d<glow.rad*1.3||d>28)continue;worst=Math.max(worst,L(A,x,y)-L(Bm,x,y));
+      if(d<glow.rad*2.6)white=Math.max(white,L(Bm,x,y)-L(A,x,y));}
+    ok(worst<12,'around a ball nothing punches a dark hole in the page behind (worst darkening '+worst.toFixed(1)+' of 255)');
+    ok(white<14,'and there is no white ring round a ball either (worst brightening just outside it '+white.toFixed(1)+' of 255)');}
 
   // ---- 4. a struck wall lights; goo is a surface only when there is goo ----
+  await p.evaluate(()=>{document.getElementById('cvGL').style.background='';});
   const wall=await p.evaluate(()=>{balls.length=0;particles.length=0;const e=edges[0],q=__P3((e.ax+e.bx)/2,(e.ay+e.by)/2,0),r=cv.getBoundingClientRect();
     for(const f of edges)f.flash=0;formGlow=0;draw();return {x:r.left+q[0]*r.width/W,y:r.top+q[1]*r.height/H};});
   const w0=await p.screenshot({clip:{x:wall.x-6,y:wall.y-6,width:12,height:12}});
@@ -81,11 +85,20 @@ const ARGS=['--autoplay-policy=no-user-gesture-required','--enable-unsafe-swifts
   const w1=await p.screenshot({clip:{x:wall.x-6,y:wall.y-6,width:12,height:12}});
   // glass at rest is pearl (nearly colourless); a strike floods it with the note's colour: measure COLOUR, not brightness
   {const avg=im=>{let s=0;for(let i=0;i<im.data.length;i+=4){const r=im.data[i],g=im.data[i+1],b2=im.data[i+2];s+=Math.max(r,g,b2)-Math.min(r,g,b2);}return s/(im.data.length/4);};
-    const a=avg(await decode(w0)),c=avg(await decode(w1));ok(c>a+8,'a struck wall floods with its note\'s colour where it is drawn (colour '+a.toFixed(0)+' -> '+c.toFixed(0)+')');}
+    const a=avg(await decode(w0)),c=avg(await decode(w1));
+    ok(a>=20,'a wall at rest is its own pastel colour, not white glass (colour '+a.toFixed(0)+')');
+    ok(c>a+8,'a struck wall floods with its note\'s colour where it is drawn (colour '+a.toFixed(0)+' -> '+c.toFixed(0)+')');}
   const goo=await p.evaluate(async()=>{particles.length=0;for(let i=0;i<5;i++)draw();const none=window.__gl.api.stats().goo;
     for(let i=0;i<120;i++)particles.push({x:CX+(Math.random()-0.5)*200,y:CY+80+Math.random()*60,z:0.5,vx:0,vy:0,r:7,hue:Math.random(),pooled:true,age:80,born:0});
     for(let i=0;i<5;i++)draw();return {none,some:window.__gl.api.stats().goo};});
   ok(goo.none===0&&goo.some>200,'the goo is a real 3D surface when there is goo ('+goo.some+' triangles) and nothing when there is none ('+goo.none+')');
+  // ---- 4a. the goo's skin is clipped to the glass, and barely needs to be ----
+  const clip=await p.evaluate(()=>{fillState='fill';frags=null;pressure=0;const s=document.getElementById('shape');s.value='cube';s.dispatchEvent(new Event('change'));
+    balls.length=0;particles.length=0;S.playing=false;const sb=startBreak;startBreak=function(){};   // no burst: this is about the glass holding it
+    for(let i=0;i<500;i++)particles.push({x:CX+(Math.random()-0.5)*R*1.4,y:CY+(Math.random()-0.5)*R*1.4,z:Math.random(),vx:0,vy:0,vz:0,r:8,hue:Math.random(),pooled:true,age:80});
+    for(let i=0;i<60;i++)simTick(performance.now());for(let i=0;i<4;i++)draw();const o=window.__gl.api.gooOut();o.state=fillState;startBreak=sb;return o;});
+  ok(clip&&clip.clip===clip.glass&&clip.glass===6,'the goo is clipped to every face of the cube it is in ('+(clip&&clip.clip)+' clip planes for '+(clip&&clip.glass)+' faces)');
+  ok(clip&&clip.reach<=4,'and pressed hard against the glass, its skin reaches at most '+4+'px past it before the clip ('+(clip?clip.reach.toFixed(1):'?')+'px)');
   // ---- 4b. a real solid is drawn as glass faces, and a struck face lights up ----
   const sol=await p.evaluate(()=>{fillState='fill';frags=null;pressure=0;const s=document.getElementById('shape');s.value='icosa';s.dispatchEvent(new Event('change'));balls.length=0;particles.length=0;
     for(let i=0;i<SOLID.flash.length;i++)SOLID.flash[i]=0;draw();const r=cv.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,st:window.__gl.api.stats()};});
