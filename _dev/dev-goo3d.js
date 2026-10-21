@@ -104,6 +104,16 @@ const GL=!!process.env.SLIME_GL;
   ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
   await ctx.close();}
 
+ // ---- 7b. the goo is in proportion to the shape: the same share of every shape's inside ----
+ {const {ctx,p,errs}=await open('?m=studio&view=3d&space=normal');
+  const sc=await p.evaluate(()=>{const out={};for(const sh of ['cube','octa','icosa','dodeca','rhombus','3']){const sel=document.getElementById('shape');sel.value=sh;sel.dispatchEvent(new Event('change'));
+      out[sh]={cap:partCap(),v:tankVolume(),room:Math.min(...gooRoom())};}return out;});
+  const share=Object.entries(sc).map(([k,x])=>[k,x.cap*3300/x.v]),lo=Math.min(...share.map(x=>x[1])),hi=Math.max(...share.map(x=>x[1]));
+  ok(hi/lo<1.05,'a full tank of goo takes the same share of every shape\'s inside ('+share.map(([k,x])=>k+' '+(x*100).toFixed(1)+'%').join(', ')+')');
+  ok(sc.octa.cap<sc.cube.cap,'an octahedron (wide in the middle, small inside) gets less goo than a cube ('+sc.octa.cap+' vs '+sc.cube.cap+'), not twice as much');
+  ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
+  await ctx.close();}
+
  // ---- 8. the flat 2D goo is untouched: no depth, the old sheet and pool ----
  {const {ctx,p,errs}=await open('?m=studio&view=2d');
   const flat=await p.evaluate(()=>{S.slimeMode=false;S.rain=false;setPlaying(true);balls.length=0;for(let i=0;i<6;i++)spawn(CX+i*10,CY);

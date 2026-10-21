@@ -4614,7 +4614,8 @@ function trigger(cents,imp,goo,now,pane){if(!pane)noteFeed(cents);goo=goo||0;let
   // now=true skips the quantize queue. A HAND gets its note instantly; a ball still lands on the grid.
   // No music software quantizes live input as you play it, and a child cannot feel they caused a sound
   // that arrives on the next grid line.
-  if(S.quantize&&!now)pendingNotes.push({cents,vel,imp,goo});else{playSynth(freqFromCents(cents),vel,imp,undefined,!!now);sendMidi(cents,vel,imp);}} // every note also teaches the chord brain
+  if(S.quantize&&!now&&!goo&&qWait())pendingNotes.push({cents,vel,imp,goo});else{   // gooed: as it hits (see BOUNCES LAND ON THE BEAT)
+    playSynth(freqFromCents(cents),vel,imp,undefined,!!now);sendMidi(cents,vel,imp);}} // every note also teaches the chord brain
 function jitter(b){if(S.chaos<=0)return;const sp=Math.hypot(b.vx,b.vy);const a=Math.atan2(b.vy,b.vx)+(Math.random()-0.5)*S.chaos*2.2; // perturb angle only — speed stays steady
   b.vx=Math.cos(a)*sp;b.vy=Math.sin(a)*sp;}
 
@@ -4622,7 +4623,14 @@ function jitter(b){if(S.chaos<=0)return;const sp=Math.hypot(b.vx,b.vy);const a=M
 const PR=8, GRAV=0.17;
 let gX=0,gY=GRAV,liquidH=0; // tiltable gravity + how high the liquid sits (drives the filter morph)
 function shapeArea(){return (edges&&edges._area)?edges._area:(R*R*2.6);} // real polygon area (works for heart/star/etc, never NaN)
-function partCap(){return Math.floor(Math.min(1600,shapeArea()/120)*(LITE?0.55:1));} // particle budget (perf + calm): fewer droplets = no overcrowded granular spazzing in the corners
+function partCap(){let n=Math.min(1600,shapeArea()/120);
+  // THE 3D TANK HOLDS GOO BY VOLUME. Counting by the middle slice's area gave an octahedron (a wide slice, a
+  // small inside) twice the goo of a cube, so the slime swamped it. Now every shape gets the same share of
+  // its own inside: the goo is always in proportion to the room the balls have.
+  if(typeof goo3D==='function'&&goo3D()){const v=tankVolume();if(v>0){const ru=Math.max(20,Math.min(...gooRoom())-GOO_IN-PR);
+    n=Math.min(1600,v*GOO_SHARE/3300,edges._solid?0.25*4.18879*ru*ru*ru/3300:1e9);}}   // ~3300 px^3: one packed drop. A solid also counts the round
+    // room in its middle: a pointed one (a tetrahedron) has much of its inside in corners a blob never reaches
+  return Math.floor(n*(LITE?0.55:1));} // particle budget (perf + calm): fewer droplets = no overcrowded granular spazzing in the corners
 let measuredFill=0;
 function ballSpeed(){return (S.bpm/80)*3.4;} // steady, tempo-driven ball speed
 let particles=[];  // {x,y,vx,vy,hue,r}
@@ -4808,11 +4816,27 @@ function fillPhysics(now){
 function goo3D(){return VIEW.d3&&!_labOn();}
 // where the music is, in beats, read off the audio clock; the plain tempo when the band is not playing
 function beatNow(){
-  try{if((drumOn||bandOn)&&AC&&S.playing){const sd=drumStepDur();if(sd>0)return (drumStep-(drumTime-AC.currentTime)/sd)/drumSPB();}}catch(e){}
+  try{if((drumOn||bandOn)&&AC&&S.playing){const sd=drumStepDur(),heard=AC.currentTime-(AC.outputLatency||AC.baseLatency||0);if(sd>0)return (drumStep-(drumTime-heard)/sd)/drumSPB();}}catch(e){}   // 'heard': the speakers lag the audio clock, so the goo pulses with what you hear
   return performance.now()/60000*(S.bpm||80);}
 function beatsPerBar(){try{return Math.max(1,Math.round(drumBar()/drumSPB()));}catch(e){return 4;}}
-const GOO_IN=10;   // the goo keeps this far inside the glass (px), so its soft surface meets the glass instead of crossing it
-const LAVA={beat:null,phase:0,kick:[0,0,0],ax:[[1,0,0],[0,1,0],[0,0,1]],hearts:[[0,0,0],[0,0,0],[0,0,0]],room:[1,1,1],n:1};
+const GOO_IN=10,GOO_SHARE=0.065;   // GOO_SHARE: how much of the shape's inside a full tank of goo takes up
+// the inside of the 3D tank, px^3: a prism is its area times its depth; a solid is the sum over its faces of
+// area x distance / 3; a curved solid is measured by sampling (its faces bow in). Kept per shape.
+const _vol=new Map();
+function tankVolume(){if(!edges)return 0;
+  if(!edges._solid)return shapeArea()*BOXD;
+  const key=SOLID.name+'|'+(edges._space||'');if(_vol.has(key))return _vol.get(key);
+  if(SOLID.from||!SOLID.planes.length)return 0;   // mid-grow: wait for the finished shape
+  let V=0;
+  if(edges._space==='curved'){const RB=HYP.RD,K=HKR();let seed=12345,inside=0;const M=6000,rnd=()=>((seed=(seed*1103515245+12345)%2147483648)/2147483648)*2-1;
+    for(let i=0;i<M;i++){const u=[rnd(),rnd(),rnd()],r2=u[0]*u[0]+u[1]*u[1]+u[2]*u[2];if(r2>=1)continue;const k=u.map(x=>2*x/(1+r2));
+      if(SOLID.planes.every(pl=>pl.n[0]*k[0]+pl.n[1]*k[1]+pl.n[2]*k[2]<=pl.d/K))inside++;}
+    V=inside/M*8*RB*RB*RB;}
+  else{const F=solidFaces(SOLID.planes);F.forEach((f,i)=>{if(f.length<3)return;let ax=0,ay=0,az=0;
+      for(let k=0;k<f.length;k++){const a=f[k].p,b=f[(k+1)%f.length].p;ax+=a[1]*b[2]-a[2]*b[1];ay+=a[2]*b[0]-a[0]*b[2];az+=a[0]*b[1]-a[1]*b[0];}
+      V+=Math.hypot(ax,ay,az)/2*SOLID.planes[i].d/3;});}
+  _vol.set(key,V);return V;}   // the goo keeps this far inside the glass (px), so its soft surface meets the glass instead of crossing it
+const LAVA={core:[0,0,0],beat:null,phase:0,kick:[0,0,0],ax:[[1,0,0],[0,1,0],[0,0,1]],hearts:[[0,0,0],[0,0,0],[0,0,0]],room:[1,1,1],n:1};
 // how far a heart may wander from the middle on each axis (px): the solid's inradius, or the prism's
 function gooRoom(){
   if(edges._solid&&SOLID.planes.length){let m=1e9;for(const pl of SOLID.planes)m=Math.min(m,pl.d);
@@ -4827,8 +4851,9 @@ function lavaTick(pooledN){
   if(fb!==LAVA.beat){const first=LAVA.beat==null;LAVA.beat=fb;
     if(!first){const down=((fb%bpb)+bpb)%bpb===0,fill=Math.min(1,pooledN/Math.max(1,partCap()*0.9));
       for(let j=0;j<3;j++){LAVA.ax[j]=randUnit();LAVA.kick[j]=(0.5+0.5*fill)*(down?1.35:1)*(0.8+Math.random()*0.4);}}}
-  for(let j=0;j<3;j++){const a=j*2.39996,w=0.09+0.031*j;   // golden-angle apart, each on its own slow cycle
-    const H=LAVA.hearts[j];H[0]=room[0]*0.42*Math.sin(b*w+a);H[1]=room[1]*0.5*Math.sin(b*w*0.63+a*1.7);H[2]=room[2]*0.42*Math.sin(b*w*1.21+a*2.3);}
+  for(let j=0;j<3;j++){const a=j*2.39996,w=0.09+0.031*j,cr=(LAVA.core[j]||0)+GOO_IN+PR;   // golden-angle apart, each on its own slow cycle
+    const amp=(k,f)=>Math.min(room[k]*f,Math.max(0,room[k]-cr));   // a big heart wanders less: it never shoves itself against the glass
+    const H=LAVA.hearts[j];H[0]=amp(0,0.42)*Math.sin(b*w+a);H[1]=amp(1,0.5)*Math.sin(b*w*0.63+a*1.7);H[2]=amp(2,0.42)*Math.sin(b*w*1.21+a*2.3);}
   LAVA.phase=b-fb;LAVA.room=room;return LAVA;}
 function nearestHeart(p,nh){const H=LAVA.hearts,x=p.x-CX,y=p.y-CY,z=(p.z-0.5)*BOXD;let best=0,bd=1e18;
   for(let j=0;j<nh;j++){const d=(x-H[j][0])**2+(y-H[j][1])**2+(z-H[j][2])**2;if(d<bd){bd=d;best=j;}}return best;}
@@ -4880,7 +4905,7 @@ function gooStep3D(now){
   const L=lavaTick(pooledN),H=L.hearts,nh=1+(pooledN>140?1:0)+(pooledN>420&&!LITE?1:0);LAVA.n=nh;
   const env=S.playing?Math.exp(-L.phase*10):0,cnt=[0,0,0],t=now*0.001;
   for(const p of particles)if(p.pooled&&p.h!=null&&p.h<nh)cnt[p.h]++;
-  const core=cnt.map(c=>8.5*Math.cbrt(Math.max(1,c)));   // how big a packed heart of that many drops is
+  const core=cnt.map(c=>8.5*Math.cbrt(Math.max(1,c)));LAVA.core=core;   // how big a packed heart of that many drops is
   for(const p of particles){p.age++;if(p.vz==null)p.vz=0;if(p.z==null)p.z=0.5;
     if(!p.pooled&&(p.age>40||(p.age>10&&Math.hypot(p.vx,p.vy,p.vz)<1.2))){p.pooled=true;p.h=nearestHeart(p,nh);}
     if(p.pooled){if(p.r<PR)p.r+=0.12;
@@ -5119,7 +5144,7 @@ function step(){
       if(g>0){const G=boxGravity();b.vx+=G[0]*gy;b.vz+=G[2]*gy/BOXD;}   // the tilted box: gravity leans balls toward a pane too
       b.vz=Math.max(-0.012,Math.min(0.012,b.vz));
       if(Math.abs(b.vz)<0.0015)b.vz=b.vz<0?-0.0015:0.0015;            // never parked against the glass
-      b.z+=b.vz;
+      b.z+=b.vz*(b.tq||1);   // the depth steers with the rest of the ball
       const hitPane=(back)=>{const nw=performance.now();if(b.lastPane&&nw-b.lastPane<140)return;b.lastPane=nw;
         if(b.mute||!inPoly(b.x,b.y,edges._verts))return;
         const rd=curRootDeg||0,c=back?centsForDegree(rd):centsForDegree(rd+((b.paneN=(b.paneN||0)+1)%2?2:4))+1200;
@@ -5131,8 +5156,9 @@ function step(){
     // no gravity = steady tempo speed; the more gravity, the more they free-fall & settle (smooth across the whole slider)
     if(b.mute&&(b.muteN=(b.muteN||0)+1)>40)b.mute=0; // safety: a shot that never lands rejoins normal physics
     if(!b.mute){ // shot balls fly TRUE — no tempo normalizer, no drag, no goo — until first impact. then they're citizens.
-    if(s3){const sp=Math.hypot(b.vx,b.vy,(b.vz||0)*BOXD)||1;const k=(ts/sp)*(1-g)+g;b.vx*=k;b.vy*=k;b.vz=(b.vz||0)*k;}   // a solid: steady speed in all three directions
-    else{const sp=Math.hypot(b.vx,b.vy)||1;const k=(ts/sp)*(1-g)+g;b.vx*=k;b.vy*=k;}
+    beatLock(b,_tickT||performance.now());const tsb=ts*(b.tq||1);   // steady speed, give or take the little steer that lands the next bounce on the beat
+    if(s3){const sp=Math.hypot(b.vx,b.vy,(b.vz||0)*BOXD)||1;const k=(tsb/sp)*(1-g)+g;b.vx*=k;b.vy*=k;b.vz=(b.vz||0)*k;}   // a solid: steady speed in all three directions
+    else{const sp=Math.hypot(b.vx,b.vy)||1;const k=(tsb/sp)*(1-g)+g;b.vx*=k;b.vy*=k;}
     if(g>0){b.vx*=(1-g*0.06);b.vy*=(1-g*0.015);} // drag grows with gravity so they land & settle instead of skating forever
     }
     // slime is thick: balls wading through the pool drag at their own per-ball rate, and deeper = thicker —
@@ -5150,11 +5176,55 @@ function step(){
 
 // ---------- transport / rain ----------
 let lastTick=0,nextRain=0,rainTickN=0,tickCount=0,_melNext=0,_melStepN=0;
-function tickInterval(){let beat=60/S.bpm;let d=S.div*4*beat;
+function tickInterval(c){if(c==null)c=tickCount;let beat=60/S.bpm;let d=S.div*4*beat;   // c: which grid step (swing alternates long/short)
   if(S.triplet)d*=2/3; // TRUE triplets: three even notes per beat — "1 & a 2 & a", not a lopsided shuffle
   if(S.dotted)d*=1.5;
-  if(!S.triplet&&S.swing>0.01)d*=(tickCount%2===0?1+S.swing*0.5:1-S.swing*0.5); // MPC-style: offbeats lean late, up to 75/25
+  if(!S.triplet&&S.swing>0.01)d*=(c%2===0?1+S.swing*0.5:1-S.swing*0.5); // MPC-style: offbeats lean late, up to 75/25
   return d*1000;}
+// ===== BOUNCES LAND ON THE BEAT =====
+// Quantize used to hold a ball's note back to the next grid line: up to a whole step (375ms at 1/8) after
+// you SAW the ball hit the wall, the flash and the goo splash had already happened, so sight and sound never
+// matched. Now each ball steers its own speed a little (never more than about a fifth) on the way across,
+// so it reaches the wall ON a grid line: the bounce, the flash, the splash and the note are one moment, and
+// the music is still on the grid. A ball in the goo is not steered: the goo drags it off the beat, and its
+// note plays the instant it hits, so the smear you hear is the smear you see.
+// QLATE: a hit this soon after a grid line counts as on it (ms). QWAIT: the most a note ever waits for the next one.
+// _rotV: how far the shape turned this tick (the walls move, so a hit comes sooner or later than a straight line says).
+// _tickT: the moment the current physics tick stands for (a slow frame runs several ticks at once).
+const QLATE=40,QWAIT=45;let _rotV=0,_tickT=0;
+// does a ball's note, hitting right now, wait for the grid? Only when the next line is moments away. A hit just
+// after a line, or one the steering could not land (a corner, a double hit), plays as it happens: sight and
+// sound never come apart by more than a frame or two.
+function qWait(){const t=_tickT||performance.now();return t-lastTick>QLATE&&lastTick+tickInterval()-t<=QWAIT;}
+function gridAhead(n){const out=[];let t=lastTick,c=tickCount;for(let i=0;i<n;i++){t+=tickInterval(c);c++;out.push(t);}return out;}
+// ticks until this ball next makes a note (a wall, a face, or in the 3D box a pane), flying straight at its current speed.
+// A spinning shape turns its walls into the ball's path, so then the flight is walked forward in the shape's own
+// turning frame, a few ticks at a time, until the ball first meets a wall.
+function hitTicks(b){let best=Infinity;
+  if(edges._space==='curved')return best;   // a curved path: not steered; the note still waits at most QWAIT for the grid
+  const solid=solid3D()&&!!edges._solid,w=_rotV;
+  if(!solid&&VIEW.d3&&!_labOn()&&b.vz){const t=b.vz<0?b.z/(-b.vz*(b.tq||1)):(1-b.z)/(b.vz*(b.tq||1));if(t>=0)best=t;}   // the front and back panes
+  const c=Math.cos(rot),s=Math.sin(rot),X=b.x-CX,Y=b.y-CY,Z=solid?((b.z==null?0.5:b.z)-0.5)*BOXD:0,VZ=solid?(b.vz||0)*BOXD:0;
+  const W=solid?SOLID.planes.map((pl,k)=>_solidOpen.has(k)?null:[pl.n[0]*c-pl.n[1]*s,pl.n[0]*s+pl.n[1]*c,pl.n[2],pl.d+(-BR)]).filter(Boolean)   // [nx,ny,nz,limit]: n.p <= limit
+                 :edges.filter(e=>!(e.broken&&(e.reform||0)<0.55)).map(e=>[-e.nx,-e.ny,0,-((e.ax-CX)*e.nx+(e.ay-CY)*e.ny)-(e.twin?0:BR)]);
+  const room=(t,k)=>{const x=X+b.vx*t,y=Y+b.vy*t,a=-w*t,ca=Math.cos(a),sa=Math.sin(a),q=W[k];return q[3]-(q[0]*(x*ca-y*sa)+q[1]*(x*sa+y*ca)+q[2]*(Z+VZ*t));};
+  if(Math.abs(w)<1e-6){for(const q of W){const vn=q[0]*b.vx+q[1]*b.vy+q[2]*VZ;if(vn<=1e-6)continue;const t=(q[3]-(q[0]*X+q[1]*Y+q[2]*Z))/vn;if(t>=0&&t<best)best=t;}return best;}
+  const prev=W.map((q,k)=>room(0,k)),DT=4;
+  for(let t=DT;t<=Math.min(best,320);t+=DT)for(let k=0;k<W.length;k++){const r=room(t,k);
+    if(prev[k]>0&&r<=0){const hit=t-DT*r/(r-prev[k]);if(hit<best)best=hit;}prev[k]=r;}   // first wall the ball meets, between two samples by straight line
+  return best;}
+function beatLock(b,now){
+  if(!S.quantize||!S.playing||b.mute||_labOn()||(fillState==="fill"&&gooAt(b.x,b.y,b.z)>0.3)){b.tq=(b.tq||1)+(1-(b.tq||1))*0.2;b.tg=0;return;}
+  if((b._bl=(b._bl||0)+1)%2)return;   // steering every other tick is plenty, and halves the cost
+  const tq=b.tq||1,n=hitTicks(b);
+  if(!(n<1e5)){b.tq=tq+(1-tq)*0.2;b.tg=0;return;}
+  if(n<4)return;   // too close to steer smoothly: hold course
+  const left=n*FIXED,tHit=now+left,G=gridAhead(Math.min(400,2+Math.ceil((left*1.4)/Math.max(30,tickInterval()))));
+  const want=g=>tq*left/Math.max(1,g-now);
+  let tg=b.tg&&b.tg>now+FIXED*3&&Math.abs(want(b.tg)-1)<0.22?b.tg:0;   // keep aiming at the same line while it still works: no flip-flopping
+  if(!tg){let bd=1e9;for(const g of G){if(g<=now+FIXED*2)continue;const w=want(g);const d=Math.abs(Math.log(w));if(Math.abs(w-1)<0.22&&d<bd){bd=d;tg=g;}if(g>tHit*1.0+left)break;}}
+  if(!tg){b.tq=tq+(1-tq)*0.2;return;}
+  b.tg=tg;b.tq=tq+(Math.max(0.8,Math.min(1.22,want(tg)))-tq)*0.35;}
 const MAXBALLS=12; // classic polysynths ran 4-8 voices; listeners stop tracking independent lines past ~4 and
 // dense textures past ~10 events fuse into mush (auditory streaming: Bregman 1990; Huron 2001). 12 keeps it alive but musical.
 function spawnRain(){const a=Math.random()*Math.PI*2,r=Math.random()*R*0.35;spawn(CX+Math.cos(a)*r,CY+Math.sin(a)*r-R*0.35);}
@@ -5166,11 +5236,9 @@ function transport(now){
   if(now-lastTick>=tickInterval()){lastTick=(now-lastTick>tickInterval()*3)?now:lastTick+tickInterval();tickCount++; // drift-free grid, stays on beat with drums
     if(S.quantize&&pendingNotes.length){const seen=new Set();
       for(const p of pendingNotes){const k=Math.round(p.cents);if(seen.has(k))continue;seen.add(k);
-        // THE GOO SURVIVES THE GRID: dry notes snap to the beat, gooed notes drag behind it — deeper = later, each ball its own lean.
-        // this is what un-robots the quantizer: the cluster-on-the-tick becomes a smear that trails off the beat as the tank fills
-        const lag=(p.goo&&!document.hidden)?Math.min(120,p.goo*tickInterval()*0.45*(0.75+Math.random()*0.5)):0;
-        if(lag>4)setTimeout(()=>{playSynth(freqFromCents(p.cents),p.vel,p.imp);sendMidi(p.cents,p.vel,p.imp);},lag);
-        else{playSynth(freqFromCents(p.cents),p.vel,p.imp);sendMidi(p.cents,p.vel,p.imp);}}
+        // (a gooed note never waits here any more: it plays as the ball hits, so the goo's smear off the beat
+        // is one you can see as well as hear - see BOUNCES LAND ON THE BEAT)
+        playSynth(freqFromCents(p.cents),p.vel,p.imp);sendMidi(p.cents,p.vel,p.imp);}
       pendingNotes.length=0;}
   }
   // SLIME (auto) MODE = SPARSE & floaty, like the original rain that flowed nicely. one gentle note every ~2 beats,
@@ -5694,7 +5762,7 @@ function simTick(now){
     let d=S.spin*0.0003;
     if(S.mode==='play'){let secBar=4*60/(S.bpm||80);try{secBar=drumBar()*drumStepDur();}catch(e){}
       if(secBar>0.05)d=(S.spin/14)*(2*Math.PI)/(8*secBar*60);}
-    rot+=d;rebuild();}
+    rot+=d;_rotV=d;rebuild();}else _rotV=0;
   if(solidMorphTick())rebuild();    // a solid growing into the next one: the slice follows it
   curSegs=(fillState==="fill")?null:computeSegs();
   step();fillPhysics(now);
@@ -5718,7 +5786,7 @@ function update(now){ // shared by the rAF loop (visible) and the worker heartbe
   _lastTick=now;
   _acc+=dt;if(!isFinite(_acc))_acc=FIXED; // accumulator can never get stuck on NaN
   let n=0;
-  while(_acc>=FIXED&&n<MAXTICKS){simTick(now);_acc-=FIXED;n++;}
+  while(_acc>=FIXED&&n<MAXTICKS){_tickT=now-_acc+FIXED;simTick(now);_acc-=FIXED;n++;}   // _tickT: the moment this tick stands for (a slow frame runs several)
   if(n>=MAXTICKS)_acc=0; // fell way behind (tab stalled) — drop the backlog instead of spiraling
   _alpha=Math.max(0,Math.min(1,_acc/FIXED)); // how far into the NEXT tick the next frame will be
 }
@@ -6775,7 +6843,10 @@ window.growSolid=growSolid;
     const ctrls=[...document.querySelectorAll('button,select,input,[role="button"],.psBtn,#triMix,.card,#studioBar,#cofWheel')].filter(e=>!chip.contains(e)&&e.offsetWidth&&getComputedStyle(e).visibility!=='hidden').map(e=>e.getBoundingClientRect());
     const free=([x,y])=>x>=0&&y>=0&&x+w<=innerWidth&&y+h<=innerHeight&&!ctrls.some(r=>x<r.right+4&&x+w>r.left-4&&y<r.bottom+4&&y+h>r.top-4);
     const at=cands.find(free)||cands[0];
-    chip.style.left=at[0]+'px';chip.style.top=at[1]+'px';}
+    chip.style.left=at[0]+'px';chip.style.top=at[1]+'px';
+    // a background mote already sitting where the button lands steps aside (the motes avoid buttons when THEY
+    // are placed, but this button can move after them)
+    document.querySelectorAll('.mote').forEach(m=>{const r=m.getBoundingClientRect();if(r.right>at[0]-6&&r.left<at[0]+w+6&&r.bottom>at[1]-6&&r.top<at[1]+h+6)m.style.display='none';});}
   function open(v){menu.hidden=!v;chip.classList.toggle('open',v);btn.setAttribute('aria-expanded',String(v));
     if(v){paint();menu.classList.remove('down');menu.style.left='0px';let r=menu.getBoundingClientRect();   // keep the whole menu on screen
       if(r.top<8){menu.classList.add('down');r=menu.getBoundingClientRect();}
