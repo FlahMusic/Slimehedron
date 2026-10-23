@@ -74,7 +74,9 @@ for(const w of ['XMLHttpRequest','sendBeacon','getUserMedia']){
 // ---- 3. accessibility.html prints real numbers ----
 {
   const idx=R('index.html');
-  const rm=(idx.match(/prefers-reduced-motion/g)||[]).length;
+  // the page says 'in the STYLESHEET', so count the stylesheet's @media rules - not the JS that also reads the
+  // setting (matchMedia) or a comment that mentions it, which made this cry wolf
+  const rm=(idx.match(/@media\s*\(prefers-reduced-motion/g)||[]).length;
   const claimed=/respected<\/strong> in (\d+) places/.exec(a11y);
   ok(!!claimed,'accessibility.html states a reduced-motion count');
   if(claimed)ok(+claimed[1]===rm,'and it is the real count ('+(claimed?claimed[1]:'?')+' claimed, '+rm+' in the stylesheet)');

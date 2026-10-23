@@ -1,0 +1,229 @@
+SLIMEHEDRON — REVIEW BRIEF FOR AN OUTSIDE AI
+Written 2026-10-22 by the Claude session that built the current 3D tank, for Flah (the owner).
+You are getting a COPY of the project folder. Nothing you change touches the real repo, so edit freely.
+
+================================================================
+0. WHAT WE WANT FROM YOU (read this first)
+================================================================
+
+We want a second, stronger pair of eyes on the 3D tank. It works, it is tested, and it is live —
+but we know it can look and feel better, and we would rather you find what we missed than
+re-explain what we already did. Specifically:
+
+  1. FIND PROBLEMS. Bugs, wrong maths, wasted work, anything that will look or run badly on a real
+     phone. Rank them by how much a kid would notice.
+  2. IMPROVE THE FOUR THINGS IN SECTION 3, in priority order. Make the changes directly in this copy.
+  3. EXPLAIN HOW EACH CHANGE FITS. For every change: what it fixes, which function(s) it touches,
+     anything else in the app it affects, how to verify it, and how to roll it back. Write this so
+     it can be merged into the real repo one change at a time.
+
+Write your notes as you go into  _docs/REVIEW-NOTES.md  (top section = ranked findings, then one
+section per change). If your session ends early, the notes should still be useful. Do not save
+the best for last.
+
+You probably have a limited session. Spend it on judgement, not on reading everything:
+  - index.html is ~767 KB / 8.8k lines. Search it; do not read it top to bottom.
+  - Never open vendor/three-slime.js (a 580 KB minified three.js r186 bundle). Its exports are listed
+    in _dev/three-build/entry.js.
+  - learn2.js (the lessons) is out of scope.
+
+================================================================
+1. WHAT SLIMEHEDRON IS
+================================================================
+
+A free, GPL-3.0-or-later, browser-based music toy and children's music-theory app. Balls bounce in a
+"tank" (a shape); every wall/face is a note; splashes of "goo" (slime) build up, change the sound,
+and eventually burst the tank, which reforms as a new shape. A band (drums, bass, chords, melody)
+follows along. Live: https://flahmusic.github.io/Slimehedron  (GitHub Pages, no build step).
+
+Hard constraints — please do not break these:
+  - 100% synthesized Web Audio. Zero external requests at runtime (no CDNs, no fonts, no analytics).
+    Offline-capable via sw.js. Any new asset must be local and added to sw.js FILES, and the cache
+    name in sw.js bumped.
+  - No new dependencies or build tools without asking. three.js is vendored locally (MIT, r186) and
+    only loaded (dynamic import) when the 3D view is on.
+  - The 2D tank (the original) must keep working and stay visually unchanged. 3D is the default; 2D
+    is one tap away. Lessons (learn mode) always use the flat tank.
+  - NEVER change the hand-drawn background art (crayon clouds/grass) and never tint or darken it.
+    Lilac is for interface elements only.
+  - UI text: short, plain, concrete. No flavour text. It is for children.
+  - Audience includes cheap phones. If a feature needs a modern GPU that is acceptable, but there must
+    always be a working fallback (see "fallback chain" below).
+  - Never change a design just to make a test pass. Fix the thing, then fix the test.
+
+================================================================
+2. HOW THE 3D TANK WORKS (so you don't have to reverse-engineer it)
+================================================================
+
+Files:
+  index.html        the whole app (UI, audio, physics, the 2D and canvas-3D drawing)
+  tank3d.js         the GPU renderer (three.js). READS the app's globals each frame; moves nothing.
+  vendor/three-slime.js  tree-shaken three.js r186 bundle (exports listed in _dev/three-build/entry.js)
+  sw.js             service worker (cache list + version)
+  _dev/             ~70 Playwright test suites (not published; Jekyll skips underscore folders)
+  _docs/SLIMEHEDRON-HANDOFF.txt   the full project handoff, including past traps (worth a skim)
+
+Search anchors in index.html (block comments in CAPS introduce each system):
+  "REAL SOLIDS"                 solids as plane sets {n,d}; cut/puff/flip "grow" ops; morphing
+  "THREE SPACES"                normal / portal (opposite walls glued) / curved (hyperbolic: Poincaré
+                                disk in 2D, Klein->Poincaré ball for solids)
+  "THE THIRD DIMENSION"         in step(): balls have depth z (0 = front glass, 1 = back)
+  "THE GOO IN 3D: A LAVA LAMP"  gooStep3D, gooContain3D, relax3D, gooWake, gooAt3, lavaTick, partCap,
+                                tankVolume
+  "BOUNCES LAND ON THE BEAT"    beatLock, hitTicks, qWait, gridAhead (quantize without the lag)
+  "TWO VIEWS OF ONE TANK"       the canvas-drawn 3D fallback: draw3D, drawSolidCanvas, drawGoo3D
+  "THE 3D TANK ON THE GRAPHICS CARD"   glEnsure / glFrame: when tank3d.js draws instead
+  function step(), simTick(), update(), fillPhysics(), trigger(), playSynth()
+
+Coordinates: physics runs in px. x right, y DOWN, z is depth 0..1 (BOXD = R*1.2 px deep, R = 300).
+The GPU camera is built to match the canvas projection P3() exactly (fov = 2·atan((H/2)/CAM),
+camera at z = CAM); the box group's matrix is S·[M|t] with S = diag(1,-1,-1). Taps are un-projected
+with screenToBox(). Keep that contract or taps stop landing where fingers are.
+
+Fixed timestep: 60 physics ticks per real second (FIXED = 1000/60), render interpolates with _alpha.
+_tickT is the moment the current tick stands for (a slow frame runs several ticks).
+
+Fallback chain (GPU -> canvas): no WebGL, ?gl=0, failed import, lost context, a lesson, PIX mode, or
+the GPU too slow even after LITE (4 slow windows). LITE is a silent auto-thinning mode (fewer goo
+drops, coarser goo mesh, no backdrop blur). There is no "performance mode" name in the UI any more.
+
+The goo, in one paragraph: in 3D the goo is a particle volume (each drop has x,y,z). Drops are held
+GOO_IN (10px) + radius inside the real glass: a solid's planes, a prism's walls and its two panes,
+Klein planes for curved solids. They gather into 1–3 "hearts" that drift on slow cycles (LAVA). Each
+beat (beatNow(), read from the audio clock minus output latency) stretches each heart along a random
+axis, squeezes it across, then a spring pulls it back — harder on the downbeat and the fuller the
+tank. Balls shove the goo (gooWake); the goo slows balls (drag) and softens their notes; gooAt(x,y,z)
+is depth-aware. The goo budget (partCap) is by volume: the same share of every shape's inside.
+On the GPU: marching cubes (three's MarchingCubes addon) over binned drops, with the field FITTED to
+the goo each update (snapped to whole cells), lumps near glass drawn smaller, and the skin CLIPPED to
+the glass with material.clippingPlanes (duck-typed {normal, constant} because the bundle exports no
+Plane/Matrix3). Clipped insides are painted a flat goo colour so a cut reads as goo pressed on glass.
+
+The look today: pastel glass (each wall/face its note's pastel, edges a deeper shade, a strike floods
+full colour), fresnel alpha via onBeforeCompile, RoomEnvironment reflections built in code, light fog,
+no additive glows (they made white rings on the pale page). Trails are normal-blended dots.
+Trap we hit: three.js caches shader programs by onBeforeCompile SOURCE TEXT, so our fresnel() helper
+sets customProgramCacheKey — keep doing that for any onBeforeCompile you add.
+
+================================================================
+3. WHERE WE ARE STRUGGLING (priority order) + OUR FIRST IDEAS
+================================================================
+
+Take our ideas as starting points, not instructions. If you think one is wrong, say so and why.
+
+--- 3.1  THE GOO DOES NOT YET LOOK OR MOVE LIKE A REAL LAVA LAMP / FLUBBER ---
+What the owner wants (his words, roughly): "lava-lamp quality", "fluctuate like flubber, all sorts of
+weird shapes, ever-changing", "pulsate with the beat while it builds up in the middle", "never glitch
+through the geometry", "no white glowy film". Today it is a decent lumpy blob that stretches on the
+beat. It can still read as a cluster of bumps, its colours can go speckled, and on a coarse mesh
+(LITE) small blobs look faceted.
+Our ideas:
+  a) Replace CPU marching cubes with a GPU ray-marched signed-distance field: hearts and binned lumps
+     as smooth-union metaballs (smooth-min), sampled in a fragment shader on a bounding proxy
+     (sphere or box) per heart. Clip to the glass planes IN the shader (exact, no cut caps needed),
+     shade like wax: soft diffuse, colour-tinted rim, faked subsurface glow by thickness. Needs care on
+     phones: cap march steps, half-res render target + upscale, early-out outside the proxy.
+  b) Or keep marching cubes but smooth harder: per-heart Gaussian splat into the field instead of
+     binned balls, higher iso falloff, normal smoothing; move the field build off the main thread
+     (Worker + transferable Float32Array).
+  c) Motion: our particle "springs to a heart + beat stretch" model works but the shapes are similar
+     beat to beat. Options: shape-matching soft bodies per heart (cheap, very controllable flubber),
+     a few low-frequency noise modes driving the heart surface, or blobs that genuinely split and
+     re-merge (lava lamp) instead of drifting hearts.
+Constraint: the physics side (gooAt, drag on balls, containment, burst) must keep working on the
+canvas fallback too, so the SIMULATION should stay in index.html; only the LOOK can be GPU-only.
+
+--- 3.2  THE 3D TANK SHOULD FEEL MORE CONVINCINGLY 3D AND "MAGICAL" ---
+The owner has rejected, in order: flat stacked-looking shapes, cheesy rainbow colours, near-white
+pearl glass. Pastel faces with deeper-shade edges is the current answer and he accepted it. What is
+still missing is depth and polish: glass that reads as thick glass, contact/occlusion where balls and
+goo meet the walls, light that makes the solid feel like an object on a table.
+Our ideas: cheap thickness cue on edges (inner bevel lines or a second inset rim), screen-space-free
+fake refraction (offset the goo/balls seen through a face by its normal — probably too costly),
+baked ambient occlusion on rims, a soft drop shadow under the whole tank on the page, a subtle
+iridescence only on strike. Do not add bloom/post-processing passes unless you can show they are
+cheap on a mid phone; we removed the composer from the bundle on purpose.
+
+--- 3.3  PERFORMANCE ON REAL PHONES IS UNMEASURED ---
+All our numbers come from headless Chromium with SwiftShader (software WebGL) on a 2-core cloud box,
+which is useless for GPU timing. We need a sober review of what is likely too expensive on a
+mid/low Android or older iPhone: marching cubes every 2nd frame (up to 520 lumps, 40³ grid),
+up to 62 clip planes in the goo fragment shader, MeshPhysicalMaterial with clearcoat + iridescence on
+every face (drawn twice: inside then outside), relax3D (spatial hash, 27-cell neighbourhood,
+up to ~1600 drops, two passes per tick), hitTicks walking each ball's flight every other tick.
+Please suggest a quality ladder (what to drop first) and, if possible, a tiny in-app probe that
+measures real GPU frame time (e.g. EXT_disjoint_timer_query where available, else rAF deltas) so
+LITE/fallback decisions use real data.
+
+--- 3.4  TIMING: "BOUNCES LAND ON THE BEAT" ---
+Quantize used to hold a ball's note to the next grid line (up to 375 ms after you SAW the hit). Now
+each ball steers its speed by up to ~20% so its next hit lands on a grid line, and a note never waits
+more than 45 ms (qWait). Measured: 100% of notes within 45 ms of the visible hit, ~80–95% within
+45 ms of the grid. Not steered: curved spaces (hyperbolic paths), balls in goo (deliberately), and
+double hits in corners. Ideas we did not try: steering by gently bending the path instead of only
+speed; predicting two bounces ahead; extending it to curved spaces (geodesics are cosh/sinh — hitTicks
+could solve them analytically). Only touch this if you see a clear win; it is working.
+
+Out of scope for this review: the lessons (learn2.js), the band/harmony engine, and the separate
+VST/CLAP plugin port in vst/ (Rust). If you notice something alarming there, one line in your notes
+is enough.
+
+================================================================
+4. HOW TO RUN AND TEST
+================================================================
+
+Serve the folder root (the app is plain files):
+    python3 -m http.server 8765
+Then open http://127.0.0.1:8765/index.html  (?view=3d or ?view=2d, ?space=normal|portal|curved,
+?gl=0 forces the canvas fallback, ?m=play or ?m=studio skips the menu).
+
+Test suites (Node + Playwright + Chromium):
+    node _dev/dev-goo3d.js        the goo: containment in 7 shape/space combos, beat stretch, wander,
+                                  depth, wake, burst, share-of-volume, 2D untouched
+    SLIME_GL=1 node _dev/dev-gl.js     the GPU renderer: camera match, no white rings, pastel at rest,
+                                  strike colour, goo clipped, solid faces, fallbacks
+    node _dev/dev-solid.js        solids: faces flat/closed, mirror bounces, grow morph, portal, curved
+    node _dev/dev-beatlock.js     sight/sound sync and on-grid rate (real time, ~70 s)
+    node _dev/dev-space.js, dev-3d.js, dev-potato.js (relative cost 2D vs 3D), dev-loadtest.js
+_dev/browser.js is the shared launcher: by default it disables WebGL (window.__noGL) because
+software GL is ~240 ms/frame; SLIME_GL=1 turns the GPU path on; SLIME_VIEW=2d|3d forces a view.
+Run Playwright suites one at a time (they share one Chromium and each kills stray ones).
+
+House rule for tests: a test that proves a feature RUNS is not a test that it WORKS. Every check we
+have was "sabotage-tested" — we broke the feature on purpose and confirmed the check fails. If you
+add a check, do the same and say how you sabotaged it.
+
+Current state (bug sweep 2026-10-22, on exactly the files you have):
+All 69 suites were run one at a time. Everything passes except two known items:
+    - dev-topbar [studio/phone-sm]: the studio strip and the floating chord button overlap the tank
+      CANVAS's empty top corner. In normal space the shape itself never reaches them (it stays inside
+      radius R of the centre). In curved space the hyperbolic horizon (radius 1.18·R) reaches under
+      them. We did not want to shove the tank down on small phones (its bottom then hides under the
+      play button). A better small-phone studio layout is welcome.
+    - dev-potato "curved costs at most a third more than normal 3D": this rule is noise-limited
+      on our test box (single-digit ms medians). The 3D canvas path is now CHEAPER than 2D on every
+      throttle level.
+  Also done in this sweep: a 150 s GPU play session cycling 11 shapes, all three spaces and 12 bursts
+  with no page errors and no broken balls. Fixed before handing over: a missing favicon (a 404 on
+  every load), the studio strip covering the tank top on tablets, the canvas-3D goo upscaling the
+  whole canvas every frame (about 3x cheaper now, and LITE is cheaper again), a 3x containment pass
+  in curved space that ran even when nothing moved, and a test that counted JS mentions of
+  prefers-reduced-motion as stylesheet rules.
+
+================================================================
+5. HOW WE WANT CHANGES DELIVERED
+================================================================
+
+  - Edit the files in this copy directly. Keep changes small and separable: one concern per change,
+    so each can be merged and tested on its own. Match the existing style (dense one-line JS with a
+    plain-English comment saying WHY, block comments in CAPS for new systems).
+  - In _docs/REVIEW-NOTES.md, for every change: the problem (what a kid would see), the fix, the
+    functions/lines touched, side effects on other systems (2D view, canvas fallback, lessons, LITE,
+    curved/portal spaces, tests), how you verified it, and how to undo it.
+  - Where you recommend something you did NOT implement, explain it well enough that we can: the
+    approach, the key maths or shader code, where it plugs in, the cost, and the risks.
+  - Flag uncertainty plainly. "I believe X but did not measure it" is far more useful to us than
+    confidence.
+  - If something in this brief is wrong, tell us.
+
+Thank you. The goal is a free toy that makes kids feel they have something genuinely magical.
