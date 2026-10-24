@@ -2281,7 +2281,7 @@ function echoGame(){
 // ================================================================================================
 const FREE_PLAY=new Set(['make','rjam','jam','jammaj','jammin','compose']);
 const GAME_AT={echo:'notes',updown:'steps',findhome:'home',review:'pulse'};   // which lesson each game / review hangs off
-const MAP_ART=new Set([]);   // ids with a drawn picture in art/ (e.g. 'l_pulse', 'map_stone', 'map_hop1')
+const MAP_ART=new Set([]);   // ids with a drawn picture in art/ (e.g. 'l_pulse', 'map_stone', 'map_walk')
 const artSrc=id=>MAP_ART.has(id)?'art/'+id+'.png':null;
 let _mapAt=null;              // the stone the slime stood on the last time the map was drawn
 function mapLayout(){
@@ -2347,7 +2347,7 @@ function home(){
     for(const id of (L.kids[u.id]||[])){const b=byId(id);if(b&&L.bpos[id])stones+=stone(b,L.bpos[id],0,true);}});
   const NP=L.pos[nextUp];
   const MO=(window.innerWidth||400)>820?36:27;   // the slime stands ON the stone: feet a little way into the top of the disc
-  const hop=artSrc('map_hop2')||'slimelogo.png';
+  const hop=artSrc('map_walk')||'slimelogo.png';
   const mascot='<img class="lmMascot" id="lmMascot" src="'+hop+'" alt="" draggable="false" style="left:'+NP.x.toFixed(2)+'%;top:'+(NP.y-MO).toFixed(0)+'px">';
   let h='<div class="uHead">'+
     '<img class="uHeadArt" src="slimelogo.png" alt="" draggable="false">'+
