@@ -447,7 +447,7 @@ let _render=null, _cleanup=null;
 let _lastTitle='';
 function stage(html){
   if(!ov)return;
-  ov.classList.remove('lab');ov.classList.add('stage');
+  ov.classList.remove('lab','lmOn');document.body.classList.remove('lm-map');ov.classList.add('stage');
   document.body.classList.add('lab-on','lab-stage');
   ov.innerHTML='<div class="lgStage">'+html+'</div>';
   // Several lessons share an instruction line ("Tap the note you hear."), and the speech dedupe
@@ -463,6 +463,7 @@ function stageOff(){
 function sheet(html){ // the old full-screen card, for menus
   if(!ov)return;
   stageOff();
+  ov.classList.remove('lmOn');document.body.classList.remove('lm-map');
   ov.classList.remove('lab');document.body.classList.remove('lab-on');
   ov.innerHTML='<div class="lCard">'+html+'</div>';
 }
@@ -2267,62 +2268,113 @@ function echoGame(){
 }
 
 // ---------------------------------------------------------------- home screen (3 tiers)
+// ================================================================================================
+//  THE LESSONS MAP. A world you walk across instead of a list you read.
+//  The taught lessons are stepping stones on one winding path of dots; the dots you have walked are
+//  coloured in, the ones ahead are faint. The slime stands on the next lesson and, when you come back
+//  from finishing one, hops along the dots to the next stone. PRACTICE IS A SIDE PATH: the units with no
+//  right or wrong answer (make a loop, the jams, compose) and the three games sit at the end of short
+//  branches off the lesson they belong to, a playground beside the road, never a gate on it.
+//  Nothing is locked (the app's no-fail rule): the path shows an order, it never enforces one.
+//  ART: a picture for a stone or the mascot is used when its file is listed in MAP_ART (Flah draws them;
+//  see _docs/ART-BRIEF.md). Until then the stone shows its number and the mascot is slimelogo.png.
+// ================================================================================================
+const FREE_PLAY=new Set(['make','rjam','jam','jammaj','jammin','compose']);
+const GAME_AT={echo:'notes',updown:'steps',findhome:'home',review:'pulse'};   // which lesson each game / review hangs off
+const MAP_ART=new Set([]);   // ids with a drawn picture in art/ (e.g. 'l_pulse', 'map_stone', 'map_hop1')
+const artSrc=id=>MAP_ART.has(id)?'art/'+id+'.png':null;
+let _mapAt=null;              // the stone the slime stood on the last time the map was drawn
+function mapLayout(){
+  const main=UNITS.filter(u=>u.tier==='lesson'&&!FREE_PLAY.has(u.id));
+  const parentOf={};let last=null;
+  for(const u of UNITS){if(u.tier==='lesson'&&!FREE_PLAY.has(u.id))last=u.id;else if(FREE_PLAY.has(u.id))parentOf[u.id]=last;}
+  for(const g in GAME_AT)parentOf[g]=GAME_AT[g];
+  const big=(window.innerWidth||400)>820,STEP=big?192:162,TOP=40,A=24,K=0.85,GAP=big?78:70;
+  // each new block of lessons opens with its sign on a row of its own, like a new world on the map
+  const ys=[];let yy=TOP;main.forEach((u,i)=>{if(i&&(u.block||'a')!==(main[i-1].block||'a'))yy+=GAP;ys.push(yy);yy+=STEP;});
+  const X=f=>50+A*Math.sin(f*K),Y=f=>{const i=Math.min(Math.floor(f),ys.length-1),j=Math.min(i+1,ys.length-1);return ys[i]+(ys[j]-ys[i])*(f-i);};
+  const pos={};main.forEach((u,i)=>{pos[u.id]={x:X(i),y:Y(i),i};});
+  const kids={};for(const id in parentOf)(kids[parentOf[id]]=kids[parentOf[id]]||[]).push(id);
+  const bpos={};
+  // A SIDE PATH GOES SIDEWAYS, on the stone's own row: the main path has only one place at any height, so a
+  // playground straight across from its lesson can never sit on the road. It goes to whichever side has room;
+  // a second playground on the same lesson sits under the first.
+  const DX=32;
+  for(const pid in kids){const P=pos[pid];if(!P)continue;
+    const side=P.x>=50?-1:1,bx=Math.max(14,Math.min(86,P.x+side*DX));
+    kids[pid].forEach((id,k)=>{bpos[id]={x:bx,y:P.y+k*(big?112:98),parent:pid};});}
+  return {main,pos,bpos,kids,STEP,GAP,X,Y,H:ys[ys.length-1]+STEP*0.9};
+}
 function home(){
   stopAll();if(_cleanup){_cleanup();_cleanup=null;}
   stageOff();
   document.body.classList.remove('lab-nokeys');
   try{LAB.give();}catch(e){}
-  const lessons=UNITS.filter(u=>u.tier!=='practice');
-  // the counter counts LESSONS. It used to include the three games, so the header read "0 of 11" while
-  // the numbered list went 1..8 - two different totals for the same thing on the same screen.
-  const numbered=UNITS.filter(u=>u.tier==='lesson');
-  const total=numbered.length,done=numbered.filter(u=>got(u.id)).length;
-  // WHERE DO I START? Duolingo marks the next node on its path; Simply Piano hard-locks everything after
-  // the current lesson. Locking fights this app's no-fail-state rule, so the sequence is SHOWN, not
-  // enforced: the first lesson not yet finished wears a "start here" flag, every other door stays open.
-  // "start here" follows MASTERY, so a lesson you half-finished is still the one waiting for you
-  const nextUp=(UNITS.find(u=>u.tier==='lesson'&&!got(u.id))||{}).id;
+  const L=mapLayout(),main=L.main;
+  const total=main.length,done=main.filter(u=>got(u.id)).length;
   const readyToReview=due().length;
-  // LESSONS ARE NUMBERED. A two-column grid of eight cards has no reading order a child (or a parent)
-  // can guess - "start here" told you where to begin and nothing told you what came next. The number
-  // IS the order, and it replaces the grey line glyph that used to sit in this corner: that glyph was
-  // flat vector clipart in an app drawn entirely in crayon, and none of the eight meant anything.
-  const lessonNo={};lessons.filter(u=>u.tier==='lesson').forEach((u,i)=>{lessonNo[u.id]=i+1;});
-  const card=(u)=>{
-    const done=got(u.id), next=(u.id===nextUp&&!readyToReview)||(u.tier==='practice'&&readyToReview>0);
-    const no=lessonNo[u.id];
-    return '<button class="uCard'+(done?' got':'')+(next?' nextUp':'')+'" data-a2="unit" data-u="'+u.id+'" '+
-      'style="--ut:'+u.tint+'" aria-label="'+(no?no+'. ':'')+t(u.title)+(next?' \u2014 '+t('startHere'):'')+'">'+
-      '<span class="uTxt"><b>'+(no?'<em class="uNum">'+no+'</em>':'')+t(u.title)+'</b><i>'+t(u.sub)+'</i></span>'+
-      (done?'<span class="uDone" aria-hidden="true">\u2713</span>'
-           :(next?'<span class="uNext">'+t(u.tier==='practice'?'revReady':'startHere')+'</span>':''))+
-      '</button>';
-  };
+  // the next lesson is the first taught one not yet learned. Side paths never hold the slime up.
+  const nextUp=(main.find(u=>!got(u.id))||main[main.length-1]).id;
+  const nextIdx=L.pos[nextUp].i;
+  const byId=id=>UNITS.find(u=>u.id===id);
+  const tintOf=id=>{const u=byId(id);return u?u.tint:'#c4a9f5';};
+  const stone=(u,P,n,branch)=>{
+    const isDone=got(u.id),isNext=(!branch&&u.id===nextUp&&!readyToReview)||(u.id==='review'&&readyToReview>0);
+    const art=artSrc('l_'+u.id);
+    return '<button class="uCard lmStone'+(branch?' lmSide':'')+(isDone?' got':'')+(isNext?' nextUp':'')+'" data-a2="unit" data-u="'+u.id+'" '+
+      'style="left:'+P.x.toFixed(2)+'%;top:'+P.y.toFixed(0)+'px;--ut:'+u.tint+'" '+
+      'aria-label="'+(n?n+'. ':'')+t(u.title)+(branch?' — '+t('tierPractice'):'')+(isNext?' — '+t(u.id==='review'?'revReady':'startHere'):'')+'">'+
+      '<span class="lmDisc">'+(art?'<img class="lmArt" src="'+art+'" alt="" draggable="false">':'')+
+        (n?'<em class="lmNum">'+n+'</em>':'<em class="lmPlay" aria-hidden="true"></em>')+'</span>'+
+      '<span class="lmCap">'+t(u.title)+'</span>'+
+      (isDone?'<span class="uDone" aria-hidden="true">✓</span>':(isNext?'<span class="uNext">'+t(u.id==='review'?'revReady':'startHere')+'</span>':''))+
+      '</button>';};
+  let dots='',stones='',signs='';
+  // the path: dots along the same curve the stones sit on, walked ones coloured in
+  for(let i=0;i<main.length-1;i++){const walked=i<nextIdx,col=main[i].tint;
+    for(let k=1;k<7;k++){const f=i+k/7;
+      dots+='<i class="lmDot'+(walked?' on':'')+'" style="left:'+L.X(f).toFixed(2)+'%;top:'+L.Y(f).toFixed(0)+'px;--dc:'+col+'"></i>';}}
+  // side paths: three small dots from the lesson out to its playground
+  for(const id in L.bpos){const B=L.bpos[id],P=L.pos[B.parent];
+    for(let k=1;k<4;k++){const f=k/4;dots+='<i class="lmDot lmSm'+(got(id)?' on':'')+'" style="left:'+(P.x+(B.x-P.x)*f).toFixed(2)+'%;top:'+(P.y+(B.y-P.y)*f).toFixed(0)+'px;--dc:'+tintOf(id)+'"></i>';}}
+  // every lesson's stone, each followed by its own side paths (so the tab order walks the map)
+  const BLOCKS={a:'blockA',b:'blockB',c:'blockC',d:'blockD',e:'blockE'};let lastBlock='';
+  main.forEach((u,i)=>{const P=L.pos[u.id];
+    const bk=u.block||'a';if(bk!==lastBlock){lastBlock=bk;
+      const sy=i?P.y-L.STEP*0.38-L.GAP*0.35:P.y-58,sx=i?50:(P.x>50?24:76);
+      signs+='<span class="lmSign" style="left:'+sx+'%;top:'+sy.toFixed(0)+'px">'+t(BLOCKS[bk])+'</span>';}
+    stones+=stone(u,P,i+1,false);
+    for(const id of (L.kids[u.id]||[])){const b=byId(id);if(b&&L.bpos[id])stones+=stone(b,L.bpos[id],0,true);}});
+  const NP=L.pos[nextUp];
+  const MO=(window.innerWidth||400)>820?36:27;   // the slime stands ON the stone: feet a little way into the top of the disc
+  const hop=artSrc('map_hop2')||'slimelogo.png';
+  const mascot='<img class="lmMascot" id="lmMascot" src="'+hop+'" alt="" draggable="false" style="left:'+NP.x.toFixed(2)+'%;top:'+(NP.y-MO).toFixed(0)+'px">';
   let h='<div class="uHead">'+
     '<img class="uHeadArt" src="slimelogo.png" alt="" draggable="false">'+
-    '<span><b>'+t('tierLessons')+'</b><i>'+t('progressOf',{done:done,total:total})+'</i></span></div>';
-  // the three section subtitles are gone: they explained spaced repetition and the word "practice" to
-  // a child who cannot read them and does not need them. The heading is the whole label.
-  // Twenty-three numbered cards in one list is a wall. They are dealt into four named blocks instead --
-  // first notes, more notes, minor keys, modes -- with the NUMBERING running straight through, so the
-  // blocks say roughly how hard and the numbers still say exactly what order. Nothing is locked: the
-  // sequence is shown, never enforced.
-  const BLOCKS=[['a','blockA'],['b','blockB'],['c','blockC'],['d','blockD'],['e','blockE']];
-  // no "LESSONS" heading above "FIRST NOTES" - two headings stacked saying the same thing
-  for(const [bk,lbl] of BLOCKS){
-    const inBlock=UNITS.filter(x=>x.tier==='lesson'&&(x.block||'a')===bk);
-    if(!inBlock.length)continue;
-    h+='<div class="uSec"><span class="uSecT">'+t(lbl)+'</span></div><div class="uGrid">'+inBlock.map(card).join('')+'</div>';
-  }
-  for(const [tier,tk] of [['practice','tierPractice'],['game','tierGames']]){
-    h+='<div class="uSec"><span class="uSecT">'+t(tk)+'</span></div>'+
-       '<div class="uGrid">'+UNITS.filter(x=>x.tier===tier).map(card).join('')+'</div>';
-  }
+    '<span><b>'+t('tierLessons')+'</b><i>'+t('progressOf',{done:done,total:total})+'</i></span></div>'+
+    '<div class="lmMap" id="lmMap" style="height:'+Math.round(L.H)+'px">'+dots+signs+stones+mascot+'</div>';
   h+='<div class="labChips" style="justify-content:center">'+
        '<button class="labChip'+(voiceOn?' on':'')+'" data-a2="voice">'+SPK+' '+t(voiceOn?'voiceOn':'voiceOff')+'</button></div>';
   h+='<p class="uFoot">'+t('noRush')+'</p>';
-  sheet(h);
+  sheet(h);if(ov)ov.classList.add('lmOn');document.body.classList.add('lm-map');
   _render=home;
+  // THE SLIME WALKS. Back from a lesson with a new stone to stand on: it hops along the dots to get there.
+  const from=_mapAt&&L.pos[_mapAt]?L.pos[_mapAt]:null;_mapAt=nextUp;
+  const card=ov&&ov.querySelector('.lCard'),m=document.getElementById('lmMascot'),map=document.getElementById('lmMap');
+  const center=(y)=>{if(card&&map)card.scrollTop=Math.max(0,map.offsetTop+y-card.clientHeight*0.45);};
+  let reduce=false;try{reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
+  if(!m||!map)return;
+  if(!from||from.i>=NP.i||reduce){center(NP.y);return;}
+  const pts=[];for(let f=from.i;f<=NP.i+1e-6;f+=1/7)pts.push([L.X(f),L.Y(f)]);
+  m.style.left=pts[0][0]+'%';m.style.top=(pts[0][1]-MO)+'px';center(pts[0][1]);
+  const HOP=Math.max(45,Math.min(110,1500/pts.length));let k=0,t0=0;
+  function step(ts){if(!m.isConnected)return;if(!t0)t0=ts;const u=(ts-t0)/HOP;k=Math.floor(u);
+    if(k>=pts.length-1){m.style.left=NP.x+'%';m.style.top=(NP.y-MO)+'px';m.style.transform='';return;}
+    const a=pts[k],b=pts[k+1],f=u-k;
+    m.style.left=(a[0]+(b[0]-a[0])*f)+'%';m.style.top=(a[1]+(b[1]-a[1])*f-MO)+'px';
+    m.style.transform='translate(-50%,calc(-100% - '+(Math.sin(f*Math.PI)*16).toFixed(1)+'px))';
+    center(a[1]+(b[1]-a[1])*f);requestAnimationFrame(step);}
+  requestAnimationFrame(step);
 }
 
 // ---------------------------------------------------------------- events
@@ -2354,7 +2406,7 @@ function enter(){
 }
 function exit(){ stopAll(); if(_cleanup){_cleanup();_cleanup=null;}
   try{LAB.give();}catch(e){}
-  if(ov){ov.hidden=true;ov.classList.remove('lab');}
+  if(ov){ov.hidden=true;ov.classList.remove('lab','lmOn');}document.body.classList.remove('lm-map');
   document.body.classList.remove('lab-on'); }
 // Map a played pitch onto the rung the lesson is asking about, then answer with it. Nearest degree
 // within a quarter-tone: a child reaching for "mi" who lands a cent off still meant mi. Outside the
@@ -2364,5 +2416,6 @@ function noteIn(cents){
   try{return !!_noteAnswer(cents);}catch(e){return false;}
 }
 return {enter,exit,home,setLang,t,LANG,UNITS,noteIn,_labels:wallLabels,
-        _MASTERY:MASTERY,_MIN_TRIES:MIN_TRIES,_due:due,_got:got,_acc:acc}; // read-only hooks for dev-curriculum.js
+        _MASTERY:MASTERY,_MIN_TRIES:MIN_TRIES,_due:due,_got:got,_acc:acc,
+        _reloadProgress:()=>{try{prog=JSON.parse(localStorage.getItem('slimehedron-learn2')||'{}');}catch(e){prog={};}}};   // test hook: progress written from outside // read-only hooks for dev-curriculum.js
 })();

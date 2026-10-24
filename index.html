@@ -632,6 +632,65 @@ header h1{margin-left:84px} /* the title steps aside for the back button */
 @supports not (background:color-mix(in srgb,red 50%,blue)){
   .uCard{background:var(--ut)}
 }
+/* ===== THE LESSONS MAP (learn2.js home()) =====
+   The crayon world behind it is the same picture as the rest of the app, with the same white veil as <body>:
+   never tinted. Stones are thick round tiles (they stand up off the ground), the path is dots, the slime
+   stands on the next lesson. Side paths are smaller, wobblier playground stones. */
+#learnOverlay.lmOn{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-mobile.webp) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);
+  -webkit-backdrop-filter:none;backdrop-filter:none;align-items:stretch}
+@media (min-width:821px){#learnOverlay.lmOn{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-desktop.webp) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}}
+#learnOverlay.lmOn .lCard{background:transparent;border:0;box-shadow:none;border-radius:0;width:min(100vw,760px);max-height:none;height:100%;
+  padding:0 14px 40px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+#learnOverlay.lmOn .uHead{position:sticky;top:0;z-index:6;margin:0 auto 6px;padding:10px 16px 10px 64px;width:fit-content;max-width:100%;
+  background:rgba(255,253,248,.88);border-radius:0 0 18px 18px;box-shadow:0 4px 14px rgba(90,70,140,.14)}
+.lmMap{position:relative;width:100%;margin:0 auto}
+/* the map is the whole screen and scrolls under the edges: the edge peekers would sit on its stones and signs */
+body.lm-map .slime.peeker,body.lm-map .mote{visibility:hidden}
+.lmDot{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:rgba(255,255,255,.8);
+  border:1.5px solid rgba(120,100,170,.32);pointer-events:none}
+.lmDot.on{background:var(--dc);border-color:color-mix(in srgb,var(--dc) 55%,#4a4170);box-shadow:0 1.5px 0 color-mix(in srgb,var(--dc) 50%,#4a4170)}
+.lmDot.lmSm{width:7px;height:7px;margin:-3.5px 0 0 -3.5px}
+.lmMap .uCard.lmStone{--dr:35px;position:absolute;transform:translate(-50%,calc(-1*var(--dr)));width:auto;min-height:0;padding:0;margin:0;background:none;box-shadow:none;border:0;
+  display:flex;flex-direction:column;align-items:center;gap:0;z-index:2;text-align:center;transition:transform .12s cubic-bezier(.2,.9,.3,1)}
+.lmMap .uCard.lmStone.lmSide{--dr:26px}
+.lmMap .uCard.lmStone:hover{transform:translate(-50%,calc(-1*var(--dr) - 3px));box-shadow:none}
+.lmMap .uCard.lmStone:active{transform:translate(-50%,calc(-1*var(--dr) + 3px))}
+.lmMap .uCard.lmStone:focus-visible{outline:none}
+.lmMap .uCard.lmStone:focus-visible .lmDisc{outline:3px solid var(--accent);outline-offset:4px}
+.lmDisc{position:relative;width:70px;height:70px;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 36% 30%,color-mix(in srgb,var(--ut) 30%,#fff) 0 22%,var(--ut) 64%,color-mix(in srgb,var(--ut) 78%,#4a4170));
+  border:3px solid color-mix(in srgb,var(--ut) 52%,#4a4170);box-shadow:0 7px 0 color-mix(in srgb,var(--ut) 48%,#4a4170),0 12px 14px rgba(70,50,120,.22);
+  filter:url(#lmCrayon)}
+.lmArt{position:absolute;inset:-6px;width:calc(100% + 12px);height:calc(100% + 12px);object-fit:contain}
+.lmNum{font:900 25px/1 system-ui,sans-serif;font-style:normal;color:#2f2a44;position:relative}
+.lmPlay{width:0;height:0;border-style:solid;border-width:9px 0 9px 15px;border-color:transparent transparent transparent #2f2a44;margin-left:4px;opacity:.75}
+.lmCap{margin-top:10px;font:800 12.5px/1.15 system-ui,sans-serif;color:#2f2a44;background:rgba(255,255,255,.85);padding:3px 9px;border-radius:10px;max-width:132px;
+  box-shadow:0 2px 6px rgba(70,50,120,.12)}
+.lmSide .lmDisc{width:52px;height:52px;border-radius:44% 56% 52% 48%/52% 44% 56% 48%;border-style:dashed;box-shadow:0 5px 0 color-mix(in srgb,var(--ut) 48%,#4a4170),0 8px 10px rgba(70,50,120,.18)}
+.lmSide .lmCap{font-size:11.5px;max-width:104px;margin-top:8px}
+@media (max-width:480px){.lmCap{max-width:108px;font-size:12px}.lmSide .lmCap{max-width:96px;font-size:11px}}
+.lmMap .uDone{position:absolute;top:-4px;right:calc(50% - 44px);left:auto;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;
+  background:#fff;color:#3a9b6e;font:900 13px/1 system-ui,sans-serif;box-shadow:0 2px 5px rgba(60,40,110,.25);z-index:3}
+.lmMap .lmSide .uDone{right:calc(50% - 34px)}
+.lmMap .uCard.got .lmDisc{filter:url(#lmCrayon) saturate(.9)}
+.lmMap .uNext{position:static;transform:none;margin-top:6px;white-space:nowrap;z-index:3}   /* in the flow, under the caption: inside the button's own box */
+.lmMap .uCard.nextUp{box-shadow:none}
+.lmMap .uCard.nextUp .lmDisc{animation:lmGlow 1.6s ease-in-out infinite}
+.lmMap .uCard.nextUp .lmCap{margin-top:12px}
+@keyframes lmGlow{0%,100%{box-shadow:0 7px 0 color-mix(in srgb,var(--ut) 48%,#4a4170),0 0 0 3px rgba(179,136,240,.0)}50%{box-shadow:0 7px 0 color-mix(in srgb,var(--ut) 48%,#4a4170),0 0 0 7px rgba(179,136,240,.45)}}
+.lmMascot{position:absolute;width:50px;height:50px;object-fit:contain;transform:translate(-50%,-100%);z-index:4;pointer-events:none;
+  filter:drop-shadow(0 5px 6px rgba(70,50,120,.28));animation:lmBob 1.8s ease-in-out infinite}
+@keyframes lmBob{0%,100%{translate:0 0}50%{translate:0 -5px}}
+.lmSign{position:absolute;z-index:3;translate:-50% -50%;font:800 10.5px/1 system-ui,sans-serif;letter-spacing:.11em;text-transform:uppercase;color:#6a4f2a;
+  background:#fff7e2;border:2px solid #d9b98a;border-radius:7px;padding:5px 10px;transform:rotate(-3deg);white-space:nowrap;box-shadow:0 3px 0 #d9b98a;filter:url(#lmCrayon)}
+@media (min-width:821px){#learnOverlay.lmOn .lCard{width:min(100vw,900px)}
+  .lmMap .uCard.lmStone{--dr:46px}.lmMap .uCard.lmStone.lmSide{--dr:34px}
+  .lmDisc{width:92px;height:92px;border-width:4px}.lmNum{font-size:32px}.lmCap{font-size:15px;max-width:170px;margin-top:12px}
+  .lmSide .lmDisc{width:68px;height:68px}.lmSide .lmCap{font-size:13.5px;max-width:140px}.lmMascot{width:62px;height:62px}
+  .lmDot{width:12px;height:12px;margin:-6px 0 0 -6px}.lmSign{font-size:12.5px;padding:7px 14px}
+  .lmMap .uDone{right:calc(50% - 56px);width:26px;height:26px}.lmMap .lmSide .uDone{right:calc(50% - 44px)}}
+@media (prefers-reduced-motion:reduce){.lmMascot,.lmMap .uCard.nextUp .lmDisc{animation:none}}
+@supports not (background:color-mix(in srgb,red 50%,blue)){.lmDisc{background:var(--ut);border-color:#7a6aa8;box-shadow:0 7px 0 #8a7ab8}.lmDot.on{background:var(--dc);border-color:#7a6aa8}}
 /* ===== LEARN KEYBED =====
    Replaces the "pitch ribbon" I proposed. A keyboard IS spatial pitch encoding -- left to right, low to
    high -- and unlike an invented ribbon it is the format every kids' music app already uses (Prodigies,
@@ -2076,10 +2135,12 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
 <main>
   <div id="stage">
     <canvas id="cv" width="720" height="720"></canvas>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><filter id="lmCrayon" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
     <div id="spaceChip">
       <button id="spaceBtn" aria-expanded="false" aria-controls="spaceMenu" aria-label="3D, space and shape" title="3D, space and shape"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 2.8 20.2 7.4v9.2L12 21.2 3.8 16.6V7.4z"/><path d="M3.8 7.4 12 12l8.2-4.6M12 12v9.2"/></svg><span id="spaceTxt" class="sr">3D</span></button>
       <div id="spaceMenu" role="group" aria-label="3D, space and shape" hidden>
         <div class="smRow"><span class="smLab">view</span><button data-view="3d" aria-pressed="false">3D</button><button data-view="2d" aria-pressed="false">2D</button></div>
+        <div class="smRow" id="lookRow" hidden><span class="smLab">look</span><button data-look="glass" aria-pressed="false" title="the tank as glass">glass</button><button data-look="crayon" aria-pressed="false" title="the tank drawn in crayon">crayon</button></div>
         <div class="smRow"><span class="smLab">space</span><button data-space="auto" aria-pressed="false">auto</button><button data-space="normal" aria-pressed="false">normal</button><button data-space="portal" aria-pressed="false">portal</button><button data-space="curved" aria-pressed="false">curved</button></div>
         <div class="smRow" id="growBar" hidden><span class="smLab">shape</span><button data-grow="cut" aria-label="cut the corners off">cut</button><button data-grow="puff" aria-label="puff out the faces">puff</button><button data-grow="flip" aria-label="swap the faces and the corners">flip</button></div>
         <p id="smNote"></p>
@@ -5767,11 +5828,17 @@ function drawBalls3D(){
 // from this site, so the first load is no heavier and nothing comes from anywhere else. No WebGL, a
 // failed load, a lost GPU context, a lesson, or ?gl=0: the canvas draws the 3D tank exactly as before.
 const GLV={api:null,loading:false,want:true};
+// HOW THE GPU TANK LOOKS: glass (the default) or crayon (drawn like the rest of the app). ?look=crayon, or the corner menu.
+const LOOK3D={v:'glass'};
+try{const q=new URLSearchParams(location.search).get('look');const sv=localStorage.getItem('slimehedron-look');
+  const w=q||sv;if(w==='crayon'||w==='glass')LOOK3D.v=w;}catch(e){}
+window.setLook3D=v=>{if(v!=='crayon'&&v!=='glass')return;LOOK3D.v=v;try{localStorage.setItem('slimehedron-look',v);}catch(e){}
+  if(GLV.api&&GLV.api.setLook)GLV.api.setLook(v);};
 try{if(new URLSearchParams(location.search).get('gl')==='0'||window.__noGL)GLV.want=false;}catch(e){}
 function glCan(){try{const c=document.createElement('canvas');return !!(c.getContext('webgl2')||c.getContext('webgl'));}catch(e){return false;}}
 function glEnsure(){if(GLV.api||GLV.loading||!GLV.want||!VIEW.d3)return;if(!glCan()){GLV.want=false;return;}
   GLV.loading=true;
-  import('./tank3d.js').then(m=>{GLV.api=m.start();GLV.loading=false;})
+  import('./tank3d.js').then(m=>{GLV.api=m.start();GLV.loading=false;try{GLV.api.setLook(LOOK3D.v);}catch(e){}})
     .catch(e=>{console.warn('3D renderer unavailable, the canvas draws the tank:',e&&e.message);GLV.want=false;GLV.loading=false;});}
 window.__glLost=()=>{GLV.want=false;if(GLV.api)GLV.api.show(false);GLV.api=null;};
 window.__gl=GLV;
@@ -6932,6 +6999,7 @@ window.growSolid=growSolid;
     const sp=edges?edges._space:'normal';
     txt.textContent=(VIEW.d3?'3D':'2D')+' \u00b7 '+(TSPACE.pick==='auto'&&sp==='normal'&&S.mode==='play'?'auto':sp);
     menu.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.view==='3d')===VIEW.d3)));
+    const lr=$("lookRow");if(lr){lr.hidden=!(VIEW.d3&&GLV.want);lr.querySelectorAll('[data-look]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.look===LOOK3D.v)));}   // the crayon look is drawn on the graphics card only
     const autoBtn=menu.querySelector('[data-space="auto"]');if(autoBtn)autoBtn.hidden=S.mode!=='play';
     menu.querySelectorAll('[data-space]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.space===TSPACE.pick)));
     const want=TSPACE.pick==='auto'?null:TSPACE.pick;
@@ -6963,6 +7031,7 @@ window.growSolid=growSolid;
   menu.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;e.stopPropagation();
     if(b.dataset.grow){growSolid(b.dataset.grow);paint();setTimeout(paint,1000);return;}
     if(b.dataset.view)window.setView3D(b.dataset.view==='3d');
+    if(b.dataset.look)window.setLook3D(b.dataset.look);
     if(b.dataset.space)window.setSpace(b.dataset.space);
     paint();});
   addEventListener('pointerdown',e=>{if(!menu.hidden&&!chip.contains(e.target))open(false);},true);

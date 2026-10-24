@@ -64,12 +64,14 @@ const URL='http://127.0.0.1:8765/index.html?m=studio';
  // ---------------------------------------------------------------- 2. LOUDNESS + CHANCE
  await p.evaluate(()=>{drumKit='pop';const k=editableKit();for(const v in k)k[v]=[];k.K=[0,16,32,48];k.h=[];for(let i=0;i<64;i++)k.h.push(i);
    KIT_BARS.pop=1;PAD.x=0.5;PAD.y=0.5;window._rebuildStepGrid();setBpm(200);
-   window.__hits=[];const d=dHit;window.__realHit=d;dHit=function(v,t,a,solid,inBar){window.__hits.push({v,a,inBar});return d.apply(this,arguments);};});
+   window.__hits=[];const d=dHit;window.__realHit=d;dHit=function(v,t,a,solid,inBar){window.__hits.push({v,a,inBar,t});return d.apply(this,arguments);};});
  const collect=async ms=>{await p.evaluate(()=>{window.__hits=[];});await p.waitForTimeout(ms);return p.evaluate(()=>window.__hits.slice());};
  const med=a=>{const s=a.slice().sort((x,y)=>x-y);return s[s.length>>1];};
  let h=await collect(5000);
  const kFull=med(h.filter(x=>x.v==='K'&&x.inBar===0).map(x=>x.a));
- const hatFull=h.filter(x=>x.v==='h'&&x.inBar<10).length,stepsFull=h.filter(x=>x.v==='K'&&x.inBar===0).length*10;
+ const inBars=h=>{const k=h.filter(x=>x.v==='K'&&x.inBar===0).map(x=>x.t).sort((a,b)=>a-b);if(k.length<2)return {bars:0,hats:0};
+   const hats=h.filter(x=>x.v==='h'&&x.inBar<10&&x.t>=k[0]-0.02&&x.t<k[k.length-1]-0.02).length;return {bars:k.length-1,hats};};   // whole bars only: the window edges used to cut a bar in half
+ const f100=inBars(h),hatFull=f100.hats,stepsFull=f100.bars*10;
  await p.click('.deMode button[data-mode="vel"]');
  for(let i=0;i<3;i++)await p.click('#stepGrid .sgCell[data-v="K"][data-i="0"]');
  const cell=await p.$eval('#stepGrid .sgCell[data-v="K"][data-i="0"]',el=>({vt:el.dataset.vt,w:parseFloat(getComputedStyle(el,'::after').width),lbl:el.getAttribute('aria-label')}));
@@ -84,9 +86,9 @@ const URL='http://127.0.0.1:8765/index.html?m=studio';
  const pc=await p.$eval('#stepGrid .sgCell[data-v="h"][data-i="5"]',el=>({pt:el.dataset.pt,maybe:el.classList.contains('maybe')}));
  ok(pc.pt==='50%'&&pc.maybe,'two taps in chance mode set a step to 50% and it is marked');
  h=await collect(9000);
- const bars=h.filter(x=>x.v==='K'&&x.inBar===0).length,hat=h.filter(x=>x.v==='h'&&x.inBar<10).length,rate=hat/(bars*10);
- ok(hatFull>=stepsFull*0.85,'at 100% chance every step plays ('+hatFull+'/'+stepsFull+')');
- ok(bars>=6&&rate>0.35&&rate<0.65,'at 50% chance about half the steps play ('+hat+' of '+bars*10+' = '+(rate*100).toFixed(0)+'%)');
+ const f50=inBars(h),bars=f50.bars,hat=f50.hats,rate=hat/Math.max(1,bars*10);
+ ok(stepsFull>=20&&hatFull===stepsFull,'at 100% chance every step plays ('+hatFull+'/'+stepsFull+')');
+ ok(bars>=5&&rate>0.35&&rate<0.65,'at 50% chance about half the steps play ('+hat+' of '+bars*10+' = '+(rate*100).toFixed(0)+'%)');
  await p.click('.deMode button[data-mode="on"]');
  await p.evaluate(()=>{dHit=window.__realHit;});
 

@@ -69,14 +69,14 @@ ok(bed<full*0.45,'and it stays a BED, not the loudest thing in the room ('+Math.
 // THE CONTROL. The speakers carry a live generative mix, so "is it silent" is the wrong question —
 // the tank keeps ticking along quietly whatever the mixer says. What must be proven is that the
 // thing just measured was DOMINATED by the chords, so mute the chord bus and demand the level
-// collapse. (Do NOT try this on melBus/drumBus/master: applyMix() rewrites those gains continuously
-// and an assignment to them is undone before the next measurement. padBus is not touched by it.)
-await p.evaluate(()=>{padBus.gain.value=0;});
+// collapse. Muted the way a person does it now: the studio mixer's chords mute. (A raw gain assignment no
+// longer holds: applyMix() owns every bus gain, padBus included, since the mixer arrived.)
+await p.evaluate(()=>{MIX.chords.m=true;applyMix();});
 await p.waitForTimeout(6000);                 // the chords feed a reverb whose tail runs for seconds
 const muted=await p.evaluate(async()=>await window.__pk(5000));
 ok(muted<bed*0.35,'muting the chord bus collapses the level — so that really was the chords ('+
   bed.toFixed(5)+' -> '+muted.toFixed(5)+', '+(bed/Math.max(1e-6,muted)).toFixed(1)+'x drop)');
-await p.evaluate(()=>{padBus.gain.value=1;});
+await p.evaluate(()=>{MIX.chords.m=false;applyMix();});
 
 // the bass/pad crossfader must no longer touch the chord level at all
 await p.evaluate(()=>{S.wM=0;S.wD=1;S.wK=0;applyMix();});
