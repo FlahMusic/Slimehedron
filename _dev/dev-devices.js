@@ -49,7 +49,9 @@ const SCREENS=[
   const p=await ctx.newPage();
   const errs=[];p.on('pageerror',e=>{if(!/ServiceWorker/i.test(e.message))errs.push(e.message)});
   await p.addInitScript(()=>{Object.defineProperty(window,'speechSynthesis',{configurable:true,
-    value:{speak:()=>{},cancel:()=>{},getVoices:()=>[]}});});
+    value:{speak:()=>{},cancel:()=>{},getVoices:()=>[]}});
+    // the first-visit hint boxes are a passing layer on top on purpose; dev-guide checks them. This suite measures the layout under them.
+    try{localStorage.setItem('slimehedron-coach','1');localStorage.setItem('slimehedron-coach-studio','1');}catch(e){}});
   console.log('\n--- '+s.n+'  '+s.w+'x'+s.h+' ---');
   for(const sc of SCREENS){
     await p.goto('http://127.0.0.1:8765/index.html'+sc.url);

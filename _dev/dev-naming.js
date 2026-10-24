@@ -15,14 +15,14 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
 const DAW_OK=new Set(['tempo','tap','time sig','key','scale','kit','grid','quantize','groove','swing',
   'shuffle','straight','backbeat','late','early','last step','revert','volume','delay','range','octave',
   'waveform','sine','triangle','saw','square','random','sub bass','clear','pause','play','record','chords',
-  'dotted notes','send midi out','internal synth','advanced','randomize','back','shape','spin','tri','sqr','rnd']);
+  'dotted notes','send midi out','internal synth','advanced','randomize','back','shape','spin','tri','sqr','rnd','step']);
 // Terms this app invents on purpose, because the thing itself is not a DAW thing.
 const OWN_WORDS=new Set(['auto-rain','rain rate','random shape','randomness','rebuild after (sec)','slime',
   'pop','rock','disco','bossa','jazz','learn','play','studio','share slimehedron','colour-blind mode']);
 // card HEADINGS name a group of controls rather than a parameter — all standard DAW section names,
 // plus "geometry", which is this app's own thing because no DAW has a tank to shape.
 const HEADINGS=new Set(['pattern','timing','groove — human feel','key & scale','geometry','instrument',
-  'mixer ⏻','mixer','sound','drums','band','advanced']);
+  'mixer ⏻','mixer','delay ⏻','song','sound','drums','band','advanced']);
 
 // ---- 0. ONE DEFINITION PER STRING. Static, and first, because it is the cheapest bug to ship and the
 // most expensive to notice: a second copy of a key later in the dictionary silently wins, so the app
