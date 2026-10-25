@@ -55,10 +55,15 @@ const SIZES=[['desktop',1440,900],['laptop',1180,760],['tablet',900,700],['phone
      const sb=document.getElementById('studioBar');
      if(vis(sb))chromeBot=Math.max(chromeBot,box(sb).b);
      // and nothing fixed in the top zone may sit ON the tank
+     // The TANK, not the canvas element: on a phone the canvas is a wide box with empty margins around the
+     // shape, and a button in that margin covers nothing. The tank can spin, so its room is the circle every
+     // corner sweeps (radius R around the centre); a control that touches that circle is on the tank.
+     const sc=cb.w/W,tx=cb.l+CX*sc,ty=cb.t+CY*sc,tr=R*sc;
      const overlapTank=[];
      for(const sel of ['#studioBar','#cofWheel','#hdrChord','#slimeBig','#chordBtn']){
        const e=document.querySelector(sel);if(!vis(e))continue;const k=box(e);
-       if(k.l<cb.r-2&&k.r>cb.l+2&&k.t<cb.b-2&&k.b>cb.t+2)overlapTank.push(sel);}
+       const nx=Math.max(k.l,Math.min(tx,k.r)),ny=Math.max(k.t,Math.min(ty,k.b));   // nearest point of the box to the centre
+       if(Math.hypot(nx-tx,ny-ty)<tr-2)overlapTank.push(sel);}
      // The tank is a SQUARE in a tall box, so on a phone it is width-limited and centres itself with
      // slack above and below. That is fine; what is NOT fine is chrome eating the top. So the test is
      // "is the tank centred in the room left under the chrome", not "is it glued to the bar".

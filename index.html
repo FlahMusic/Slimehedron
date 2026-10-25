@@ -304,6 +304,10 @@ header h1{flex-shrink:0}
    ball by tapping anywhere, and drums/band live in the mixer. keeps the transport tidy. */
 #dropBtn,#newShapeBtn,#drumBtn,#bandBtn{display:none!important}
 .mode-play #resetBtn,.mode-play header .adv{display:none}
+/* start fresh moved into Preferences (#freshBtn). On a desktop the old button keeps its room, unseen and untappable:
+   the transport row is centred, and taking 48px out of the studio header slid play, record and the slime switch
+   ~28px away from where they sit in play. */
+#resetBtn{visibility:hidden!important;pointer-events:none!important}
 /* circle of fifths now shows in play too — you asked for it big & visible everywhere */
 .mode-play #newShapeBtn{display:inline-flex}
 /* play-mode tempo: turtle=slow, rabbit=fast (the standard kids-music tempo metaphor), tucked under Clear top-right */
@@ -737,6 +741,11 @@ body.lab-on #playSide,body.lab-on #triMixBar,body.lab-on #autoRow,body.lab-on #k
 body.mode-learn:not(.lab-on) header{display:none}
 /* and in a lesson, the two buttons that would wipe the child's tank mid-question have no business there */
 body.mode-learn #clearBtn,body.mode-learn #resetBtn,body.mode-learn #chordBtn{display:none!important}
+/* play never follows a written progression (cmActive() is studio-only), so the editor is not offered there.
+   It keeps its room (visibility, not display): the transport row is centred, and play and studio must put the
+   play button, record and the slime switch in exactly the same place. */
+body.mode-play #chordBtn{visibility:hidden!important;pointer-events:none!important}
+
 body.mode-learn #menuBtn{display:none!important}
 /* RESERVE the dock's space instead of letting it float over the tank. The tank is square and centred in
    `main`, so shrinking main is what actually keeps the geometry fully visible -- exactly the same lesson
@@ -1296,7 +1305,11 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 #undoBtn,#redoBtn{min-width:44px;min-height:44px;border-radius:9px;font-size:16px;line-height:1;padding:0 8px}
 #undoBtn:disabled,#redoBtn:disabled{opacity:.4}
 /* ---- HUMANIZE knobs ---- */
-#humanize .hzHead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+#humanize .hzHead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;cursor:pointer;list-style:none;user-select:none;min-height:32px;align-items:center}
+#humanize .hzHead::-webkit-details-marker{display:none}
+#humanize .hzHead::before{content:'▸';font-size:11px;color:var(--ink-soft);transition:transform .18s}
+#humanize details[open]>.hzHead::before{transform:rotate(90deg)}
+@media (prefers-reduced-motion:reduce){#humanize .hzHead::before{transition:none}}
 #humanize .hzHead b{font:900 14px system-ui,sans-serif;color:var(--ink)}
 #humanize .hzHead span{font:700 11.5px system-ui,sans-serif;color:var(--ink-soft)}
 #humanize .hzKnobs{display:flex;justify-content:center;gap:clamp(10px,5vw,40px);margin-top:8px;flex-wrap:wrap}
@@ -1669,11 +1682,11 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   #exitMode::before{content:"←";font-size:17px;font-weight:800}
   header{padding-left:44px} /* keep the volume speaker clear of the back arrow (arrow ends at x=37 on a 375px screen) */
   .mode-play #topRight{bottom:auto!important;right:6px!important;top:8px!important;gap:5px;z-index:262} /* clear rides at the end of the ONE bar, not on a row of its own */
-  /* studio keeps clear + reset in the header row on a desktop; on a phone that row has no 60px to spare,
-     so they lift out of the flow and sit at the bar's right end instead. */
-  .mode-studio #clearBtn,.mode-studio #resetBtn{position:fixed!important;top:8px!important;z-index:262}
-  .mode-studio #clearBtn{right:56px!important} .mode-studio #resetBtn{right:6px!important;padding:0!important;width:44px!important;min-height:44px!important;display:flex!important;align-items:center;justify-content:center;font-size:17px!important}
-  .mode-studio header{padding-right:80px}
+  /* studio keeps clear in the header row on a desktop; on a phone that row has no room to spare,
+     so it lifts out of the flow and sits at the bar's right end instead. (start fresh moved to Preferences) */
+  .mode-studio #clearBtn{position:fixed!important;top:8px!important;z-index:262;right:6px!important}
+  #resetBtn{display:none!important}
+  .mode-studio header{padding-right:56px}
   .mode-play #topRight #shareApp{padding:7px 13px!important;font-size:14px!important;min-height:44px!important;display:flex;align-items:center}
   #clearBtn{font-size:0!important;padding:0!important;width:44px!important;min-height:44px!important;display:flex!important;align-items:center;justify-content:center}
   #clearBtn::before{content:"\2715";font-size:14px;font-weight:800;line-height:1} /* the word "clear" cost 40px the bar does not have */
@@ -1723,7 +1736,7 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   #chordPanel{left:50%!important;top:64px!important;transform:translateX(-50%)!important;width:min(300px,90vw)}
   .mode-play main{padding:10px 40px 8px} /* the header is in flow and reserves itself; this is just breathing room */
   main{padding:0 8px 8px}
-  aside{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:74vh;background:rgba(246,240,255,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-radius:22px 22px 0 0;box-shadow:0 -12px 40px rgba(120,100,170,.4);padding:8px 14px 24px;transform:translateY(105%);transition:transform .32s cubic-bezier(.3,1,.3,1);z-index:80;overflow-y:auto}
+  aside{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:74vh;background:rgba(246,240,255,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-radius:22px 22px 0 0;box-shadow:0 -12px 40px rgba(120,100,170,.4);padding:8px 14px calc(78px + env(safe-area-inset-bottom,0px));transform:translateY(105%);transition:transform .32s cubic-bezier(.3,1,.3,1);z-index:80;overflow-y:auto}
   aside.open{transform:translateY(0)}
   #dragBar{display:block}
   #menuBtn{display:flex;position:fixed;right:12px;bottom:12px;z-index:81;width:54px;height:54px;border-radius:50%;align-items:center;justify-content:center;font-size:24px;border:1px solid var(--card-brd);background:linear-gradient(135deg,var(--lav),var(--sky));box-shadow:var(--shadow);cursor:pointer}
@@ -1979,6 +1992,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
 #spaceMenu .smArrow{font:900 18px/1 system-ui,sans-serif;color:var(--ink-soft,#7a7098);margin:0 2px}
 #smNote{margin:0;font:600 12px/1.3 system-ui,sans-serif;color:var(--ink-soft,#7a7098);max-width:260px}
 #smNote[hidden]{display:none}
+#freshBtn.armed{background:linear-gradient(180deg,#ffd9e4,#ff9fbd);color:#5a1a33}
 .mode-learn #spaceChip,body.lab-on #spaceChip{display:none}
 </style>
 </head>
@@ -2234,6 +2248,10 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
       <div id="grooveFolders"></div>
     </div>
 
+    <!-- the first screen is the beat, the mix, the song and the feel. Sound shaping, the tank's shape and the scale
+         range are one tap away, not stacked on top of a first-timer. Open or shut is remembered. -->
+    <details class="advReveal" id="advReveal" data-keep>
+      <summary>more settings</summary>
     <div class="card">
       <h2>Key &amp; Scale</h2>
       <div class="row dupStrip"><label>key</label><select id="root"></select></div>
@@ -2285,12 +2303,9 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
       <div class="row" hidden><label>volume</label><input type="range" id="vol" min="0" max="100" value="55"><span class="val" id="volV">55</span></div><!-- the master fader lives on the transport bar in every mode now; this mirror stays wired but is not a second control to hunt for -->
       
       <div class="row"><label title="echoes that repeat in time with the tempo">delay</label><input type="range" id="dly" min="0" max="100" value="0"><span class="val" id="dlyV">0</span></div>
-      <hr>
-      <div class="row"><label>send MIDI out</label><div class="toggle" id="midiT"></div></div>
+      <div class="row" hidden><label>send MIDI out</label><div class="toggle" id="midiT"></div></div><!-- same switch as #midiT2 in Preferences; kept wired, not shown twice -->
       
     </div>
-    <details class="advReveal" id="advReveal">
-      <summary>Advanced</summary>
       <div class="card">
       <h2>Velocity</h2>
       <div class="row"><label>randomize</label><div class="toggle on" id="velRandT"></div></div>
@@ -2330,7 +2345,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
 <dialog id="prefsDlg" aria-label="Preferences">
   <form method="dialog" style="margin:0">
     <div class="prefsHead"><h2 style="margin:0">Preferences</h2><button class="btn" value="close" title="close">✕</button></div>
-    <p class="prefsNote">Things you set once, not per song: MIDI.</p>
+    <p class="prefsNote">Things you set once, not per song.</p>
     <div class="prefsBody">
         <!-- TWO ROWS TO GET SOUND OUT. Everything under them is set once and never touched again, so
              it does not get to compete for attention: twelve rows of equal weight made wiring up a
@@ -2364,6 +2379,8 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
           </div>
         </div>
       </details>
+      <hr>
+      <div class="row"><label title="Every setting back to how it came, and the beat, mixer and chords cleared. Your recordings stay.">everything back to new</label><button type="button" class="btn" id="freshBtn">start fresh</button></div>
     </div>
   </form>
 </dialog>
@@ -2373,6 +2390,11 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
 
 <script>
 "use strict";
+// a fold marked data-keep remembers whether you left it open (per fold, on this device)
+window._keepOpen=function(d){if(!d||!d.id)return;const k='slimehedron-open-'+d.id;
+  try{const v=localStorage.getItem(k);if(v!==null)d.open=v==='1';}catch(e){}
+  d.addEventListener('toggle',()=>{try{localStorage.setItem(k,d.open?'1':'0');}catch(e){}});};
+document.querySelectorAll('details[data-keep]').forEach(window._keepOpen);
 const SCALES={
   chromatic:{n:"Chromatic",c:[0,100,200,300,400,500,600,700,800,900,1000,1100]},
   major:{n:"Major (Ionian)",c:[0,200,400,500,700,900,1100]},
@@ -7192,9 +7214,10 @@ function phPaint(){_phRaf=0;if(!AC)return;
   const K=[['dyn','dynamics','how much louder and softer each hit is'],
            ['time','timing','how far the notes between the beats push and drag'],
            ['ghost','ghost notes','quiet extra taps in the gaps']];
-  host.innerHTML='<div class="hzHead"><b>Humanize</b><span>the beat itself never moves</span></div><div class="hzKnobs">'+
+  host.innerHTML='<details class="hzFold" id="hzFold" data-keep><summary class="hzHead"><b>Humanize</b><span>the beat itself never moves</span></summary><div class="hzKnobs">'+
     K.map(([k,n,d])=>'<div class="hzKnob" data-k="'+k+'" role="slider" tabindex="0" aria-label="'+n+'" title="'+d+
-      '" aria-valuemin="0" aria-valuemax="100"><div class="hzDial"><i></i></div><b>'+n+'</b><span class="hzVal"></span></div>').join('')+'</div>';
+      '" aria-valuemin="0" aria-valuemax="100"><div class="hzDial"><i></i></div><b>'+n+'</b><span class="hzVal"></span></div>').join('')+'</div></details>';
+  if(window._keepOpen)window._keepOpen(host.querySelector('details'));
   const paint=()=>host.querySelectorAll('.hzKnob').forEach(el=>{const v=Math.round(HUMAN[el.dataset.k]*100);
     el.style.setProperty('--v',v);el.setAttribute('aria-valuenow',v);el.querySelector('.hzVal').textContent=v;});
   window._paintHumanize=paint;
@@ -8181,7 +8204,16 @@ $("slimeBig").addEventListener('click',()=>{
   }
 });
 let _modSnap=null,_slimeOnAt=0;
-$("resetBtn").addEventListener('click',()=>{try{localStorage.removeItem('slimehedron2');}catch(e){}location.reload();}); // recordings survive — settings go back to factory
+// START FRESH. It used to sit in the header, one tap from wiping everything (and since songs autosave, a stray
+// tap lost the beat too). It lives in Preferences now and asks once more. "Fresh" also means the beat you drew,
+// the mixer and the chords: those are kept in their own storage and were surviving the reset. Recordings stay.
+function startFresh(){try{clearTimeout(saveTmr);}catch(e){}   // a save queued by the tap itself must not write it all back
+  try{['slimehedron2','slimehedron-song','slimehedron-chords','slimehedron-groove','slimehedron-chordbars'].forEach(k=>localStorage.removeItem(k));}catch(e){}location.reload();}
+$("resetBtn").addEventListener('click',startFresh);
+(function(){const b=$("freshBtn");if(!b)return;let armed=0;
+  b.addEventListener('click',()=>{if(armed&&Date.now()-armed<4000){startFresh();return;}
+    armed=Date.now();b.textContent='tap again to clear';b.classList.add('armed');
+    setTimeout(()=>{if(Date.now()-armed>=3900){b.textContent='start fresh';b.classList.remove('armed');armed=0;}},4000);});})();
 
 // ---------- record & keep: pulse-red recorder, count-in, refresh-proof shelf ----------
 function toast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t);}
@@ -8817,7 +8849,7 @@ const COACH={
 function startCoach(room){room=room||'play';const C=COACH[room];if(!C||document.getElementById('coach'))return;
   try{if(localStorage.getItem(C.key))return;}catch(e){}
   const vis=el=>{if(!el)return false;const r=el.getBoundingClientRect(),cs=getComputedStyle(el);return r.width>2&&r.height>2&&cs.visibility!=='hidden'&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;};
-  let i=-1,tgt=null;const b=document.createElement('div');b.id='coach';b.setAttribute('role','status');document.body.appendChild(b);
+  let i=-1,tgt=null,inPanel=false;const b=document.createElement('div');b.id='coach';b.setAttribute('role','status');document.body.appendChild(b);
   // A HINT ONLY SHOWS WHILE ITS TARGET IS REALLY THERE. Something opened on top (tools, a dialog, a lesson) hides
   // it -- it used to float over the tools overlay and swallow taps meant for it. Leaving the room ends it unseen,
   // so it comes back the next time you are in that room.
@@ -8833,7 +8865,9 @@ function startCoach(room){room=room||'play';const C=COACH[room];if(!C||document.
   function quit(){clearInterval(watch);if(tgt)tgt.classList.remove('coachHi');b.remove();removeEventListener('pointerdown',adv,true);removeEventListener('resize',onResize);}
   function next(){if(tgt)tgt.classList.remove('coachHi');tgt=null;
     for(i++;i<C.steps.length;i++){const el=document.querySelector(C.steps[i][0]);
-      if(el&&!seen(el)&&el.closest('aside'))try{el.scrollIntoView({block:'nearest'});}catch(e){}   // a card further down the side panel is brought into view
+      // a card further down the side panel is brought into view -- but not when the tap was IN that panel:
+      // whoever is working in it must not have it scrolled out from under them (that hint is skipped instead)
+      if(el&&!seen(el)&&el.closest('aside')&&!inPanel)try{el.scrollIntoView({block:'nearest'});}catch(e){}
       if(seen(el)){tgt=el;break;}}   // a target this screen does not show is skipped
     if(i>=C.steps.length){end();return;}show();}
   function show(){const st=C.steps[i];b.dataset.target=st[0];
@@ -8847,7 +8881,8 @@ function startCoach(room){room=room||'play';const C=COACH[room];if(!C||document.
     b.style.left=left+'px';b.style.top=(up?Math.max(8,r.top-12-bh):below)+'px';
     b.style.setProperty('--ax',Math.max(14,Math.min(bw-14,r.left+r.width/2-left))+'px');}
   function end(){quit();try{localStorage.setItem(C.key,'1');}catch(e){}}
-  function adv(e){if(e.target.dataset&&e.target.dataset.cs){end();return;}if(b.style.display==='none')return;setTimeout(next,350);}   // a tap while the hint is hidden is not an answer to it
+  function adv(e){if(e.target.dataset&&e.target.dataset.cs){end();return;}if(b.style.display==='none')return;
+    inPanel=!!(e.target.closest&&e.target.closest('aside'));setTimeout(next,350);}   // a tap while the hint is hidden is not an answer to it
   function onResize(){if(tgt&&b.isConnected)show();}
   addEventListener('pointerdown',adv,true);addEventListener('resize',onResize);next();}
 
