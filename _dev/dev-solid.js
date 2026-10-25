@@ -133,12 +133,14 @@ const URL='http://127.0.0.1:8765/index.html';
     return {off:off*RB,hd,rmax:Math.max(...U.map(u=>Math.hypot(...u)))};});
   ok(g.off<0.05,'curved solid: a free ball flies a straight line of hyperbolic space (straight in Klein coordinates, worst '+g.off.toFixed(4)+'px off)');
   ok(g.hd<0.01,'covering the same hyperbolic distance every tick (worst '+(g.hd*100).toFixed(2)+'% off, out to r='+g.rmax.toFixed(2)+')');
-  const run=await p.evaluate(async()=>{S.slimeMode=false;S.rain=false;S.chaos=0.1;balls.length=0;for(let i=0;i<8;i++)spawn(CX+Math.cos(i)*40,CY+Math.sin(i)*40);setPlaying(true);
+  // the burst is held off: a curved solid is a small room, its goo fills it in ~7s and the burst (on purpose) lets the
+  // balls fly out. This run is about the walls holding the balls, so it must stay a whole 10s in one piece.
+  const run=await p.evaluate(async()=>{const sb=startBreak;startBreak=()=>{};S.slimeMode=false;S.rain=false;S.chaos=0.1;balls.length=0;for(let i=0;i<8;i++)spawn(CX+Math.cos(i)*40,CY+Math.sin(i)*40);setPlaying(true);
     let n=0,bad=0;const t0=trigger;trigger=function(c){n++;if(!SOLID.deg.some(d=>Math.abs(centsForDegree(d)-c)<0.01))bad++;return t0.apply(this,arguments);};
     let worst=-1e9;const RB=HYP.RD,K=HKR();
     const iv=setInterval(()=>{if(fillState!=='fill')return;const c=Math.cos(rot),s=Math.sin(rot);for(const b of balls){const u=[(b.x-CX)/RB,(b.y-CY)/RB,(b.z-0.5)*BOXD/RB],r2=u[0]**2+u[1]**2+u[2]**2,k=u.map(x=>2*x/(1+r2));
       for(const pl of SOLID.planes){const nn=pl.n,v=(nn[0]*c-nn[1]*s)*k[0]+(nn[0]*s+nn[1]*c)*k[1]+nn[2]*k[2]-pl.d/K;worst=Math.max(worst,v*K);}}},50);
-    await new Promise(r=>setTimeout(r,10000));clearInterval(iv);trigger=t0;return {balls:balls.length,n,bad,worst,space:edges._space,small:Math.min(...balls.map(b=>ballScale(b.x,b.y,b.z)))};});
+    await new Promise(r=>setTimeout(r,10000));clearInterval(iv);trigger=t0;startBreak=sb;return {balls:balls.length,n,bad,worst,space:edges._space,small:Math.min(...balls.map(b=>ballScale(b.x,b.y,b.z)))};});
   ok(run.space==='curved'&&run.balls===8,'10s in a curved dodecahedron: all 8 balls still there');
   ok(run.worst<=0.5,'and never outside a face (deepest '+run.worst.toFixed(2)+' Klein-px)');
   ok(run.n>=8&&run.bad===0,'every note is one of its faces\' notes ('+(run.n-run.bad)+'/'+run.n+')');

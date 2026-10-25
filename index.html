@@ -1946,7 +1946,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
 }
 
 /* THE TANK'S CORNER MENU — small cream chip, opens upward. */
-#spaceChip{position:fixed;z-index:30;left:8px;top:8px}
+#spaceChip{position:fixed;z-index:77;left:8px;top:8px}   /* above the side columns (76): it is placed clear of their buttons, and while they re-lay out it must never end up underneath them */
 #spaceChip .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 #growBar[hidden]{display:none}
 #growBar button{background:linear-gradient(135deg,#efe6ff,#dff7ef)}
@@ -1967,6 +1967,16 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
   box-shadow:0 3px 0 rgba(160,140,210,.35)}
 #spaceMenu button[aria-pressed="true"]{background:linear-gradient(135deg,#c9b3f0,#b388f0);color:#fff;border-color:#a992e0;box-shadow:0 2px 0 rgba(110,80,180,.5),0 0 12px rgba(190,150,255,.55)}
 #spaceMenu button[hidden]{display:none}
+/* PICTURES FIRST. Every choice in the corner menu shows what it does -- the cube, the flat shape, the glued sides,
+   the bent sides, and for the grow buttons the actual shape you will get -- with the word small underneath for
+   whoever can read it. A child who cannot read picks by looking. */
+#spaceMenu button.smHasPic{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 7px 5px;min-width:52px}
+#spaceMenu .smPic{display:block;width:34px;height:34px;flex:none}
+#spaceMenu .smWord{font:800 10px/1 system-ui,sans-serif;letter-spacing:.2px;opacity:.85}
+#spaceMenu button:disabled{opacity:.38;cursor:default}
+#spaceMenu .smNow{display:inline-flex;width:44px;height:44px;align-items:center;justify-content:center;border-radius:12px;background:rgba(255,255,255,.7);color:var(--ink,#4a4170)}
+#spaceMenu .smNow .smPic{width:38px;height:38px}
+#spaceMenu .smArrow{font:900 18px/1 system-ui,sans-serif;color:var(--ink-soft,#7a7098);margin:0 2px}
 #smNote{margin:0;font:600 12px/1.3 system-ui,sans-serif;color:var(--ink-soft,#7a7098);max-width:260px}
 #smNote[hidden]{display:none}
 .mode-learn #spaceChip,body.lab-on #spaceChip{display:none}
@@ -2142,7 +2152,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
         <div class="smRow"><span class="smLab">view</span><button data-view="3d" aria-pressed="false">3D</button><button data-view="2d" aria-pressed="false">2D</button></div>
         <div class="smRow" id="lookRow" hidden><span class="smLab">look</span><button data-look="glass" aria-pressed="false" title="the tank as glass">glass</button><button data-look="crayon" aria-pressed="false" title="the tank drawn in crayon">crayon</button></div>
         <div class="smRow"><span class="smLab">space</span><button data-space="auto" aria-pressed="false">auto</button><button data-space="normal" aria-pressed="false">normal</button><button data-space="portal" aria-pressed="false">portal</button><button data-space="curved" aria-pressed="false">curved</button></div>
-        <div class="smRow" id="growBar" hidden><span class="smLab">shape</span><button data-grow="cut" aria-label="cut the corners off">cut</button><button data-grow="puff" aria-label="puff out the faces">puff</button><button data-grow="flip" aria-label="swap the faces and the corners">flip</button></div>
+        <div class="smRow" id="growBar" hidden><span class="smLab">shape</span><span class="smNow" id="smNow" aria-hidden="true"></span><span class="smArrow" aria-hidden="true">&rarr;</span><button data-grow="cut" aria-label="cut the corners off">cut</button><button data-grow="puff" aria-label="puff out the faces">puff</button><button data-grow="flip" aria-label="swap the faces and the corners">flip</button><button data-grow="back" aria-label="back to the shape before">back</button></div>
         <p id="smNote"></p>
       </div>
     </div>
@@ -6990,6 +7000,15 @@ function growSolid(op){const base=growBase(),name=growNext(op);if(!name||SOLID.f
   const rd=curRootDeg||0;[0,2,4].forEach((k,i)=>setTimeout(()=>{try{trigger(centsForDegree(rd+k)+1200,0.35,0,true,true);}catch(e){}},i*90));   // a little rising chord: it grew
   if(window._spaceChip)window._spaceChip();return true;}
 window.growSolid=growSolid;
+// one step back along the grow path: "cube.cut.flip" goes back to "cube.cut", and a grown prism goes back to the prism
+function growPrev(){const b=growBase();if(!b||b.indexOf('.')<0)return null;return b.slice(0,b.lastIndexOf('.'));}
+function growBack(){const base=growBase(),name=growPrev();if(!name||SOLID.from||fillState!=="fill")return false;
+  if(base!==SOLID.name)solidSet(base);
+  solidSet(name,true);S.shape=name;rebuild();formGlow=1;
+  initAudio();if(AC&&AC.state==='suspended')AC.resume();
+  const rd=curRootDeg||0;[4,2,0].forEach((k,i)=>setTimeout(()=>{try{trigger(centsForDegree(rd+k)+1200,0.35,0,true,true);}catch(e){}},i*90));   // the same little chord, falling: it went back
+  if(window._spaceChip)window._spaceChip();return true;}
+window.growBack=growBack;
 // ---------- THE TANK'S CORNER MENU: view (3D / 2D) and space (auto / normal / portal / curved) ----------
 // It sits on the tank's bottom-left corner, or the nearest free corner if a control is already there.
 (function(){const chip=$("spaceChip"),btn=$("spaceBtn"),menu=$("spaceMenu"),txt=$("spaceTxt"),note=$("smNote");if(!chip)return;
@@ -7006,8 +7025,49 @@ window.growSolid=growSolid;
     note.textContent=(want&&want!==sp&&why[want])?why[want]:'';note.hidden=!note.textContent;
     const gb=$("growBar"),canGrow=VIEW.d3&&!_labOn()&&!!growBase()&&(S.mode==='play'||S.mode==='studio');
     gb.hidden=!canGrow;
-    if(canGrow)gb.querySelectorAll('button').forEach(b=>{const n=growNext(b.dataset.grow);b.disabled=!!SOLID.from||!n||solidFaceCount(n)>SOLID_MAXF;});}
+    if(canGrow){const now=growBase(),nw=$("smNow");if(nw&&nw.dataset.n!==now){nw.dataset.n=now;nw.innerHTML=solidPic(now);}
+      gb.querySelectorAll('button').forEach(b=>{const n=b.dataset.grow==='back'?growPrev():growNext(b.dataset.grow);
+        b.disabled=!!SOLID.from||!n||solidFaceCount(n)>SOLID_MAXF;
+        if(b.dataset.n!==String(n)){b.dataset.n=String(n);withPic(b,n?solidPic(n):(b.dataset.grow==='back'?PIC.back:''));}});}}
   window._spaceChip=paint;
+  // ---- the pictures ----
+  const svg=(inner)=>'<svg class="smPic" viewBox="0 0 36 36" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'+inner+'</svg>';
+  const hex=(r,j)=>{let d='';for(let i=0;i<6;i++){const a=-Math.PI/2+i*Math.PI/3+Math.PI/6,w=j?j[i]:0;d+=(i?'L':'M')+(18+(r+w)*Math.cos(a)).toFixed(1)+' '+(18+(r+w)*Math.sin(a)).toFixed(1);}return d+'Z';};
+  const hexV=i=>{const a=-Math.PI/2+i*Math.PI/3+Math.PI/6;return [18+13*Math.cos(a),18+13*Math.sin(a)];};
+  const PIC={
+    '3d':svg('<path d="M18 5 30 11.5V24.5L18 31 6 24.5V11.5Z"/><path d="M6 11.5 18 18 30 11.5M18 18V31"/>'),
+    '2d':svg('<path d="'+hex(13)+'" fill="currentColor" fill-opacity=".14"/>'),
+    'glass':svg('<path d="'+hex(13)+'" fill="currentColor" fill-opacity=".1"/><path d="M11 15 15 11M11 20 19 12" stroke-width="1.8" opacity=".7"/>'),
+    'crayon':svg('<path d="'+hex(13,[0.8,-0.9,0.6,-0.7,1,-0.5])+'" stroke-width="2.8" stroke-dasharray="7 1.4 3 1.2"/><path d="'+hex(11.6,[-0.5,0.7,-0.6,0.9,-0.4,0.5])+'" stroke-width="1" opacity=".55"/>'),
+    'auto':svg('<rect x="7" y="7" width="22" height="22" rx="5"/><circle cx="13" cy="13" r="1.6" fill="currentColor"/><circle cx="23" cy="23" r="1.6" fill="currentColor"/><circle cx="18" cy="18" r="1.6" fill="currentColor"/>'),
+    'normal':svg('<path d="'+hex(13)+'"/>'),
+    'back':svg('<path d="M13 9L7 15L13 21"/><path d="M7 15H20A7 7 0 0 1 20 29H16"/>'),   // nothing to go back to: just the arrow, greyed
+    // glued sides: the two opposite sides are dashed, as the tank draws them, and a ball leaves one and comes in the other
+    'portal':(()=>{const a=hexV(1),b=hexV(2),c=hexV(4),d=hexV(5);
+      return svg('<path d="'+hex(13)+'" opacity=".45"/><path d="M'+a+'L'+b+'M'+c+'L'+d+'" stroke-dasharray="3 2.6" stroke-width="2.8"/><circle cx="27.5" cy="18" r="2.2" fill="currentColor" stroke="none"/><circle cx="8.5" cy="18" r="2.2" fill="currentColor" stroke="none" opacity=".45"/>');})(),
+    // bent space: every side bows in, the way the curved tank looks
+    'curved':(()=>{let d='';for(let i=0;i<6;i++){const [x0,y0]=hexV(i),[x1,y1]=hexV((i+1)%6),mx=(x0+x1)/2,my=(y0+y1)/2;
+      d+=(i?'':'M'+x0.toFixed(1)+' '+y0.toFixed(1))+'Q'+(mx+(18-mx)*0.45).toFixed(1)+' '+(my+(18-my)*0.45).toFixed(1)+' '+x1.toFixed(1)+' '+y1.toFixed(1);}
+      return svg('<path d="'+d+'Z"/>');})()};
+  // a solid, drawn as you would see it in the tank: front edges solid, back edges faint
+  const solidPicCache=new Map();
+  function solidPic(name){if(!name)return '';if(solidPicCache.has(name))return solidPicCache.get(name);let out='';
+    try{const F=solidFaces(solidPlanes(name)),ya=0.62,pa=-0.42,cy=Math.cos(ya),sy=Math.sin(ya),cp=Math.cos(pa),sp=Math.sin(pa);
+      const rot=p=>{const x=p[0]*cy+p[2]*sy,z1=-p[0]*sy+p[2]*cy;return [x,p[1]*cp-z1*sp,p[1]*sp+z1*cp];};
+      const E=new Map();let m=1e-9;
+      F.forEach(f=>{if(f.length<3)return;const P=f.map(v=>rot(v.p));
+        let cz=0;P.forEach(q=>{cz+=q[2];m=Math.max(m,Math.abs(q[0]),Math.abs(q[1]));});cz/=P.length;
+        const front=cz<0;   // a face whose middle is nearer than the solid's middle is a face you see
+        for(let k=0;k<P.length;k++){const a=P[k],b=P[(k+1)%P.length],key=[a,b].map(q=>q.map(x=>Math.round(x)).join(',')).sort().join('|');
+          const e=E.get(key)||{a,b,front:false};e.front=e.front||front;E.set(key,e);}});
+      const k=14/m,f=v=>(18+v*k).toFixed(1);let back='',fr='';
+      for(const e of E.values()){const seg='M'+f(e.a[0])+' '+f(e.a[1])+'L'+f(e.b[0])+' '+f(e.b[1]);if(e.front)fr+=seg;else back+=seg;}
+      out=svg('<path d="'+back+'" stroke-width="1.2" opacity=".35"/><path d="'+fr+'" stroke-width="1.8"/>');}catch(e){out='';}
+    if(solidPicCache.size>60)solidPicCache.clear();solidPicCache.set(name,out);return out;}
+  window._solidPic=solidPic;   // test hook
+  function withPic(b,pic){const word=b.dataset.word||(b.dataset.word=b.textContent.trim());
+    b.classList.add('smHasPic');b.innerHTML=pic+'<span class="smWord">'+word+'</span>';}
+  menu.querySelectorAll('[data-view],[data-look],[data-space]').forEach(b=>withPic(b,PIC[b.dataset.view||b.dataset.look||b.dataset.space]||''));
   // OUT OF THE WAY: a small round button in a corner of the SCREEN, never in the middle of things.
   // Bottom-right first, then along the bottom edge, then the bottom-left; never on top of a control.
   function place(){
@@ -7029,7 +7089,7 @@ window.growSolid=growSolid;
     if(v){paint();const f=menu.querySelector('[aria-pressed="true"]');if(f)f.focus();}}
   btn.addEventListener('click',e=>{e.stopPropagation();open(menu.hidden);});
   menu.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;e.stopPropagation();
-    if(b.dataset.grow){growSolid(b.dataset.grow);paint();setTimeout(paint,1000);return;}
+    if(b.dataset.grow){if(b.dataset.grow==='back')growBack();else growSolid(b.dataset.grow);paint();setTimeout(paint,1000);return;}
     if(b.dataset.view)window.setView3D(b.dataset.view==='3d');
     if(b.dataset.look)window.setLook3D(b.dataset.look);
     if(b.dataset.space)window.setSpace(b.dataset.space);
@@ -8746,7 +8806,8 @@ window.slimeStar=function(){}; // intentionally a no-op — a "win" is its own r
 const COACH={
   play:{key:'slimehedron-coach',steps:[
     ['#slimeBig',()=>S.slimeMode?'this slime plays along with you. tap it to stop it':'tap this slime and it plays along with you'],
-    ['#triMix',()=>'drag the dot to mix the tune, the drums and the band']]},
+    ['#triMix',()=>'drag the dot to mix the tune, the drums and the band'],
+    ['#spaceBtn',()=>'change the shape here']]},
   studio:{key:'slimehedron-coach-studio',steps:[
     ['#playBtn',()=>S.playing?'the band is playing. this stops and starts it':'press play to start the band'],
     ['#stepGrid',()=>'tap a square to change the beat'],

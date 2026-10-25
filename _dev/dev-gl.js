@@ -64,7 +64,7 @@ const ARGS=['--autoplay-policy=no-user-gesture-required','--enable-unsafe-swifts
 
   // ---- 3. glows add light, never a dark disk ----
   const glow=await p.evaluate(()=>{balls.length=0;spawn(CX,CY);const B=balls[0];B.z=B.pz=0.1;B.vx=B.vy=0;B.trail.length=0;B.hue=0.6;draw();
-    const q=__P3(B.x,B.y,0.1),r=cv.getBoundingClientRect();return {x:r.left+q[0]*r.width/W,y:r.top+q[1]*r.height/H,rad:BR*q[2]*r.width/W};});
+    const q=__P3(B.x,B.y,0.1),r=cv.getBoundingClientRect();return {x:r.left+q[0]*r.width/W,y:r.top+q[1]*r.height/H,rad:BR*q[2]*r.width/W*((window.__gl&&window.__gl.api&&window.__gl.api.noteScale)||1)};});   // the note as DRAWN (it is drawn bigger than the physics ball)
   // over a mid-tone backdrop, so a white ring would show (on a near-white page it hides, which is how it slipped by)
   const before=await p.evaluate(()=>{document.getElementById('cvGL').style.background='rgb(90,140,110)';balls.length=0;draw();return 1;});
   const bgPng=await p.screenshot({clip:{x:glow.x-30,y:glow.y-30,width:60,height:60}});

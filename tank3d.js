@@ -92,8 +92,14 @@ export function start(){
       gl_FragColor=vec4(vC.rgb,vC.a*(1.0-r)*(1.0-r));
       #include <colorspace_fragment>
       }`});
-  const ballMat=fresnel(new T.MeshPhysicalMaterial({roughness:0.34,metalness:0,clearcoat:0.35,clearcoatRoughness:0.2,envMapIntensity:0.3,
+  const ballMat=fresnel(new T.MeshPhysicalMaterial({roughness:0.3,metalness:0,clearcoat:0.6,clearcoatRoughness:0.07,envMapIntensity:0.25,
     emissive:0x000000}),0,0.28);   // a mirror coat ringed every ball in white: kept soft, and it glows in its own colour
+  // A NOTE YOU CAN SEE. The silhouette darkens into a deeper shade of the ball's own colour, so a pale note on
+  // the pale page has a clean edge; the clearcoat is tight, so the light makes one small sharp glint, not a sheen.
+  {const prev=ballMat.onBeforeCompile;ballMat.onBeforeCompile=sh=>{prev(sh);sh.fragmentShader=sh.fragmentShader.replace('#include <opaque_fragment>',
+    'float bR=1.0-abs(dot(normalize(normal),normalize(vViewPosition)));vec3 bK=outgoingLight*0.6;bK=clamp(mix(vec3(dot(bK,vec3(0.299,0.587,0.114))),bK,1.5),0.0,1.0);'+
+    'outgoingLight=mix(outgoingLight,bK,smoothstep(0.3,0.6,bR)*0.85);\n#include <opaque_fragment>');};
+   const k0=ballMat.customProgramCacheKey;ballMat.customProgramCacheKey=()=>k0()+'-ballrim';}
   // THE GOO IS WAX, NOT WET GLASS: no white sheen, a soft coat, and a glow in its own colour from inside, like a
   // lava lamp. Both sides are drawn so where the glass cuts it the goo looks pressed against the glass, not hollow.
   const gooMat=fresnel(new T.MeshPhysicalMaterial({vertexColors:true,roughness:0.5,metalness:0,clearcoat:0.3,clearcoatRoughness:0.3,
@@ -109,6 +115,7 @@ export function start(){
   // "line boil" of hand-drawn animation) and hold still when the system asks for reduced motion.
   // All of it is our own shader code on top of three.js's own materials.
   let CRAY=false;
+  const noteScale=()=>CRAY?1.5:1.3;   // how much bigger a note is drawn than the ball the physics moves (it reads at a glance)
   const CR={seed:{value:0},px:{value:1}};
   const reduceMotion=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)');}catch(e){return {matches:false};}})();
   const CR_GLSL=`uniform float uSeed;uniform float uPx;
@@ -129,21 +136,22 @@ export function start(){
       if(o.hatch)inj+='float crA0=max(dot(diffuseColor.rgb,vec3(0.299,0.587,0.114)),0.05);float crB0=crL/crA0;'+
         'float crS=max(crHatch(crQ,0.785,7.0)*(0.35+0.65*smoothstep(1.05,0.6,crB0)),crHatch(crQ,-0.785,9.5)*smoothstep(0.8,0.45,crB0));\n'+
         'outgoingLight=mix(outgoingLight,pow(outgoingLight,vec3(1.9))*0.9,crS*'+o.hatch.toFixed(2)+');diffuseColor.a=clamp(diffuseColor.a+crS*0.42*'+o.hatch.toFixed(2)+',0.0,1.0);\n';
-      inj+='outgoingLight*=mix(0.9,1.05,crG);diffuseColor.a=clamp(diffuseColor.a*mix(0.72,1.12,crG),0.0,1.0);\n';
+      inj+='outgoingLight*=mix(0.9,1.05,crG);'+(o.body?'':'diffuseColor.a=clamp(diffuseColor.a*mix(0.72,1.12,crG),0.0,1.0);')+'\n';
       // toon: the light falls into three flat bands of the surface's own colour, like crayon pressed light, medium, hard
-      if(o.toon)inj+='float crA=max(dot(diffuseColor.rgb,vec3(0.299,0.587,0.114)),0.05);float crB=crL/crA;outgoingLight=diffuseColor.rgb*(crB<0.35?0.8:(crB<0.75?0.95:1.08));\n';
-      if(o.rim)inj+='float crR=1.0-abs(dot(normalize(normal),normalize(vViewPosition)));outgoingLight=mix(outgoingLight,pow(outgoingLight,vec3(2.2))*0.8,smoothstep(0.55,0.8,crR+(crG-0.5)*0.14)*'+o.rim.toFixed(2)+');\n';
+      if(o.toon)inj+='float crA=max(dot(diffuseColor.rgb,vec3(0.299,0.587,0.114)),0.05);float crB=crL/crA;outgoingLight=diffuseColor.rgb*(crB<0.35?0.84:(crB<0.75?0.97:1.1));\n';
+      if(o.rim)inj+='float crR=1.0-abs(dot(normalize(normal),normalize(vViewPosition)));vec3 crK=outgoingLight*0.62;crK=clamp(mix(vec3(dot(crK,vec3(0.299,0.587,0.114))),crK,1.7),0.0,1.0);'+
+        'outgoingLight=mix(outgoingLight,crK,smoothstep(0.55,0.8,crR+(crG-0.5)*0.14)*'+o.rim.toFixed(2)+');\n';
       if(o.spot)inj+='outgoingLight+=vec3(0.55)*smoothstep(0.9,0.96,dot(normalize(normal),normalize(vec3(-0.45,0.55,0.9))));\n';
       if(o.cap)inj='if(!gl_FrontFacing)outgoingLight=vColor.rgb*0.82;\n'+inj;
       sh.fragmentShader=f.replace('#include <opaque_fragment>',inj+'#include <opaque_fragment>');};
-    m.customProgramCacheKey=()=>'slime-cr'+(o.hatch||0)+'-'+(o.rim||0)+(o.spot?'s':'')+(o.cap?'c':'')+(o.toon?'t':'');return m;};
+    m.customProgramCacheKey=()=>'slime-cr'+(o.hatch||0)+'-'+(o.rim||0)+(o.spot?'s':'')+(o.cap?'c':'')+(o.toon?'t':'')+(o.body?'b':'');return m;};
   const crayGlassFor=(col)=>crayonize(new T.MeshStandardMaterial({roughness:1,metalness:0,envMapIntensity:0.15,color:col,emissive:col,emissiveIntensity:0.18,
     transparent:true,opacity:0.24,side:T.DoubleSide,depthWrite:false}),{hatch:0.55});
   const crayPane=crayonize(new T.MeshStandardMaterial({roughness:1,metalness:0,envMapIntensity:0.15,color:0xe8dcff,emissive:0xcdb8ff,emissiveIntensity:0,transparent:true,opacity:0.3,
     side:T.DoubleSide,depthWrite:false}),{hatch:0.4});
   const crayFront=new T.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.02,side:T.DoubleSide,depthWrite:false});
-  const crayBall=crayonize(new T.MeshStandardMaterial({roughness:1,metalness:0,envMapIntensity:0.1,}),{toon:true,rim:1,spot:true});
-  const crayGoo=crayonize(new T.MeshStandardMaterial({roughness:1,metalness:0,envMapIntensity:0.1,vertexColors:true,transparent:true,opacity:0.94,depthWrite:true,side:T.DoubleSide}),{toon:true,rim:0.75,cap:true});
+  const crayBall=crayonize(new T.MeshStandardMaterial({roughness:1,metalness:0,envMapIntensity:0.1,}),{toon:true,rim:1,spot:true,body:true});
+  const crayGoo=crayonize(new T.MeshStandardMaterial({roughness:1,metalness:0,envMapIntensity:0.1,vertexColors:true,transparent:true,opacity:0.94,depthWrite:true,side:T.DoubleSide}),{toon:true,rim:0.75,cap:true,body:true});
   const craySolid=(side)=>crayonize(new T.MeshStandardMaterial({roughness:1,metalness:0,envMapIntensity:0.15,vertexColors:true,transparent:true,side,depthWrite:false,emissive:0xffffff,emissiveIntensity:0.0}),{hatch:side===T.FrontSide?0.5:0.3});
   // the edges: the same beams, each corner nudged a pixel or two on every boil, waxy and broken along the stroke
   const crayRim=new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{uT:{value:0},uSeed:CR.seed,uPx:CR.px},
@@ -306,7 +314,7 @@ export function start(){
     mc=new T.MarchingCubes(GRES,CRAY?crayGoo:gooMat,false,true,90000);mc.isolation=60;mc.renderOrder=2;mc.frustumCulled=false;
     mc.position.set(0,0,0);mc.scale.set(SX,SX,SX);box.add(mc);}
   makeGoo();
-  const GC=new T.Color(),LQ=new T.Color(),cells=new Map();
+  const GC=new T.Color(),LQ=new T.Color(),LQH={h:0,s:0,l:0},cells=new Map();
   function glassList(){const glass=[];   // [nx,ny,nz,d]: inside is n.p <= d, box-local px
     if(edges._space!=='curved'){
       if(edges._solid){const c=Math.cos(rot),s=Math.sin(rot);for(const pl of SOLID.planes){const q=pl.n;glass.push([q[0]*c-q[1]*s,q[0]*s+q[1]*c,q[2],pl.d]);}}
@@ -333,7 +341,11 @@ export function start(){
     const cell=2*fitH/GRES;fitC=[Math.round((x0+x1)/2/cell)*cell,Math.round((y0+y1)/2/cell)*cell,Math.round((z0+z1)/2/cell)*cell];
     mc.position.set(fitC[0],fitC[1],fitC[2]);mc.scale.set(fitH,fitH,fitH);
     const bin=Math.max(10,cell*2.4),MAX=lite?220:520;
-    LQ.setRGB(liqRGB[0]/255,liqRGB[1]/255,liqRGB[2]/255);
+    LQ.setRGB(liqRGB[0]/255,liqRGB[1]/255,liqRGB[2]/255,T.SRGBColorSpace);   // the pool colour is a CSS (sRGB) colour
+    // THE POOL'S COLOUR IS AN AVERAGE OF NOTES, and an average of colours goes grey-brown. Keep its hue (the chord's)
+    // and give it back a clean pastel's saturation and lightness, so the goo reads as candy, not mud.
+    LQ.getHSL(LQH,T.SRGBColorSpace);LQH.s=Math.max(LQH.s,0.6);LQH.l=Math.min(0.74,Math.max(0.6,LQH.l));   // judged as the eye sees it (sRGB): a candy pastel, light but with body
+    GC.setHSL(LQH.h,Math.max(0.55,LQH.s*0.95),Math.min(0.8,LQH.l+(CRAY?0.04:0)),T.SRGBColorSpace);const gTop=Math.max(GC.r,GC.g,GC.b);   // the brightness every lump is given
     for(let i=0;i<particles.length;i++){const p=particles[i];if(!p.pooled)continue;
       const z=zl(p.z==null?0.5:p.z),k=(Math.floor(p.x/bin)+256)*262144+(Math.floor(p.y/bin)+256)*512+(Math.floor(z/bin)+256);let c=cells.get(k);
       if(!c){c={x:0,y:0,z:0,n:0,hx:0,hy:0};cells.set(k,c);}
@@ -347,10 +359,17 @@ export function start(){
       let rad=Math.max(PR*1.5,bin*Math.min(0.95,0.5+0.13*Math.cbrt(c.n)));   // neighbours' fields overlap well: one smooth skin, not a heap of beads
       let room=1e9;for(const g of glass)room=Math.min(room,g[3]-(g[0]*x+g[1]*y+g[2]*z));
       rad=Math.min(rad,Math.max(bin*0.25,room/1.3));
-      hueCol(h,0.8,0.68,GC).lerp(LQ,0.42);   // lava-lamp pastels: the chord's colour, swirled with the notes the goo is made of
+      const lh=LQH.h+0.07*Math.sin(h*6.2832),ll=Math.min(0.8,LQH.l+(CRAY?0.04:0)+0.05*Math.cos(h*6.2832));
+      GC.setHSL(((lh%1)+1)%1,Math.max(0.55,LQH.s*0.95),ll,T.SRGBColorSpace);   // one candy in the chord's colour, each lump nudged a little warmer or cooler by its own notes (blending the notes' own hues went grey)   // lava-lamp pastels: the chord's colour, swirled with the notes the goo is made of
       const rr=rad/F;
       mc.addBall(0.5+(x-fitC[0])/F,0.5+(y-fitC[1])/F,0.5+(z-fitC[2])/F,rr*rr*(mc.isolation+12),12,GC);}
-    mc.update();}
+    mc.update();
+    // THE GOO'S TRUE COLOUR. MarchingCubes adds each lump's colour times a falloff and never divides by it, and the
+    // skin sits between a coloured cell and an empty one, so every colour came out at the skin dim and greyed (and
+    // overshot where lumps overlapped). Each vertex is scaled back to the brightness the lumps were given; its hue
+    // and saturation are kept.
+    const ca=mc.colorArray,tm=gTop;
+    for(let i=0,L=mc.count*3;i<L;i+=3){const m=Math.max(ca[i],ca[i+1],ca[i+2]);if(m>1e-5){const k=tm/m;ca[i]*=k;ca[i+1]*=k;ca[i+2]*=k;}}}
   // the glass the goo is clipped to, in world space: a solid's faces, or the prism's walls and two panes.
   // Curved space has curved glass, which a flat clip cannot follow: there the physics' inset holds it.
   const clip=[];let clipN=0;
@@ -421,12 +440,12 @@ export function start(){
     for(const b of balls){if(n>=MAXB)break;
       let bx=lerpX(b),by=lerpY(b),bz=(b.pz==null?(b.z||0):b.pz+((b.z||0)-b.pz)*_alpha);
       if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR*2.2){bx=b.x;by=b.y;bz=b.z||0;}
-      const r=BR*ballScale(bx,by,bz)*(CRAY?1.5:1),x=bx-CX,y=by-CY,z=zl(bz),under=fill&&gooAt(b.x,b.y,b.z)>0.3;
+      const r=BR*ballScale(bx,by,bz)*noteScale(),x=bx-CX,y=by-CY,z=zl(bz),under=fill&&gooAt(b.x,b.y,b.z)>0.3;
       tmpM.makeScale(r,r,r).setPosition(x,y,z);ballMesh.setMatrixAt(n,tmpM);
-      HUE.setHSL(b.hue,under?0.7:0.88,under?0.52:0.58);ballMesh.setColorAt(n,HUE);   // balls wear their raw hue, as in 2D
+      HUE.setHSL(b.hue,under?0.7:0.86,under?0.52:0.6,T.SRGBColorSpace);ballMesh.setColorAt(n,HUE);   // balls wear their raw hue, as in 2D. In sRGB, as the 2D sprite does: set in linear light the same numbers came out washed-out pastel
       const tl=b.trail.length;for(let i=0;i<tl;i++){const t=b.trail[i],f=i/tl;
         trails.add(t[0]-CX,t[1]-CY,zl(t[2]||0),r*(0.5+1.1*f),HUE.r,HUE.g,HUE.b,f*0.32);}
-      if(fill&&!solid)shadows.add(x+3,y+5,zl(0.995),r*2.6,0.24,0.14,0.42,0.22);
+      if(fill&&!solid)shadows.add(x+3,y+5,zl(0.995),r*(2.6-1.0*bz),0.42,0.3,0.62,0.02+0.12*bz*bz);   // a soft lilac shadow on the back glass: darker and smaller the closer the ball is to it
       else if(fill&&solid&&edges._space!=='curved'){   // a solid: a soft shadow straight down on whichever face is underneath
         const G=boxGravity(),c=Math.cos(rot),sn=Math.sin(rot);let best=1e9,bn=null;
         for(const pl of SOLID.planes){const n=pl.n,nx=n[0]*c-n[1]*sn,ny=n[0]*sn+n[1]*c,nd=nx*G[0]+ny*G[1]+n[2]*G[2];
@@ -459,6 +478,11 @@ export function start(){
   let lost=false;
   glc.addEventListener('webglcontextlost',e=>{e.preventDefault();lost=true;if(window.__glLost)window.__glLost();},false);
   function show(v){glc.style.display=v?'block':'none';}
-  return {render,setLite,setLook,show,canvas:glc,gooOut,get look(){return CRAY?'crayon':'glass';},get lost(){return lost;},
+  // test hook: the colours the goo is actually drawn in (its vertex colours): how far apart the hues spread
+  // (circular, in turns), and the mean saturation and lightness
+  function gooColors(){if(!mc||!mc.count)return null;const ca=mc.colorArray,h={h:0,s:0,l:0},C=new T.Color();let sx=0,sy=0,ss=0,sl=0,n=0;
+    for(let i=0;i<mc.count;i+=7){C.setRGB(ca[i*3],ca[i*3+1],ca[i*3+2]);C.getHSL(h,T.SRGBColorSpace);sx+=Math.cos(h.h*6.2832)*h.s;sy+=Math.sin(h.h*6.2832)*h.s;ss+=h.s;sl+=h.l;n++;}
+    return {spread:1-Math.hypot(sx,sy)/Math.max(1e-6,ss),sat:ss/n,light:sl/n,n};}
+  return {render,setLite,setLook,show,canvas:glc,gooOut,gooColors,get noteScale(){return noteScale();},get look(){return CRAY?'crayon':'glass';},get lost(){return lost;},
     stats(){const i=renderer.info;return {calls:i.render.calls,tris:i.render.triangles,cpuMs,goo:mc?mc.count:0,gres:GRES,lite};}};
 }
