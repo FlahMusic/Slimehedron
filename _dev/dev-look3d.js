@@ -42,6 +42,21 @@ print(json.dumps({'mid':ring(0,r*0.35),'rim':ring(r*0.72,r*0.92),'bg':ring(r*1.6
   ok(g&&g.spread<0.2,'['+look+'] fed every colour at once, the goo is still one candy (hue spread '+(g?g.spread.toFixed(3):'?')+')');
   ok(g&&g.sat>0.45,'['+look+'] and it is clearly coloured, not grey (saturation '+(g?g.sat.toFixed(2):'?')+')');
   ok(g&&g.light>0.55&&g.light<0.88,'['+look+'] and pastel-light, not dark or muddy (lightness '+(g?g.light.toFixed(2):'?')+')');}
+ // ---- 1b. a note squashes when it hits a wall, and not when it slips through a glued (portal) side ----
+ const sq=async(space)=>p.evaluate(async space=>{window.setLook3D('glass');window.setSpace(space);const s=document.getElementById('shape');s.value='6';s.dispatchEvent(new Event('change'));
+   window.setSpace(space);fillState='fill';particles.length=0;balls.length=0;S.chaos=0;
+   // each one starts just inside the glass and heads straight at it (software GL draws a few frames a second here)
+   for(let i=0;i<4;i++){const ang=i*Math.PI/2+0.3;spawn(CX+Math.cos(ang)*R*0.62,CY+Math.sin(ang)*R*0.62);const B=balls[balls.length-1];B.z=B.pz=0.5;B.vz=0;B.vx=ballSpeed()*Math.cos(ang);B.vy=ballSpeed()*Math.sin(ang);}
+   if(!S.playing)setPlaying(true);window.__gl.api.squash();
+   // wait until the balls have reached the glass and come off it (or gone through it): software GL is slow here
+   const v0=balls.map(b=>[b.vx,b.vy]),t0=performance.now();let k=0;
+   while(performance.now()-t0<15000){await new Promise(r=>setTimeout(r,250));k=Math.max(k,window.__gl.api.squash());
+     const turned=balls.slice(0,4).filter((b,i)=>v0[i]&&b.vx*v0[i][0]+b.vy*v0[i][1]<0).length,far=balls.slice(0,4).filter(b=>Math.hypot(b.x-CX,b.y-CY)<R*0.5).length;
+     if(turned>=2||(space==='portal'&&far>=2&&performance.now()-t0>3000))break;}return {k:Math.max(k,window.__gl.api.squash()),space:edges._space,n:balls.length,b0:balls[0]?[Math.round(balls[0].x),Math.round(balls[0].y),balls[0].vx.toFixed(1)]:null,shape:String(S.shape),gl:!!window.__gl.api,look:window.__gl.api.look};},space);
+ const sN=await sq('normal'),sP=await sq('portal');
+ ok(sN.k>0.15,'a note squashes when it hits a wall (flattened by up to '+(sN.k*100).toFixed(0)+'%'+(sN.k>0.15?'':', '+JSON.stringify(sN))+')');
+ ok(sP.space==='portal'&&sP.k<0.02,'and does not when it slips through a glued side (portal: '+(sP.k*100).toFixed(0)+'%)');
+ await p.evaluate(()=>{window.setSpace('normal');balls.length=0;});
  // ---- 2. a note has a clean edge ----
  await p.evaluate(()=>window.setLook3D('glass'));
  const shot=await p.evaluate(()=>{try{setPlaying(false);}catch(e){}particles.length=0;balls.length=0;window.requestAnimationFrame=()=>0;

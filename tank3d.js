@@ -291,6 +291,22 @@ export function start(){
 
   // ---------- balls, trails, spray, shadows ----------
   const MAXB=40;
+  // A NOTE SQUASHES WHEN IT HITS. Read straight from the motion, so every kind of wall (a prism's, a solid's face,
+  // the front and back glass, a curved wall) does it and a portal (no change of direction) does not: when a ball's
+  // heading turns sharply between two frames it bounced, and the bounce's normal is the change in its velocity.
+  // It flattens along that normal and swells across it for a tenth of a second, then springs back.
+  const SQ=new WeakMap(),SQT=120;let sqMax=0;
+  function noteMatrix(b,x,y,z,r,now){let st=SQ.get(b);const vx=b.vx||0,vy=b.vy||0,vz=(b.vz||0)*BOXD;
+    if(!st){st={vx,vy,vz,t:-1e9,n:[0,0,1]};SQ.set(b,st);}
+    const pv=Math.hypot(st.vx,st.vy,st.vz),cv=Math.hypot(vx,vy,vz);
+    if(pv>0.2&&cv>0.2&&(vx*st.vx+vy*st.vy+vz*st.vz)/(pv*cv)<0.8){const dx=vx/cv-st.vx/pv,dy=vy/cv-st.vy/pv,dz=vz/cv-st.vz/pv,dl=Math.hypot(dx,dy,dz)||1;
+      st.n=[dx/dl,dy/dl,dz/dl];st.t=now;}
+    st.vx=vx;st.vy=vy;st.vz=vz;
+    const a=now-st.t;if(a>=SQT||reduceMotion.matches){tmpM.makeScale(r,r,r).setPosition(x,y,z);return;}
+    const k=0.34*(1-a/SQT)*(1-a/SQT),n=st.n,sn=r*(1-k),sp=r*(1+k*0.5);sqMax=Math.max(sqMax,k);
+    const t0=Math.abs(n[2])<0.9?[0,0,1]:[1,0,0];let u=[n[1]*t0[2]-n[2]*t0[1],n[2]*t0[0]-n[0]*t0[2],n[0]*t0[1]-n[1]*t0[0]];const ul=Math.hypot(...u);u=u.map(q=>q/ul);
+    const w=[n[1]*u[2]-n[2]*u[1],n[2]*u[0]-n[0]*u[2],n[0]*u[1]-n[1]*u[0]];
+    tmpM.set(u[0]*sp,w[0]*sp,n[0]*sn,x, u[1]*sp,w[1]*sp,n[1]*sn,y, u[2]*sp,w[2]*sp,n[2]*sn,z, 0,0,0,1);}
   const ballMesh=new T.InstancedMesh(new T.SphereGeometry(1,32,20),ballMat,MAXB);ballMesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
   ballMesh.count=0;ballMesh.renderOrder=3;ballMesh.frustumCulled=false;box.add(ballMesh);
   for(let i=0;i<MAXB;i++)ballMesh.setColorAt(i,HUE.set(0xffffff));
@@ -441,7 +457,7 @@ export function start(){
       let bx=lerpX(b),by=lerpY(b),bz=(b.pz==null?(b.z||0):b.pz+((b.z||0)-b.pz)*_alpha);
       if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR*2.2){bx=b.x;by=b.y;bz=b.z||0;}
       const r=BR*ballScale(bx,by,bz)*noteScale(),x=bx-CX,y=by-CY,z=zl(bz),under=fill&&gooAt(b.x,b.y,b.z)>0.3;
-      tmpM.makeScale(r,r,r).setPosition(x,y,z);ballMesh.setMatrixAt(n,tmpM);
+      noteMatrix(b,x,y,z,r,now);ballMesh.setMatrixAt(n,tmpM);
       HUE.setHSL(b.hue,under?0.7:0.86,under?0.52:0.6,T.SRGBColorSpace);ballMesh.setColorAt(n,HUE);   // balls wear their raw hue, as in 2D. In sRGB, as the 2D sprite does: set in linear light the same numbers came out washed-out pastel
       const tl=b.trail.length;for(let i=0;i<tl;i++){const t=b.trail[i],f=i/tl;
         trails.add(t[0]-CX,t[1]-CY,zl(t[2]||0),r*(0.5+1.1*f),HUE.r,HUE.g,HUE.b,f*0.32);}
@@ -483,6 +499,6 @@ export function start(){
   function gooColors(){if(!mc||!mc.count)return null;const ca=mc.colorArray,h={h:0,s:0,l:0},C=new T.Color();let sx=0,sy=0,ss=0,sl=0,n=0;
     for(let i=0;i<mc.count;i+=7){C.setRGB(ca[i*3],ca[i*3+1],ca[i*3+2]);C.getHSL(h,T.SRGBColorSpace);sx+=Math.cos(h.h*6.2832)*h.s;sy+=Math.sin(h.h*6.2832)*h.s;ss+=h.s;sl+=h.l;n++;}
     return {spread:1-Math.hypot(sx,sy)/Math.max(1e-6,ss),sat:ss/n,light:sl/n,n};}
-  return {render,setLite,setLook,show,canvas:glc,gooOut,gooColors,get noteScale(){return noteScale();},get look(){return CRAY?'crayon':'glass';},get lost(){return lost;},
+  return {render,setLite,setLook,show,canvas:glc,gooOut,gooColors,get noteScale(){return noteScale();},squash(){const m=sqMax;sqMax=0;return m;},get look(){return CRAY?'crayon':'glass';},get lost(){return lost;},
     stats(){const i=renderer.info;return {calls:i.render.calls,tris:i.render.triangles,cpuMs,goo:mc?mc.count:0,gres:GRES,lite};}};
 }
