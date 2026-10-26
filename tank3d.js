@@ -20,7 +20,7 @@ export function start(){
   const glc=document.createElement('canvas');glc.id='cvGL';glc.setAttribute('aria-hidden','true');
   stage.insertBefore(glc,cv);
   let renderer;
-  try{renderer=new T.WebGLRenderer({canvas:glc,antialias:true,alpha:true,powerPreference:'high-performance'});}
+  try{renderer=new T.WebGLRenderer({canvas:glc,antialias:true,alpha:true,stencil:true,powerPreference:'high-performance'});/* stencil: a wormhole's throat is only seen through its mouth */}
   catch(e){glc.remove();throw e;}
   renderer.setClearColor(0x000000,0);
   renderer.localClippingEnabled=true;   // the goo is clipped to the glass it sits in
@@ -217,7 +217,7 @@ export function start(){
         const da=dashFrom<0?-1:dashFrom,db=dashFrom<0?-1:dashFrom+L;D.push(da,da,db,da,db,db);}
       return L;};
     const owner=[];
-    per.forEach((pts,i)=>{const portal=!!edges[i].twin;let run=0;
+    per.forEach((pts,i)=>{const portal=false;let run=0;
       for(let k=0;k<pts.length-1;k++){const a=pts[k],b=pts[k+1];
         const n0=P.length,cw=crayW();run+=beam([a[0],a[1],zl(0)],[b[0],b[1],zl(0)],5.5*cw,portal?run:-1);
         beam([a[0],a[1],zl(1)],[b[0],b[1],zl(1)],3*cw,-1);
@@ -232,8 +232,7 @@ export function start(){
   function buildHorizon(){horizon=new T.Group();
     const ring=(z,rr)=>{const pos=[];for(let k=0;k<=96;k++){const a=k/96*Math.PI*2;pos.push(Math.cos(a)*rr,Math.sin(a)*rr,z);}
       const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));return g;};
-    horizon.add(new T.Line(ring(zl(0),HYP.RD),new T.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.85})));
-    horizon.add(new T.Line(ring(zl(1),HYP.RD),new T.LineBasicMaterial({color:0xd8c6ff,transparent:true,opacity:0.5})));
+    // (no rings at the rim any more: they drew a circle round every curved shape. The echoes stay.)
     const ech=window.__echoPolys?window.__echoPolys():null;
     if(ech){const segs=(list,z)=>{const pos=[];for(const pts of list)for(let k=0;k<pts.length;k++){const a=pts[k],b=pts[(k+1)%pts.length];
           pos.push(a[0]-CX,a[1]-CY,z,b[0]-CX,b[1]-CY,z);}const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));return g;};
@@ -270,18 +269,15 @@ export function start(){
     const P=[],D=[],ow=[],seen=new Set(),key=(a,b)=>{const r=v=>v.map(x=>Math.round(x)).join(',');const A=r(a),B=r(b);return A<B?A+'|'+B:B+'|'+A;};
     F.forEach((f,i)=>{for(let k=0;k<f.length;k++){const a=f[k].p,b=f[(k+1)%f.length].p,kk=key(a,b);if(seen.has(kk))continue;seen.add(kk);
       const n0=P.length,ES=curved?8:1;for(let e=0;e<ES;e++)beamTo(P,D,M(lerp3(a,b,e/ES)),M(lerp3(a,b,(e+1)/ES)),4.4*crayW());for(let j=n0;j<P.length;j+=3)ow.push(i);}});
-    // the edge of hyperbolic space itself: a faint glass sphere at infinity
-    if(curved&&!skyBall){skyBall=new T.Mesh(new T.SphereGeometry(RB,48,32),fresnel(new T.MeshPhysicalMaterial({color:0xe6dcff,roughness:0.1,clearcoat:1,
-      iridescence:0.5,transparent:true,opacity:0.03,side:T.BackSide,depthWrite:false,envMapIntensity:1.2}),0.35));skyBall.renderOrder=0;box.add(skyBall);}
+    // (the faint glass sphere at infinity drew a big circle round every curved solid; Flah: take it out)
     if(skyBall)skyBall.visible=curved;
     const rg=new T.BufferGeometry();rg.setAttribute('position',new T.Float32BufferAttribute(P,3));
     solidRimCol=new Float32Array(P.length);rg.setAttribute('color',new T.BufferAttribute(solidRimCol,3));rg.setAttribute('dash',new T.Float32BufferAttribute(D,1));
     solidRimOwner=ow;solidRims=new T.Mesh(rg,CRAY?crayRim:rimMat);solidRims.renderOrder=7;solidRims.frustumCulled=false;spin.add(solidRims);}
   function updateSolid(ph,now){const td=totalDegrees()||1,col=solidCol,own=solidFaceOf;let last=-1,r=0,g=0,b=0,a=0;
-    for(let t=0;t<own.length;t++){const i=own[t];if(i!==last){last=i;const fl=Math.min(1,(SOLID.flash[i]||0)*1.4),
-        tw=edges._space==='portal'&&SOLID.twin&&SOLID.twin[i]>=0;
+    for(let t=0;t<own.length;t++){const i=own[t];if(i!==last){last=i;const fl=Math.min(1,(SOLID.flash[i]||0)*1.4);
         glassCol((SOLID.deg[i]||0)/td+ph,fl,HUE,0.6,0.8);r=HUE.r;g=HUE.g;b=HUE.b;
-        a=(tw?0.1+0.06*(0.5+0.5*Math.sin(now*0.004+i)):0.2)+fl*0.35;}
+        a=0.2+fl*0.35;}
       const j=t*4;col[j]=r;col[j+1]=g;col[j+2]=b;col[j+3]=a;}
     solidIn.geometry.attributes.color.needsUpdate=true;
     last=-1;const rc=solidRimCol,ro=solidRimOwner;
@@ -321,10 +317,130 @@ export function start(){
       done(){g.setDrawRange(0,n);for(const k of ['position','size','col'])g.attributes[k].needsUpdate=true;},get n(){return n;}};}
   const shadows=pointsSystem(shadowMat,MAXB,1),trails=pointsSystem(trailMat,MAXB*8,4),drops=pointsSystem(dropMat,900,5);
 
+  // ---------- THE WORMHOLES (portal space; the physics is PORTAL SPACE in index.html) ----------
+  // Each hole is a flat disc lying on its wall, drawn entirely by its own shader: a whirlpool whose arms wind
+  // into the middle, rings that keep rushing inward (that is what makes it read as a tunnel and not a sticker),
+  // a bright event-horizon rim, a soft glow round it, and -- right at the bottom -- the OTHER hole's colour:
+  // you can see through to where it comes out. When a ball goes in, the hole spins up and glows; when the far
+  // hole spits one out it swells and throws a ring of light. A few motes keep spiralling into each hole.
+  // The crayon look draws the same thing in flat crayon bands with hatching, boiling with the rest.
+  const WK=1.75;   // the disc mesh is this many times the hole's radius: the rim, its glow and the spit ring live outside it
+  const wormMat=(rimHex,deepHex)=>new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,
+    uniforms:{uT:{value:0},uOpen:{value:0},uSuck:{value:0},uSpit:{value:0},uPre:{value:0},uCray:{value:0},uSeed:CR.seed,uPx:CR.px,
+      uRim:{value:new T.Color(rimHex)},uDeep:{value:new T.Color(deepHex)},uFar:{value:new T.Color(0xffffff)}},
+    vertexShader:`varying vec2 vP;void main(){vP=position.xy;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+    fragmentShader:CR_GLSL+`uniform float uT,uOpen,uSuck,uSpit,uPre,uCray;uniform vec3 uRim,uDeep,uFar;varying vec2 vP;
+      void main(){const float K=${WK.toFixed(2)};vec2 p=vP*K;float r=length(p);if(r>K)discard;
+        float a=atan(p.y,p.x),rr=r/(1.0+0.24*uSpit+0.2*uPre);   // swells as it is about to spit, and as it spits
+        float tun=log(max(rr,0.012));                                   // tunnel depth: equal steps here look like equal steps down the hole
+        float sw=a*3.0+tun*5.2-uT*(2.3+4.0*uSuck);                      // three arms winding in
+        float arms=0.5+0.5*sin(sw),rings=0.5+0.5*sin(tun*10.0+uT*(5.5+8.0*uSuck));
+        float hole=1.0-smoothstep(0.95,1.02,rr);
+        vec3 deep=mix(uDeep,uFar,smoothstep(0.55,0.04,rr)*0.9);          // the far side, glimpsed at the bottom
+        vec3 col=mix(uRim,deep,smoothstep(0.98,0.28,rr));
+        col=mix(col,col*0.62+uRim*0.5,arms*0.6*smoothstep(1.0,0.12,rr));
+        col*=0.78+0.22*rings;
+        col*=1.0-0.32*exp(-pow((rr-0.84)/0.11,2.0));                     // the lip's shadow: the inside drops away under it
+        float rim=exp(-pow((rr-1.0)/0.065,2.0));
+        col=mix(col,uRim*1.12+0.14,rim*0.85);
+        float halo=step(1.0,rr)*(1.0-smoothstep(1.0,K,rr));
+        float w=uSpit>0.01?exp(-pow((rr-(1.0+(1.0-uSpit)*0.62))/0.075,2.0))*uSpit:0.0;   // the ring a spit throws
+        col=mix(col,uRim*1.15+0.22,w);
+        float al=hole*mix(0.42,0.9,smoothstep(0.55,0.97,rr))+rim*0.9+halo*halo*0.3*(1.0+1.6*uSuck+uSpit)+w*0.9;   // see-through in the middle: the throat is behind it
+        if(uCray>0.5){vec2 q=gl_FragCoord.xy/uPx;float g=crGrain(q);
+          col=floor(col*4.0+g*0.55)/4.0+0.04;                              // pressed in flat crayon bands
+          float h=max(crHatch(q,0.785,6.5)*arms,crHatch(q,-0.785,8.0)*smoothstep(0.7,0.2,rr))*hole;
+          col=mix(col,pow(col,vec3(1.8))*0.85,h*0.7);
+          float edge=rr+(crN(vec2(a*2.6,uSeed*3.1))-0.5)*0.07;           // a wobbly hand-drawn lip
+          al=(1.0-smoothstep(0.96,1.0,edge))*mix(0.78,1.08,g)+exp(-pow((edge-1.0)/0.05,2.0))*0.95+w*0.8+halo*0.18;
+          if(g<0.16&&rr>0.98)discard;}
+        gl_FragColor=vec4(col,clamp(al,0.0,1.0)*uOpen);
+        #include <colorspace_fragment>
+      }`});
+  const wormMeshes=[wormMat(0xff9ccf,0x7a45c8),wormMat(0x86e8d6,0x2f74c4)].map(m=>{const me=new T.Mesh(new T.PlaneGeometry(2,2),m);
+    me.matrixAutoUpdate=false;me.renderOrder=5;me.frustumCulled=false;me.visible=false;box.add(me);return me;});
+  wormMeshes[0].material.uniforms.uFar.value.copy(wormMeshes[1].material.uniforms.uRim.value);
+  wormMeshes[1].material.uniforms.uFar.value.copy(wormMeshes[0].material.uniforms.uRim.value);
+  // THE THROAT: a real funnel behind each mouth, narrowing as it goes away from the tank, so you look DOWN a tunnel
+  // that has depth and parallax from every angle (a flat disc alone read as a sticker on the wall). Rings flow down
+  // it, the arms wind round it, and at the bottom it glows in the other hole's colour. It is cut by a STENCIL to
+  // the mouth: you only ever see it through the hole, never sticking out of the tank (drawn plainly it looked like
+  // a horn bolted onto the glass).
+  const throatGeo=(()=>{const A=48,L=18,pos=[],uv=[],idx=[];
+    for(let j=0;j<=L;j++){const v=j/L,r=1-0.84*Math.pow(v,0.62),d=-2.6*v;
+      for(let i=0;i<=A;i++){const u=i/A,a=u*Math.PI*2;pos.push(Math.cos(a)*r,Math.sin(a)*r,d);uv.push(u,v);}}
+    for(let j=0;j<L;j++)for(let i=0;i<A;i++){const a=j*(A+1)+i,b=a+A+1;idx.push(a,b,a+1,a+1,b,b+1);}
+    const cap=pos.length/3;pos.push(0,0,-2.6);uv.push(0.5,1);
+    for(let i=0;i<A;i++){idx.push(cap,L*(A+1)+i,L*(A+1)+i+1);}
+    const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('uv',new T.Float32BufferAttribute(uv,2));g.setIndex(idx);return g;})();
+  const throatMat=(src)=>new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,uniforms:src.uniforms,
+    vertexShader:`varying vec2 vU;void main(){vU=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+    fragmentShader:CR_GLSL+`uniform float uT,uOpen,uSuck,uSpit,uCray;uniform vec3 uRim,uDeep,uFar;varying vec2 vU;
+      void main(){float u=vU.x,v=vU.y;
+        float arms=0.5+0.5*sin(u*18.8496+v*7.5-uT*(2.3+4.0*uSuck)),rings=0.5+0.5*sin(v*17.0-uT*(5.5+8.0*uSuck));   // rings run DOWN the throat
+        vec3 col=mix(uRim,uDeep,smoothstep(0.0,0.55,v));col=mix(col,uFar*1.1+0.08,smoothstep(0.6,1.0,v));
+        col=mix(col,col*0.6+uRim*0.5,arms*0.5*(1.0-v));col*=0.72+0.28*rings;
+        float al=(0.5+0.35*arms)*(1.0-0.2*v)+smoothstep(0.92,1.0,v)*0.4;
+        if(uCray>0.5){vec2 q=gl_FragCoord.xy/uPx;float g=crGrain(q);col=floor(col*4.0+g*0.55)/4.0+0.04;
+          col=mix(col,pow(col,vec3(1.8))*0.85,crHatch(q,0.785,6.5)*arms*0.6);al*=mix(0.7,1.1,g);}
+        gl_FragColor=vec4(col,clamp(al,0.0,1.0)*uOpen);
+        #include <colorspace_fragment>
+      }`});
+  // stencil values: 519 ALWAYS, 514 EQUAL, 7681 REPLACE, 7680 KEEP (three.js's constants, as numbers: the bundle does not export them)
+  const throats=wormMeshes.map((w,i)=>{const m=throatMat(w.material);m.stencilWrite=true;m.stencilRef=i+1;m.stencilFunc=514;m.stencilFail=m.stencilZFail=m.stencilZPass=7680;
+    const me=new T.Mesh(throatGeo,m);me.matrixAutoUpdate=false;me.renderOrder=4.5;me.frustumCulled=false;me.visible=false;box.add(me);return me;});
+  const mouthMask=wormMeshes.map((w,i)=>{const m=new T.MeshBasicMaterial({colorWrite:false,depthWrite:false,side:T.DoubleSide});
+    m.stencilWrite=true;m.stencilRef=i+1;m.stencilFunc=519;m.stencilZPass=7681;m.stencilFail=m.stencilZFail=7680;
+    const me=new T.Mesh(new T.CircleGeometry(0.97,64),m);me.matrixAutoUpdate=false;me.renderOrder=4.4;me.frustumCulled=false;me.visible=false;box.add(me);return me;});
+  // a hole on a wall you see nearly edge-on is only a sliver, so each one also has a soft GLOW that faces you whatever
+  // the angle, just inside the glass, and its motes swirl in a little cone standing out of the hole into the tank
+  const wormGlowMat=new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{uScale:{value:1}},
+    vertexShader:ptVert,fragmentShader:`varying vec4 vC;void main(){vec2 p=gl_PointCoord*2.0-1.0;float r=dot(p,p);if(r>1.0)discard;
+      gl_FragColor=vec4(vC.rgb,vC.a*pow(1.0-r,1.6));
+      #include <colorspace_fragment>
+      }`});
+  const wormGlow=pointsSystem(wormGlowMat,2,5);
+  const motes=pointsSystem(dropMat,64,5),WMC=[new T.Color(0xffc4e2),new T.Color(0xb6f4ea)],WGC=[new T.Color(0xff86c4),new T.Color(0x5fd9c6)];
+  const WB=new T.Matrix4(),WX=new T.Vector3(),WY=new T.Vector3(),WZ=new T.Vector3();
+  function wormBasis(n,t1,c,sc){WZ.set(n[0],n[1],n[2]);WX.set(t1[0],t1[1],t1[2]);WY.crossVectors(WZ,WX);
+    WB.makeBasis(WX.multiplyScalar(sc),WY.multiplyScalar(sc),WZ.multiplyScalar(sc));WB.setPosition(c[0],c[1],c[2]);return WB;}
+  const camL=new T.Vector3(),invBox=new T.Matrix4();
+  function drawWorms(now,fill){const W=window.__worm;motes.reset();wormGlow.reset();
+    invBox.copy(box.matrix).invert();camL.set(0,0,CAM).applyMatrix4(invBox);   // the camera, in the box's own frame
+    const on=!!W&&fill&&W.open>0.01&&edges._space==='portal';
+    const da=-(typeof _rotV==='number'?_rotV:0)*(1-(typeof _alpha==='number'?_alpha:1)),dc=Math.cos(da),ds=Math.sin(da),rz=v=>[v[0]*dc-v[1]*ds,v[0]*ds+v[1]*dc,v[2]];   // turned with the glass, between ticks
+    for(let i=0;i<2;i++){const me=wormMeshes[i],P0=on?W.P[i]:null;
+      const P=P0?Object.assign({},P0,(()=>{const q=rz([P0.x,P0.y,P0.z]);return {x:q[0],y:q[1],z:q[2],n:rz(P0.n),t1:rz(P0.t1)};})()):null;
+      if(!P||P.rad<1.5){me.visible=false;throats[i].visible=false;mouthMask[i].visible=false;continue;}
+      const z=P.z,c=[P.x+P.n[0]*1.2,P.y+P.n[1]*1.2,z+P.n[2]*1.2];
+      // the throat always runs AWAY from you: out through the wall when you look at the hole from inside the tank,
+      // into the tank when you look at it from outside (a solid's near face). Either way you look down into it,
+      // and a hole on a near face is drawn over that face's glass so the glass does not grey it out.
+      const facing=(camL.x-P.x)*P.n[0]+(camL.y-P.y)*P.n[1]+(camL.z-z)*P.n[2]<0,nn=facing?[-P.n[0],-P.n[1],-P.n[2]]:P.n;
+      const th=throats[i],mk=mouthMask[i],sc=P.rad*(1+0.2*(P.spit||0));th.matrix.copy(wormBasis(nn,P.t1,[P.x,P.y,z],sc));th.matrixWorldNeedsUpdate=true;th.visible=true;
+      th.renderOrder=facing?6.6:4.5;mk.renderOrder=facing?6.5:4.4;me.renderOrder=facing?6.7:5;
+      mk.matrix.copy(wormBasis(P.n,P.t1,[P.x+P.n[0]*0.6,P.y+P.n[1]*0.6,z+P.n[2]*0.6],sc));mk.matrixWorldNeedsUpdate=true;mk.visible=true;
+      me.matrix.copy(wormBasis(P.n,P.t1,c,P.rad*WK));me.matrixWorldNeedsUpdate=true;me.visible=true;
+      const u=me.material.uniforms;u.uT.value=reduceMotion.matches?0:now/1000;u.uOpen.value=Math.min(1,W.open*1.2);
+      u.uSuck.value=Math.max(P.suck||0,(P.pre||0)*0.6);u.uSpit.value=P.spit||0;u.uPre.value=P.pre||0;u.uCray.value=CRAY?1:0;
+      const vx=camL.x-P.x,vy=camL.y-P.y,vz=camL.z-z,vl=Math.hypot(vx,vy,vz)||1,edgeOn=1-Math.abs((vx*P.n[0]+vy*P.n[1]+vz*P.n[2])/vl);   // 1 = seen side-on
+      const gl=0.4+0.3*edgeOn+0.35*Math.max(P.suck||0,P.spit||0,P.pre||0);   // the more side-on the hole, the more its glow has to say where it is
+      wormGlow.add(P.x+P.n[0]*P.rad*0.3,P.y+P.n[1]*P.rad*0.3,z+P.n[2]*P.rad*0.3,P.rad*(2.4+0.8*edgeOn)*(1+0.25*(P.spit||0)),WGC[i].r,WGC[i].g,WGC[i].b,Math.min(0.85,gl)*Math.min(1,W.open*1.2));
+      if(!reduceMotion.matches&&!lite)for(let k=0;k<14;k++){   // motes spiralling in
+        const pr=(now/1000*0.5+k*0.618)%1,ang=k*2.3998+pr*3.2+now/1000*0.9,rr=P.rad*(1.55-1.35*pr),cs=Math.cos(ang),sn=Math.sin(ang),hh=P.rad*0.7*(1-pr)*(1-pr);
+        motes.add(c[0]+(P.t1[0]*cs+WY.x/(P.rad*WK)*sn)*rr+P.n[0]*hh,c[1]+(P.t1[1]*cs+WY.y/(P.rad*WK)*sn)*rr+P.n[1]*hh,c[2]+(P.t1[2]*cs+WY.z/(P.rad*WK)*sn)*rr+P.n[2]*hh,
+          3.6*(1-pr*0.6),WMC[i].r,WMC[i].g,WMC[i].b,Math.sin(pr*Math.PI)*0.85);}}
+    motes.done();wormGlow.done();}
+
   // ---------- the goo: a real volume (marching cubes over the goo drops, at their real depths) ----------
   // The physics holds every drop inside the shape (gooContain3D); the soft surface drawn round them is also
   // CLIPPED to the glass, so not one pixel of goo can show through a wall or a face.
-  let GRES=lite?32:40,mc=null,mcEvery=lite?3:2,mcTick=0;   // rebuilt every 2nd frame (3rd when slow): it moves slowly, the eye cannot tell
+  // THE GOO IS REBUILT EVERY FRAME, FROM LUMPS THAT MOVE SMOOTHLY. It used to be rebuilt every 2nd frame (3rd when
+  // slow) from drops binned into grid cells: a drop crossing a cell line moved a whole lump at once, the fitted
+  // grid snapped by a cell, the drops were drawn where the last 60 Hz tick left them (not between ticks, like the
+  // balls) -- all of which read as choppy. Now (see LUMPS below) the surface is built from a few dozen lumps that
+  // follow the goo continuously, so it is cheap enough to rebuild on every frame.
+  let GRES=lite?32:40,mc=null,mcEvery=lite?2:1,mcTick=0,gooMs=0,gooAvg=0;
   const SX=R*1.18;   // the field spans the whole tank, curved space included, the same on every axis
   function makeGoo(){if(mc){box.remove(mc);mc.geometry.dispose();}
     mc=new T.MarchingCubes(GRES,CRAY?crayGoo:gooMat,false,true,90000);mc.isolation=60;mc.renderOrder=2;mc.frustumCulled=false;
@@ -340,52 +456,100 @@ export function start(){
   function gooOut(){if(!mc||!mc.count)return null;const g=glassList(),pa=mc.positionArray;let worst=-1e9;
     for(let i=0;i<mc.count;i++){const x=pa[i*3]*fitH+fitC[0],y=pa[i*3+1]*fitH+fitC[1],z=pa[i*3+2]*fitH+fitC[2];for(const q of g)worst=Math.max(worst,q[0]*x+q[1]*y+q[2]*z-q[3]);}
     return {reach:worst,clip:(mc.material.clippingPlanes||[]).length,glass:g.length};}
-  // THE FIELD FOLLOWS THE GOO. The marching-cubes grid is fitted round the goo each time (snapped to whole cells
-  // so it does not shimmer as it moves), so a small blob gets a fine grid and stays smooth instead of coming
-  // out as faceted beads, and a big one still fits. Lumps are binned at a couple of grid cells each.
+  // THE LUMPS. A few dozen of them share the goo out between them (each drop belongs to the lump nearest it; a lump
+  // sits at the middle of its drops and is as big as their spread) -- k-means, one step per frame, carried from
+  // frame to frame. Each lump EASES toward where its drops are (time-based, so 60, 90 or 120 Hz look the same), so
+  // the surface flows instead of stepping. A lump with no drops shrinks to nothing; a new one grows from nothing at
+  // a drop. Nothing ever appears or vanishes in one frame. Drops are read BETWEEN physics ticks (_alpha).
+  const LUMPS=[];let lastGoo=0;
   let fitH=SX,fitC=[0,0,0];
-  function gooUpdate(){
-    if(++mcTick%mcEvery)return;
-    mc.reset();cells.clear();
-    if(!particles.length){mc.update();return;}
-    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9,any=false;
-    for(const p of particles){if(!p.pooled)continue;any=true;const x=p.x-CX,y=p.y-CY,z=zl(p.z==null?0.5:p.z);
-      if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;if(z<z0)z0=z;if(z>z1)z1=z;}
-    if(!any){mc.update();return;}
-    const want=Math.min(SX,Math.max(70,Math.ceil((Math.max(x1-x0,y1-y0,z1-z0)/2+44)/24)*24));
-    fitH=want>fitH?want:(want<fitH*0.7?want:fitH);   // grow at once, shrink only when it is well worth it
-    const cell=2*fitH/GRES;fitC=[Math.round((x0+x1)/2/cell)*cell,Math.round((y0+y1)/2/cell)*cell,Math.round((z0+z1)/2/cell)*cell];
+  function gooPos(p,o){const a=(typeof _alpha==='number')?_alpha:1,z=p.z==null?0.5:p.z;
+    if(p.ox==null){o[0]=p.x-CX;o[1]=p.y-CY;o[2]=zl(z);return o;}
+    o[0]=p.ox+(p.x-p.ox)*a-CX;o[1]=p.oy+(p.y-p.oy)*a-CY;o[2]=zl(p.oz+(z-p.oz)*a);return o;}
+  const _q=[0,0,0],_alive=[],_live=[];
+  // ONE LUMP INTO THE FIELD. Same field as MarchingCubes.addBall (strength/d^2 - sub, in grid units), written
+  // straight into its arrays: addBall reaches 2.45x a lump's radius, takes a square root and a smoothstep for
+  // every cell it touches and makes a new Color per call -- 6 ms a frame for 31 lumps here, the whole budget.
+  // A stiffer falloff (sub 24, not 12) reaches 1.87x, and the colour weight is the field value itself (the
+  // colours are rescaled to one brightness after the build anyway). Same surface where a lump stands alone.
+  const LSUB=24,BB=[0,0,0,0,0,0];   // BB: the box of cells the lumps reach, so only those get polygonized (mc.bounds)
+  function addLump(x,y,z,rr,col){const S=mc.size,S2=mc.size2,F=mc.field,P=mc.palette,b=rr*rr*(mc.isolation+LSUB),reach=S*Math.sqrt(b/LSUB);
+    const cx=z*S,cy=y*S,cz=x*S;   // (z, y, x) = slowest to fastest axis, as addBall lays them out
+    const z0=Math.max(1,Math.floor(cx-reach)),z1=Math.min(S-1,Math.floor(cx+reach)),y0=Math.max(1,Math.floor(cy-reach)),y1=Math.min(S-1,Math.floor(cy+reach)),
+          x0=Math.max(1,Math.floor(cz-reach)),x1=Math.min(S-1,Math.floor(cz+reach)),inv=1/S,cr=col.r,cg=col.g,cb=col.b;
+    if(z0<BB[0])BB[0]=z0;if(z1>BB[1])BB[1]=z1;if(y0<BB[2])BB[2]=y0;if(y1>BB[3])BB[3]=y1;if(x0<BB[4])BB[4]=x0;if(x1>BB[5])BB[5]=x1;
+    for(let k=z0;k<z1;k++){const dz=k*inv-z,dz2=dz*dz,bk=S2*k;
+      for(let j=y0;j<y1;j++){const dy=j*inv-y,dyz=dy*dy+dz2,bj=bk+S*j;
+        for(let i=x0;i<x1;i++){const dx=i*inv-x,v=b/(1e-6+dx*dx+dyz)-LSUB;
+          if(v>0){const q=bj+i;F[q]+=v;const c=q*3;P[c]+=cr*v;P[c+1]+=cg*v;P[c+2]+=cb*v;}}}}}
+  let _glass=null;
+  function gooUpdate(){_glass=null;
+    const g0=performance.now(),now=g0,dt=Math.min(100,lastGoo?now-lastGoo:16.7);lastGoo=now;
+    const ease=(tau)=>1-Math.exp(-dt/tau);
+    let pooled=0;for(const p of particles)if(p.pooled)pooled++;
+    const K=pooled?Math.max(4,Math.min(lite?24:40,Math.round(Math.sqrt(pooled)*1.25))):0;
+    // grow the set to K, at drops that are furthest from any lump (so new lumps cover what is not covered yet)
+    const aliveN=()=>{let c=0;for(const L of LUMPS)if(!L.dying)c++;return c;};
+    if(pooled){let tries=0;while(aliveN()<K&&tries++<K*2){
+      let best=null,bd=-1;for(let t=0;t<12;t++){const p=particles[(Math.random()*particles.length)|0];if(!p||!p.pooled)continue;gooPos(p,_q);
+        let d=1e18;for(const L of LUMPS){if(L.dying)continue;const dx=_q[0]-L.tx,dy=_q[1]-L.ty,dz=_q[2]-L.tz;d=Math.min(d,dx*dx+dy*dy+dz*dz);}
+        if(d>bd){bd=d;best=[_q[0],_q[1],_q[2]];}}
+      if(!best)break;LUMPS.push({x:best[0],y:best[1],z:best[2],tx:best[0],ty:best[1],tz:best[2],r:0,tr:PR*1.5,hx:1,hy:0,h:0,n:0,dying:false,sx:0,sy:0,sz:0,s2:0,shx:0,shy:0});}}
+    // too many: the emptiest ones shrink away
+    let alive=_alive;alive.length=0;for(const L of LUMPS)if(!L.dying)alive.push(L);
+    if(alive.length>K){alive.sort((a,b)=>a.n-b.n);for(let i=0;i<alive.length-K;i++)alive[i].dying=true;
+      alive.length=0;for(const L of LUMPS)if(!L.dying)alive.push(L);}
+    // one k-means step: every drop to its nearest lump
+    for(const L of LUMPS){L.n=0;L.sx=L.sy=L.sz=L.s2=0;L.shx=L.shy=0;}
+    if(alive.length)for(const p of particles){if(!p.pooled)continue;gooPos(p,_q);let bL=null,bd=1e18;
+      for(const L of alive){const dx=_q[0]-L.tx,dy=_q[1]-L.ty,dz=_q[2]-L.tz,d=dx*dx+dy*dy+dz*dz;if(d<bd){bd=d;bL=L;}}
+      bL.n++;bL.sx+=_q[0];bL.sy+=_q[1];bL.sz+=_q[2];bL.s2+=bd;const a=(p.hue||0)*6.2832;bL.shx+=Math.cos(a);bL.shy+=Math.sin(a);}
+    const glass=_glass||(_glass=glassList()),kp=ease(55),kr=ease(90);
+    for(let i=LUMPS.length-1;i>=0;i--){const L=LUMPS[i];
+      if(L.n>0&&!L.dying){L.tx=L.sx/L.n;L.ty=L.sy/L.n;L.tz=L.sz/L.n;
+        // as big as its drops' spread, and always big enough to overlap its neighbours: one skin, not beads
+        L.tr=Math.max(PR*1.6,1.18*Math.sqrt(L.s2/L.n)+PR*1.1);L.hx+=(L.shx/L.n-L.hx)*kr;L.hy+=(L.shy/L.n-L.hy)*kr;}
+      else L.tr=0;
+      let room=1e9;for(const g of glass)room=Math.min(room,g[3]-(g[0]*L.tx+g[1]*L.ty+g[2]*L.tz));
+      const tr=Math.min(L.tr,Math.max(PR*0.5,room/1.3));   // near the glass a lump is drawn smaller, so the skin meets the glass
+      L.x+=(L.tx-L.x)*kp;L.y+=(L.ty-L.y)*kp;L.z+=(L.tz-L.z)*kp;L.r+=(tr-L.r)*kr;
+      if((L.dying||L.n===0)&&L.r<0.6)LUMPS.splice(i,1);}
+    const tA=performance.now();mc.reset();const tB=performance.now();
+    const live=_live;live.length=0;for(const L of LUMPS)if(L.r>0.6)live.push(L);
+    if(!live.length){mc.update();gooMs=performance.now()-g0;return;}
+    // the field box: fitted round the lumps, but it only MOVES when the goo is about to leave it, and only grows at
+    // once / shrinks when it is well worth it -- so the sampling grid stands still while the goo flows through it
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;
+    for(const L of live){const e=L.r*1.9;x0=Math.min(x0,L.x-e);x1=Math.max(x1,L.x+e);y0=Math.min(y0,L.y-e);y1=Math.max(y1,L.y+e);z0=Math.min(z0,L.z-e);z1=Math.max(z1,L.z+e);}
+    const want=Math.min(SX,Math.max(70,Math.ceil(Math.max(x1-x0,y1-y0,z1-z0)/2/24)*24+24));
+    const out=x0<fitC[0]-fitH||x1>fitC[0]+fitH||y0<fitC[1]-fitH||y1>fitC[1]+fitH||z0<fitC[2]-fitH||z1>fitC[2]+fitH;
+    if(out||want>fitH||want<fitH*0.6){fitH=Math.max(want,out?fitH:0);if(want<fitH*0.6)fitH=want;fitH=Math.min(SX,fitH);
+      const cell=2*fitH/GRES;fitC=[Math.round((x0+x1)/2/cell)*cell,Math.round((y0+y1)/2/cell)*cell,Math.round((z0+z1)/2/cell)*cell];}
     mc.position.set(fitC[0],fitC[1],fitC[2]);mc.scale.set(fitH,fitH,fitH);
-    const bin=Math.max(10,cell*2.4),MAX=lite?220:520;
     LQ.setRGB(liqRGB[0]/255,liqRGB[1]/255,liqRGB[2]/255,T.SRGBColorSpace);   // the pool colour is a CSS (sRGB) colour
     // THE POOL'S COLOUR IS AN AVERAGE OF NOTES, and an average of colours goes grey-brown. Keep its hue (the chord's)
     // and give it back a clean pastel's saturation and lightness, so the goo reads as candy, not mud.
     LQ.getHSL(LQH,T.SRGBColorSpace);LQH.s=Math.max(LQH.s,0.6);LQH.l=Math.min(0.74,Math.max(0.6,LQH.l));   // judged as the eye sees it (sRGB): a candy pastel, light but with body
     GC.setHSL(LQH.h,Math.max(0.55,LQH.s*0.95),Math.min(0.8,LQH.l+(CRAY?0.04:0)),T.SRGBColorSpace);const gTop=Math.max(GC.r,GC.g,GC.b);   // the brightness every lump is given
-    for(let i=0;i<particles.length;i++){const p=particles[i];if(!p.pooled)continue;
-      const z=zl(p.z==null?0.5:p.z),k=(Math.floor(p.x/bin)+256)*262144+(Math.floor(p.y/bin)+256)*512+(Math.floor(z/bin)+256);let c=cells.get(k);
-      if(!c){c={x:0,y:0,z:0,n:0,hx:0,hy:0};cells.set(k,c);}
-      c.x+=p.x;c.y+=p.y;c.z+=z;c.n++;const a=(p.hue||0)*Math.PI*2;c.hx+=Math.cos(a);c.hy+=Math.sin(a);}
-    // how far a point is from the glass (px, positive inside): a lump near a wall is drawn smaller, so the
-    // skin comes up to the glass instead of through it and the clip below rarely has anything to cut
-    const glass=glassList(),F=2*fitH;
-    let n=0;
-    for(const c of cells.values()){if(n++>MAX)break;
-      const x=c.x/c.n-CX,y=c.y/c.n-CY,z=c.z/c.n,h=((Math.atan2(c.hy,c.hx)/(Math.PI*2))+1)%1;
-      let rad=Math.max(PR*1.5,bin*Math.min(0.95,0.5+0.13*Math.cbrt(c.n)));   // neighbours' fields overlap well: one smooth skin, not a heap of beads
-      let room=1e9;for(const g of glass)room=Math.min(room,g[3]-(g[0]*x+g[1]*y+g[2]*z));
-      rad=Math.min(rad,Math.max(bin*0.25,room/1.3));
+    const F=2*fitH;BB[0]=BB[2]=BB[4]=1e9;BB[1]=BB[3]=BB[5]=-1;
+    for(const L of live){const h=((Math.atan2(L.hy,L.hx)/6.2832)+1)%1;
       const lh=LQH.h+0.07*Math.sin(h*6.2832),ll=Math.min(0.8,LQH.l+(CRAY?0.04:0)+0.05*Math.cos(h*6.2832));
-      GC.setHSL(((lh%1)+1)%1,Math.max(0.55,LQH.s*0.95),ll,T.SRGBColorSpace);   // one candy in the chord's colour, each lump nudged a little warmer or cooler by its own notes (blending the notes' own hues went grey)   // lava-lamp pastels: the chord's colour, swirled with the notes the goo is made of
-      const rr=rad/F;
-      mc.addBall(0.5+(x-fitC[0])/F,0.5+(y-fitC[1])/F,0.5+(z-fitC[2])/F,rr*rr*(mc.isolation+12),12,GC);}
-    mc.update();
+      GC.setHSL(((lh%1)+1)%1,Math.max(0.55,LQH.s*0.95),ll,T.SRGBColorSpace);   // one candy in the chord's colour, each lump nudged a little warmer or cooler by its own notes (blending the notes' own hues went grey)
+      addLump(0.5+(L.x-fitC[0])/F,0.5+(L.y-fitC[1])/F,0.5+(L.z-fitC[2])/F,L.r/F,GC);}
+    const lim=mc.size-2;mc.bounds=[Math.max(1,BB[0]-1),Math.min(lim,BB[1]+1),Math.max(1,BB[2]-1),Math.min(lim,BB[3]+1),Math.max(1,BB[4]-1),Math.min(lim,BB[5]+1)];
+    const tC=performance.now();mc.update();const tD=performance.now();window.__gooT=[tA-g0,tB-tA,tC-tB,tD-tC,live.length,fitH,GRES];
     // THE GOO'S TRUE COLOUR. MarchingCubes adds each lump's colour times a falloff and never divides by it, and the
     // skin sits between a coloured cell and an empty one, so every colour came out at the skin dim and greyed (and
     // overshot where lumps overlapped). Each vertex is scaled back to the brightness the lumps were given; its hue
     // and saturation are kept.
     const ca=mc.colorArray,tm=gTop;
-    for(let i=0,L=mc.count*3;i<L;i+=3){const m=Math.max(ca[i],ca[i+1],ca[i+2]);if(m>1e-5){const k=tm/m;ca[i]*=k;ca[i+1]*=k;ca[i+2]*=k;}}}
+    for(let i=0,L=mc.count*3;i<L;i+=3){const m=Math.max(ca[i],ca[i+1],ca[i+2]);if(m>1e-5){const k=tm/m;ca[i]*=k;ca[i+1]*=k;ca[i+2]*=k;}}
+    // UPLOAD ONLY WHAT WAS BUILT. MarchingCubes flags its whole buffers for upload on every rebuild: room for 90,000
+    // triangles, about 10 MB across position, normal and colour, sent to the graphics card every frame for a skin of
+    // a few thousand triangles. That bandwidth, not the maths, was most of what made the goo heavy. Only the part in use
+    // goes up now (the draw range already stops at mc.count).
+    const g=mc.geometry,nUsed=mc.count*3;for(const k of ['position','normal','color']){const at=g.getAttribute(k);if(at){at.clearUpdateRanges();at.addUpdateRange(0,Math.max(3,nUsed));}}
+    gooMs=performance.now()-g0;gooAvg+=(gooMs-gooAvg)*0.05;}
   // the glass the goo is clipped to, in world space: a solid's faces, or the prism's walls and two panes.
   // Curved space has curved glass, which a flat clip cannot follow: there the physics' inset holds it.
   const clip=[];let clipN=0;
@@ -414,8 +578,12 @@ export function start(){
     if(Math.round(c.width)!==lastW||Math.round(c.height)!==lastH||want!==dpr){lastW=Math.round(c.width);lastH=Math.round(c.height);dpr=want;
       renderer.setPixelRatio(dpr);renderer.setSize(Math.max(1,lastW),Math.max(1,lastH),false);}
     // gl_PointSize: a point of world size s at depth d covers s*f/d device px, f = (height px / 2) / tan(fov/2)
-    trailMat.uniforms.uScale.value=dropMat.uniforms.uScale.value=shadowMat.uniforms.uScale.value=(lastH*dpr/2)/Math.tan(camera.fov*Math.PI/360);}
-  try{new ResizeObserver(place).observe(cv);}catch(e){}
+    trailMat.uniforms.uScale.value=dropMat.uniforms.uScale.value=shadowMat.uniforms.uScale.value=wormGlowMat.uniforms.uScale.value=(lastH*dpr/2)/Math.tan(camera.fov*Math.PI/360);}
+  // placed when something moved it, not every frame: reading the layout every frame forces the browser to work out
+  // the whole page's layout first whenever anything on it changed, which is a hitch waiting to happen
+  let placeDirty=true,placeN=0;const dirty=()=>{placeDirty=true;};
+  try{new ResizeObserver(dirty).observe(cv);new ResizeObserver(dirty).observe(stage);}catch(e){}
+  addEventListener('resize',dirty);addEventListener('orientationchange',dirty);addEventListener('scroll',dirty,true);
   place();
 
   const SM=new T.Matrix4();
@@ -425,7 +593,10 @@ export function start(){
   let t0=performance.now(),cpuMs=0;
   function render(){
     const a0=performance.now(),now=a0,ph=now*0.000012;
-    place();setBoxMatrix();spin.rotation.z=rot;
+    if(placeDirty||++placeN%30===0){placeDirty=false;place();}setBoxMatrix();   // (and twice a second anyway, in case something shifted it)
+    // the shape's turn, drawn BETWEEN physics ticks like the balls are: the spin steps 60 times a second, and on a
+    // 90/120 Hz screen drawing it as-is turned the glass in little stutters while the balls glided
+    spin.rotation.z=rot-(typeof _rotV==='number'?_rotV:0)*(1-(typeof _alpha==='number'?_alpha:1));
     CR.px.value=dpr;CR.seed.value=reduceMotion.matches?1:(Math.floor(now/125)%997)+1;   // line boil: 8 new strokes a second, still when motion is reduced
     const fill=fillState==="fill";
     const solid=!!edges._solid;
@@ -438,8 +609,8 @@ export function start(){
     for(let i=0;i<walls.length;i++){const e=edges[i],m=walls[i].material;if(!e)continue;
       const lit=Math.min(1,(e.flash||0)*1.4),gone=e.broken?(e.reform||0):1;
       glassCol(e.hue+ph,lit,m.color,0.6,0.8);glassCol(e.hue+ph,lit,m.emissive,0.6,0.78);
-      m.emissiveIntensity=0.22+lit*0.8+(e.twin?0.12*(0.5+0.5*Math.sin(now*0.004+i)):0);
-      m.opacity=(e.twin?0.12:(lite?0.32:0.24))*gone+lit*0.25;walls[i].visible=!solid&&fill&&gone>0.02;}
+      m.emissiveIntensity=0.22+lit*0.8;
+      m.opacity=(lite?0.32:0.24)*gone+lit*0.25;walls[i].visible=!solid&&fill&&gone>0.02;}
     if(rims&&!solid){const own=rims.geometry.userData.owner,col=rimCol;
       let last=-1;for(let t=0;t<own.length;t++){const e=edges[own[t]];if(!e)continue;
         if(own[t]!==last){last=own[t];const lit=Math.min(1,(e.flash||0)*1.4+formGlow*0.6),gone=e.broken?(e.reform||0):1;
@@ -456,13 +627,19 @@ export function start(){
     for(const b of balls){if(n>=MAXB)break;
       let bx=lerpX(b),by=lerpY(b),bz=(b.pz==null?(b.z||0):b.pz+((b.z||0)-b.pz)*_alpha);
       if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR*2.2){bx=b.x;by=b.y;bz=b.z||0;}
-      const r=BR*ballScale(bx,by,bz)*noteScale(),x=bx-CX,y=by-CY,z=zl(bz),under=fill&&gooAt(b.x,b.y,b.z)>0.3;
-      noteMatrix(b,x,y,z,r,now);ballMesh.setMatrixAt(n,tmpM);
+      const wv=window.wormView?wormView(b,now):null;if(wv&&wv.hide){if(SQ.has(b))SQ.delete(b);continue;}   // in the other dimension: not here at all
+      let r=BR*ballScale(bx,by,bz)*noteScale(),x=bx-CX,y=by-CY,z=zl(bz);const under=fill&&gooAt(b.x,b.y,b.z)>0.3;
+      if(wv&&wv.x!=null){x=wv.x;y=wv.y;z=wv.z;}
+      noteMatrix(b,x,y,z,r,now);
+      if(wv){const nn=wv.n;let t1=Math.abs(nn[2])<0.9?[-nn[1],nn[0],0]:[1,0,0];const l=Math.hypot(...t1);t1=t1.map(q=>q/l);
+        WZ.set(nn[0],nn[1],nn[2]).multiplyScalar(r*wv.sx);WX.set(t1[0],t1[1],t1[2]);WY.crossVectors(WZ,WX).normalize().multiplyScalar(r*wv.sy);WX.multiplyScalar(r*wv.sy);
+        tmpM.makeBasis(WX,WY,WZ);tmpM.setPosition(x,y,z);}   // stretched along the hole's axis, shrinking in / swelling out
+      ballMesh.setMatrixAt(n,tmpM);
       HUE.setHSL(b.hue,under?0.7:0.86,under?0.52:0.6,T.SRGBColorSpace);ballMesh.setColorAt(n,HUE);   // balls wear their raw hue, as in 2D. In sRGB, as the 2D sprite does: set in linear light the same numbers came out washed-out pastel
-      const tl=b.trail.length;for(let i=0;i<tl;i++){const t=b.trail[i],f=i/tl;
+      const tl=wv?0:b.trail.length;for(let i=0;i<tl;i++){const t=b.trail[i],f=i/tl;
         trails.add(t[0]-CX,t[1]-CY,zl(t[2]||0),r*(0.5+1.1*f),HUE.r,HUE.g,HUE.b,f*0.32);}
-      if(fill&&!solid)shadows.add(x+3,y+5,zl(0.995),r*(2.6-1.0*bz),0.42,0.3,0.62,0.02+0.12*bz*bz);   // a soft lilac shadow on the back glass: darker and smaller the closer the ball is to it
-      else if(fill&&solid&&edges._space!=='curved'){   // a solid: a soft shadow straight down on whichever face is underneath
+      if(fill&&!solid&&!wv)shadows.add(x+3,y+5,zl(0.995),r*(2.6-1.0*bz),0.42,0.3,0.62,0.02+0.12*bz*bz);   // a soft lilac shadow on the back glass: darker and smaller the closer the ball is to it
+      else if(fill&&solid&&!wv&&edges._space!=='curved'){   // a solid: a soft shadow straight down on whichever face is underneath
         const G=boxGravity(),c=Math.cos(rot),sn=Math.sin(rot);let best=1e9,bn=null;
         for(const pl of SOLID.planes){const n=pl.n,nx=n[0]*c-n[1]*sn,ny=n[0]*sn+n[1]*c,nd=nx*G[0]+ny*G[1]+n[2]*G[2];
           if(nd<=0.05)continue;const t=(pl.d-(nx*x+ny*y+n[2]*z))/nd;if(t>0&&t<best){best=t;bn=1;}}
@@ -471,10 +648,10 @@ export function start(){
       n++;}
     ballMesh.count=n;ballMesh.instanceMatrix.needsUpdate=true;if(ballMesh.instanceColor)ballMesh.instanceColor.needsUpdate=true;
     // spray that has not landed yet: little droplets at their own depth
-    for(const p of particles){if(p.pooled)continue;hueCol(p.hue||0,0.7,0.62,HUE);
-      drops.add(p.x-CX,p.y-CY,zl(p.z==null?0.5:p.z),5.2,HUE.r,HUE.g,HUE.b,0.95);}
-    shadows.done();trails.done();drops.done();
-    gooClip(fill,solid);gooUpdate();mc.visible=particles.length>0;
+    for(const p of particles){if(p.pooled)continue;hueCol(p.hue||0,0.7,0.62,HUE);gooPos(p,_q);
+      drops.add(_q[0],_q[1],_q[2],5.2,HUE.r,HUE.g,HUE.b,p.fade?0.95*Math.max(0,1-p.age/34):0.95);}   // spray that will not join the goo fades as it flies
+    shadows.done();trails.done();drops.done();drawWorms(now,fill);
+    gooClip(fill,solid);if(!(++mcTick%(gooAvg>6?Math.max(2,mcEvery):mcEvery)))gooUpdate();mc.visible=particles.length>0;
     // broken open: the walls are loose glass slabs
     if(!fill){const segs=curSegs||[];let m=0;
       for(const s of segs){if(m>=MAXS)break;const mx=(s.ax+s.bx)/2-CX,my=(s.ay+s.by)/2-CY,L=Math.hypot(s.bx-s.ax,s.by-s.ay);
@@ -490,7 +667,7 @@ export function start(){
     ballMesh.material=CRAY?crayBall:ballMat;
     solidIn.material=CRAY?craySolidIn:solidInGlass;solidOut.material=CRAY?craySolidOut:solidOutGlass;
     if(mc)mc.material=CRAY?crayGoo:gooMat;}
-  function setLite(v){v=!!v;if(v===lite)return;lite=v;GRES=lite?32:40;mcEvery=lite?3:2;makeGoo();place();}
+  function setLite(v){v=!!v;if(v===lite)return;lite=v;GRES=lite?32:40;mcEvery=lite?2:1;makeGoo();place();}
   let lost=false;
   glc.addEventListener('webglcontextlost',e=>{e.preventDefault();lost=true;if(window.__glLost)window.__glLost();},false);
   function show(v){glc.style.display=v?'block':'none';}
@@ -500,5 +677,10 @@ export function start(){
     for(let i=0;i<mc.count;i+=7){C.setRGB(ca[i*3],ca[i*3+1],ca[i*3+2]);C.getHSL(h,T.SRGBColorSpace);sx+=Math.cos(h.h*6.2832)*h.s;sy+=Math.sin(h.h*6.2832)*h.s;ss+=h.s;sl+=h.l;n++;}
     return {spread:1-Math.hypot(sx,sy)/Math.max(1e-6,ss),sat:ss/n,light:sl/n,n};}
   return {render,setLite,setLook,show,canvas:glc,gooOut,gooColors,get noteScale(){return noteScale();},squash(){const m=sqMax;sqMax=0;return m;},get look(){return CRAY?'crayon':'glass';},get lost(){return lost;},
-    stats(){const i=renderer.info;return {calls:i.render.calls,tris:i.render.triangles,cpuMs,goo:mc?mc.count:0,gres:GRES,lite};}};
+    gooBuild(){gooUpdate();return gooMs;},
+    worms(){return wormMeshes.map(m=>({on:m.visible,at:[m.matrix.elements[12],m.matrix.elements[13],m.matrix.elements[14]].map(Math.round),size:Math.round(Math.hypot(m.matrix.elements[0],m.matrix.elements[1],m.matrix.elements[2])),open:m.material.uniforms.uOpen.value}));},   // test hook: the two wormholes as drawn   // test hook: rebuild the goo's surface alone (no drawing), and how long it took
+    gooShape(){if(!mc||!mc.count)return null;const pa=mc.positionArray;let sx=0,sy=0,sz=0,x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;const n=mc.count;
+      for(let i=0;i<n;i++){const x=pa[i*3]*fitH+fitC[0],y=pa[i*3+1]*fitH+fitC[1],z=pa[i*3+2]*fitH+fitC[2];sx+=x;sy+=y;sz+=z;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;}
+      return {c:[sx/n,sy/n,sz/n],w:x1-x0,h:y1-y0,n,fitH,lumps:LUMPS.length};},   // test hook: where the goo's surface is (box px): its middle and its size
+    stats(){const i=renderer.info;return {calls:i.render.calls,tris:i.render.triangles,cpuMs,goo:mc?mc.count:0,gres:GRES,lite,gooMs,gooAvg,lumps:LUMPS.length};}};
 }

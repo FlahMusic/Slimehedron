@@ -9,7 +9,7 @@
 //    4. 2D shows the middle slice, and each slice wall plays the note of the face it is cut from
 //    5. grow morphs smoothly: every in-between frame is a closed solid with every ball still inside,
 //       and it lands on the right new shape; the face cap greys the buttons out
-//    6. portal cube: a ball through a face comes out of the opposite face, same velocity
+//    6. portal cube: a ball into a face's wormhole comes out of the other one
 //    7. no WebGL: the canvas draws the solid; the grow buttons are 44px, on screen, on no control
 //  Needs a local server: python3 -m http.server 8765
 //  Run from the project root: node _dev/dev-solid.js
@@ -105,15 +105,18 @@ const URL='http://127.0.0.1:8765/index.html';
   ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
   await ctx.close();}
 
- // ---- 6. portal cube ----
+ // ---- 6. portal cube: a face with a wormhole on it takes the ball in, and the other hole spits it out ----
  {const {ctx,p,errs}=await open('?m=studio&view=3d&space=portal');await setShape(p,'cube');
-  const r=await p.evaluate(()=>{S.playing=false;rot=0;rebuild();balls.length=0;const ts=ballSpeed();
-    spawn(CX+120,CY+10);const B=balls[0];B.s3=1;B.mute=0;B.z=0.5;B.vx=ts*0.9;B.vy=ts*0.3;B.vz=ts*0.2/BOXD;
-    const sp=Math.hypot(B.vx,B.vy,B.vz*BOXD),v0=[B.vx,B.vy,B.vz];let crossed=null;
-    for(let i=0;i<60&&!crossed;i++){const x0=B.x;solidSub(B,1,ts);if(B.x<x0-100)crossed={x:B.x-CX};}
-    return {space:edges._space,crossed,dv:Math.hypot(B.vx-v0[0],B.vy-v0[1],(B.vz-v0[2])*BOXD),sp};});
-  ok(r.space==='portal'&&r.crossed&&r.crossed.x<-150,'portal cube: a ball through the right face comes out of the left face ('+(r.crossed?Math.round(r.crossed.x):'none')+'px)');
-  ok(r.dv<1e-9,'with exactly the same velocity');
+  const r=await p.evaluate(async()=>{if(!S.playing)setPlaying(true);await new Promise(r=>setTimeout(r,300));S.spin=0;
+    let T=performance.now();const real=performance.now.bind(performance);performance.now=()=>T;const bn=beatNow;beatNow=()=>4.85;
+    const tick=n=>{for(let i=0;i<n;i++){T+=1000/60;_tickT=T;simTick(T);}};tick(20);
+    const A=__worm.P[0],B=__worm.P[1],ts=ballSpeed();balls.length=0;spawn(CX,CY);const q=balls[0];q.s3=1;q.mute=0;
+    q.x=CX+A.x+A.n[0]*30;q.y=CY+A.y+A.n[1]*30;q.z=(A.z+A.n[2]*30)/BOXD+0.5;q.vx=-A.n[0]*ts;q.vy=-A.n[1]*ts;q.vz=-A.n[2]*ts/BOXD;
+    let went=false,k=0;while(k<200){tick(1);k++;if(q.warp)went=true;if(went&&!q.warp)break;}
+    const rel=[q.x-CX-B.x,q.y-CY-B.y,(q.z-0.5)*BOXD-B.z],along=rel[0]*B.n[0]+rel[1]*B.n[1]+rel[2]*B.n[2],head=(q.vx*B.n[0]+q.vy*B.n[1]+q.vz*BOXD*B.n[2])/ts;
+    performance.now=real;beatNow=bn;return {space:edges._space,went,face:[A.face,B.face],along,head,n:balls.length};});
+  ok(r.space==='portal'&&r.went&&r.n===1,'portal cube: a ball into the wormhole on face '+r.face[0]+' goes in');
+  ok(r.along>0&&r.along<30&&r.head>0.5,'and comes out of the one on face '+r.face[1]+', heading into the cube ('+r.along.toFixed(1)+'px out, heading '+r.head.toFixed(2)+')');
   ok(errs.length===0,'no page errors in the portal cube'+(errs.length?': '+errs[0]:''));
   await ctx.close();}
 

@@ -111,11 +111,14 @@ html,body{margin:0;height:100%;font-family:'Quicksand',system-ui,sans-serif;colo
    on school wifi is the difference between the picture arriving and the picture arriving late. */
 /* THE CRAYON SKY, EVERYWHERE: same hand-drawn backdrop behind every mode (learn/play/studio) + the splash.
    A soft white veil fades it back so note-balls, cards and text stay crisp — the art is wallpaper, never competes. */
-body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
-body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)} /* play area gets a touch more veil so the geometry reads */
+body{background:linear-gradient(rgba(255,255,255,.1),rgba(255,255,255,.1)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(rgba(255,255,255,.1),rgba(255,255,255,.1)),image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
+body.mode-play{background:linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)),image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)} /* play area gets a touch more veil so the geometry reads */
+/* FULL-COLOUR CRAYON, 2026-10-26. Flah: "the top bar is just pure white ... burns my eyes. i want full color crayon art". The art files are
+   cropped to the drawing (the blank paper above and below it is gone, so no white band behind the header), and the white veil
+   over it is down from .4/.5 to .1/.16: the crayon shows in full colour; the controls carry their own backgrounds. */
 @media(max-width:820px){ /* phones get the portrait art so it fills tall screens without cropping the scene */
-  body{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
-  body.mode-play{background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,.5)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}}
+  body{background:linear-gradient(rgba(255,255,255,.1),rgba(255,255,255,.1)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.1),rgba(255,255,255,.1)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}
+  body.mode-play{background:linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.16),rgba(255,255,255,.16)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}}
 /* (crayon edge-filter removed — it just smeared the edges, didn't read as crayon. real crayon UI will come from
    PNG assets via border-image; see below when those are added.) */
 header{display:flex;align-items:center;flex-wrap:wrap;gap:clamp(6px,4px + 0.7vmin,14px);
@@ -640,9 +643,9 @@ header h1{margin-left:84px} /* the title steps aside for the back button */
    The crayon world behind it is the same picture as the rest of the app, with the same white veil as <body>:
    never tinted. Stones are thick round tiles (they stand up off the ground), the path is dots, the slime
    stands on the next lesson. Side paths are smaller, wobblier playground stones. */
-#learnOverlay.lmOn{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-mobile.webp) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);
+#learnOverlay.lmOn{background:linear-gradient(rgba(255,255,255,.1),rgba(255,255,255,.1)),url(bg-mobile.webp) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);
   -webkit-backdrop-filter:none;backdrop-filter:none;align-items:stretch}
-@media (min-width:821px){#learnOverlay.lmOn{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-desktop.webp) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}}
+@media (min-width:821px){#learnOverlay.lmOn{background:linear-gradient(rgba(255,255,255,.1),rgba(255,255,255,.1)),url(bg-desktop.webp) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}}
 #learnOverlay.lmOn .lCard{background:transparent;border:0;box-shadow:none;border-radius:0;width:min(100vw,760px);max-height:none;height:100%;
   padding:0 14px 40px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 #learnOverlay.lmOn .uHead{position:sticky;top:0;z-index:6;margin:0 auto 6px;padding:10px 16px 10px 64px;width:fit-content;max-width:100%;
@@ -1605,8 +1608,8 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
    reach it and the credit line floated into the middle of the doors. `safe center` centres while
    it fits and falls back to the start when it does not, so the overflow only ever goes one way,
    and the scroll makes that way reachable. The same keyword the lesson screens already use. */
-#splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow-y:auto;overscroll-behavior:contain;gap:16px;background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);cursor:pointer;transition:opacity .5s;text-align:center;background:image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)} /* splash uses the landscape art; matched aspect ratio so cover fills edge-to-edge with no crop */
-@media(max-width:820px){#splash{background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.4),rgba(255,255,255,.4)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}} /* phones: portrait art */
+#splash{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:safe center;overflow-y:auto;overscroll-behavior:contain;gap:16px;background:linear-gradient(rgba(255,255,255,.1),rgba(255,255,255,.1)),url(bg-desktop.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);cursor:pointer;transition:opacity .5s;text-align:center;background:image-set(url(bg-desktop.webp) type('image/webp'), url(bg-desktop.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)} /* splash uses the landscape art; matched aspect ratio so cover fills edge-to-edge with no crop */
+@media(max-width:820px){#splash{background:linear-gradient(rgba(255,255,255,.1),rgba(255,255,255,.1)),url(bg-mobile.jpg) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9);background:linear-gradient(rgba(255,255,255,.1),rgba(255,255,255,.1)),image-set(url(bg-mobile.webp) type('image/webp'), url(bg-mobile.jpg) type('image/jpeg')) center/cover no-repeat,linear-gradient(135deg,#c6f2e3,#ffe1c2 50%,#ffd6e9)}} /* phones: portrait art */
 #splash.gone{opacity:0;pointer-events:none}
 /* the colour-blind switch lives on the front door, bottom-left, where a parent or teacher sets it once
    for the whole app. 44px tall, and the tick is a SHAPE so the on-state never depends on colour. */
@@ -1705,7 +1708,7 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   .btngroup #slimeBig.on .ss-knob{left:25px}
   .hdrSep{display:none} /* phone: the gap is the separator */
   /* it is a BUTTON now (tap to lock/release the key), so it needs 44 on both axes, not just height */
-  #hdrChord{width:88px;min-width:88px;min-height:44px;padding:1px 2px;background:none;border:0;box-shadow:none;justify-content:center;overflow:hidden} /* a FIXED width: the row never shifts as the name changes */
+  #hdrChord{width:88px;min-width:88px;min-height:44px;padding:1px 2px;background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.7);border-radius:11px;box-shadow:0 2px 8px rgba(54,36,104,.14);justify-content:center;overflow:hidden} /* a FIXED width: the row never shifts as the name changes. Its own little card: on the full-colour art the name sits over dark crayon */
   #hdrChord b{font-size:15px;white-space:nowrap;max-width:86px;overflow:hidden;text-overflow:ellipsis}
   #hdrChord i{display:block;font-size:8.5px;letter-spacing:.3px;white-space:normal;line-height:1.05;max-width:86px;overflow:hidden;text-align:center} /* which scale: "G major", "E hirajoshi" -- a long one ("A major pentatonic") takes two short lines instead of being cut off */
   /* FADERS on their own line: full width, centred, and finally long enough to actually aim at.
@@ -2956,7 +2959,10 @@ function dHit(v,t,a,solid,inBar){a=Math.min(1.9,a||1);
       cf.type='lowpass';cf.frequency.value=(T.st==='acoustic')?3200:5500;
       cg.gain.setValueAtTime(0.5*a*T.kc,t);cg.gain.exponentialRampToValueAtTime(0.001,t+0.012); // ultra-short = a beater click
       cs.connect(cf);cf.connect(cg);cg.connect(drumBus);cs.start(t,nOff());cs.stop(t+0.03);}
-    if(bandBus&&bandOn){bandBus.gain.cancelScheduledValues(t);bandBus.gain.setValueAtTime(0.32,t);bandBus.gain.linearRampToValueAtTime(1,t+0.3);}}
+    // KICK DUCK: the band dips under the kick so the two lows do not smear. It was -10 dB for 300 ms, and the bass
+    // nearly always starts ON the kick, so every bass note was born at a third of its level and still ducked even
+    // with the drums turned all the way down. Now -3 dB for 120 ms, and only when you can actually hear the drums.
+    if(bandBus&&bandOn&&S.wD>0.02&&trackGain('drums')>0){bandBus.gain.cancelScheduledValues(t);bandBus.gain.setValueAtTime(0.7,t);bandBus.gain.linearRampToValueAtTime(1,t+0.12);}}
   else if(v==='C'||v==='c'){ // tom/conga: a PITCHED DRUM (skin slap + pitch drop), not a pure sine beep
     const o=AC.createOscillator(),g=AC.createGain(),f0=v==='C'?300:210;
     o.type='triangle'; // triangle (not sine) = more harmonics = reads as a drum skin, not a test tone
@@ -2997,15 +3003,23 @@ function dHit(v,t,a,solid,inBar){a=Math.min(1.9,a||1);
     metal(t,T.hf*0.5,T.hf*0.85,T.hf*0.92,0.05*a*(0.5+T.hm),dur,ch);
     hiss(t,T.hf,0.05*a,dur+0.05,ch);
     _ohChoke={g:ch,end:t+dur+0.05};}
-  else if(v==='y'){const T=KITTONE[drumKit]||KITTONE.pop,cy=T.cy||1;
-    // RIDE: a long, even "ping" plus a little bell on top. The bell grows with how hard it is hit,
-    // so accents ring out and the in-between notes stay a wash -- that is most of a jazz ride.
+  else if(v==='y'){
+    // RIDE: a small, clean bell -- "ding". It used to be the 808 metal (six detuned squares) left to ring for
+    // 1.2 s at 3-5 kHz, the band the ear is most sensitive to; six of those a bar in jazz piled into one
+    // shrill wash (Flah: "ear bleeding"). Now: pure sines, a bell's three partials, gone in under half a
+    // second, about as loud as a closed hat. Harder hits bring the upper partials up a little, so the
+    // accents still speak. A soft, low-passed tick is the stick.
+    // A sine bell has a clear pitch (real cymbals do not), so it is tuned to the KEY: the tonic, placed between
+    // 880 and 1760 Hz, with its octave and the fifth above that. It can never clash with the band.
     const out=AC.createGain();out.gain.value=1;out.connect(panTo(drumBus,-0.28));
-    metal(t,470*cy,5600*cy,3200*cy,0.05*a,1.25,out,[1,1.48,1.92,2.37,2.89,3.41]);
-    for(const [f,l] of [[2350,0.034],[3520,0.022]]){const o=AC.createOscillator(),g=AC.createGain();
-      o.type='sine';o.frequency.value=f*cy;g.gain.setValueAtTime(l*a*a,t);g.gain.exponentialRampToValueAtTime(0.0005,t+0.7);
-      o.connect(g);g.connect(out);o.start(t);o.stop(t+0.75);}
-    hiss(t,6500,0.05*a,0.03,out);}                                    // the stick tip on the metal
+    const rt=Number.isFinite(S.root)?S.root:60;let f0=440*Math.pow(2,((((rt%12)+12)%12)-9)/12);
+    while(f0<880)f0*=2;while(f0>=1760)f0/=2;
+    for(const [r,l,tau,acc] of [[1,0.034,0.085,0],[2,0.011,0.045,1],[3,0.005,0.028,1]]){
+      const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f0*r;
+      const L=l*a*(acc?Math.min(1.4,a):1),end=t+tau*7;
+      g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(L,t+0.002);g.gain.setTargetAtTime(0.00001,t+0.002,tau);
+      o.connect(g);g.connect(out);o.start(t);o.stop(end);}
+    hiss(t,1800,0.014*a,0.008,out,4200);}                             // the stick tip, soft and short
   else if(v==='x'){const T=KITTONE[drumKit]||KITTONE.pop,cy=T.cy||1;
     // CRASH: a burst of bright noise over the same metal, decaying for well over a second.
     const out=AC.createGain();out.gain.value=1;out.connect(panTo(drumBus,0.34));
@@ -4166,7 +4180,12 @@ function bandBar(t,barI){ // RENDERS the chord the brain picked. Audio only — 
   window._padV=degs;
   bandComp(t,barI,degs,drumStepDur(),drumBar()); // ← the BAND: the keyboard player. no pad, no drone.
 }
-const BASS_TRIM=0.40;   // -8dB on the whole bass voice: see the measurement in bassNote()
+const BASS_TRIM=0.42;   // the whole bass voice (was 0.40 when the bass sat in the sub-basement; see bassNote and bassRootMidi)
+const BASS_PRESENCE=1.3; // the harmonic layer, relative to the body (set by measuring through a phone-speaker model)
+// THE BASS LIVES IN A BASS GUITAR'S REGISTER, whatever the tank's key. It used to hang an octave under the tank's
+// root, and the root select runs C3..G4, so a low key put the bass at 31-60 Hz: under what a phone, a laptop or most
+// headphones can play at all. Its root now always sits between E2 and D#3 (82-156 Hz), same note name as the key.
+function bassRootMidi(){let r=(Number.isFinite(S.root)?S.root:60)-12;while(r>51)r-=12;while(r<40)r+=12;return r;}
 function bassNote(tok,t,hum,dur){ // bass pluck by default; pass `dur` (seconds) for a long sustained DRONE note (industrial)
   const sc=scaleObj().c,n=sc.length,harm=scaleObj().harm||'triad';let deg=curRootDeg,addOct=0;
   // MICROTONAL GUARDRAIL: in drone/neutral scales the bass stays on the STABLE notes (root + a real 5th). the melodic
@@ -4179,42 +4198,34 @@ function bassNote(tok,t,hum,dur){ // bass pluck by default; pass `dur` (seconds)
   let c=centsForDegree(deg)+addOct*1200;
   // VOICE-LEADING: keep the bass low and moving by the SMALLEST step from the last note — no more
   // erratic octave drops when the chord changes. (the octave token 'O' is allowed to leap on purpose.)
-  if(_lastBassCents!=null&&tok!=='O'){let best=c,bd=1e9;for(const o of [-1200,0,1200]){const cc=c+o;if(cc<-1300||cc>500)continue;const dd=Math.abs(cc-_lastBassCents);if(dd<bd){bd=dd;best=cc;}}c=best;}
+  if(_lastBassCents!=null&&tok!=='O'){let best=c,bd=1e9;for(const o of [-1200,0,1200]){const cc=c+o;if(cc<-800||cc>700)continue;/* within a 6th below to a 5th above the bass root */const dd=Math.abs(cc-_lastBassCents);if(dd<bd){bd=dd;best=cc;}}c=best;}
   _lastBassCents=c;
   // MEASURED, NOT ASSUMED. The old comment here said "MUCH quieter - never covers the melody" and it
   // was wrong. Rendering each part alone, eight notes each, same length: melody mean -23.8dB, chords
   // -28.7dB, drums -23.0dB, bass -17.0dB. The bass was +6.8dB on the melody - about five times the
   // energy. The peaks matched (-6.7 vs -7.3), which is why it read as fine: a bass note SUSTAINS, so
   // it wins on mean energy even when its peak is level. Judge a foundation by energy, not by peak.
-  if(S.synth){const f=freqFromCents(c)/2,v=0.17*BASS_TRIM*(hum||1)*Math.min(1,(1-S.bpMix)*2);
-    const o=AC.createOscillator(),g=AC.createGain(),lp=AC.createBiquadFilter(),sub=AC.createOscillator(),sg=AC.createGain();
+  if(S.synth){const f=440*Math.pow(2,(bassRootMidi()+c/100-69)/12),v=0.17*BASS_TRIM*(hum||1)*Math.min(1,(1-S.bpMix)*2);
     // a real bass player HOLDS notes and connects them. `dur` = how long this note should ring (seconds). the note
     // sustains, then a short release TAIL overlaps the next note = legato. pitch GLIDES from the last note = a smooth walk.
     const D=Math.max(0.18,dur||0.5),rel=Math.min(0.14,D*0.45),hold=D-rel*0.6;
-    o.type='sine';lp.type='lowpass';lp.frequency.value=420;lp.Q.value=0.5; // SOFT filtered sine = a round, subtle bass (no buzz, sits under the mix)
-    sub.type='sine';sg.gain.value=0.28; // a gentle sub underneath for a hint of weight (not boom)
-    // MISSING-FUNDAMENTAL layer: phone speakers can't reproduce the low sine/sub, so add UPPER HARMONICS of the bass
-    // note in the 200–700Hz band the speaker CAN play — the ear reconstructs the missing low pitch from them.
-    // (research: harmonics ~250-700Hz let the brain 'hear' bass a speaker physically can't make.) audible on all devices.
-    const har=AC.createOscillator(),hg=AC.createGain(),hbp=AC.createBiquadFilter();
-    har.type='triangle'; // triangle = odd harmonics, warm not buzzy — the natural overtones of a plucked/upright bass
-    hbp.type='bandpass';hbp.frequency.value=Math.min(520,Math.max(180,f*3.2));hbp.Q.value=0.9; // focus the harmonics in the phone-audible mid-bass
-    hg.gain.value=0.11*BASS_TRIM*(hum||1); // subtle — it fills in the low end without turning into a mid honk
-    if(_lastBassFreq&&Math.abs(_lastBassFreq-f)<f*0.6){ // glide only for nearby notes (a walk); big leaps just jump
-      o.frequency.setValueAtTime(_lastBassFreq,t);o.frequency.exponentialRampToValueAtTime(f,t+0.05);
-      sub.frequency.setValueAtTime(_lastBassFreq/2,t);sub.frequency.exponentialRampToValueAtTime(f/2,t+0.05);
-      har.frequency.setValueAtTime(_lastBassFreq,t);har.frequency.exponentialRampToValueAtTime(f,t+0.05);
-    }else{o.frequency.setValueAtTime(f,t);sub.frequency.setValueAtTime(f/2,t);har.frequency.setValueAtTime(f,t);}
-    _lastBassFreq=f;
-    g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+0.015); // quick soft attack (fingered, not clicky)
-    g.gain.setValueAtTime(v,t+hold);g.gain.exponentialRampToValueAtTime(0.0008,t+D); // hold full, then a smooth release tail
-    o.connect(lp);sub.connect(sg);sg.connect(lp);lp.connect(g);g.connect(bandBus);
-    // harmonic layer rides the SAME envelope so it plucks + sustains with the note
-    const heg=AC.createGain();heg.gain.setValueAtTime(0.0001,t);heg.gain.exponentialRampToValueAtTime(v,t+0.015);
-    heg.gain.setValueAtTime(v,t+hold);heg.gain.exponentialRampToValueAtTime(0.0008,t+D);
-    har.connect(hbp);hbp.connect(hg);hg.connect(heg);heg.connect(bandBus);
-    o.start(t);o.stop(t+D+0.06);sub.start(t);sub.stop(t+D+0.06);har.start(t);har.stop(t+D+0.06);}
-  sendMidiAt(S.root+c/100-12,96,S.chBass,t,Math.max(0.2,(dur||0.5)*0.95));
+    const env=(peak)=>{const e=AC.createGain();e.gain.setValueAtTime(0.0001,t);e.gain.exponentialRampToValueAtTime(peak,t+0.015); // quick soft attack
+      e.gain.setValueAtTime(peak,t+hold);e.gain.exponentialRampToValueAtTime(0.0008*peak/v,t+D);e.connect(bandBus);return e;};  // hold, then a smooth tail
+    const glide=(o,ff)=>{if(_lastBassFreq&&Math.abs(_lastBassFreq-f)<f*0.6){o.frequency.setValueAtTime(_lastBassFreq*ff/f,t);o.frequency.exponentialRampToValueAtTime(ff,t+0.05);}
+      else o.frequency.setValueAtTime(ff,t);o.start(t);o.stop(t+D+0.06);};
+    // BODY: a soft, round sine (+ a gentle sub when there is room for one above 45 Hz) -- the weight you feel on big speakers
+    const g=env(v),lp=AC.createBiquadFilter();lp.type='lowpass';lp.frequency.value=420;lp.Q.value=0.5;lp.connect(g);
+    const o=AC.createOscillator();o.type='sine';o.connect(lp);glide(o,f);
+    if(f/2>=45){const sub=AC.createOscillator(),sg=AC.createGain();sub.type='sine';sg.gain.value=0.28;sub.connect(sg);sg.connect(lp);glide(sub,f/2);}
+    // PRESENCE: the same note's 2nd-5th harmonics (a sawtooth, band-limited to ~180-900 Hz), at a real level. A phone
+    // speaker cannot make 80 Hz, but it can make 160-400 Hz, and the ear rebuilds the missing low note from its
+    // harmonics. This layer existed before but ran through two gains in a row (0.044 x the envelope), about -50 dB:
+    // on a phone the bass was simply not there.
+    const hg=env(v*BASS_PRESENCE),hp=AC.createBiquadFilter(),hl=AC.createBiquadFilter();
+    hp.type='highpass';hp.frequency.value=180;hp.Q.value=0.6;hl.type='lowpass';hl.frequency.value=900;hl.Q.value=0.5;hp.connect(hl);hl.connect(hg);
+    const har=AC.createOscillator();har.type='sawtooth';har.connect(hp);glide(har,f);
+    _lastBassFreq=f;}
+  sendMidiAt(bassRootMidi()+c/100,96,S.chBass,t,Math.max(0.2,(dur||0.5)*0.95));   // MIDI says the note you hear
 }
 // ============================================================================================
 //  HUMANIZE — three knobs, and a rule that cannot be broken: THE BEAT NEVER MOVES.
@@ -4615,15 +4626,6 @@ function solidFaceCount(name){try{return solidPlanes(name).length;}catch(e){retu
 function solidFaceDegrees(planes){const td=totalDegrees(),idx=planes.map((p,i)=>i);
   idx.sort((a,b)=>{const A=planes[a].n,B=planes[b].n;return (B[1]-A[1])||(Math.atan2(A[2],A[0])-Math.atan2(B[2],B[0]));});   // y is DOWN: big y = low
   const D=wallDegrees(planes.length,td),out=new Array(planes.length);idx.forEach((k,j)=>out[k]=D[j]);return out;}
-// opposite faces that are the same shape slid across the middle can be glued (a portal); null if any face has no partner
-function solidTwins(planes){const F=solidFaces(planes),tw=new Array(planes.length).fill(-1);
-  const cen=f=>{const c=[0,0,0];for(const v of f){c[0]+=v.p[0];c[1]+=v.p[1];c[2]+=v.p[2];}return c.map(x=>x/f.length);};
-  for(let i=0;i<planes.length;i++){if(tw[i]>=0||!F[i].length)continue;
-    for(let j=0;j<planes.length;j++){if(j===i||tw[j]>=0||vdot(planes[i].n,planes[j].n)>-0.9999||F[j].length!==F[i].length)continue;
-      const ci=cen(F[i]),cj=cen(F[j]),T=[cj[0]-ci[0],cj[1]-ci[1],cj[2]-ci[2]];
-      const match=F[i].every(v=>F[j].some(u=>Math.hypot(v.p[0]+T[0]-u.p[0],v.p[1]+T[1]-u.p[1],v.p[2]+T[2]-u.p[2])<0.5));
-      if(match){tw[i]=j;tw[j]=i;break;}}}
-  return tw.every((t,i)=>t>=0||!F[i].length)?tw:null;}
 // the middle slice (z = 0) of the solid turned by rot: the flat tank, each wall tagged with its face
 function solidSlice(planes,rotA){const c=Math.cos(rotA),s=Math.sin(rotA);
   const P=planes.map(p=>({n:[p.n[0]*c-p.n[1]*s,p.n[0]*s+p.n[1]*c,p.n[2]],d:p.d}));
@@ -4632,13 +4634,11 @@ function solidSlice(planes,rotA){const c=Math.cos(rotA),s=Math.sin(rotA);
   const out=[];for(const v of poly){const l=out[out.length-1];if(!l||Math.hypot(l.p[0]-v.p[0],l.p[1]-v.p[1])>0.05)out.push(v);else out[out.length-1]={p:l.p,t:v.t};}
   return out;}
 // THE SOLID IN PLAY: its planes (with a morph between two solids in progress), each face's note and flash
-const SOLID={name:null,planes:[],deg:[],flash:[],twin:null,from:null,to:null,t0:0,dur:900,fromDeg:null,toDeg:null};
+const SOLID={name:null,planes:[],deg:[],flash:[],from:null,to:null,t0:0,dur:900,fromDeg:null,toDeg:null};
 function solidSet(name,morph){const P=solidPlanes(name),D=solidFaceDegrees(P);
   if(morph&&SOLID.planes.length){SOLID.from=SOLID.planes.slice();SOLID.fromDeg=SOLID.deg.slice();SOLID.to=P;SOLID.toDeg=D;SOLID.t0=performance.now();}
   else{SOLID.from=null;SOLID.planes=P;SOLID.deg=D;SOLID.flash=P.map(()=>0);}
-  SOLID.name=name;SOLID.twin=solidTwins(P);SOLID.T=null;
-  if(SOLID.twin){const F=solidFaces(P),cen=f=>{const q=[0,0,0];for(const v of f){q[0]+=v.p[0];q[1]+=v.p[1];q[2]+=v.p[2];}return q.map(x=>x/f.length);};
-    SOLID.T=P.map((p,i)=>{const j=SOLID.twin[i];if(j<0)return null;const a=cen(F[i]),b2=cen(F[j]);return [b2[0]-a[0],b2[1]-a[1],b2[2]-a[2]];});}}
+  SOLID.name=name;}
 // a morph is the old planes sliding out while the new ones slide in; in between, the shape is everything
 // inside all of them, so every in-between frame is itself a real, closed, convex solid
 function solidMorphTick(){if(!SOLID.from)return false;
@@ -4652,11 +4652,8 @@ window.__solid=SOLID;
 // ================================================================================================
 //  THREE SPACES. The tank can be one of three kinds of space, and each one follows its own maths:
 //    normal  the tank it has always been. Every shape, every lesson.
-//    portal  opposite walls are glued together (a torus, or for 8+ sides a many-holed one). A ball
-//            that crosses a wall plays that wall's note and comes out of the opposite wall with the
-//            same speed and heading. Only shapes whose opposite sides are equal and parallel can be
-//            glued like that (square, hexagon, octagon... rhombus, parallelogram); any other shape
-//            keeps its solid walls. The goo stays held by the walls: only balls go through.
+//    portal  two wormholes glide round the walls with the music; a ball that meets one is drawn in and
+//            spat out of the other (see PORTAL SPACE). Every shape. The goo stays held: only balls travel.
 //    curved  the hyperbolic plane, drawn as a Poincare disk. Walls are true straight lines of that
 //            space, which on screen are arcs that meet the rim at right angles. Balls fly along the
 //            space's own straight lines, look smaller and slower toward the rim (the rim is infinitely
@@ -4683,14 +4680,13 @@ function hypCorner(N){let best=HYP.UV,bd=9,bk=0;
     const u=Math.tanh(Math.acosh(c)/2),d=Math.abs(u-HYP.UV);if(d<bd){bd=d;best=u;bk=k;}}
   return {u:best,k:bk};}
 function _labOn(){try{return !!(LAB&&LAB._on);}catch(e){return false;}}   // LAB is a const declared further down
-function polyCentral(v){const N=v.length;if(N%2)return false;let cx=0,cy=0;for(const p of v){cx+=p[0];cy+=p[1];}cx/=N;cy/=N;
-  for(let i=0;i<N/2;i++){const a=v[i],b=v[i+N/2];if(Math.abs(a[0]+b[0]-2*cx)>0.5||Math.abs(a[1]+b[1]-2*cy)>0.5)return false;}return true;}
 function polyConvex(v){const N=v.length;let sg=0;for(let i=0;i<N;i++){const a=v[i],b=v[(i+1)%N],c=v[(i+2)%N];
   const cr=(b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0]);if(Math.abs(cr)<1e-6)continue;const s=cr>0?1:-1;if(sg&&s!==sg)return false;sg=s;}return true;}
 function spaceFits(shapeVal,sp,verts){if(sp==='normal')return true;
-  if(isSolidName(String(shapeVal)))return sp==='curved'||(sp==='portal'&&!!solidTwins(solidPlanes(String(shapeVal))));   // every solid is convex: it can be curved
+  if(sp==='portal')return true;   // two wormholes fit on any shape: nothing has to be glued (see PORTAL SPACE)
+  if(isSolidName(String(shapeVal)))return sp==='curved';   // every solid is convex: it can be curved
   const v=verts||shapeVerts(shapeVal);
-  return sp==='portal'?polyCentral(v):sp==='curved'?polyConvex(v):false;}
+  return sp==='curved'?polyConvex(v):false;}
 // hyperboloid helpers: a screen point -> its point on the hyperboloid; the Minkowski product
 function hP(x,y){const ux=(x-CX)/HYP.RD,uy=(y-CY)/HYP.RD,r2=ux*ux+uy*uy,D=1-r2;return [(1+r2)/D,2*ux/D,2*uy/D];}
 function mdot(a,b){return -a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
@@ -4702,7 +4698,7 @@ function edgePath(e,move){if(e.cr){if(move!==false)ctx.moveTo(e.ax,e.ay);ctx.arc
   else{if(move!==false)ctx.moveTo(e.ax,e.ay);ctx.lineTo(e.bx,e.by);}}
 // curved walls as short straight pieces, for the 3D side walls and anything else that wants chords
 function wallPieces(list){if(!list||!list.length||!list[0].cr)return list;const out=[];
-  for(const e of list){const pts=e.pts;for(let k=0;k<pts.length-1;k++)out.push({ax:pts[k][0],ay:pts[k][1],bx:pts[k+1][0],by:pts[k+1][1],hue:e.hue,flash:e.flash,broken:e.broken,reform:e.reform,twin:e.twin,piece:k>0});}
+  for(const e of list){const pts=e.pts;for(let k=0;k<pts.length-1;k++)out.push({ax:pts[k][0],ay:pts[k][1],bx:pts[k+1][0],by:pts[k+1][1],hue:e.hue,flash:e.flash,broken:e.broken,reform:e.reform,piece:k>0});}
   return out;}
 function curveEdges(edges,verts){
   let cx=0,cy=0;for(const[x,y]of verts){cx+=x;cy+=y;}cx/=verts.length;cy/=verts.length;const Pc=hP(cx,cy),RD=HYP.RD;
@@ -4745,7 +4741,6 @@ function buildEdges(shapeVal,sp){
   let ar=0;for(let i=0;i<N;i++){const[ax,ay]=verts[i],[bx,by]=verts[(i+1)%N];ar+=ax*by-bx*ay;} // shoelace: real area of ANY shape (heart, star…)
   edges._verts=verts;edges._area=Math.abs(ar)/2; // stash corners + area so goo budget & ball-inside test work for every shape
   edges._space=sp;edges._solid=solidName;if(solidName&&verts._tags)edges.forEach((e,i)=>e.face=verts._tags[i]);
-  if(sp==='portal')for(let i=0;i<N;i++){const e=edges[i];e.twin=edges[(i+N/2)%N];}   // each wall is glued to the one opposite
   if(sp==='curved')curveEdges(edges,verts);
   return edges;
 }
@@ -4829,12 +4824,23 @@ function feedLiquidHue(h){let d=((h-liqHue)%1+1.5)%1-0.5;liqHue=(liqHue+d*0.035+
 let ripples=[]; // surface rings where things enter the goo
 function addRipple(x,y,s){if(ripples.length>=24)ripples.shift();ripples.push({x,y,r:5,vr:1.8+(s||1),a:0.5});}
 let _splashZ=0.5; // 3D: the depth the next splash happens at (the ball's own)
+// EACH SHAPE IS A SONG: IT LIVES ABOUT 64 BARS. Flah: the shapes "break apart too fast ... let it breathe more, each one is
+// basically like its own song ... maybe like 64 bars". The goo used to be fed by every hit (5 drops a hit), so a busy tank
+// burst in about 20 bars. Now the goo grows on the MUSIC clock: by bar b of a shape it may hold at most b/66 of
+// a full tank, so it reaches the burst line (about nine tenths) round bar 60-64 however many balls are flying, at any
+// tempo. A hit past that allowance still splashes -- the drops fly and fade -- it just does not add to the goo.
+// FILL_BARS is the knob. The clock counts only while the music runs (it is advanced by the physics ticks).
+const FILL_BARS=66;let fillBeats=0;
+function fillBars(){return fillBeats/Math.max(1,beatsPerBar());}
+function fillAllowance(){return Math.min(1,fillBars()/(goo3D()?FILL_BARS*1.13:FILL_BARS))*partCap();}   // the 3D tank reads 'nine tenths full' a little sooner (by volume), so its clock is stretched to land on the same bar
 function splash(x,y,inx,iny,hue){
-  if(fillState!=="fill"||particles.length>=partCap())return; // no new fill while it's broken open
+  if(fillState!=="fill")return; // no new fill while it's broken open
   if(hue==null)hue=Math.random();feedLiquidHue(hue);
-  for(let i=0;i<5;i++){const sp=1.4+Math.random()*2.6, tx=-iny, ty=inx, tang=(Math.random()-0.5)*3.6; // 5 droplets/hit (was 10) — plenty of splash, far less pile-up
+  let feed=0;for(const p of particles)if(!p.fade)feed++;
+  const keep=Math.max(0,Math.min(5,Math.floor(fillAllowance()-feed)));   // how many of these drops may join the goo
+  for(let i=0;i<5;i++){if(i>=keep&&particles.length>=partCap()*1.15)break;/* spray that only fades is capped too */const sp=1.4+Math.random()*2.6, tx=-iny, ty=inx, tang=(Math.random()-0.5)*3.6; // 5 droplets/hit (was 10) — plenty of splash, far less pile-up
     const px=x+(Math.random()-0.5)*8, py=y+(Math.random()-0.5)*8;
-    particles.push({x:px,y:py,z:_splashZ,sx:px,sy:py,vx:inx*sp+tx*tang,vy:iny*sp+ty*tang,hue:(hue+(Math.random()-0.5)*0.05+1)%1,r:2,age:0,pooled:false});} // droplets wear the note's color
+    particles.push({x:px,y:py,z:_splashZ,sx:px,sy:py,vx:inx*sp+tx*tang,vy:iny*sp+ty*tang,hue:(hue+(Math.random()-0.5)*0.05+1)%1,r:2,age:0,pooled:false,fade:i>=keep});} // droplets wear the note's color
 }
 // deflect a mover inward off the solid boundary
 function bounceInside(o){ // deflect inward off intact walls; broken walls let stuff spill through
@@ -4921,16 +4927,21 @@ function commitReform(){
   TSPACE.cur=_nextSpace;if(window._spaceChip)window._spaceChip();
   S.shape=/^\d+$/.test(nextShape)?parseInt(nextShape,10):nextShape; // keep named shapes as-is — parseInt('heart') was NaN → broke the shape + froze bursts
   const sl=document.getElementById('shape');if(sl)sl.value=String(nextShape);
-  rebuild();particles=[];frags=null;fillState="fill";pressure=0;formGlow=1;measuredFill=0;nextRain=0; // fresh shape = empty barrel, instant pluck
+  rebuild();particles=[];frags=null;fillState="fill";pressure=0;formGlow=1;measuredFill=0;nextRain=0;fillBeats=0; // fresh shape = empty barrel, instant pluck, a new song
   manualHold=false; // fresh geometry = auto-play may take the stage back (until the next human note)
 }
 function fillPhysics(now){
+  // the shape's song clock (see EACH SHAPE IS A SONG): it runs while the shape is whole and the music plays, and starts
+  // again with every new shape (commitReform) or an emptied tank (no goo and no balls)
+  if(fillState==="fill"){let gone=0;for(const p of particles)if(p.fade&&p.age>34)gone++;
+    fillBeats=(particles.length||balls.length)?fillBeats+(S.bpm||80)/3600:0;
+    if(gone){let w=0;for(let r=0;r<particles.length;r++){const p=particles[r];if(!(p.fade&&p.age>34))particles[w++]=p;}particles.length=w;}}   // spray that only splashed has flown: gone
   if(fillState==="fill"){
     if(goo3D())gooStep3D(now);   // the 3D tank: a lava lamp inside the real shape (see THE GOO IN 3D)
     else{
     const settle=settleAmt(),pg=gY*(0.12+0.88*settle); // young goo is nearly weightless; it gains weight as it grows and sinks to the floor
     for(const p of particles){p.age++;if(p.z!=null&&p.z!==0.5)p.z+=(0.5-p.z)*0.045; // 3D: spray drifts in from the glass to the liquid sheet as it falls
-      if(!p.pooled&&(p.age>50||(p.age>10&&Math.hypot(p.vx,p.vy)<1.2))){p.pooled=true;if(Math.random()<0.2)addRipple(p.x,p.y-3,0.4);} // fleck lands -> joins the liquid, little ring where it lands
+      if(!p.pooled&&!p.fade&&(p.age>50||(p.age>10&&Math.hypot(p.vx,p.vy)<1.2))){p.pooled=true;if(Math.random()<0.2)addRipple(p.x,p.y-3,0.4);} // fleck lands -> joins the liquid, little ring where it lands
       if(p.pooled&&p.r<PR)p.r+=0.12;
       p.vy+=(p.pooled?pg:gY);p.vx+=gX;
       if(p.pooled&&settle<1){p.vx+=(CX-p.x)*0.0009*(1-settle);p.vy+=((CY-R*0.05)-p.y)*0.0011*(1-settle);} // cohesion: the young blob hangs mid-shape where the balls fly
@@ -4988,9 +4999,10 @@ function fillPhysics(now){
 // In the 3D tank the goo is a real volume, not a sheet through the middle: every drop has its own depth,
 // and all of it is held inside the actual shape - the solid's faces, or the prism's walls and its two
 // panes - a little way in from the glass, so it can never poke through it.
-// It gathers into soft hearts (one to start, a second buds off as it grows, a third when there is
-// plenty) that drift round the middle on slow cycles of their own, rising and sinking like wax in a lava
-// lamp. Every beat squeezes each heart along a fresh direction and lets it spring back - harder on the
+// It gathers into ONE soft heart that drifts round the middle on a slow cycle, rising and sinking like wax
+// in a lava lamp. (It used to bud a second and a third heart as it grew; Flah: it "piles up into multiple
+// diff blobs instead of conglomerating into one". One mass now.) Every beat squeezes the heart along a fresh
+// direction and lets it spring back - harder on the
 // downbeat, and harder the fuller the tank - so a ball crossing the middle meets goo in a different
 // place, at a different moment, every bar. A ball pushes the goo aside as it passes and the goo slows the
 // ball down: one physics, both ways. The flat 2D tank keeps its own goo, untouched.
@@ -5059,36 +5071,60 @@ function gooContain3D(p){
   const r0=p.r;p.r=r;for(let k=0;k<3;k++){const x=p.x,y=p.y;bounceInside(p);if(p.x===x&&p.y===y)break;}p.r=r0;   // the prism: its walls (again only if it moved: in a corner, leaving one wall can mean entering the next)...
   const m=r/BOXD;if(p.z<m){p.z=m;if(p.vz<0)p.vz*=-0.4;}else if(p.z>1-m){p.z=1-m;if(p.vz>0)p.vz*=-0.4;}}   // ...and its two panes
 const gk=(x,y,z)=>((x+512)*2048+(y+512))*2048+(z+512);
-const _rg=new Map();
-function relax3D(){const cell=2*PR,g=_rg;g.clear();const N=particles.length;
-  for(let i=0;i<N;i++){const p=particles[i],k=gk(Math.floor(p.x/cell),Math.floor(p.y/cell),Math.floor((p.z-0.5)*BOXD/cell));let a=g.get(k);if(!a){a=[];g.set(k,a);}a.push(i);}
-  for(let i=0;i<N;i++){const p=particles[i],cx=Math.floor(p.x/cell),cy=Math.floor(p.y/cell),cz=Math.floor((p.z-0.5)*BOXD/cell);
-    for(let gx=cx-1;gx<=cx+1;gx++)for(let gy=cy-1;gy<=cy+1;gy++)for(let gz=cz-1;gz<=cz+1;gz++){const a=g.get(gk(gx,gy,gz));if(!a)continue;
-      for(const j of a){if(j<=i)continue;const q=particles[j];let dx=q.x-p.x,dy=q.y-p.y,dz=(q.z-p.z)*BOXD;const d2=dx*dx+dy*dy+dz*dz,min=p.r+q.r;
-        if(d2<min*min&&d2>1e-8){const d=Math.sqrt(d2),push=(min-d)/2;dx/=d;dy/=d;dz/=d;
-          p.x-=dx*push;p.y-=dy*push;p.z-=dz*push/BOXD;q.x+=dx*push;q.y+=dy*push;q.z+=dz*push/BOXD;
-          const rvx=(p.vx-q.vx)*0.25,rvy=(p.vy-q.vy)*0.25,rvz=(p.vz-q.vz)*0.25;p.vx-=rvx;p.vy-=rvy;p.vz-=rvz;q.vx+=rvx;q.vy+=rvy;q.vz+=rvz;}}}}}
+// THE NEIGHBOUR GRID, WITHOUT GARBAGE. This was a Map of fresh arrays, rebuilt twice a tick: hundreds of small
+// allocations sixty times a second, and the garbage collector's pauses are exactly the hitches that make goo
+// look choppy. Now one flat grid of cells over the tank, a linked list per cell in two typed arrays, reused
+// every tick. Same pairs, same pushes.
+const _RG={head:null,next:null,nx:0,ny:0,nz:0,ox:0,oy:0,oz:0,cell:0};
+function _rgBuild(cell){const N=particles.length,G=_RG,span=2*R*1.3+4*cell,nx=Math.ceil(span/cell)+2,nz=Math.ceil((BOXD+4*cell)/cell)+2;
+  if(!G.head||G.nx!==nx||G.nz!==nz||G.cell!==cell){G.nx=nx;G.ny=nx;G.nz=nz;G.cell=cell;G.head=new Int32Array(nx*nx*nz);}
+  if(!G.next||G.next.length<N)G.next=new Int32Array(Math.max(64,N*2));
+  G.ox=CX-span/2;G.oy=CY-span/2;G.oz=-BOXD/2-2*cell;G.head.fill(-1);
+  for(let i=0;i<N;i++){const p=particles[i],k=_rgKey(p.x,p.y,(p.z-0.5)*BOXD);G.next[i]=G.head[k];G.head[k]=i;}}
+function _rgKey(x,y,z){const G=_RG;let a=Math.floor((x-G.ox)/G.cell),b=Math.floor((y-G.oy)/G.cell),c=Math.floor((z-G.oz)/G.cell);
+  a=a<0?0:a>=G.nx?G.nx-1:a;b=b<0?0:b>=G.ny?G.ny-1:b;c=c<0?0:c>=G.nz?G.nz-1:c;return (c*G.ny+b)*G.nx+a;}
+// each pair of neighbours is met ONCE: a drop looks at the drops after it in its own cell, and at every drop in the 13
+// neighbouring cells that come "after" its own (a half shell). The full 27-cell sweep met every pair twice and threw
+// half away -- this was half the physics' time.
+const _HS=[];for(let dz=-1;dz<=1;dz++)for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(dz>0||(dz===0&&(dy>0||(dy===0&&dx>0))))_HS.push([dx,dy,dz]);
+function _pair(p,q){let dx=q.x-p.x,dy=q.y-p.y,dz=(q.z-p.z)*BOXD;const d2=dx*dx+dy*dy+dz*dz,min=p.r+q.r;
+  if(d2<min*min&&d2>1e-8){const d=Math.sqrt(d2),push=(min-d)/2;dx/=d;dy/=d;dz/=d;
+    p.x-=dx*push;p.y-=dy*push;p.z-=dz*push/BOXD;q.x+=dx*push;q.y+=dy*push;q.z+=dz*push/BOXD;
+    const rvx=(p.vx-q.vx)*0.25,rvy=(p.vy-q.vy)*0.25,rvz=(p.vz-q.vz)*0.25;p.vx-=rvx;p.vy-=rvy;p.vz-=rvz;q.vx+=rvx;q.vy+=rvy;q.vz+=rvz;}}
+function relax3D(){const cell=2*PR,N=particles.length;if(!N)return;_rgBuild(cell);const G=_RG,head=G.head,next=G.next,nx=G.nx,ny=G.ny,nz=G.nz;
+  const cA=_RG.ca||(_RG.ca=new Int32Array(0));if(cA.length<N*3)_RG.ca=new Int32Array(N*6);const C=_RG.ca;
+  for(let i=0;i<N;i++){const p=particles[i];   // the cell each drop was binned in (positions move as pairs are pushed; the grid is not rebuilt mid-pass, as before)
+    let a=Math.floor((p.x-G.ox)/cell),b=Math.floor((p.y-G.oy)/cell),c=Math.floor(((p.z-0.5)*BOXD-G.oz)/cell);
+    C[i*3]=a<0?0:a>=nx?nx-1:a;C[i*3+1]=b<0?0:b>=ny?ny-1:b;C[i*3+2]=c<0?0:c>=nz?nz-1:c;}
+  for(let i=0;i<N;i++){const p=particles[i],ca=C[i*3],cb=C[i*3+1],cc=C[i*3+2];
+    for(let j=next[i];j!==-1;j=next[j])_pair(p,particles[j]);                 // the rest of its own cell
+    for(let h=0;h<13;h++){const o=_HS[h],gx=ca+o[0],gy=cb+o[1],gz=cc+o[2];if(gx<0||gy<0||gz<0||gx>=nx||gy>=ny||gz>=nz)continue;
+      for(let j=head[(gz*ny+gy)*nx+gx];j!==-1;j=next[j])_pair(p,particles[j]);}}}
 // a ball moving through the goo shoves it aside and drags a little of it along
 function gooWake(){if(!balls.length)return;const reach=BR+PR+6;
-  for(const b of balls){if(b.mute)continue;const bz=b.z==null?0.5:b.z,vz=(b.vz||0)*BOXD;
+  for(const b of balls){if(b.mute||b.warp)continue;const bz=b.z==null?0.5:b.z,vz=(b.vz||0)*BOXD;
     for(const p of particles){if(!p.pooled)continue;const dx=p.x-b.x;if(dx>reach||dx<-reach)continue;const dy=p.y-b.y;if(dy>reach||dy<-reach)continue;
       const dz=(p.z-bz)*BOXD;if(dz>reach||dz<-reach)continue;const d=Math.sqrt(dx*dx+dy*dy+dz*dz)||1;if(d>=reach)continue;const f=1-(d/reach)*(d/reach);
       p.vx+=b.vx*0.22*f+dx/d*f*1.2;p.vy+=b.vy*0.22*f+dy/d*f*1.2;p.vz+=vz*0.22*f+dz/d*f*1.2;}}}
 // how thick the goo is round a point, 0..1, from the drops themselves (so depth counts: a ball in front of the goo is not in it)
-const GOOC=24,_gooD=new Map();
-function buildGooHash(){_gooD.clear();for(const p of particles){if(!p.pooled)continue;
-  const k=gk(Math.floor(p.x/GOOC),Math.floor(p.y/GOOC),Math.floor((p.z-0.5)*BOXD/GOOC));_gooD.set(k,(_gooD.get(k)||0)+p.r*p.r*p.r);}}
-function gooAt3(x,y,z){if(!_gooD.size)return 0;const cx=Math.floor(x/GOOC),cy=Math.floor(y/GOOC),cz=Math.floor((z-0.5)*BOXD/GOOC);let s=0;
-  for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)for(let k=-1;k<=1;k++)s+=_gooD.get(gk(cx+i,cy+j,cz+k))||0;
+const GOOC=24,_GD={a:null,nx:0,nz:0,ox:0,oy:0,oz:0,n:0};
+function buildGooHash(){const G=_GD,span=2*R*1.3+4*GOOC,nx=Math.ceil(span/GOOC)+2,nz=Math.ceil((BOXD+4*GOOC)/GOOC)+2;
+  if(!G.a||G.nx!==nx||G.nz!==nz){G.nx=nx;G.nz=nz;G.a=new Float32Array(nx*nx*nz);}else G.a.fill(0);
+  G.ox=CX-span/2;G.oy=CY-span/2;G.oz=-BOXD/2-2*GOOC;G.n=0;
+  for(const p of particles){if(!p.pooled)continue;const k=_gdKey(Math.floor((p.x-G.ox)/GOOC),Math.floor((p.y-G.oy)/GOOC),Math.floor(((p.z-0.5)*BOXD-G.oz)/GOOC));if(k<0)continue;G.a[k]+=p.r*p.r*p.r;G.n++;}}
+function _gdKey(a,b,c){const G=_GD;return (a<0||b<0||c<0||a>=G.nx||b>=G.nx||c>=G.nz)?-1:(c*G.nx+b)*G.nx+a;}
+function gooAt3(x,y,z){const G=_GD;if(!G.n)return 0;const cx=Math.floor((x-G.ox)/GOOC),cy=Math.floor((y-G.oy)/GOOC),cz=Math.floor(((z-0.5)*BOXD-G.oz)/GOOC);let s=0;
+  for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)for(let k=-1;k<=1;k++){const q=_gdKey(cx+i,cy+j,cz+k);if(q>=0)s+=G.a[q];}
   return Math.min(1,s*4.18879/(27*GOOC*GOOC*GOOC)*1.9);}   // packed drops read about 1, the skin of a heart about 0.5
 function gooStep3D(now){
   let pooledN=0;for(const p of particles)if(p.pooled)pooledN++;
-  const L=lavaTick(pooledN),H=L.hearts,nh=1+(pooledN>140?1:0)+(pooledN>420&&!LITE?1:0);LAVA.n=nh;
+  const L=lavaTick(pooledN),H=L.hearts,nh=1;LAVA.n=nh;
   const env=S.playing?Math.exp(-L.phase*10):0,cnt=[0,0,0],t=now*0.001;
   for(const p of particles)if(p.pooled&&p.h!=null&&p.h<nh)cnt[p.h]++;
   const core=cnt.map(c=>8.5*Math.cbrt(Math.max(1,c)));LAVA.core=core;   // how big a packed heart of that many drops is
+  for(const p of particles){p.ox=p.x;p.oy=p.y;p.oz=p.z==null?0.5:p.z;}   // where each drop was: drawn between ticks, like the balls
   for(const p of particles){p.age++;if(p.vz==null)p.vz=0;if(p.z==null)p.z=0.5;
-    if(!p.pooled&&(p.age>40||(p.age>10&&Math.hypot(p.vx,p.vy,p.vz)<1.2))){p.pooled=true;p.h=nearestHeart(p,nh);}
+    if(!p.pooled&&!p.fade&&(p.age>40||(p.age>10&&Math.hypot(p.vx,p.vy,p.vz)<1.2))){p.pooled=true;p.h=nearestHeart(p,nh);}
     if(p.pooled){if(p.r<PR)p.r+=0.12;
       if(p.h==null||p.h>=nh||Math.random()<0.004)p.h=nearestHeart(p,nh);   // matter drifts between hearts that pass close
       const A=H[p.h],rx=p.x-CX-A[0],ry=p.y-CY-A[1],rz=(p.z-0.5)*BOXD-A[2],d=Math.sqrt(rx*rx+ry*ry+rz*rz)||1,c=core[p.h]*0.75;
@@ -5170,28 +5206,28 @@ function hypSolidSub(b,isub,ts){
     _splashZ=0.5;}
   return false;}
 // ONE STEP INSIDE A SOLID. The ball moves in all three directions; any face it is pushing out through
-// reflects it (a true 3D mirror, v - 2(v.n)n) and plays that face's note. A portal face hands the ball
-// to its glued twin instead (a plain slide across the middle: same velocity). An open face lets it out.
+// reflects it (a true 3D mirror, v - 2(v.n)n) and plays that face's note. A face with a wormhole on it hands the
+// ball to the other wormhole instead (see PORTAL SPACE). An open face lets it out.
 const _solidOpen=new Set();
 function solid3D(){return VIEW.d3&&!!edges&&!!edges._solid&&!_labOn();}
 function solidSub(b,isub,ts){
   if(b.z==null)b.z=0.5;
   if(!b.s3){b.s3=1;const a=(Math.random()-0.5)*1.6,sp=Math.hypot(b.vx,b.vy)||ts,c=Math.cos(a);   // first tick in a solid: a real 3D heading
     b.vx*=c;b.vy*=c;b.vz=Math.sin(a)*sp/BOXD;if(b.z<0.08||b.z>0.92)b.z=0.5;}   // born on the box's front glass: start mid-solid instead
-  const c=Math.cos(rot),s=Math.sin(rot),P=SOLID.planes,portal=edges._space==='portal'&&SOLID.twin&&!SOLID.from&&SOLID.T;
+  const c=Math.cos(rot),s=Math.sin(rot),P=SOLID.planes;
   let x=b.x-CX+b.vx*isub,y=b.y-CY+b.vy*isub,vx=b.vx,vy=b.vy,vz=(b.vz||0)*BOXD,z=(b.z-0.5)*BOXD+vz*isub,hit=-1,hvn=0,cross=-1;
   for(let k=0;k<P.length;k++){const n=P[k].n,nx=n[0]*c-n[1]*s,ny=n[0]*s+n[1]*c,nz=n[2],dist=nx*x+ny*y+nz*z-P[k].d;
     if(dist<=-BR)continue;const vn=nx*vx+ny*vy+nz*vz;
     if(_solidOpen.has(k))continue;
-    if(portal&&SOLID.twin[k]>=0){if(vn>0&&dist>0&&cross<0){const T=SOLID.T[k];x+=T[0]*c-T[1]*s;y+=T[0]*s+T[1]*c;z+=T[2];cross=k;hvn=vn;}continue;}
+    if(vn>0&&WORM.on){const W=wormAt(true,k,x-dist*nx,y-dist*ny,z-dist*nz);   // a wormhole on this face: in it goes (see PORTAL SPACE)
+      if(W){b.x=x+CX;b.y=y+CY;b.z=z/BOXD+0.5;wormEnter(b,W,x,y,z,vx,vy,vz);return 'warp';}}
     if(vn>0){vx-=2*vn*nx;vy-=2*vn*ny;vz-=2*vn*nz;x-=(dist+BR)*nx;y-=(dist+BR)*ny;z-=(dist+BR)*nz;hit=k;hvn=vn;}
     else if(dist>-BR*0.5){x-=(dist+BR)*nx;y-=(dist+BR)*ny;z-=(dist+BR)*nz;}}   // a face sliding in (a grow) carries the ball in with it
   b.x=x+CX;b.y=y+CY;b.z=z/BOXD+0.5;b.vx=vx;b.vy=vy;b.vz=vz/BOXD;
-  if(cross>=0){b.px=b.x;b.py=b.y;b.pz=b.z;b.trail.length=0;}
   if(Math.hypot(x,y,z)>SOLID_R*2.5)return true;                 // left through an open face
   const k=hit>=0?hit:cross;
   if(k>=0){const n=P[k].n,nx=n[0]*c-n[1]*s,ny=n[0]*s+n[1]*c,td=totalDegrees(),hue=(SOLID.deg[k]||0)/(td||1);
-    SOLID.flash[k]=1;if(cross>=0&&SOLID.twin[k]>=0)SOLID.flash[SOLID.twin[k]]=1;
+    SOLID.flash[k]=1;
     for(const e of edges)if(e.face===k)e.flash=1;
     _splashZ=Math.max(0,Math.min(1,b.z));const nw=performance.now();
     if(b.mute){b.mute=0;splash(b.x,b.y,-nx,-ny,hue);}
@@ -5203,16 +5239,149 @@ function solidSub(b,isub,ts){
       if(hit>=0)jitter(b);splash(b.x,b.y,-nx,-ny,hue);}
     _splashZ=0.5;}
   return false;}
-// PORTAL CROSSING. Opposite sides of these shapes are equal and parallel, so sliding one onto the other
-// is a plain translation (midpoint to midpoint): position shifts, speed and heading do not change at all.
-function portalCross(b,e,vn,ts){const t=e.twin;
-  b.x+=(t.ax+t.bx-e.ax-e.bx)/2;b.y+=(t.ay+t.by-e.ay-e.by)/2;b.px=b.x;b.py=b.y;b.trail.length=0;
-  e.flash=1;t.flash=1;
-  const nw=performance.now();
-  if(b.mute){b.mute=0;}else if(!b.lastHit||nw-b.lastHit>60){b.lastHit=nw;
-    const gd=gooAt(b.x,b.y,b.z),under=gd>0.3,goo=under?Math.min(1,0.35+0.65*Math.min(1,(gd-0.3)/0.6)):0;
-    trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1))*(1-goo*0.45),goo);}
-  _splashZ=VIEW.d3?(b.z||0):0.5;splash(b.x,b.y,t.nx,t.ny,e.hue);}
+// ================================================================================================
+//  PORTAL SPACE: TWO WORMHOLES.
+//  It used to glue whole opposite walls together: every ball that reached a wall vanished from it and
+//  appeared on the far side in the same instant, which looked like the tank was deleting balls (Flah:
+//  "it just seems like the notes are falling through and disappearing ... looks cheap").
+//  Now there are two round wormholes, A and B, each sitting ON a wall (a face, for a solid). They glide
+//  round the shape with the music -- a slide on every beat, a rest, a slide -- slipping round each corner by
+//  shrinking to nothing and opening again on the next wall, so where they are keeps changing. A ball that
+//  hits a wall anywhere else bounces and rings that wall as always. A ball that meets a wormhole is drawn
+//  in -- it spirals into the hole and is gone for a moment (half a beat) -- and then the OTHER wormhole,
+//  wherever it has got to by then, swells and spits it out, ringing the wall it is on. Its speed is kept;
+//  its heading is carried across from one hole to the other (in through A, out of B, the way a door works).
+//  Near a hole the ball's path bends toward it a little (a wormhole pulls), which is also how you can see it
+//  coming. Every shape can have them now (there is no gluing to fit), in 2D, in the 3D box and in a solid.
+//  The goo stays held by the glass: only balls travel. Lessons never have them.
+// ================================================================================================
+const WORM={on:false,open:0,key:'',beat:0,P:[0,1].map(i=>({i,x:0,y:0,z:0,n:[1,0,0],t1:[0,1,0],t2:[0,0,1],rad:0,want:0,wall:-1,face:-1,cents:0,hue:i?0.55:0.88,suck:0,spit:0,pre:0,from:0,at:0,dir:1,za:0,zb:0}))};
+function wormOn(){return !!edges&&edges._space==='portal'&&fillState==='fill'&&!_labOn();}
+function wormMax(){return solid3D()&&edges._solid?SOLID_R*0.24:(VIEW.d3?Math.min(84,BOXD*0.24):36);}   // a hole's full radius, px: about one wall hit in eight goes through
+function wormBeat(){return beatNow();}
+// HOW THE HOLES MOVE. Each one rests in the middle of a wall (a face) and, on every beat, slides to a NEIGHBOURING
+// wall: the slide takes the first part of the beat (eased), then it rests there for the rest of it. Round the
+// corner it shrinks to nothing and opens again on the other side, so it is never hanging off an edge, and at rest
+// it is always fully open, whatever the shape (on an icosahedron's small faces too). Which neighbour it goes to
+// is a coin toss that mostly keeps it going the same way round; the two never head for the same wall, and in
+// the 3D box each also drifts front-to-back. So where a ball that goes in will come out is never the same twice.
+function wormGlide(b){const f=b-Math.floor(b),k=Math.min(1,f/0.6);return k*k*(3-2*k);}
+const _wormAdj=new Map();
+function wormFaces(){const key=SOLID.name+'|'+SOLID.planes.length;let A=_wormAdj.get(key);if(A)return A;
+  const F=solidFaces(SOLID.planes);A={cen:F.map(f=>{const c=[0,0,0];for(const v of f){c[0]+=v.p[0];c[1]+=v.p[1];c[2]+=v.p[2];}return f.length?c.map(x=>x/f.length):[0,0,0];}),
+    nb:F.map((f,i)=>[...new Set(f.map(v=>v.t).filter(t=>t!=null&&t!==i&&F[t]&&F[t].length))])};
+  if(_wormAdj.size>20)_wormAdj.clear();_wormAdj.set(key,A);return A;}
+function wormSites(){return solid3D()&&edges._solid?SOLID.planes.length:edges.length;}
+function wormNext(P,other){const n=wormSites();if(n<2)return P.at;
+  let nb;if(solid3D()&&edges._solid)nb=wormFaces().nb[P.at]||[];else nb=[(P.at+1)%n,(P.at+n-1)%n];
+  if(!nb.length)return P.at;
+  let pick=nb.filter(k=>k!==other);if(!pick.length)pick=nb;
+  if(!(solid3D()&&edges._solid)){const fwd=(P.at+P.dir+n)%n;if(pick.includes(fwd)&&Math.random()<0.75)return fwd;P.dir=-P.dir;const back=(P.at+P.dir+n)%n;return pick.includes(back)?back:pick[0];}
+  return pick[(Math.random()*pick.length)|0];}
+// a point on the shape's surface for a hole on its way from site `a` to site `b` (k = 0..1 of the way)
+function wormPlace(P,k){const rm=wormMax(),A=P.from,Bt=P.at;
+  if(solid3D()&&edges._solid){
+    const W=wormFaces(),ca=W.cen[A]||[0,0,1],cb=W.cen[Bt]||ca,u0=[ca[0]+(cb[0]-ca[0])*k,ca[1]+(cb[1]-ca[1])*k,ca[2]+(cb[2]-ca[2])*k];
+    const c=Math.cos(rot),sn=Math.sin(rot),U=[u0[0]*c-u0[1]*sn,u0[0]*sn+u0[1]*c,u0[2]],PL=SOLID.planes;
+    let best=1e18,f=-1;const N=[];
+    for(let j=0;j<PL.length;j++){const n=PL[j].n,nx=n[0]*c-n[1]*sn,ny=n[0]*sn+n[1]*c,nz=n[2];N.push([nx,ny,nz]);const du=nx*U[0]+ny*U[1]+nz*U[2];
+      if(du>1e-6){const t=PL[j].d/du;if(t<best){best=t;f=j;}}}
+    if(f<0){P.want=0;return;}
+    const q=[U[0]*best,U[1]*best,U[2]*best],nk=N[f];let dEdge=1e9;
+    for(let j=0;j<PL.length;j++){if(j===f)continue;const dd=N[j][0]*nk[0]+N[j][1]*nk[1]+N[j][2]*nk[2],sq=Math.sqrt(Math.max(1e-6,1-dd*dd));
+      dEdge=Math.min(dEdge,(PL[j].d-(N[j][0]*q[0]+N[j][1]*q[1]+N[j][2]*q[2]))/sq);}
+    P.x=q[0];P.y=q[1];P.z=q[2];P.n=[-nk[0],-nk[1],-nk[2]];P.face=f;P.wall=-1;
+    for(let w=0;w<edges.length;w++)if(edges[w].face===f){P.wall=w;break;}   // the wall of the slice that face makes, for the flash
+    P.cents=centsForDegree(SOLID.deg[f]||0);P.hue=(SOLID.deg[f]||0)/(totalDegrees()||1);
+    let t1=Math.abs(P.n[2])<0.9?[-P.n[1],P.n[0],0]:[1,0,0];const l1=Math.hypot(...t1);t1=t1.map(v=>v/l1);
+    P.t1=t1;P.t2=[P.n[1]*t1[2]-P.n[2]*t1[1],P.n[2]*t1[0]-P.n[0]*t1[2],P.n[0]*t1[1]-P.n[1]*t1[0]];
+    const room=Math.min(rm,dEdge*0.9);P.want=(SOLID.from||_solidOpen.has(f))?0:room*smooth01(dEdge/(room*1.2+1e-6));return;}
+  // the flat tank and the 3D box: along the walls, from the middle of wall A round the corner to the middle of wall B
+  const n=edges.length,ea=edges[A%n],eb=edges[Bt%n];if(!ea||!eb){P.want=0;return;}
+  const fwd=((A+1)%n)===Bt%n,back=((A+n-1)%n)===Bt%n;let e,t;
+  if(A===Bt||(!fwd&&!back)){e=eb;t=0.5;}
+  else if(k<0.5){e=ea;t=fwd?0.5+k:0.5-k;}
+  else{e=eb;t=fwd?k-0.5:1.5-k;}
+  const L=Math.hypot(e.bx-e.ax,e.by-e.ay)||1,px=e.ax+(e.bx-e.ax)*t-CX,py=e.ay+(e.by-e.ay)*t-CY;
+  const zz=VIEW.d3&&!_labOn()?P.za+(P.zb-P.za)*k:0;
+  P.x=px;P.y=py;P.z=zz;P.n=[e.nx,e.ny,0];P.t1=[(e.bx-e.ax)/L,(e.by-e.ay)/L,0];P.t2=[0,0,1];P.wall=edges.indexOf(e);P.face=e.face!=null?e.face:-1;
+  P.cents=e.cents;P.hue=e.hue;
+  let lim=Math.min(t*L,(1-t)*L);if(VIEW.d3&&!_labOn())lim=Math.min(lim,BOXD/2-Math.abs(zz));
+  const room=Math.min(rm,lim*0.92+0.001);P.want=(e.broken||e.cr)?0:room*smooth01(lim/(room*1.2));}
+function smooth01(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}
+// once a tick: are there wormholes, where are they, how open
+function wormTick(){const on=wormOn();WORM.on=on;
+  WORM.open+=((on?1:0)-WORM.open)*0.06;if(!on&&WORM.open<0.01)WORM.open=0;
+  if(!on&&WORM.open===0){for(const P of WORM.P){P.rad=0;P.suck*=0.9;P.spit*=0.9;}return;}
+  const b=wormBeat(),fb=Math.floor(b),n=wormSites(),key=(solid3D()&&edges._solid?SOLID.name:'w')+'|'+n;
+  if(WORM.key!==key){WORM.key=key;WORM.beat=fb;   // a new shape: start the two holes on opposite sides of it
+    WORM.P.forEach((P,i)=>{P.from=P.at=Math.min(n-1,i===0?0:Math.floor(n/2));P.dir=i?-1:1;P.za=P.zb=(i?-0.12:0.12)*BOXD;});}
+  if(fb!==WORM.beat){const steps=Math.min(4,Math.abs(fb-WORM.beat));WORM.beat=fb;   // a new beat: each hole sets off for a neighbour
+    for(let s=0;s<steps;s++)WORM.P.forEach((P,i)=>{P.from=P.at;P.za=P.zb;P.at=wormNext(P,WORM.P[1-i].at);P.zb=(Math.random()*2-1)*0.26*BOXD;});}
+  const k=wormGlide(b);
+  for(const P of WORM.P){if(on)wormPlace(P,k);else P.want=0;}
+  // the two holes never overlap: on the same wall they make room for each other
+  const A=WORM.P[0],B=WORM.P[1],d=Math.hypot(A.x-B.x,A.y-B.y,A.z-B.z);
+  if(d<A.want+B.want+6){const k=Math.max(0,(d-6)/(A.want+B.want||1));A.want*=k;B.want*=k;}
+  for(const P of WORM.P){P.rad+=(P.want*WORM.open-P.rad)*0.25;P.suck*=0.9;P.spit*=0.93;P.pre=0;}
+  // the far hole swells a moment before it spits: you see it coming
+  const now=_tickT||performance.now();for(const bl of balls){const w=bl.warp;if(!w)continue;const left=w.t0+w.dur-now,Q=WORM.P[1-w.a];
+    if(left<160)Q.pre=Math.max(Q.pre,Math.min(1,1-left/160));}}
+// is this ball, touching wall/face idx at box-local (x,y,z), inside one of the holes on it?
+function wormAt(isFace,idx,x,y,z){if(!WORM.on)return null;
+  for(const P of WORM.P){if(P.rad<BR*1.2)continue;if(isFace?P.face!==idx:P.wall!==idx)continue;
+    const dx=x-P.x,dy=y-P.y,dz=z-P.z,dn=dx*P.n[0]+dy*P.n[1]+dz*P.n[2],ax=dx-dn*P.n[0],ay=dy-dn*P.n[1],az=dz-dn*P.n[2];
+    const m=P.rad-BR*0.3;if(ax*ax+ay*ay+az*az<m*m)return P;}
+  return null;}
+function wormDur(){return Math.max(240,Math.min(520,30000/(S.bpm||80)));}   // half a beat in the other dimension
+// in: the ball leaves the tank's physics until it comes out of the other hole
+function wormEnter(b,P,x,y,z,vx,vy,vz){const now=_tickT||performance.now();
+  b.warp={a:P.i,t0:now,dur:wormDur(),ex:[x,y,z],c:[P.x,P.y,P.z],n:P.n.slice(),t1:P.t1.slice(),t2:P.t2.slice(),
+    v:[vx,vy,vz],spd:Math.hypot(vx,vy,vz)||ballSpeed()};
+  P.suck=1;b.trail.length=0;b.spit=0;
+  if(P.wall>=0&&edges[P.wall])edges[P.wall].flash=Math.max(edges[P.wall].flash||0,0.5);}
+// out: carried across, A's frame to B's, and spat out of B along its wall's inward normal
+function wormExit(b,force){const w=b.warp,now=_tickT||performance.now();let Q=WORM.P[1-w.a];
+  if(!force&&WORM.on&&Q.rad<BR*1.6&&now-w.t0<w.dur+700)return false;   // B is squeezing round a corner: wait for it to open (a moment at most)
+  if(!WORM.on||Q.rad<BR*1.2)Q={x:w.c[0],y:w.c[1],z:w.c[2],n:w.n,t1:w.t1,t2:w.t2,rad:BR*2,wall:-1,face:-1,cents:null,hue:b.hue,i:w.a,spit:0};   // no other hole: back out of the one it went in
+  const d3=VIEW.d3&&!_labOn(),sol=d3&&solid3D()&&!!edges._solid,off=BR+1.5;
+  // a solid turns all three directions across; the flat tank and the 3D box's side walls work across only (depth
+  // has its own motion there, between the panes), so the heading across turns and the depth speed is kept
+  const v=sol?w.v:[w.v[0],w.v[1],0],spd=Math.hypot(...v)||w.spd,a=-(v[0]*w.n[0]+v[1]*w.n[1]+v[2]*w.n[2]),c1=v[0]*w.t1[0]+v[1]*w.t1[1]+v[2]*w.t1[2],c2=sol?v[0]*w.t2[0]+v[1]*w.t2[1]+v[2]*w.t2[2]:0;
+  let A2=Math.max(a,0.55*spd),out=[A2*Q.n[0]+c1*Q.t1[0]+c2*Q.t2[0],A2*Q.n[1]+c1*Q.t1[1]+c2*Q.t2[1],A2*Q.n[2]+c1*Q.t1[2]+c2*Q.t2[2]];
+  const ol=Math.hypot(...out)||1;out=out.map(q=>q/ol*spd);
+  b.x=CX+Q.x+Q.n[0]*off;b.y=CY+Q.y+Q.n[1]*off;b.px=b.x;b.py=b.y;
+  if(d3){b.z=Math.max(0.03,Math.min(0.97,(Q.z+Q.n[2]*off)/BOXD+0.5));b.pz=b.z;}
+  b.vx=out[0];b.vy=out[1];if(sol)b.vz=out[2]/BOXD;else if(d3)b.vz=w.v[2]/BOXD;
+  b.trail.length=0;b.warp=null;b.spit=now;b.spitN=Q.n.slice();b.lastHit=now;
+  if(Q.spit!=null)Q.spit=1;
+  if(Q.wall>=0&&edges[Q.wall])edges[Q.wall].flash=1;if(Q.face>=0&&SOLID.flash)SOLID.flash[Q.face]=1;
+  if(Q.cents!=null)trigger(Q.cents,0.85,0);
+  _splashZ=d3?(b.z||0.5):0.5;splash(b.x,b.y,Q.n[0],Q.n[1],Q.hue);_splashZ=0.5;
+  return true;}
+// a hole pulls: within a couple of its radii a ball heading for that wall bends toward it (its speed is kept)
+function wormPull(b,ts){if(!WORM.on||b.mute)return;const d3=VIEW.d3&&!_labOn(),X=b.x-CX,Y=b.y-CY,Z=d3?((b.z==null?0.5:b.z)-0.5)*BOXD:0;
+  for(const P of WORM.P){if(P.rad<BR*1.2)continue;const reach=P.rad*2.6,dx=P.x-X,dy=P.y-Y,dz=d3?P.z-Z:0,d=Math.hypot(dx,dy,dz);
+    if(d>=reach||d<1)continue;const vz=d3?(b.vz||0)*BOXD:0,sp=Math.hypot(b.vx,b.vy,vz)||1,head=-(b.vx*P.n[0]+b.vy*P.n[1]+vz*P.n[2])/sp;
+    if(head<=0)continue;const f=(1-d/reach)*(1-d/reach)*head*ts*0.16;
+    b.vx+=dx/d*f;b.vy+=dy/d*f;if(d3)b.vz=(vz+dz/d*f)/BOXD;}}
+// what a ball in or just out of a wormhole looks like right now (both renderers use this): where to draw it,
+// how big, and how it is stretched (sx along the hole's normal n, sy across). null = draw it as usual.
+// In: it slides from where it touched the wall to the middle of the hole, spiralling, stretching toward it and
+// shrinking to nothing (150 ms). Then it is not drawn at all. Out: it is pushed out of the other hole small and
+// stretched, and swells to its size with a little overshoot (260 ms).
+const WARP_IN=150,WARP_OUT=260;
+function wormView(b,now){
+  if(b.warp){const w=b.warp,k=(now-w.t0)/WARP_IN;if(k>=1)return {hide:true};
+    const e=k*k*(3-2*k),sp=(1-e)*BR*0.9,ang=e*5.2,tx=w.t1,ty=w.t2;
+    const cx=w.c[0]-w.n[0]*BR*0.6,cy=w.c[1]-w.n[1]*BR*0.6,cz=w.c[2]-w.n[2]*BR*0.6;
+    const ox=w.ex[0]+(cx-w.ex[0])*e+(tx[0]*Math.cos(ang)+ty[0]*Math.sin(ang))*sp*0.35,oy=w.ex[1]+(cy-w.ex[1])*e+(tx[1]*Math.cos(ang)+ty[1]*Math.sin(ang))*sp*0.35,
+          oz=w.ex[2]+(cz-w.ex[2])*e+(tx[2]*Math.cos(ang)+ty[2]*Math.sin(ang))*sp*0.35;
+    const s=Math.pow(1-e,0.8);return {x:ox,y:oy,z:oz,s,sx:s*(1+1.6*e),sy:s*(1-0.25*e),n:w.n};}
+  if(b.spit&&now-b.spit<WARP_OUT){const e=(now-b.spit)/WARP_OUT,c=1.70158,q=e-1,bk=1+(c+1)*q*q*q+c*q*q;   // ease-out-back
+    const st=(1-e)*(1-e);return {s:Math.max(0.05,bk),sx:Math.max(0.05,bk)*(1+0.9*st),sy:Math.max(0.05,bk)*(1-0.3*st),n:b.spitN||[1,0,0],pos:false};}
+  return null;}
+window.__worm=WORM;
 // ONE STEP ALONG A STRAIGHT LINE OF THE CURVED SPACE. (vx,vy) is the ball's heading and its speed as it
 // would be at the centre; the hyperbolic distance it covers is 2|v|/RD per tick (so at the centre it
 // moves exactly as fast as in the normal tank, and on screen it slows toward the rim). The move is exact:
@@ -5265,6 +5434,8 @@ function step(){
   if(s3){_solidOpen.clear();for(const e of edges)if(e.broken&&(e.reform||0)<0.55&&e.face!=null)_solidOpen.add(e.face);}   // an open wall of the slice opens its face
   for(let bi=balls.length-1;bi>=0;bi--){
     const b=balls[bi];
+    if(b.warp){const w=b.warp;b.px=b.x;b.py=b.y;if(s3)b.pz=b.z;   // in the other dimension: no physics until the far hole spits it out
+      if(!WORM.on||(_tickT||performance.now())-w.t0>=w.dur)wormExit(b,!WORM.on);continue;}
     b.r=BR;
     b.px=b.x; b.py=b.y;   // where it was when this tick began — the draw interpolates from here
     if(s3)b.pz=b.z==null?0.5:b.z;
@@ -5274,7 +5445,7 @@ function step(){
     const dist0=Math.hypot(b.vx,b.vy),sub=Math.max(1,Math.min(8,Math.ceil(dist0/(BR*0.5)))),isub=1/sub;
     let killed=false;
     for(let s=0;s<sub;s++){
-      if(fillState==="fill"&&s3){if((edges._space==='curved'?hypSolidSub:solidSub)(b,isub,ts)){balls.splice(bi,1);killed=true;break;}continue;}  // see REAL SOLIDS
+      if(fillState==="fill"&&s3){const r=(edges._space==='curved'?hypSolidSub:solidSub)(b,isub,ts);if(r==='warp'){killed=true;break;}if(r){balls.splice(bi,1);killed=true;break;}continue;}  // see REAL SOLIDS
       if(fillState==="fill"&&edges._space==='curved'){if(hypSub(b,isub,ts)){balls.splice(bi,1);killed=true;break;}continue;}  // see THREE SPACES
       b.x+=b.vx*isub;b.y+=b.vy*isub;
       if(fillState==="fill"){
@@ -5289,9 +5460,8 @@ function step(){
             const ex=e.bx-e.ax,ey=e.by-e.ay,L2=ex*ex+ey*ey||1,t=((b.x-e.ax)*ex+(b.y-e.ay)*ey)/L2;
             if(t<-0.05||t>1.05)continue;
             const vn=b.vx*e.nx+b.vy*e.ny;
-            if(e.twin){ // PORTAL: no bounce. Once the ball's centre is through, it comes out of the opposite wall
-              if(dist<0&&vn<0&&t>=0&&t<=1){hitWall=true;portalCross(b,e,vn,ts);}
-              continue;}
+            if(vn<0&&WORM.on){const ei=edges.indexOf(e),W=wormAt(false,ei,b.x-CX-dist*e.nx,b.y-CY-dist*e.ny,VIEW.d3&&!_labOn()?((b.z==null?0.5:b.z)-0.5)*BOXD:0);   // a wormhole on this wall (see PORTAL SPACE)
+              if(W){wormEnter(b,W,b.x-CX,b.y-CY,VIEW.d3&&!_labOn()?((b.z==null?0.5:b.z)-0.5)*BOXD:0,b.vx,b.vy,VIEW.d3?(b.vz||0)*BOXD:0);hitWall=true;break;}}
             if(vn<0){hitWall=true;b.vx-=2*vn*e.nx;b.vy-=2*vn*e.ny;jitter(b);b.x+=(BR-dist)*e.nx;b.y+=(BR-dist)*e.ny;e.flash=1;
               const nw=performance.now();
               if(b.mute){b.mute=0;e.flash=1;(_splashZ=VIEW.d3?(b.z||0):0.5,splash(b.x,b.y,e.nx,e.ny,e.hue));}else
@@ -5302,6 +5472,7 @@ function step(){
                 trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1))*(1-goo*0.45),goo); // goo-slathered hits ring softer & rounder
                 if(LAB._hit){try{LAB._hit(e.deg,e.cents);}catch(err){}} // the lesson hears every wall the child rings
                 (_splashZ=VIEW.d3?(b.z||0):0.5,splash(b.x,b.y,e.nx,e.ny,e.hue));}}}} // splash carries the note's color into the pool
+        if(b.warp){killed=true;break;}
         // despawn only a ball that truly left the arena through an open corner (never bounced, wandered far off-screen)
         if(!hitWall&&!inPoly(b.x,b.y,edges._verts)&&(b.x<-80||b.x>W+80||b.y<-80||b.y>H+80)){balls.splice(bi,1);killed=true;break;}
       }else{ // broken open — bounce off the fragments, trickle out through the gaps
@@ -5337,7 +5508,7 @@ function step(){
     // no gravity = steady tempo speed; the more gravity, the more they free-fall & settle (smooth across the whole slider)
     if(b.mute&&(b.muteN=(b.muteN||0)+1)>40)b.mute=0; // safety: a shot that never lands rejoins normal physics
     if(!b.mute){ // shot balls fly TRUE — no tempo normalizer, no drag, no goo — until first impact. then they're citizens.
-    beatLock(b,_tickT||performance.now());const tsb=ts*(b.tq||1);   // steady speed, give or take the little steer that lands the next bounce on the beat
+    wormPull(b,ts);beatLock(b,_tickT||performance.now());const tsb=ts*(b.tq||1);   // steady speed, give or take the little steer that lands the next bounce on the beat
     if(s3){const sp=Math.hypot(b.vx,b.vy,(b.vz||0)*BOXD)||1;const k=(tsb/sp)*(1-g)+g;b.vx*=k;b.vy*=k;b.vz=(b.vz||0)*k;}   // a solid: steady speed in all three directions
     else{const sp=Math.hypot(b.vx,b.vy)||1;const k=(tsb/sp)*(1-g)+g;b.vx*=k;b.vy*=k;}
     if(g>0){b.vx*=(1-g*0.06);b.vy*=(1-g*0.015);} // drag grows with gravity so they land & settle instead of skating forever
@@ -5387,7 +5558,7 @@ function hitTicks(b){let best=Infinity;
   if(!solid&&VIEW.d3&&!_labOn()&&b.vz){const t=b.vz<0?b.z/(-b.vz*(b.tq||1)):(1-b.z)/(b.vz*(b.tq||1));if(t>=0)best=t;}   // the front and back panes
   const c=Math.cos(rot),s=Math.sin(rot),X=b.x-CX,Y=b.y-CY,Z=solid?((b.z==null?0.5:b.z)-0.5)*BOXD:0,VZ=solid?(b.vz||0)*BOXD:0;
   const W=solid?SOLID.planes.map((pl,k)=>_solidOpen.has(k)?null:[pl.n[0]*c-pl.n[1]*s,pl.n[0]*s+pl.n[1]*c,pl.n[2],pl.d+(-BR)]).filter(Boolean)   // [nx,ny,nz,limit]: n.p <= limit
-                 :edges.filter(e=>!(e.broken&&(e.reform||0)<0.55)).map(e=>[-e.nx,-e.ny,0,-((e.ax-CX)*e.nx+(e.ay-CY)*e.ny)-(e.twin?0:BR)]);
+                 :edges.filter(e=>!(e.broken&&(e.reform||0)<0.55)).map(e=>[-e.nx,-e.ny,0,-((e.ax-CX)*e.nx+(e.ay-CY)*e.ny)-BR]);
   const room=(t,k)=>{const x=X+b.vx*t,y=Y+b.vy*t,a=-w*t,ca=Math.cos(a),sa=Math.sin(a),q=W[k];return q[3]-(q[0]*(x*ca-y*sa)+q[1]*(x*sa+y*ca)+q[2]*(Z+VZ*t));};
   if(Math.abs(w)<1e-6){for(const q of W){const vn=q[0]*b.vx+q[1]*b.vy+q[2]*VZ;if(vn<=1e-6)continue;const t=(q[3]-(q[0]*X+q[1]*Y+q[2]*Z))/vn;if(t>=0&&t<best)best=t;}return best;}
   const prev=W.map((q,k)=>room(0,k)),DT=4;
@@ -5445,10 +5616,7 @@ function strokeSeg(e,i,N,extra){
   grad.addColorStop(0,aurora(e.hue+ph,68+formGlow*15));grad.addColorStop(1,aurora(((i+1)%N)/N+ph,68+formGlow*15));
   ctx.strokeStyle=grad;}ctx.lineWidth=7+e.flash*7;
   ctx.shadowBlur=e.flash>0.02?20*e.flash:(extra>0.02?20*extra:0);ctx.shadowColor=aurora(e.hue+ph,72);
-  if(e.twin){ // a portal wall: a moving dashed line, a door rather than a wall
-    ctx.setLineDash([12,11]);ctx.lineDashOffset=-(performance.now()*0.02)%23;ctx.lineWidth=5+e.flash*7;}
   ctx.beginPath();edgePath(e);ctx.stroke();e.flash*=0.86;
-  if(e.twin)ctx.setLineDash([]);
   // a lesson can write on the walls (solfège, scale numbers, note names). Drawn just inside the wall so it
   // never leaves the tank, and only while a lesson asked for it.
   if(LAB&&LAB._labels&&e.deg!=null){
@@ -5637,12 +5805,55 @@ function drawParticles(noDrops){ // the goo: floats as a blob while young, settl
     surfY=null;softBlobs(LC.mid);drawRipples();
     if(!noDrops)for(const p of particles){if(p.pooled)continue;
       ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}}}
+// ---------- THE WORMHOLES ON THE CANVAS (the flat tank, and the 3D box when there is no graphics card) ----------
+// The same two holes the GPU draws (see THE WORMHOLES in tank3d.js), in the same colours: a whirlpool whose arms
+// wind in, rings that keep falling toward the middle, the other hole's colour glimpsed at the bottom, a bright
+// rim and a soft glow. A hole swells before it spits and throws a ring of light when it does.
+const WORMC=[{rim:[255,156,207],deep:[122,69,200]},{rim:[134,232,214],deep:[47,116,196]}];
+function wormRGBA(c,a){return 'rgba('+c[0]+','+c[1]+','+c[2]+','+Math.max(0,Math.min(1,a)).toFixed(3)+')';}
+// pts(r,ang) -> [x,y] on screen for a point r (0..1 of the hole's radius) and angle round it, plus the centre and
+// the hole's drawn radius: the flat tank passes a circle, the 3D box a circle laid on the wall and projected
+function wormPaint(i,P,pt,cx,cy,rad){const C=WORMC[i],F=WORMC[1-i],now=performance.now()/1000,still=reduceMotionOn();
+  const t=still?0:now,sw=1+0.24*(P.spit||0)+0.2*(P.pre||0),R0=rad*sw,op=Math.min(1,WORM.open*1.2);
+  if(R0<1.5||op<0.02)return;
+  ctx.save();ctx.globalAlpha=op;
+  // the hole's outline, projected once a frame and scaled for each ring (a circle laid on a wall stays an ellipse
+  // round the same centre under the box's projection, near enough at these sizes): 24 points, not 40 per ring
+  const ring=[];for(let k=0;k<24;k++){const q=pt(sw,k/24*Math.PI*2);ring.push(q[0]-cx,q[1]-cy);}
+  const path=(r)=>{ctx.beginPath();for(let k=0;k<24;k++){const x=cx+ring[k*2]*r,y=cy+ring[k*2+1]*r;k?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.closePath();};
+  // the glow round it, then the hole: rim colour at the lip, deep inside, the far hole's colour at the bottom
+  let g=ctx.createRadialGradient(cx,cy,R0*0.9,cx,cy,R0*1.75);g.addColorStop(0,wormRGBA(C.rim,0.45*(1+(P.suck||0))));g.addColorStop(1,wormRGBA(C.rim,0));
+  ctx.fillStyle=g;path(1.75);ctx.fill();
+  g=ctx.createRadialGradient(cx,cy,0,cx,cy,R0);g.addColorStop(0,wormRGBA(F.rim,0.95));g.addColorStop(0.3,wormRGBA(C.deep,0.95));g.addColorStop(0.82,wormRGBA(C.deep.map((v,k)=>(v+C.rim[k])/2|0),0.92));g.addColorStop(1,wormRGBA(C.rim,0.95));
+  ctx.fillStyle=g;path(1);ctx.fill();
+  if(!LITE){   // three arms winding in, and rings falling toward the middle
+    ctx.lineCap='round';
+    for(let a=0;a<3;a++){ctx.beginPath();for(let k=0;k<=14;k++){const r=0.95*Math.pow(1-k/14,1.15)+0.04,ang=a*2.0944+Math.log(r)*1.9+t*(2.3+4*(P.suck||0));
+        const q=pt(r*sw,ang);k?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]);}
+      ctx.strokeStyle=wormRGBA(C.rim,0.5);ctx.lineWidth=Math.max(1,R0*0.09);ctx.stroke();}
+    for(let k=0;k<3;k++){const f=((t*0.7+k/3)%1),r=Math.pow(1-f,1.4)*0.95;if(r<0.06)continue;path(r);ctx.strokeStyle=wormRGBA([255,255,255],0.28*(1-f));ctx.lineWidth=1.2;ctx.stroke();}}
+  path(1);ctx.strokeStyle=wormRGBA(C.rim.map(v=>Math.min(255,v+30)),0.95);ctx.lineWidth=Math.max(1.5,R0*0.1);ctx.stroke();
+  if((P.spit||0)>0.02){path(1+(1-P.spit)*0.62);ctx.strokeStyle=wormRGBA(C.rim,0.85*P.spit);ctx.lineWidth=Math.max(1.5,R0*0.12);ctx.stroke();}
+  ctx.restore();}
+function reduceMotionOn(){try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}}
+function drawWorm2D(){if(!WORM.open||edges._space!=='portal'||fillState!=='fill')return;
+  WORM.P.forEach((P,i)=>{const cx=CX+P.x,cy=CY+P.y;wormPaint(i,P,(r,a)=>[cx+Math.cos(a)*r*P.rad,cy+Math.sin(a)*r*P.rad],cx,cy,P.rad);});}
+function drawWorm3D(){if(!WORM.open||edges._space!=='portal'||fillState!=='fill')return;
+  WORM.P.forEach((P,i)=>{if(P.rad<1.5)return;const c=P3(CX+P.x,CY+P.y,P.z/BOXD+0.5);
+    const pt=(r,a)=>{const ca=Math.cos(a)*r*P.rad,sa=Math.sin(a)*r*P.rad;
+      return P3(CX+P.x+P.t1[0]*ca+P.t2[0]*sa,CY+P.y+P.t1[1]*ca+P.t2[1]*sa,(P.z+P.t1[2]*ca+P.t2[2]*sa)/BOXD+0.5);};
+    let m=0;for(let k=0;k<8;k++){const q=pt(1,k/8*Math.PI*2);m+=Math.hypot(q[0]-c[0],q[1]-c[1]);}
+    wormPaint(i,P,pt,c[0],c[1],m/8);});}
 function drawBalls(){ // every ball its own vivid hue; in the goo they wade — fat goopy wake, dimmer glow, visibly slower
   for(const b of balls){const tl=b.trail.length,bh=Math.round(b.hue*360),under=fillState==="fill"&&gooAt(b.x,b.y,b.z)>0.3;
     // interpolated draw position. A bounce moves a ball a long way in one tick, so anything that big
     // is a direction change rather than travel -- snap to the true position instead of smearing across it.
     let bx=lerpX(b), by=lerpY(b);
     if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR0*2.2){bx=b.x;by=b.y;}
+    const wv=wormView(b,performance.now());if(wv&&wv.hide)continue;   // in the other dimension
+    if(wv&&wv.x!=null){bx=CX+wv.x;by=CY+wv.y;}
+    if(wv){const hb=Math.round(b.hue*360),a=Math.atan2(wv.n[1],wv.n[0]);ctx.fillStyle=`hsl(${hb},88%,58%)`;ctx.beginPath();
+      ctx.ellipse(bx,by,Math.max(0.3,BR0*wv.sx),Math.max(0.3,BR0*wv.sy),a,0,7);ctx.fill();continue;}   // stretched along the hole's axis
     const BR=BR0*ballScale(bx,by);   // curved space: a ball shrinks toward the rim (1 everywhere else)
     for(let i=0;i<tl;i++){const [tx,ty]=b.trail[i];const f=i/tl;
       if(under){ctx.fillStyle=`hsla(${bh},65%,58%,${(f*0.4).toFixed(3)})`;ctx.beginPath();ctx.arc(tx,ty,BR*(0.4+0.95*f),0,7);ctx.fill();} // thick wake dragging through the goo
@@ -5689,19 +5900,24 @@ window.__space=TSPACE;
 window.__view=VIEW;
 const BOXD=R*1.2;                        // how deep the box is, in the same units as the shape
 const CAM=1000;                          // camera distance: the back of the box shows at ~74% size
-const TILT=0.22;                         // ~13 degrees: how far the spin axis leans
+// HOW FAR THE BOX LEANS TOWARD YOU. It was a steady 13 degrees, and Flah: "the 3d rotation isnt enough ... coming and
+// rotating toward u, still feels too flat". Now the lean BREATHES with the music: from 17 degrees out to 37 and back
+// over 32 bars, so the box keeps rolling its sides and faces round toward you, on top of the wander below.
+const TILT=0.3,TILT_SWING=0.34;
 const _pane={front:0,back:0};           // how lit each glass pane is after a ball strikes it
 const _ptr={x:0,y:0};
 addEventListener('pointermove',e=>{_ptr.x=(e.clientX/innerWidth-0.5)*2;_ptr.y=(e.clientY/innerHeight-0.5)*2;},{passive:true});
-let _M=[1,0,0,0,1,0,0,0,1],_phi=0,_tiltNow=TILT,_ptrE={x:0,y:0};
+let _M=[1,0,0,0,1,0,0,0,1],_phi=0,_tiltNow=TILT,_ptrE={x:0,y:0},_vtLast=0;
 let _reduced=false;try{_reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
 // the axis wanders round once every 16 bars in play (it speeds up with the tempo, like the spin),
 // slowly elsewhere; the pointer leans it a little more so the box turns toward your hand
 function viewTick(){
   let secBar=4*60/(S.bpm||80);try{secBar=drumBar()*drumStepDur();}catch(e){}
-  if(!_reduced&&S.playing)_phi+=(2*Math.PI)/(16*Math.max(0.2,secBar)*60);
-  _ptrE.x+=(_ptr.x-_ptrE.x)*0.05;_ptrE.y+=(_ptr.y-_ptrE.y)*0.05;
+  const vn=performance.now(),vdt=Math.min(100,_vtLast?vn-_vtLast:16.7)/1000;_vtLast=vn;   // by the clock, not per frame: a 120 Hz screen used to turn it twice as fast
+  if(!_reduced&&S.playing)_phi+=(2*Math.PI)*vdt/(16*Math.max(0.2,secBar));
+  const pe=1-Math.pow(0.95,vdt*60);_ptrE.x+=(_ptr.x-_ptrE.x)*pe;_ptrE.y+=(_ptr.y-_ptrE.y)*pe;
   const ax=Math.cos(_phi)+(_reduced?0:-_ptrE.y*0.6),ay=Math.sin(_phi)+(_reduced?0:_ptrE.x*0.6),al=Math.hypot(ax,ay)||1;
+  _tiltNow=TILT+TILT_SWING*(0.5-0.5*Math.cos(_phi*0.5));   // 16 bars to lean all the way in, 16 to come back
   const ux=ax/al,uy=ay/al,th=_tiltNow,c=Math.cos(th),s=Math.sin(th),k=1-c;   // Rodrigues: tilt by th about (ux,uy,0)
   _M=[c+ux*ux*k, ux*uy*k, uy*s,
       ux*uy*k, c+uy*uy*k, -ux*s,
@@ -5719,7 +5935,7 @@ function screenToBox(sx,sy){const M=_M,ox=sx-CX,oy=sy-CY;
   return [CX+M[0]*Q[0]+M[3]*Q[1]+M[6]*Q[2],CY+M[1]*Q[0]+M[4]*Q[1]+M[7]*Q[2]];}
 window.__screenToBox=screenToBox;window.__P3=P3;
 // a flat layer of the tank (goo, ripples, the front rim) drawn at one depth: the affine transform that
-// matches P3 at that depth. Exact at the middle, within ~2px at the corners at this tilt.
+// matches P3 at that depth. Exact at the middle; a few px off at the corners at the deepest lean (the canvas view only).
 function planeAt(z){const o=P3(CX,CY,z),a=P3(CX+100,CY,z),b=P3(CX,CY+100,z);
   const A=(a[0]-o[0])/100,Bv=(a[1]-o[1])/100,C=(b[0]-o[0])/100,D=(b[1]-o[1])/100;
   return [A,Bv,C,D,o[0]-A*CX-C*CY,o[1]-Bv*CX-D*CY];}
@@ -5740,7 +5956,7 @@ function drawSolidCanvas(){wallUpkeep(true);const F=solidFaces(SOLID.planes),c=M
   const face=(it,a)=>{const fl=Math.min(1,(SOLID.flash[it.i]||0)*1.4);ctx.beginPath();it.pts.forEach((q,k)=>k?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath();
     ctx.fillStyle=glassTint((SOLID.deg[it.i]||0)/td+ph,fl,(a+fl*0.3).toFixed(3));ctx.fill();ctx.lineWidth=2.4;ctx.strokeStyle=glassTint((SOLID.deg[it.i]||0)/td+ph,fl,(0.8+fl*0.2).toFixed(3),1);ctx.stroke();};
   for(const it of items)if(!it.front)face(it,0.12);
-  drawGoo3D();drawDroplets3D();drawBalls3D();
+  drawWorm3D();drawGoo3D();drawDroplets3D();drawBalls3D();
   for(const it of items)if(it.front)face(it,0.07);}
 function draw3D(){viewTick();
   if(fillState==="fill"&&edges._solid&&!_labOn()){drawSolidCanvas();return;}
@@ -5760,12 +5976,12 @@ function draw3D(){viewTick();
     _pane.back*=0.88;
     // ball shadows on the back pane: how far each ball is from the back is what makes the box a volume
     if(fill){ctx.fillStyle='rgba(60,36,110,.15)';
-      for(const b of balls){const s=P3(lerpX(b),lerpY(b),1);ctx.beginPath();ctx.ellipse(s[0]+3,s[1]+5,BR*s[2]*1.05,BR*s[2]*0.8,0,0,7);ctx.fill();}}
+      for(const b of balls){if(b.warp)continue;const s=P3(lerpX(b),lerpY(b),1);ctx.beginPath();ctx.ellipse(s[0]+3,s[1]+5,BR*s[2]*1.05,BR*s[2]*0.8,0,0,7);ctx.fill();}}
     // the side walls, one per edge, each in its wall's colour, lit along their length by a strike
     for(let i=0;i<N;i++){const e=list[i];if(fill&&e.broken&&!e.reform)continue;
       const lit=Math.min(1,(e.flash||0)*1.4);
       ctx.beginPath();ctx.moveTo(F[i][0],F[i][1]);ctx.lineTo(Fb[i][0],Fb[i][1]);ctx.lineTo(Bb[i][0],Bb[i][1]);ctx.lineTo(Bk[i][0],Bk[i][1]);ctx.closePath();
-      ctx.fillStyle=glassTint(e.hue+ph,lit,((e.twin?0.05:(LITE?0.12:0.16))+lit*0.3).toFixed(3));ctx.fill();}   // glass; a portal wall is a door: barely there
+      ctx.fillStyle=glassTint(e.hue+ph,lit,((LITE?0.12:0.16)+lit*0.3).toFixed(3));ctx.fill();}   // glass
     // two faint depth rings, then the corner rails and the back rim
     if(fill&&!LITE){ctx.setLineDash([3,9]);ctx.lineWidth=1.2;ctx.strokeStyle='rgba(255,255,255,.32)';
       for(const d of [0.33,0.66]){ctx.beginPath();list.forEach((e,i)=>{const p=P3(e.ax,e.ay,d);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]);});ctx.closePath();ctx.stroke();}
@@ -5776,6 +5992,7 @@ function draw3D(){viewTick();
     for(let i=0;i<N;i++){const e=list[i];if(fill&&e.broken&&!e.reform)continue;
       ctx.strokeStyle=glassTint(e.hue+ph,Math.min(1,(e.flash||0)*1.4),0.7,1);ctx.beginPath();ctx.moveTo(Bk[i][0],Bk[i][1]);ctx.lineTo(Bb[i][0],Bb[i][1]);ctx.stroke();}
     ctx.restore();}
+  drawWorm3D();   // the wormholes lie on the walls
   // the goo is a liquid sheet through the middle of the box; spray droplets fly at their own depth
   drawGoo3D();
   drawDroplets3D();
@@ -5811,10 +6028,9 @@ function buildEcho(){
   return {key:String(S.shape)+'|'+edges.length+'|'+HYP.RD,lvl1,lvl2};}
 function drawHorizon(z){
   const key=String(S.shape)+'|'+edges.length+'|'+HYP.RD;if(!_echo||_echo.key!==key)_echo=buildEcho();
+  // (the disc and its rim at infinity used to be drawn here too: a big circle round every curved shape. Flah: "take
+  // that out". The bent walls and their mirrored echoes say it is curved space on their own.)
   ctx.save();if(z!=null)ctx.transform(...planeAt(z));ctx.translate(CX,CY);
-  const g=ctx.createRadialGradient(0,0,HYP.RD*0.55,0,0,HYP.RD);g.addColorStop(0,'rgba(236,226,255,0)');g.addColorStop(1,'rgba(214,196,252,.32)');
-  ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,HYP.RD,0,7);ctx.fill();
-  ctx.lineWidth=2;ctx.strokeStyle='rgba(255,255,255,.7)';ctx.stroke();
   ctx.rotate(rot);const ph=performance.now()*0.000012;
   if(!LITE){ctx.lineWidth=1.2;ctx.strokeStyle='rgba(170,140,230,.22)';ctx.stroke(_echo.lvl2);}
   ctx.lineWidth=1.8;for(const L of _echo.lvl1){   // in 3D the echoes are glass too; the flat view keeps their colours
@@ -5847,7 +6063,9 @@ function drawBalls3D(){
   for(const b of order){const tl=b.trail.length,bh=Math.round(b.hue*360),under=fillState==="fill"&&gooAt(b.x,b.y,b.z)>0.3;
     let bx=lerpX(b),by=lerpY(b),bz=(b.pz==null?(b.z||0):b.pz+((b.z||0)-b.pz)*_alpha);
     if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR*2.2){bx=b.x;by=b.y;bz=b.z||0;}
-    const s=P3(bx,by,bz),X=s[0],Y=s[1],r=BR*s[2]*ballScale(bx,by,bz);
+    const wv=wormView(b,performance.now());if(wv&&wv.hide)continue;   // in the other dimension
+    if(wv&&wv.x!=null){bx=CX+wv.x;by=CY+wv.y;bz=wv.z/BOXD+0.5;}
+    const s=P3(bx,by,bz),X=s[0],Y=s[1],r=BR*s[2]*ballScale(bx,by,bz)*(wv?Math.sqrt(wv.sx*wv.sy):1);
     ctx.globalAlpha=1-0.3*bz;                                              // further back = a little hazier
     for(let i=0;i<tl;i++){const t=b.trail[i],f=i/tl,q=P3(t[0],t[1],t[2]||0);
       ctx.fillStyle=under?`hsla(${bh},65%,58%,${(f*0.4).toFixed(3)})`:`hsla(${bh},90%,64%,${(f*0.25).toFixed(3)})`;
@@ -5892,7 +6110,7 @@ function draw(){
   if(useGL)glFrame();
   else if(VIEW.d3){glEnsure();draw3D();}   // the glass box on the canvas (see TWO VIEWS OF ONE TANK)
   else{if(fillState==="fill"&&edges._space==='curved')drawHorizon();
-    drawParticles();drawShape();drawDebris();drawBalls();}  // the flat tank, exactly as it has always been
+    drawParticles();drawShape();drawDebris();drawWorm2D();drawBalls();}  // the flat tank, exactly as it has always been (plus the wormholes)
   // The chord readout is the header chip (#hdrChord) now: it rides in the transport row, so it cannot be
   // covered by the studio strip and it is the only readout play mode has left. This floating pill is
   // retired - it is still wired (updateChordPill) but never shown. NOTE: this line used to re-show it on
@@ -5959,7 +6177,7 @@ function simTick(now){
     rot+=d;_rotV=d;rebuild();}else _rotV=0;
   if(solidMorphTick())rebuild();    // a solid growing into the next one: the slice follows it
   curSegs=(fillState==="fill")?null:computeSegs();
-  step();fillPhysics(now);
+  wormTick();step();fillPhysics(now);
 }
 // FIXED TIMESTEP: physics used to run once per drawn frame, so a 30fps phone moved balls half as fast
 // as a 60fps desktop (and a 144Hz monitor ran too fast). Now we run exactly 60 ticks per real second on
@@ -7035,7 +7253,7 @@ window.growBack=growBack;
 // It sits on the tank's bottom-left corner, or the nearest free corner if a control is already there.
 (function(){const chip=$("spaceChip"),btn=$("spaceBtn"),menu=$("spaceMenu"),txt=$("spaceTxt"),note=$("smNote");if(!chip)return;
   document.body.appendChild(chip);   // fixed to the viewport, so no panel's stacking can trap its menu
-  const why={portal:'portal needs a shape with matching opposite sides',curved:'curved needs a shape with no dents'};
+  const why={curved:'curved needs a shape with no dents'};   // (portal fits every shape now: two wormholes, nothing glued)
   function paint(){
     const sp=edges?edges._space:'normal';
     txt.textContent=(VIEW.d3?'3D':'2D')+' \u00b7 '+(TSPACE.pick==='auto'&&sp==='normal'&&S.mode==='play'?'auto':sp);
@@ -7064,9 +7282,11 @@ window.growBack=growBack;
     'auto':svg('<rect x="7" y="7" width="22" height="22" rx="5"/><circle cx="13" cy="13" r="1.6" fill="currentColor"/><circle cx="23" cy="23" r="1.6" fill="currentColor"/><circle cx="18" cy="18" r="1.6" fill="currentColor"/>'),
     'normal':svg('<path d="'+hex(13)+'"/>'),
     'back':svg('<path d="M13 9L7 15L13 21"/><path d="M7 15H20A7 7 0 0 1 20 29H16"/>'),   // nothing to go back to: just the arrow, greyed
-    // glued sides: the two opposite sides are dashed, as the tank draws them, and a ball leaves one and comes in the other
-    'portal':(()=>{const a=hexV(1),b=hexV(2),c=hexV(4),d=hexV(5);
-      return svg('<path d="'+hex(13)+'" opacity=".45"/><path d="M'+a+'L'+b+'M'+c+'L'+d+'" stroke-dasharray="3 2.6" stroke-width="2.8"/><circle cx="27.5" cy="18" r="2.2" fill="currentColor" stroke="none"/><circle cx="8.5" cy="18" r="2.2" fill="currentColor" stroke="none" opacity=".45"/>');})(),
+    // portal space: two wormholes sitting on two of the walls, each a little whirlpool
+    'portal':(()=>{const a=hexV(0),b=hexV(1),c=hexV(3),d=hexV(4),m1=[(a[0]+b[0])/2,(a[1]+b[1])/2],m2=[(c[0]+d[0])/2,(c[1]+d[1])/2];
+      const swirl=(m,r)=>{let p='';for(let k=0;k<=14;k++){const t=k/14,rr=r*(1-t*0.85),an=t*7.5;p+=(k?'L':'M')+(m[0]+Math.cos(an)*rr).toFixed(1)+' '+(m[1]+Math.sin(an)*rr).toFixed(1);}return p;};
+      return svg('<path d="'+hex(13)+'" opacity=".45"/><circle cx="'+m1[0].toFixed(1)+'" cy="'+m1[1].toFixed(1)+'" r="4.6" fill="currentColor" fill-opacity=".18"/><path d="'+swirl(m1,4)+'" stroke-width="1.6"/>'+
+        '<circle cx="'+m2[0].toFixed(1)+'" cy="'+m2[1].toFixed(1)+'" r="4.6" fill="currentColor" fill-opacity=".18"/><path d="'+swirl(m2,4)+'" stroke-width="1.6"/>');})(),
     // bent space: every side bows in, the way the curved tank looks
     'curved':(()=>{let d='';for(let i=0;i<6;i++){const [x0,y0]=hexV(i),[x1,y1]=hexV((i+1)%6),mx=(x0+x1)/2,my=(y0+y1)/2;
       d+=(i?'':'M'+x0.toFixed(1)+' '+y0.toFixed(1))+'Q'+(mx+(18-mx)*0.45).toFixed(1)+' '+(my+(18-my)*0.45).toFixed(1)+' '+x1.toFixed(1)+' '+y1.toFixed(1);}

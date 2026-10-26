@@ -1,9 +1,8 @@
 // ============================================================================================
 //  SPACE TEST — the three spaces the tank can be (normal / portal / curved), and the corner menu.
 //  Every check here is about what the space DOES, measured off the running physics, not that code ran:
-//    portal  a ball that crosses a wall comes out of the opposite wall at the exact translated spot,
-//            with exactly the same velocity, and the crossed wall's note sounds. Only shapes whose
-//            opposite sides are equal and parallel get portals; the rest keep solid walls.
+//    portal  two wormholes on the walls; every shape can have them; a busy tank never loses a ball
+//            (what a hole does to a ball is checked in dev-portal.js)
 //    curved  with the walls out of the way a ball's path is a hyperbolic straight line: an arc that
 //            meets the rim at right angles (or a diameter). It covers the same hyperbolic distance
 //            every tick, it looks slower near the rim by exactly (1-r^2), a bounce is a true mirror
@@ -34,40 +33,20 @@ const URL='http://127.0.0.1:8765/index.html';
   ok(errs.length===0,'no page errors on a fresh load'+(errs.length?': '+errs[0]:''));
   await ctx.close();}
 
- // ---- 1. PORTAL ----
+ // ---- 1. PORTAL: two wormholes (the full checks are dev-portal.js) ----
  {const {ctx,p,errs}=await open('?m=studio&view=2d&space=portal');
   const elig=await p.evaluate(()=>{const out={};for(const sh of ['3','4','5','6','8','12','rhombus','parallelogram','trapezoid','star','heart'])out[sh]=buildEdges(sh,'portal')._space;return out;});
-  ok(['4','6','8','12','rhombus','parallelogram'].every(k=>elig[k]==='portal'),'shapes with equal parallel opposite sides get portals ('+['4','6','8','12','rhombus','parallelogram'].map(k=>k+':'+elig[k]).join(' ')+')');
-  ok(['3','5','trapezoid','star','heart'].every(k=>elig[k]==='normal'),'every other shape keeps solid walls ('+['3','5','trapezoid','star','heart'].map(k=>k+':'+elig[k]).join(' ')+')');
+  ok(Object.values(elig).every(v=>v==='portal'),'every shape can be portal space: nothing has to be glued ('+Object.entries(elig).map(([k,v])=>k+':'+v).join(' ')+')');
   await setShape(p,'6');
-  // one ball, aimed straight through wall 0, stepped by the real physics
-  const r=await p.evaluate(()=>{S.spin=0;S.chaos=0;S.grav=0;balls.length=0;particles.length=0;mMask=null;settleAmt=()=>0;
-    const notes=[];const t0=trigger;trigger=function(c){notes.push(c);return t0.apply(this,arguments);};
-    const e=edges[0],t=e.twin,mx=(e.ax+e.bx)/2,my=(e.ay+e.by)/2;
-    const ts=ballSpeed(),dx=-e.nx*3-e.ny*0.8,dy=-e.ny*3+e.nx*0.8,dl=Math.hypot(dx,dy);
-    spawn(mx+e.nx*30,my+e.ny*30);const B=balls[0];B.mute=0;B.vx=dx/dl*ts;B.vy=dy/dl*ts;B.vz=0;B.z=0.5;
-    const v0=[B.vx,B.vy];let cross=null;
-    for(let i=0;i<40&&!cross;i++){const bx=B.x,by=B.y,vx=B.vx,vy=B.vy;step();
-      if(Math.hypot(B.x-bx,B.y-by)>60)cross={bx,by,ax:B.x,ay:B.y,vx0:vx,vy0:vy,vx:B.vx,vy:B.vy};}
-    trigger=t0;
-    const T=[(t.ax+t.bx-e.ax-e.bx)/2,(t.ay+t.by-e.ay-e.by)/2];
-    const pred=cross?[cross.bx+cross.vx0+T[0],cross.by+cross.vy0+T[1]]:null;
-    return {crossed:!!cross,posErr:cross?Math.hypot(cross.ax-pred[0],cross.ay-pred[1]):99,
-      velErr:cross?Math.hypot(cross.vx-cross.vx0,cross.vy-cross.vy0):99,
-      inside:inPoly(B.x,B.y,edges._verts),noteOk:notes.length>0&&Math.abs(notes[0]-e.cents)<0.01,notes:notes.length};});
-  ok(r.crossed,'a ball aimed at a portal wall goes through it');
-  ok(r.posErr<0.5,'and comes out of the opposite wall exactly where the gluing says ('+r.posErr.toFixed(3)+'px off)');
-  ok(r.velErr<1e-9,'with exactly the same velocity, speed and heading ('+r.velErr.toExponential(1)+')');
-  ok(r.inside,'landing inside the tank');
-  ok(r.noteOk,'and the wall it crossed played its own note');
-  // a full tank for 15s: nobody escapes, notes keep coming, and no ball ever bounces off a portal wall
+  // a full tank for 15s: nobody escapes or vanishes, notes keep coming, and the two holes are there
   const run=await p.evaluate(async()=>{S.chaos=0.1;balls.length=0;for(let i=0;i<8;i++)spawn(CX+Math.cos(i)*60,CY+Math.sin(i)*60);setPlaying(true);
     let n=0;const t0=trigger;trigger=function(){n++;return t0.apply(this,arguments);};
-    let outside=0;const iv=setInterval(()=>{for(const b of balls)if(!inPoly(b.x,b.y,edges._verts))outside++;},100);
-    await new Promise(r=>setTimeout(r,15000));clearInterval(iv);trigger=t0;return {balls:balls.length,n,outside};});
-  ok(run.balls===8,'15s of a busy portal tank: all 8 balls still in it ('+run.balls+')');
-  ok(run.outside<=2,'and essentially never seen outside the walls ('+run.outside+' ball-samples outside, mid-crossing)');
+    let outside=0,lost=0;const iv=setInterval(()=>{if(balls.length!==8)lost++;for(const b of balls)if(!b.warp&&!inPoly(b.x,b.y,edges._verts))outside++;},100);
+    await new Promise(r=>setTimeout(r,15000));clearInterval(iv);trigger=t0;return {balls:balls.length,n,outside,lost,holes:__worm.P.filter(P=>P.rad>BR).length};});
+  ok(run.balls===8&&run.lost===0,'15s of a busy portal tank: all 8 balls still in it, at every look ('+run.balls+')');
+  ok(run.outside<=2,'and never seen outside the walls ('+run.outside+' ball-samples outside)');
   ok(run.n>=15,'notes keep coming ('+run.n+')');
+  ok(run.holes>=1,'the wormholes are open ('+run.holes+')');
   ok(errs.length===0,'no page errors in portal space'+(errs.length?': '+errs[0]:''));
   await ctx.close();}
 

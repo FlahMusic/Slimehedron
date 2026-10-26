@@ -4,12 +4,13 @@
 //    1. it stays inside the real shape — every drop, in every space (flat, portal, curved; prism and solid),
 //       a solid's faces and a prism's walls AND panes, all while balls splash into it and it pulses
 //    2. on the graphics card its skin is clipped to that same glass, and barely needs to be
-//    3. it pulses with the beat: right after a beat a heart is stretched, by the end of the beat it is round again
-//    4. it moves: its hearts wander, so a ball crossing the middle meets goo in different places
+//    3. it pulses with the beat: right after a beat the heart is stretched, by the end of the beat it is round again
+//    4. it moves: its heart wanders, so a ball crossing the middle meets goo in different places; and it is ONE mass
 //    5. depth counts: a ball in front of the goo is not in the goo
 //    6. a ball pushes the goo aside as it passes
 //    7. it still fills up and bursts
 //    8. the flat 2D tank's goo is left exactly as it was
+//    9. each shape is a song: a busy tank lives about 64 bars before it bursts (it used to burst in about 20)
 //  Needs a local server: python3 -m http.server 8765
 //  Run from the project root: node _dev/dev-goo3d.js
 // ============================================================================================
@@ -47,10 +48,12 @@ const GL=!!process.env.SLIME_GL;
     S.slimeMode=false;S.rain=false;S.randomShape=false;S.chaos=0.1;setPlaying(true);
     balls.length=0;for(let i=0;i<8;i++)spawn(CX+Math.cos(i)*40,CY+Math.sin(i)*40);
     let worst=-1e9,maxN=0,ticks=0;startBreak=function(){};   // no burst mid-test: this is about holding it
-    for(let i=0;i<900;i++){simTick(performance.now());ticks++;if(i%10===0){worst=Math.max(worst,__gooWorst());let n=0;for(const q of particles)if(q.pooled)n++;maxN=Math.max(maxN,n);}}
+    fillBeats=40*beatsPerBar();   // well into the shape's song, where every splash may still feed the goo (see EACH SHAPE IS A SONG)
+    const T0=performance.now();   // the physics' own clock moves with the ticks (a ball in a wormhole comes out by that clock)
+    for(let i=0;i<900;i++){_tickT=T0+i*16.67;simTick(_tickT);ticks++;if(i%10===0){worst=Math.max(worst,__gooWorst());let n=0;for(const q of particles)if(q.pooled)n++;maxN=Math.max(maxN,n);}}
     // and topped right up, squeezed in from everywhere at once
     for(let i=0;i<partCap()*0.9-particles.length;i++)particles.push({x:CX+(Math.random()-0.5)*R,y:CY+(Math.random()-0.5)*R,z:Math.random(),vx:(Math.random()-0.5)*8,vy:(Math.random()-0.5)*8,vz:0,r:8,hue:Math.random(),pooled:true,age:80});
-    for(let i=0;i<300;i++){simTick(performance.now());if(i%10===0)worst=Math.max(worst,__gooWorst());}
+    for(let i=0;i<300;i++){_tickT=T0+(900+i)*16.67;simTick(_tickT);if(i%10===0)worst=Math.max(worst,__gooWorst());}
     return {worst,maxN,n:particles.length,space:edges._space,solid:!!edges._solid,fill:fillState};},shape);
   ok(r.space===space&&r.fill==='fill'&&r.maxN>40,'['+shape+' '+space+'] goo builds up from the balls\' splashes ('+r.maxN+' drops, then topped up to '+r.n+')');
   ok(r.worst<=0.5,'['+shape+' '+space+'] every drop stays inside the glass, the whole time (deepest '+r.worst.toFixed(2)+'px past where it may go)');
@@ -80,10 +83,22 @@ const GL=!!process.env.SLIME_GL;
     return {early:avg(early),late:avg(late),move};});
   ok(beat.early>beat.late*1.3,'right after each beat the goo is stretched, by the end of the beat it has sprung back (long/short axis '+beat.early.toFixed(2)+' just after vs '+beat.late.toFixed(2)+' at the end)');
   ok(beat.move>25,'over 16 beats the goo wanders round the middle, it does not sit still ('+beat.move.toFixed(0)+'px)');
-  // 4b. more goo, more hearts
-  const hearts=await p.evaluate(()=>{for(let i=0;i<400;i++)particles.push({x:CX+(Math.random()-0.5)*80,y:CY+(Math.random()-0.5)*80,z:0.5,vx:0,vy:0,vz:0,r:8,hue:Math.random(),pooled:true,age:80});
-    for(let i=0;i<300;i++)simTick(performance.now());const used=new Set(particles.filter(q=>q.pooled).map(q=>q.h));return {n:LAVA.n,used:used.size};});
-  ok(hearts.n>=2&&hearts.used===hearts.n,'with more goo it splits into more than one heart ('+hearts.n+' hearts, all holding goo)');
+  // 4b. ONE MASS. It used to bud a second and a third heart as it grew (Flah: "piles up into multiple diff blobs
+  // instead of conglomerating into one"). Drop two separate clumps in, far apart: they must flow into one.
+  const one=await p.evaluate(()=>{particles.length=0;
+    for(const side of [-1,1])for(let i=0;i<330;i++)particles.push({x:CX+side*R*0.45+(Math.random()-0.5)*50,y:CY+(Math.random()-0.5)*50,z:0.5+(Math.random()-0.5)*0.2,vx:0,vy:0,vz:0,r:8,hue:Math.random(),pooled:true,age:80});
+    for(let i=0;i<360;i++)simTick(performance.now());
+    const P=particles.filter(q=>q.pooled),N=P.length,par=new Int32Array(N).map((_,i)=>i),f=i=>{while(par[i]!==i)i=par[i]=par[par[i]];return i;};
+    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const a=P[i],c=P[j],dx=a.x-c.x,dy=a.y-c.y,dz=(a.z-c.z)*BOXD;if(dx*dx+dy*dy+dz*dz<(2.6*PR)**2)par[f(i)]=f(j);}
+    const cnt={};for(let i=0;i<N;i++){const r=f(i);cnt[r]=(cnt[r]||0)+1;}const sz=Object.values(cnt).sort((a,b)=>b-a);
+    // and it is ROUND: a single heart packs its drops close round one middle; three hearts on necks spread them out.
+    // rms distance from the middle, over the radius a ball of that many packed drops would have
+    let mx=0,my=0,mz=0;for(const q of P){mx+=q.x;my+=q.y;mz+=(q.z-0.5)*BOXD;}mx/=N;my/=N;mz/=N;
+    let s2=0;for(const q of P)s2+=(q.x-mx)**2+(q.y-my)**2+((q.z-0.5)*BOXD-mz)**2;
+    const ball=Math.cbrt(N/0.6)*PR,spread=Math.sqrt(s2/N)/(Math.sqrt(0.6)*ball);
+    return {n:N,biggest:sz[0],pieces:sz.length,hearts:LAVA.n,spread};});
+  ok(one.biggest>=one.n*0.97,'two clumps of goo flow together into ONE mass ('+one.biggest+' of '+one.n+' drops in the biggest piece, '+one.pieces+' piece(s), '+one.hearts+' heart)');
+  ok(one.spread<1.2,'and it is one round heart, not several on necks (spread '+one.spread.toFixed(2)+'x a single packed ball)');
   // 5. depth
   const depth=await p.evaluate(()=>{particles.length=0;for(let i=0;i<260;i++){const a=Math.random()*6.28,c=Math.random()*2-1,r=Math.cbrt(Math.random())*50,s=Math.sqrt(1-c*c);
       particles.push({x:CX+Math.cos(a)*s*r,y:CY+Math.sin(a)*s*r,z:0.5+c*r/BOXD,vx:0,vy:0,vz:0,r:8,hue:0,pooled:true,age:80});}
@@ -121,6 +136,23 @@ const GL=!!process.env.SLIME_GL;
     for(let i=0;i<200;i++)simTick(performance.now());gooStep3D=g;return {called,d3:goo3D()};});
   ok(!flat.d3&&flat.called===0,'the flat 2D tank never runs the 3D goo');
   ok(errs.length===0,'no page errors in 2D'+(errs.length?': '+errs[0]:''));
+  await ctx.close();}
+
+ // ---- 9. EACH SHAPE IS A SONG: a busy tank lives about 64 bars before it bursts, at any tempo, 3D and 2D ----
+ // (it used to burst in about 20 bars). Driven tick by tick on a pinned clock, 8 balls bouncing the whole time.
+ for(const [view,bpm] of [['3d',80],['3d',140],['2d',80]]){const {ctx,p,errs}=await open('?m=play&view='+view+'&space=normal');
+  const r=await p.evaluate(async bpm=>{const s=document.getElementById('shape');s.value='6';s.dispatchEvent(new Event('change'));await new Promise(r=>setTimeout(r,1500));
+    setBpm(bpm);if(!S.playing)setPlaying(true);await new Promise(r=>setTimeout(r,300));
+    fillState='fill';particles.length=0;measuredFill=0;fillBeats=0;balls.length=0;for(let i=0;i<8;i++)spawn(CX+Math.cos(i)*60,CY+Math.sin(i)*60);
+    let broke=null,ticks=0,T=performance.now(),fill32=0;const sb=startBreak;startBreak=function(){broke=ticks;};
+    const real=performance.now.bind(performance);performance.now=()=>T;const barT=60/S.bpm*4*60;
+    try{while(broke==null&&ticks<barT*120){T+=1000/60;_tickT=T;simTick(T);ticks++;if(ticks%600===0&&balls.length<8)spawn(CX,CY);
+      if(ticks%60===0)measureFill();if(Math.abs(ticks-barT*32)<0.5)fill32=fillFrac();}}
+    finally{performance.now=real;startBreak=sb;}
+    return {bars:ticks/barT,broke:broke!=null,fill32};},bpm);
+  ok(r.broke&&r.bars>=56&&r.bars<=72,'['+view+' '+bpm+' bpm] a busy tank bursts after about 64 bars ('+r.bars.toFixed(1)+' bars)');
+  ok(r.fill32<0.7,'['+view+' '+bpm+' bpm]   half way through, the goo is about half way up ('+r.fill32.toFixed(2)+' full at bar 32)');
+  ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
   await ctx.close();}
 
  await b.close();

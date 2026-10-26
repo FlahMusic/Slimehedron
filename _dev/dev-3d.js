@@ -7,7 +7,7 @@
 //    3. pane notes do not feed the chord brain (or the harmony would camp on whatever is playing)
 //    4. lessons keep every ball on the front glass, exactly as before
 //    5. in play mode the shape turns with the tempo: twice the tempo, twice the turn
-//    6. the selected sound and rhythm wear the glass rim; the background art has its white veil back
+//    6. the selected sound and rhythm wear the glass rim; the background art is in full colour, with no blank paper band
 //  Needs a local server: python3 -m http.server 8765
 //  Run from the project root: node _dev/dev-3d.js
 // ============================================================================================
@@ -65,7 +65,25 @@ const URL='http://127.0.0.1:8765/index.html';
    const be=on?getComputedStyle(on,'::before'):null;
    return {rim:!!be&&be.content!=='none'&&/conic-gradient/.test(be.backgroundImage),bg:getComputedStyle(document.body).backgroundImage};});
  ok(look.rim,'the selected button wears the glass rim');
- ok(/rgba\(255, 255, 255, 0\.[45]\)/.test(look.bg)&&!/rgba\(7[0-9], 5[0-9], 12/.test(look.bg),'the background art is back under its white veil, not lilac');
+ // FULL-COLOUR CRAYON (2026-10-26): only a light white veil (Flah: the bright white burnt his eyes), never lilac, and the art
+ // file starts with the drawing: no band of blank paper at the top for the header to sit on
+ const va=(look.bg.match(/rgba\(255, 255, 255, ([0-9.]+)\)/)||[])[1];
+ ok(va!=null&&+va<=0.2&&!/rgba\(7[0-9], 5[0-9], 12/.test(look.bg),'the background art shows in full colour: a light veil ('+va+'), not lilac');
+ const paper=await p.evaluate(async()=>{const out={};for(const f of ['bg-desktop.jpg','bg-mobile.jpg']){const im=new Image();im.src=f+'?t='+Date.now();await im.decode();
+   const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const x=c.getContext('2d');x.drawImage(im,0,0);
+   const rowWhite=y=>{const d=x.getImageData(0,y,im.width,1).data;let w=0;for(let i=0;i<d.length;i+=4)if(Math.min(d[i],d[i+1],d[i+2])>250)w++;return w/(d.length/4);};
+   let top=0;for(let y=0;y<12;y++)top+=rowWhite(y)/12;out[f]=top;}return out;});
+ ok(Object.values(paper).every(v=>v<0.7),'the art starts with the drawing, no blank paper along the top ('+Object.entries(paper).map(([k,v])=>k+' '+(v*100).toFixed(0)+'% white').join(', ')+')');
+
+ // 6b. THE BOX LEANS TOWARD YOU, AND BY THE CLOCK (Flah: the 3D "still feels too flat"). Over 32 bars the lean breathes
+ // from under 20 degrees to over 30; and a 120 Hz screen turns it exactly as fast as a 60 Hz one (it used to be per frame)
+ const lean=await p.evaluate(()=>{const real=performance.now.bind(performance);let T=real();performance.now=()=>T;
+   const secBar=drumBar()*drumStepDur(),run=(hz,secs)=>{const a0=_phi;for(let i=0;i<secs*hz;i++){T+=1000/hz;viewTick();}return _phi-a0;};
+   run(60,0.1);const d60=run(60,4),d120=run(120,4);
+   let lo=9,hi=0;for(let i=0;i<32*secBar*30;i++){T+=1000/30;viewTick();lo=Math.min(lo,_tiltNow);hi=Math.max(hi,_tiltNow);}
+   performance.now=real;return {d60,d120,lo:lo*180/Math.PI,hi:hi*180/Math.PI};});
+ ok(lean.lo<20&&lean.hi>30,'over 32 bars the box leans from '+lean.lo.toFixed(0)+' to '+lean.hi.toFixed(0)+' degrees toward you');
+ ok(Math.abs(lean.d120-lean.d60)<lean.d60*0.02,'and it turns by the clock: 4 s at 120 Hz turns it as far as 4 s at 60 Hz ('+lean.d60.toFixed(3)+' vs '+lean.d120.toFixed(3)+')');
 
  // 7. a tap in 3D lands where it looks like it lands
  const tap=await p.evaluate(()=>{const out=[];for(const [sx,sy] of [[360,360],[250,300],[470,430],[300,470]]){

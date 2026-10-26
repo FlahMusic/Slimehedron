@@ -1,7 +1,8 @@
 // ============================================================================================
 //  DRUMS TEST — the kit, the five play-mode styles, and the humanize knobs. Checks what you would
 //  HEAR, not that functions ran:
-//    1. every drum voice renders, at the pitch and length that makes it that drum
+//    1. every drum voice renders, at the pitch and length that makes it that drum; the ride is a short,
+//       mellow bell in the key (no ringing metal above 5 kHz)
 //    2. a closed hat really shuts an open hat
 //    3. each style plays its signature: the bossa clave, the jazz ride + swung "&", disco's open hat
 //    4. humanize can never move a beat, and never drifts further than its cap
@@ -35,6 +36,21 @@ const URL='http://127.0.0.1:8765/index.html';
        for(let n=0;n<N;n++){const x=d[st+n]*(0.5-0.5*Math.cos(2*Math.PI*n/N));re+=x*Math.cos(w*n);im-=x*Math.sin(w*n);}
        const m=Math.hypot(re,im);if(m>best){best=m;bf=f;}}
      out[v]={peak:pk,decay:(last-st)/SR,hz:bf};}
+   // THE RIDE, measured the way it was complained about: sharp, ringing, metallic. Rendered in the jazz kit, in
+   // two keys, at a hard and a soft hit. hi = share of its energy above 5 kHz (Goertzel, per-Hz weighted).
+   const spec=(d,st)=>{const N=8192;let tot=0,hi=0,cen=0,bf=0,bm=0;
+     for(let f=60;f<18000;f*=1.02){let re=0,im=0;const w=2*Math.PI*f/SR;
+       for(let n=0;n<N;n++){const x=d[st+n]*(0.5-0.5*Math.cos(2*Math.PI*n/N));re+=x*Math.cos(w*n);im-=x*Math.sin(w*n);}
+       const m=(re*re+im*im)*f;tot+=m;cen+=m*f;if(f>5000)hi+=m;if(m>bm){bm=m;bf=f;}}
+     return {hi:hi/tot,cen:cen/tot,hz:bf};};
+   const rms=(d,st)=>{let e=0;for(let i=st;i<st+Math.round(0.3*SR);i++)e+=d[i]*d[i];return Math.sqrt(e/(0.3*SR));};
+   drumKit='jazz';const st=Math.round(0.05*SR);out.ride={};
+   for(const root of [60,66]){S.root=root;const d=await render(()=>dHit('y',0.05,1,true),2);
+     let pk=0;for(const x of d)pk=Math.max(pk,Math.abs(x));let last=0;for(let i=d.length-1;i>=0;i--)if(Math.abs(d[i])>pk/100){last=i;break;}
+     out.ride[root]={...spec(d,st),decay:(last-st)/SR,rms:rms(d,st),peak:pk};}
+   out.ride.soft=rms(await render(()=>dHit('y',0.05,0.45,true),2),st);
+   out.ride.hat=rms(await render(()=>dHit('h',0.05,1,true),2),st);
+   drumKit='pop';S.root=60;
    const energy=d=>{let e=0;for(let i=Math.round(0.3*SR);i<Math.round(0.45*SR);i++)e+=d[i]*d[i];return e;};
    out.open=energy(await render(()=>dHit('o',0.05,1,true),1));
    out.choked=energy(await render(()=>{dHit('o',0.05,1,true);dHit('h',0.17,1,true);},1));
@@ -46,8 +62,16 @@ const URL='http://127.0.0.1:8765/index.html';
  for(const v of ['K','s','r','h','o','y','x','ht','lt','cl'])ok(V[v].peak>0.02,v+' makes a sound (peak '+V[v].peak.toFixed(3)+')');
  ok(V.cl.hz>2000&&V.cl.hz<3200&&V.cl.decay<0.12,'the clave is a bright, short click ('+Math.round(V.cl.hz)+'Hz, '+(V.cl.decay*1000|0)+'ms)');
  ok(V.lt.hz<V.ht.hz&&V.lt.hz<160&&V.ht.hz<260,'the low tom is lower than the high tom ('+Math.round(V.lt.hz)+' < '+Math.round(V.ht.hz)+'Hz)');
- ok(V.x.decay>1&&V.y.decay>0.8,'the crash and ride ring on (crash '+V.x.decay.toFixed(2)+'s, ride '+V.y.decay.toFixed(2)+'s)');
- ok(V.x.hz>2500&&V.y.hz>2500,'and they are cymbal-bright (crash '+Math.round(V.x.hz)+'Hz, ride '+Math.round(V.y.hz)+'Hz)');
+ ok(V.x.decay>1,'the crash rings on ('+V.x.decay.toFixed(2)+'s)');
+ ok(V.x.hz>2500,'and it is cymbal-bright ('+Math.round(V.x.hz)+'Hz)');
+ // the ride is a small clean bell now (Flah: the old metal one was "ear bleeding")
+ {const R=V.ride,a=R[60],b=R[66],pc=hz=>((Math.round(12*Math.log2(hz/440))+69)%12+12)%12;
+  ok(a.hi<0.03&&b.hi<0.03,'the ride has no sharp metal on top (energy above 5 kHz: '+(a.hi*100).toFixed(1)+'%)');
+  ok(a.cen<2000,'it is a mellow bell, not a hiss (centre of its sound '+Math.round(a.cen)+' Hz)');
+  ok(a.decay<0.5&&a.decay>0.15,'it rings briefly, then it is gone (silent after '+a.decay.toFixed(2)+'s)');
+  ok(a.rms<R.hat*1.4,'it is no louder than a closed hat ('+a.rms.toFixed(4)+' vs hat '+R.hat.toFixed(4)+')');
+  ok(pc(a.hz)===0&&pc(b.hz)===6,'and it is in tune with the key (C key rings a C, F# key rings an F#: '+Math.round(a.hz)+' / '+Math.round(b.hz)+' Hz)');
+  ok(R.soft<a.rms*0.6,'a soft hit is clearly softer than an accent ('+(R.soft/a.rms*100).toFixed(0)+'%)');}
  ok(V.o.decay>V.h.decay*4,'the open hat rings far longer than the closed one ('+V.o.decay.toFixed(2)+'s vs '+V.h.decay.toFixed(3)+'s)');
  ok(V.choked<V.open*0.05,'a closed hat shuts the open hat (tail energy '+(V.choked/V.open*100).toFixed(1)+'% of unchoked)');
  ok(V.twoOpen<V.oneOpen*1.05,'open hat and open hat share the choke group too (two hits ring like one: '+(V.twoOpen/V.oneOpen).toFixed(2)+'x)');
