@@ -42,16 +42,16 @@ const URL='http://127.0.0.1:8765/index.html';
    ok(seq.every(d=>d===0||d===v.fifth),k+' stays on its tonic and fifth frames ('+set(seq)+')');
    v=v.n;
    ok(v===2,k+' is voiced as an open fifth, never a triad ('+v+' notes)');}
- // the chip
+ // the chip (studio: the key line reads "in G major" since 2026-10-27, so chord-in-key does not read as the same thing twice)
  const chip=await p.evaluate(()=>{const out={};const s=document.getElementById('scale'),r=document.getElementById('root');
    const read=(sc,root,deg)=>{s.value=sc;s.dispatchEvent(new Event('change'));r.value=String(root);r.dispatchEvent(new Event('change'));curRootDeg=deg;paintChordChip();
      return document.getElementById('hcName').textContent+' | '+document.getElementById('hcKey').textContent;};
    out.min=read('major',67,5);out.maj=read('major',67,0);out.blues=read('blues',60,0);out.raga=read('bhairav',64,0);out.hira=read('hirajoshi',64,0);return out;});
- ok(chip.min==='E minor | G major','the chip names the chord and its scale ("'+chip.min+'")');
- ok(chip.maj==='G major | G major','and a major chord says major ("'+chip.maj+'")');
- ok(/^C7 \| C blues$/.test(chip.blues),'the blues says C7 ("'+chip.blues+'")');
- ok(/^E drone \| E bhairav$/.test(chip.raga),'a raga says it is a drone ("'+chip.raga+'")');
- ok(/^E drone \| E hirajoshi$/.test(chip.hira),'hirajoshi too ("'+chip.hira+'")');
+ ok(chip.min==='E minor | in G major','the chip names the chord and its scale ("'+chip.min+'")');
+ ok(chip.maj==='G major | in G major','and a major chord says major ("'+chip.maj+'")');
+ ok(/^C7 \| in C blues$/.test(chip.blues),'the blues says C7 ("'+chip.blues+'")');
+ ok(/^E drone \| in E bhairav$/.test(chip.raga),'a raga says it is a drone ("'+chip.raga+'")');
+ ok(/^E drone \| in E hirajoshi$/.test(chip.hira),'hirajoshi too ("'+chip.hira+'")');
  // play-mode journey
  const j=await p.evaluate(()=>{applyMode('play');const s=document.getElementById('scale'),r=document.getElementById('root');
    s.value='major';s.dispatchEvent(new Event('change'));r.value='60';r.dispatchEvent(new Event('change'));

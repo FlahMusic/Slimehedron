@@ -14,7 +14,7 @@ const R=(f)=>fs.readFileSync(path.resolve(__dirname,'..',f),'utf8');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m)};
 
 const priv=R('privacy.html'), a11y=R('accessibility.html');
-const SHIPPED=['index.html','learn2.js','sw.js','landing.html','privacy.html','accessibility.html','teachers/index.html'];
+const SHIPPED=['index.html','learn2.js','sw.js','privacy.html','accessibility.html','teachers/index.html'];
 
 // ---- 1. the words privacy.html tells you to search for ----
 // A bare word match is not enough: `fetchpriority` contains "fetch" and is an HTML attribute, not a

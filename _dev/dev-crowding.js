@@ -21,7 +21,6 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
 const SIZES=[['desktop',1440,900],['laptop',1280,800],['tablet',820,1180],
              ['phone',393,852],['small phone',360,740],['landscape',852,393]];
 const STATES=[
-  ['landing','/landing.html',null],
   ['splash','/index.html',null],
   ['play','/index.html?m=play',null],
   ['studio','/index.html?m=studio',null],

@@ -2289,7 +2289,9 @@ function mapLayout(){
   const parentOf={};let last=null;
   for(const u of UNITS){if(u.tier==='lesson'&&!FREE_PLAY.has(u.id))last=u.id;else if(FREE_PLAY.has(u.id))parentOf[u.id]=last;}
   for(const g in GAME_AT)parentOf[g]=GAME_AT[g];
-  const big=(window.innerWidth||400)>820,STEP=big?192:162,TOP=40,A=24,K=0.85,GAP=big?78:70;
+  // TOP leaves room ABOVE the first stone for the slime standing on it and the first sign: at 40 both sat under
+  // the sticky "Lessons 0 of 23" card (2026-10-27)
+  const big=(window.innerWidth||400)>820,STEP=big?192:162,TOP=big?122:118,A=24,K=0.85,GAP=big?78:70;
   // each new block of lessons opens with its sign on a row of its own, like a new world on the map
   const ys=[];let yy=TOP;main.forEach((u,i)=>{if(i&&(u.block||'a')!==(main[i-1].block||'a'))yy+=GAP;ys.push(yy);yy+=STEP;});
   const X=f=>50+A*Math.sin(f*K),Y=f=>{const i=Math.min(Math.floor(f),ys.length-1),j=Math.min(i+1,ys.length-1);return ys[i]+(ys[j]-ys[i])*(f-i);};
@@ -2341,7 +2343,9 @@ function home(){
   const BLOCKS={a:'blockA',b:'blockB',c:'blockC',d:'blockD',e:'blockE'};let lastBlock='';
   main.forEach((u,i)=>{const P=L.pos[u.id];
     const bk=u.block||'a';if(bk!==lastBlock){lastBlock=bk;
-      const sy=i?P.y-L.STEP*0.38-L.GAP*0.35:P.y-58,sx=i?50:(P.x>50?24:76);
+      const big=(window.innerWidth||400)>820;
+      // the first sign: beside the slime on a wide screen; on a phone there is no room beside it, so it goes above
+      const sy=i?P.y-L.STEP*0.38-L.GAP*0.35:P.y-(big?58:100),sx=i?50:(P.x>50?24:76);
       signs+='<span class="lmSign" style="left:'+sx+'%;top:'+sy.toFixed(0)+'px">'+t(BLOCKS[bk])+'</span>';}
     stones+=stone(u,P,i+1,false);
     for(const id of (L.kids[u.id]||[])){const b=byId(id);if(b&&L.bpos[id])stones+=stone(b,L.bpos[id],0,true);}});
