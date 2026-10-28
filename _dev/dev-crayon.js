@@ -31,7 +31,9 @@ const px=(...f)=>JSON.parse(execFileSync('python3',['-c',PY,...f]).toString());
 (async()=>{const b=await launch();
  const run=async(reduce)=>{
   const ctx=await b.newContext({viewport:{width:1200,height:900},reducedMotion:reduce?'reduce':'no-preference'});
-  await ctx.addInitScript(()=>{try{localStorage.setItem('slimehedron-coach','1');}catch(e){}window.__glKeep=true;});   // software GL is slow here: keep it on anyway
+  // tapped: the first-tap invite (a DOM pulse over the middle of the tank, 2026-10-27) would fade in over the frozen
+  // frames once the tank is emptied, and this suite measures the tank's own drawing
+  await ctx.addInitScript(()=>{try{localStorage.setItem('slimehedron-coach','1');localStorage.setItem('slimehedron-tapped','1');}catch(e){}window.__glKeep=true;});   // software GL is slow here: keep it on anyway
   const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));p.on('console',m=>{if(m.type()==='error'||(m.type()==='warning'&&!/GPU stall/.test(m.text())))console.log('   console:',m.text().slice(0,400));});
   await p.goto(URL);await p.waitForTimeout(3500);
   // a still tank: nothing moving, so any change between two frames is the drawing itself

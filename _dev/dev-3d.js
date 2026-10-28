@@ -25,6 +25,8 @@ const URL='http://127.0.0.1:8765/index.html';
  const flat2d=await p.evaluate(()=>({d3:window.__view.d3,z:balls.map(b=>b.z||0)}));
  ok(!flat2d.d3,'?view=2d gives the flat tank');
  ok(flat2d.z.every(v=>v===0),'in 2D every ball stays flat, exactly as before ('+flat2d.z.length+' balls)');
+ // this section watches the slime's own notes travel the box: since 2026-10-27 play starts with auto-notes off, so turn it on
+ await p.evaluate(()=>{try{localStorage.setItem('slimehedron-autonotes-play','1');}catch(e){}});
  await p.goto(URL+'?m=play&view=3d');await p.waitForTimeout(1500);
  await p.evaluate(()=>{window.__notes=[];const t=trigger;trigger=function(c,i,g,n,pane){window.__notes.push({c,pane:!!pane,root:curRootDeg,
    feedBefore:noteHisto.reduce((a,v)=>a+v,0)});return t.apply(this,arguments);};});

@@ -1,14 +1,14 @@
 {
   "splash": {
-    "controls": 28,
+    "controls": 29,
     "words": 72
   },
   "play": {
-    "controls": 21,
+    "controls": 22,
     "words": 21
   },
   "studio": {
-    "controls": 21,
+    "controls": 22,
     "words": 26
   },
   "learn-home": {
