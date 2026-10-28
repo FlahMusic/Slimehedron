@@ -44,7 +44,7 @@ const URL='http://127.0.0.1:8765/index.html';
     if(!S.playing)setPlaying(true);await new Promise(r=>setTimeout(r,400));
     // hold the music still so the holes stay put while one ball is followed through
     let T=performance.now();const real=performance.now.bind(performance);performance.now=()=>T;const bn=beatNow;
-    let B0=3.8;beatNow=()=>B0;   // late in a beat: the holes are resting in the middle of their wallsS.spin=0;S.chaos=0;
+    let B0=3.8;beatNow=()=>B0;S.spin=0;S.chaos=0;   // late in a beat: the holes are resting in the middle of their walls (and the shape holds still)
     const tick=(n)=>{for(let i=0;i<n;i++){T+=1000/60;_tickT=T;simTick(T);}};
     tick(30);
     const solid=solid3D()&&!!edges._solid,d3=VIEW.d3&&!_labOn(),W=__worm.P;

@@ -4422,6 +4422,7 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
       // gBar, not barI: barI wraps every 4 bars, so a fill set to every 8 or 16 bars never came round
       const _fillBar=(((gBar+1)%_fl.every)===0);
       const _fillFrom=16-_fl.len;
+      if(JACK.fill&&performance.now()-(JACK.fillAt||0)>2.5*bar*_sDur()*1000)JACK.fill=0;   // the drums were off for it: forget it, no fill and crash out of nowhere
       const _jf=JACK.fill===1&&inBar>=_fillFrom;          // a chord jackpot: the drummer answers with a fill (see HANDS ON THE TANK)
       if(JACK.fill===1&&inBar===bar-1)JACK.fill=2;
       const inFill=(_fillBar&&inBar>=_fillFrom)||_jf;
@@ -5295,7 +5296,7 @@ function solidSub(b,isub,ts){
     if(_solidOpen.has(k))continue;
     if(vn>0&&WORM.on){const W=wormAt(true,k,x-dist*nx,y-dist*ny,z-dist*nz);   // a wormhole on this face: in it goes (see PORTAL SPACE)
       if(W){b.x=x+CX;b.y=y+CY;b.z=z/BOXD+0.5;wormEnter(b,W,x,y,z,vx,vy,vz);return 'warp';}}
-    if(vn>0){vx-=2*vn*nx;vy-=2*vn*ny;vz-=2*vn*nz;x-=(dist+BR)*nx;y-=(dist+BR)*ny;z-=(dist+BR)*nz;hit=k;hvn=vn;if(SPINU.u){b.vx=vx;b.vy=vy;b.vz=vz/BOXD;spinKick(b,ts);}}
+    if(vn>0){vx-=2*vn*nx;vy-=2*vn*ny;vz-=2*vn*nz;x-=(dist+BR)*nx;y-=(dist+BR)*ny;z-=(dist+BR)*nz;hit=k;hvn=vn;if(SPINU.u){const sp0=_bsp(b);b.vx=vx;b.vy=vy;b.vz=vz/BOXD;spinKick(b,ts,sp0);}}
     else if(dist>-BR*0.5){x-=(dist+BR)*nx;y-=(dist+BR)*ny;z-=(dist+BR)*nz;}}   // a face sliding in (a grow) carries the ball in with it
   b.x=x+CX;b.y=y+CY;b.z=z/BOXD+0.5;b.vx=vx;b.vy=vy;b.vz=vz/BOXD;
   if(Math.hypot(x,y,z)>SOLID_R*2.5)return true;                 // left through an open face
@@ -5507,7 +5508,7 @@ function step(){
   const g=settleAmt()*0.09, ts=ballSpeed(), gy=g*0.55, s3=solid3D();
   if(s3){_solidOpen.clear();for(const e of edges)if(e.broken&&(e.reform||0)<0.55&&e.face!=null)_solidOpen.add(e.face);}   // an open wall of the slice opens its face
   for(let bi=balls.length-1;bi>=0;bi--){
-    const b=balls[bi];
+    const b=balls[bi];_noFeed=!!b.seed;   // a seed's note rings its walls without steering the chord brain
     if(b.warp){const w=b.warp;b.px=b.x;b.py=b.y;if(s3)b.pz=b.z;   // in the other dimension: no physics until the far hole spits it out
       if(!WORM.on||(_tickT||performance.now())-w.t0>=w.dur)wormExit(b,!WORM.on);continue;}
     b.r=BR;
@@ -5598,6 +5599,7 @@ function step(){
       b._under=under;
     }else b._under=false;
   }
+  _noFeed=false;
 }
 
 // ---------- transport / rain ----------
@@ -6231,7 +6233,7 @@ function loop(now){
   _lastFrame=now;
   if(S.playing){try{update(now);}catch(e){console.error('sim tick error (loop kept alive):',e);}} // one bad tick can NEVER freeze the app
   try{draw();}catch(e){console.error('draw error (loop kept alive):',e);}
-  try{seedTick();seedDraw();}catch(e){}
+  try{seedDraw();}catch(e){}
   if(S.playing&&(drumOn||bandOn)&&AC){ // a slime bounces on every beat, in time with the music
     const bp=(drumStep-(drumTime-AC.currentTime)/drumStepDur())/drumSPB(),fb=Math.floor(bp);
     if(fb!==_beatIdx){_beatIdx=fb;if(fb>0&&window._bounceSlime)window._bounceSlime();
@@ -6243,6 +6245,7 @@ function loop(now){
 // ONE physics tick. Everything that MOVES lives here so it can run on a fixed clock (below).
 function simTick(now){
   if(S.slimeMode)slimeModStep(now);
+  try{seedTick();}catch(e){}   // a seed drops its note on the physics clock
   let d=0;
   if(S.spin!==0&&!SPINU.drag){   // a hand holding the shape holds it still
     // PLAY MODE TURNS WITH THE TEMPO: one full turn every 8 bars at the slime's own spin, so speeding the
@@ -6252,7 +6255,9 @@ function simTick(now){
       if(secBar>0.05)d=(S.spin/14)*(2*Math.PI)/(8*secBar*60);}}
   const u=handsOn()?handSpin():0;SPINU.u=u;   // the hand's turn (see HANDS ON THE TANK)
   if(d||u){const tot=d+u,n=u?Math.min(6,Math.max(1,Math.ceil(Math.abs(tot)*R/(BR*0.9)))):1;   // a fast flick turns in small steps so no wall jumps a note
-    for(let i=0;i<n;i++){rot+=tot/n;rebuild();if(u)spinContain(tot);}
+    for(let i=0;i<n;i++){const fl=edges.map(e=>e.flash);rot+=tot/n;rebuild();   // the same walls, turned: a struck one keeps its flash
+      if(edges.length===fl.length)for(let k=0;k<fl.length;k++)edges[k].flash=fl[k];
+      if(u)spinContain(tot);}
     if(u)spinSwirl(tot);
     _rotV=tot;}else _rotV=0;
   if(u&&particles.length){const c=Math.cos(u*0.55),sn=Math.sin(u*0.55);   // the goo is thick: it is dragged round with the glass, a little behind it
@@ -7612,7 +7617,8 @@ function phPaint(){_phRaf=0;if(!AC)return;
     else if(e.key==='ArrowRight')ax=Math.min(.96,ax+step);
     else if(e.key==='ArrowUp')   ay=Math.max(.04,ay-step);
     else if(e.key==='ArrowDown') ay=Math.min(.96,ay+step);
-    else if(e.key==='['||e.key===']'){if(typeof SPINU!=='undefined'){SPINU.w=Math.max(-0.22,Math.min(0.22,SPINU.w+(e.key===']'?0.07:-0.07)));}}   /* spin it from the keyboard (the drag is a path gesture: WCAG 2.5.1 wants a one-press way too) */
+    else if(e.key==='['||e.key===']'){if(typeof SPINU!=='undefined'){SPINU.w=Math.max(-0.22,Math.min(0.22,SPINU.w+(e.key===']'?0.07:-0.07)));
+      initAudio();if(AC&&AC.state==='suspended')AC.resume();if(!S.playing)setPlaying(true);}}   /* spin it from the keyboard (the drag is a path gesture: WCAG 2.5.1 wants a one-press way too) */
     else if((e.key==='Enter'||e.key===' ')&&e.shiftKey){   /* shift+enter: plant a seed at the marker (the keyboard's "hold") */
       initAudio();if(AC&&AC.state==='suspended')AC.resume();plantSeed(ax*W,ay*H);if(!S.playing)setPlaying(true);}
     else if(e.key==='Enter'||e.key===' '){
@@ -7650,7 +7656,8 @@ function tankPt(cx,cy){const r=cv.getBoundingClientRect();if(!(r.width>0&&r.heig
   let x=(cx-r.left)*(W/r.width),y=(cy-r.top)*(H/r.height);
   if(VIEW.d3)[x,y]=screenToBox(x,y);                 // 3D: where the finger lands on the front glass of the tilted box
   return Number.isFinite(x)&&Number.isFinite(y)?[x,y]:null;}   // a NaN ball never despawns and kills the renderer
-function tankToScreen(x,y){const r=cv.getBoundingClientRect();let q=[x,y];if(VIEW.d3)q=P3(x,y,0);
+function tankToScreen(x,y,r){r=r||cv.getBoundingClientRect();let q=[x,y];   // r: pass the canvas rect when placing many things in one frame
+  if(VIEW.d3)q=P3(x,y,0);
   return [r.left+q[0]*r.width/W,r.top+q[1]*r.height/H];}
 function handsOn(){return (S.mode==='play'||S.mode==='studio')&&!(LAB&&LAB._on);}
 // ---- the chord jackpot ----
@@ -7674,7 +7681,7 @@ function jackpot(tones){
   // the chord, rolled up an octave: the sound of getting it, whether or not the drums are on
   const cs=edges.filter(e=>tones.includes(_pc(e.cents))).map(e=>e.cents).sort((a,b)=>a-b).filter((c,i,a)=>i===0||_pc(c)!==_pc(a[i-1]));
   cs.slice(0,4).forEach((c,i)=>setTimeout(()=>{try{trigger(c+1200,0.6,0,true,true);}catch(err){}},70*i));
-  if(drumOn)JACK.fill=1;   // the drummer answers: a fill to the end of this bar, a crash on the next one
+  if(drumOn&&_sSig==='16'&&!_sTrip){JACK.fill=1;JACK.fillAt=performance.now();}   // (fills are a 4/4 thing: other meters have none to answer with) the drummer answers: a fill to the end of this bar, a crash on the next one
   try{window._bounceSlime&&window._bounceSlime();}catch(err){}
   const chip=$("hdrChord");if(chip){chip.classList.remove('jack');void chip.offsetWidth;chip.classList.add('jack');}
   window.__jackpots=(window.__jackpots||0)+1;}
@@ -7686,19 +7693,22 @@ function plantSeed(x,y,at){if(SEEDS.length>=SEED_MAX)dropSeed(0);   // at: the b
   const s={x,y,ph,k:Math.floor((beatNow()-ph+0.01)/bb),el};SEEDS.push(s);seedDraw();
   el.classList.add('pop');window.__seeds=SEEDS.length;return s;}
 function dropSeed(i){const s=SEEDS[i];if(!s)return;SEEDS.splice(i,1);s.el.classList.add('gone');setTimeout(()=>s.el.remove(),300);window.__seeds=SEEDS.length;}
-function seedAt(cx,cy){const rad=matchMedia('(pointer:coarse)').matches?26:18;
-  for(let i=SEEDS.length-1;i>=0;i--){const q=tankToScreen(SEEDS[i].x,SEEDS[i].y);if(Math.hypot(q[0]-cx,q[1]-cy)<=rad)return i;}return -1;}
+const _coarse=matchMedia('(pointer:coarse)');
+function seedAt(cx,cy){const rad=_coarse.matches?26:18,r=cv.getBoundingClientRect();
+  for(let i=SEEDS.length-1;i>=0;i--){const q=tankToScreen(SEEDS[i].x,SEEDS[i].y,r);if(Math.hypot(q[0]-cx,q[1]-cy)<=rad)return i;}return -1;}
 function seedTick(){if(!SEEDS.length||!S.playing||!handsOn())return;const bb=beatsPerBar(),b=beatNow();
   for(const s of SEEDS){const k=Math.floor((b-s.ph)/bb);
-    if(k===s.k+1){s.k=k;const wi=LAB.nearestWall(s.x,s.y);if(wi>=0){_noFeed=true;try{LAB.strike(wi,0.7);}catch(e){}_noFeed=false;}spawn(s.x,s.y);   // a loop is not you playing a new chord: it does not steer the band
+    if(k===s.k+1){s.k=k;const wi=LAB.nearestWall(s.x,s.y);if(wi>=0){_noFeed=true;try{LAB.strike(wi,0.7);}catch(e){}_noFeed=false;}
+      const n0=balls.length;spawn(s.x,s.y);if(balls.length>n0)balls[balls.length-1].seed=1;   // a loop is not you playing a new chord: it does not steer the band
       s.el.classList.remove('beat');void s.el.offsetWidth;s.el.classList.add('beat');}
     else if(k!==s.k)s.k=k;}}   // the clock jumped (drums switched on or off, a tab came back): pick up from here, no burst
 // #handSpot: an invisible marker on the bottom edge of the tank, for the first-run hint about the gestures to point at
 // (the whole tank as a target put the hint over the transport)
 const _spot=document.createElement('div');_spot.id='handSpot';_spot.dataset.coachPass='1';_spot.setAttribute('aria-hidden','true');document.body.appendChild(_spot);
 function seedDraw(){const on=handsOn()&&!document.body.classList.contains('tools-on');
-  _spot.style.display=on?'':'none';if(on){const q=tankToScreen(CX,CY+R*0.9);_spot.style.left=q[0]+'px';_spot.style.top=q[1]+'px';}
-  for(const s of SEEDS){s.el.style.display=on?'':'none';if(!on)continue;const q=tankToScreen(s.x,s.y);s.el.style.left=q[0]+'px';s.el.style.top=q[1]+'px';}}
+  const r=on?cv.getBoundingClientRect():null;   // read the layout once, then write: a read between writes forces a layout each time
+  _spot.style.display=on?'':'none';if(on){const q=tankToScreen(CX,CY+R*0.9,r);_spot.style.left=q[0]+'px';_spot.style.top=q[1]+'px';}
+  for(const s of SEEDS){s.el.style.display=on?'':'none';if(!on)continue;const q=tankToScreen(s.x,s.y,r);s.el.style.left=q[0]+'px';s.el.style.top=q[1]+'px';}}
 function clearSeeds(){while(SEEDS.length)dropSeed(0);}
 // ---- the spin, on the physics clock (simTick calls this) ----
 function handSpin(){let u=0;
@@ -7710,31 +7720,35 @@ function handSpin(){let u=0;
 function spinContain(w){
   if(fillState!=='fill'||!edges||!edges.length||edges._solid||edges._space==='curved')return;   // solids and curved space do this inside their own step
   const ts=ballSpeed()||1,open=edges.some(e=>e.broken&&(e.reform||0)<0.55);
-  for(const b of balls){if(b.warp)continue;
+  for(const b of balls){if(b.warp)continue;_noFeed=!!b.seed;
     for(const e of edges){if(e.broken&&(e.reform||0)<0.55)continue;
       const dist=(b.x-e.ax)*e.nx+(b.y-e.ay)*e.ny;if(dist>=BR)continue;
       const ex=e.bx-e.ax,ey=e.by-e.ay,L2=ex*ex+ey*ey||1,t=((b.x-e.ax)*ex+(b.y-e.ay)*ey)/L2;if(t<-0.15||t>1.15)continue;
       const cx=b.x-dist*e.nx-CX,cy=b.y-dist*e.ny-CY,ux=-w*cy,uy=w*cx,vn=(b.vx-ux)*e.nx+(b.vy-uy)*e.ny;
       b.x+=(BR-dist)*e.nx;b.y+=(BR-dist)*e.ny;
-      if(vn<0){b.vx-=2*vn*e.nx;b.vy-=2*vn*e.ny;spinKick(b,ts);e.flash=1;
+      if(vn<0){const sp0=_bsp(b);b.vx-=2*vn*e.nx;b.vy-=2*vn*e.ny;spinKick(b,ts,sp0);e.flash=1;
         const nw=performance.now();if(!b.mute&&(!b.lastHit||nw-b.lastHit>60)){b.lastHit=nw;trigger(e.cents,Math.min(1,Math.abs(vn)/ts));
           (_splashZ=VIEW.d3?(b.z||0):0.5,splash(b.x,b.y,e.nx,e.ny,e.hue));_splashZ=0.5;}}}
     if(!open&&!inPoly(b.x,b.y,edges._verts)){   // a corner swept past it: bring it back in towards the middle
       for(let i=0;i<8&&!inPoly(b.x,b.y,edges._verts);i++){b.x=CX+(b.x-CX)*0.9;b.y=CY+(b.y-CY)*0.9;}
-      b.px=b.x;b.py=b.y;}}}
+      b.px=b.x;b.py=b.y;}}
+  _noFeed=false;}
 // the air and the goo in a spinning tank turn with it, so the notes inside are dragged round too, and a note going
 // round is thrown outwards (into the walls: more notes). Thick goo drags harder than air.
 function spinSwirl(w){if(!balls.length)return;const ts=ballSpeed()||1;
   for(const b of balls){if(b.warp)continue;const rx=b.x-CX,ry=b.y-CY,r=Math.hypot(rx,ry);if(r<1)continue;
     const tx=-ry/r,ty=rx/r,vt=b.vx*tx+b.vy*ty,k=gooAt(b.x,b.y,b.z)>0.3?0.14:0.05,dv=k*(w*r-vt);
-    b.vx+=dv*tx;b.vy+=dv*ty;spinKick(b,ts);}}
-function spinKick(b,ts){const sp=Math.hypot(b.vx,b.vy,(b.vz||0)*BOXD);const k=Math.min(2.2,sp/(ts||1)-1);if(k>(b.boost||0))b.boost=k;}
+    const sp0=_bsp(b);b.vx+=dv*tx;b.vy+=dv*ty;spinKick(b,ts,sp0);}}
+// boost: the speed this kick ADDED, on top of what is left of the last one (step() lets it die away). It used to
+// read the note's whole speed, which already held the last kick, so a steady spin wound every note up to the cap.
+const _bsp=b=>Math.hypot(b.vx,b.vy,(b.vz||0)*BOXD);
+function spinKick(b,ts,sp0){const k=(_bsp(b)-sp0)/(ts||1);if(k>0)b.boost=Math.min(2.2,(b.boost||0)+k);}
 // ---- the gestures ----
 (function(){
   const G=new Map(),SLOP_T=12,SLOP_M=7;
   const ring=document.createElement('div');ring.id='holdRing';ring.setAttribute('aria-hidden','true');document.body.appendChild(ring);
   const slop=e=>e.pointerType==='touch'?SLOP_T:SLOP_M;
-  const rimK=()=>{const r=cv.getBoundingClientRect();return (matchMedia('(pointer:coarse)').matches?28:18)*W/(r.width||W);};
+  const rimK=()=>{const r=cv.getBoundingClientRect();return (_coarse.matches?28:18)*W/(r.width||W);};
   const wallDist=(x,y)=>{let bd=1e9;for(const e of edges)bd=Math.min(bd,_segDist(x,y,e));return bd;};
   function ringAt(cx,cy,on){ring.style.left=cx+'px';ring.style.top=cy+'px';ring.classList.remove('go');
     if(on){void ring.offsetWidth;ring.classList.add('go');}}
@@ -7769,7 +7783,8 @@ function spinKick(b,ts){const sp=Math.hypot(b.vx,b.vy,(b.vz||0)*BOXD);const k=Ma
     if(g.mode==='press'){if(Math.hypot(e.clientX-g.x0,e.clientY-g.y0)<slop(e))return;
       clearTimeout(g.hold);ringAt(0,0,false);
       if(g.rim)g.mode='strum';
-      else if(!SPINU.drag&&handsOn()){g.mode='spin';SPINU.drag=true;SPINU.owner=e.pointerId;SPINU.w=0;SPINU.pend=0;cv.classList.add('spinning');}
+      else if(!SPINU.drag&&handsOn()){g.mode='spin';SPINU.drag=true;SPINU.owner=e.pointerId;SPINU.w=0;SPINU.pend=0;cv.classList.add('spinning');
+        if(!S.playing)setPlaying(true);}   // the turn is applied on the physics tick, which only runs while playing
       else g.mode='none';}
     const p=tankPt(e.clientX,e.clientY);if(!p)return;
     if(g.mode==='strum')strumTo(g,p,e);
@@ -7784,6 +7799,7 @@ function spinKick(b,ts){const sp=Math.hypot(b.vx,b.vy,(b.vz||0)*BOXD);const k=Ma
       SPINU.w=Math.max(-SPIN_MAX,Math.min(SPIN_MAX,w));SPINU.drag=false;SPINU.owner=null;cv.classList.remove('spinning');}}
   cv.addEventListener('pointerup',e=>end(e,false));
   cv.addEventListener('pointercancel',e=>end(e,true));
+  cv.addEventListener('lostpointercapture',e=>end(e,true));   // after a pointerup this finds nothing and does nothing
   window._hands={G,SPINU,SEEDS,JACK,plantSeed,dropSeed,clearSeeds,jackNote,chordPcsNow};
 })();
 // ---------- THE EMPTY TANK ASKS TO BE TOUCHED (2026-10-27) ----------
@@ -8686,13 +8702,13 @@ function setDivUI(d){S.div=d;[...$("divSeg").children].forEach(b=>b.classList.to
 // slime moves the key, the spin and the shapes (the switch), and the slime drops notes (this button). Play starts
 // with auto-notes OFF so the notes are yours; studio starts ON (a beat with a melody, one press of play away).
 // Remembered per room.
-S.autoNotes=false;
-const _anKey=()=>'slimehedron-autonotes-'+(S.mode==='studio'?'studio':'play');
+function _anKey(){return 'slimehedron-autonotes-'+(S.mode==='studio'?'studio':'play');}   // a declaration: the first applyMode (dressing the room at load) calls loadAutoNotes
 function paintAutoNotes(){const b=$("autoNotesBtn");if(!b)return;const on=!!(S.autoNotes&&S.slimeMode);
   b.setAttribute('aria-pressed',on?'true':'false');b.classList.toggle('noSlime',!S.slimeMode);
   b.title=on?'the slime is playing notes too. tap to play them all yourself':'tap and the slime plays notes with you';}
 function loadAutoNotes(){let v=null;try{v=localStorage.getItem(_anKey());}catch(e){}
   S.autoNotes=v==null?S.mode==='studio':v==='1';paintAutoNotes();}
+if(S.autoNotes==null)loadAutoNotes();
 $("autoNotesBtn").addEventListener('click',()=>{initAudio();if(AC&&AC.state==="suspended")AC.resume();
   if(!S.slimeMode){S.autoNotes=true;$("slimeBig").click();}   // "slime, play notes" means the slime is on
   else S.autoNotes=!S.autoNotes;
