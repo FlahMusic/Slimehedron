@@ -38,7 +38,8 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
 ================================================================
   - Flah: try the hands-on play pass (spin, hold to loop, strum, chord jackpot, auto-notes) on a phone.
   - Flah: listen to VST milestone 1b in Studio One (built 2026-10-14, never confirmed).
-  - Next build: VST milestone 2, the tank headless (goo settled 2026-10-27: full, ADR 0007). Grill + spec first.
+  - Next build: VST milestone 2, the tank headless. Grilled + specced 2026-10-28: _docs/specs/2026-10-28-tank-headless/
+    (spec + 6 tickets, all Status: ready; 3D tank only = ADR 0008). Start with ticket 01 (web numbers) and 02.
   - Open question: reverb (convolution vs algorithmic, needed by milestone 5).
   - Flaky suites to diagnose: dev-potato, dev-bassmix [play jazz], dev-portal (icosa exit, holes stand out), dev-hands 1/3 (see _dev/SUITES.md).
   - Bug, not fixed: every turn of the shape rebuilds the walls and resets e.broken / _brokenOrder, and play always

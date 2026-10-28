@@ -33,9 +33,19 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 - **Key journey**: the slime moves the key every ~90 s (not when pinned, `_keyPinned`).
 - **Slime / slime mode**: the auto-jammer switch (`#slimeBig`, `S.slimeMode`): moves key, spin, shapes, sound knobs (**MODS**).
 - **Auto-notes**: the slime dropping notes by itself (`#autoNotesBtn`, `S.autoNotes`). Off in play, on in studio.
+  It is a melody with motifs (`autoMelodyNote`), and it only runs while the slime is on.
+- **Rain**: the old steady note drop (`spawnRain`, `S.rain`). Runs only while the slime is off. Not auto-notes.
 - **Band**: bass + comp + pad (+ drums). **Kit**: a drum style (pop, rock, disco, bossa, jazz, ...).
 - **Triangle mixer**: `#triMix` (melody / drums / band). **Mixer**: studio's per-part volume/mute/solo (`MIX`).
 - **Beat lock**: balls are steered so their hits land on the grid (`beatLock`, `b.tq`).
+
+## The plugin (`vst/`)
+- **Core**: `slimehedron-core`, the engine with no dependencies (no plugin, no window). Also builds to WASM.
+- **Headless tank**: the tank running in the core with no window: physics, goo and notes, nothing drawn.
+- **Tick**: one fixed 60 Hz physics step. In the plugin it is counted in samples, never in screen frames.
+- **DAW clock**: the host's tempo, play/stop and song position. The plugin's only clock.
+- **Random seed**: the number the plugin's random numbers start from, so a song exports the same twice.
+  Not a **Seed** (the hold-to-loop marker).
 
 ## The work (how a change gets made: `.claude/CLAUDE.md` has the full loop)
 - **Pass**: one round of Flah's requests, from questions to the GitHub upload list.

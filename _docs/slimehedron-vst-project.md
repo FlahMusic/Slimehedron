@@ -212,6 +212,8 @@ One synth, not two that drift.
    passed, 0 failed, 23 skipped (no params or state yet). A held key does not sustain yet.
 2. **The tank, headless.** Physics + geometry + note triggering in `core`, driven by the host clock.
    Still no UI — a test that renders 8 bars to a WAV and we listen to it.
+   **Grilled + specced 2026-10-28**: `_docs/specs/2026-10-28-tank-headless/` (3D tank only, ADR 0008;
+   auto-notes melody; DAW clock; burst/reform split off as step 2b). 6 tickets.
 3. **The webview shows up.** wxp window, the existing canvas drawing code lifted over, state
    streamed from Rust. First time it looks like Slimehedron.
 4. **The band and the kits.** Chord brain, bass, comp, 11 drum kits, grooves.
