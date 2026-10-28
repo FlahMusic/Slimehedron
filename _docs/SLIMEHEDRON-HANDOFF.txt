@@ -34,10 +34,21 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
 
 
 ================================================================
+0. WHAT IS OPEN RIGHT NOW (update this block every pass; older "still open" lines below are history)
+================================================================
+  - Flah: try the hands-on play pass (spin, hold to loop, strum, chord jackpot, auto-notes) on a phone.
+  - Flah: listen to VST milestone 1b in Studio One (built 2026-10-14, never confirmed).
+  - Next build: VST milestone 2, the tank headless (goo settled 2026-10-27: full, ADR 0007). Grill + spec first.
+  - Open question: reverb (convolution vs algorithmic, needed by milestone 5).
+  - Flaky suites to diagnose: dev-potato, dev-bassmix [play jazz] (see _dev/SUITES.md).
+  - NOT open: dev-topbar studio/phone-sm (fixed 2026-10-25, passing since).
+
+================================================================
 2. STANDING RULES -- DO NOT VIOLATE
 ================================================================
 
-HOW A PASS RUNS (since 2026-10-28): the loop is in the repo at .claude/CLAUDE.md (grill -> prototype if the feel is
+HOW A PASS RUNS (since 2026-10-28): the loop is in the repo at _docs/CLAUDE.project.md, which Flah copies to
+.claude/CLAUDE.md for Claude Code (agents may not write into .claude/) (grill -> prototype if the feel is
 uncertain -> spec in _docs/specs -> build with dev-syntax after every edit -> sabotage-tested suite -> targeted runs
 from _dev/SUITES.md -> one sweep, no edits during it -> code-review -> ship -> retro when it went sideways).
 Words: _docs/GLOSSARY.md. Review rules: _docs/CODING_STANDARDS.md. Decisions: _docs/adr/. Old docs: _docs/retired/.
@@ -321,8 +332,8 @@ CURRENT index.html behaviour, not the 2026-10-14 one.
 
   - Reverb: convolution (faithful, more work) or algorithmic (close,
     cheap)?
-  - The goo: full fluid in the audio thread, or simplified? It damps
-    the balls, so "turn it off" changes the sound -- it is not free.
+  - [SETTLED 2026-10-27: full, ADR 0007] The goo: full fluid or simplified?
+    It damps the balls, so "turn it off" changes the sound.
 
 Everything else on the VST side is settled.
 
@@ -529,7 +540,7 @@ the Orff sequence (imitate -> explore -> improvise -> compose).
     the goo's bounding box; LITE skips the second stamp and the shading - ~3x cheaper at 8x throttle), curved
     prism containment ran 3 passes even when nothing moved, dev-claims counted JS/comments as stylesheet
     reduced-motion rules, dev-potato timed tanks mid-burst/mid-gather (now: forced fill, 4 s settle, quietest of 3).
-  - Still open: dev-topbar studio/phone-sm (strip + chord button over the canvas's empty corner; reaches the
+  - [FIXED 2026-10-25, see DECLUTTER PASS] Still open: dev-topbar studio/phone-sm (strip + chord button over the canvas's empty corner; reaches the
     shape only in curved space), dev-potato curved-vs-normal ratio is noise-limited here.
   - _docs/REVIEW-BRIEF.txt: brief for an outside AI (Freebuff; recommended Gemini 4 Argon, then GPT-6.1 Sol)
     to review the 3D tank on a COPY of the folder and write _docs/REVIEW-NOTES.md.
@@ -561,7 +572,7 @@ the Orff sequence (imitate -> explore -> improvise -> compose).
   - Old "Mixer" card (delay + MIDI out) is now "Delay". Vocabulary allows step / song.
   - New suites: dev-daw (signal measured on the buses, hostile files, autosave), dev-guide, dev-monkey, dev-hostile.
     dev-daw sabotaged 8 ways, all caught. dev-surface re-accepted (studio 21 -> 25 controls).
-  - Still open: dev-topbar studio/phone-sm (pre-existing). _dev/.head-index.tmp is an empty scratch file I could
+  - [dev-topbar FIXED 2026-10-25] Still open: dev-topbar studio/phone-sm (pre-existing). _dev/.head-index.tmp is an empty scratch file I could
     not delete -- Flah deletes it.
 
 2026-10-24 MAP + CRAYON PASS (commit 56706db). Flah's calls: crayon-drawn 3D; a lessons map like a game world map, with a dotted path; practice on side paths, a playground with no right/wrong; no words needed to learn, "any means necessary".
@@ -587,7 +598,7 @@ the Orff sequence (imitate -> explore -> improvise -> compose).
     frames are drawn by hand.
   - Test fixes: dev-daw counts whole bars between beat-1 kicks; dev-chordbed mutes through MIX (applyMix now owns
     padBus).
-  - Still open: dev-topbar studio/phone-sm and dev-potato noise (both pre-existing).
+  - [dev-topbar FIXED 2026-10-25; dev-potato still noisy] Still open: dev-topbar studio/phone-sm and dev-potato noise (both pre-existing).
   - TRAP: `pkill -f 'node _dev/dev-'` kills your own shell (exit 144). Never pkill with a pattern from your own command.
   - TRAP: a background run.sh kills any Playwright you start alongside it. Stop it first, or wait.
 
@@ -783,7 +794,8 @@ play), flick-spin (record-style, physics axis only), hold to loop, strum the rim
 MSI, not in the cloud session) and asked to fortify the process. Researched the repo's skills from source.
   - New gate _dev/dev-syntax.js: parses every inline <script> + learn2.js, sw.js, tank3d.js in ~1 s, no browser.
     Sabotaged with the exact mid-line // trap in index.html and a broken tank3d.js: both caught.
-  - .claude/CLAUDE.md (46 lines, dot folder so Pages never publishes it): the pass loop mapped to the skills,
+  - _docs/CLAUDE.project.md (~50 lines; belongs at .claude/CLAUDE.md, which agents cannot write, so Flah copies it):
+    the pass loop mapped to the skills,
     hard rules, and @imports of _docs/GLOSSARY.md + _docs/CODING_STANDARDS.md so Claude Code loads them every session.
   - _docs/CODING_STANDARDS.md: harvested every still-true rule from the 849-line _docs/CLAUDE.md + the trap list.
   - _docs/GLOSSARY.md: tank / music / process vocabulary. _docs/adr/ 0001-0006 (synth-only, Pages + underscore

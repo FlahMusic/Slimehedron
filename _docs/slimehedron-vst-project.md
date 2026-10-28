@@ -231,8 +231,8 @@ Milestone 1 is a weekend. Milestones 2–3 are where the project is really decid
   MIDI in, chord follower, band transposes to match, band parts out as raw MIDI per channel. See
   scope above.
 - **Reverb:** convolution (faithful, more work) or algorithmic (close, cheap).
-- **The goo:** full fluid in the audio thread, or simplified. It affects the sound (it damps balls),
-  so "turn it off" is not free.
+- ~~**The goo:**~~ **Settled 2026-10-27: full.** The real goo is ported and runs on the physics tick; it damps
+  the balls, so a stand-in would change the sound. See `_docs/adr/0007-plugin-goo-is-full.md`.
 - ~~**Mac?**~~ **Settled 2026-10-14: Windows only for now.** macOS is the last step. There is no
   Mac here to build or sign on, so nothing in the plan may assume one.
 
