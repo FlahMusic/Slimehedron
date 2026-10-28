@@ -1,0 +1,872 @@
+SLIMEHEDRON / PLINKY -- HANDOFF
+Written 2026-10-14, updated 2026-10-28 (process pass). Paste or upload this at the start of a new chat.
+
+
+================================================================
+1. THE PROJECT
+================================================================
+
+Slimehedron (dev name "plinky"): free, GPL-3.0-or-later, browser-based
+generative music toy + children's music-theory app. 100% synthesized
+Web Audio, zero external requests, offline-capable.
+
+  Local repo:  C:\flah plugins\plinky   (device "msi")
+  Cloud copy:  /root/plinktest          (NOT a git repo)
+  GitHub:      github.com/FlahMusic/Slimehedron
+  Live:        flahmusic.github.io/Slimehedron
+
+Files:
+  index.html           ~636KB, the whole app
+  learn2.js            ~152KB curriculum
+  sw.js, manifest.json
+  landing.html, privacy.html, accessibility.html
+  teachers/index.html
+  _docs/               design + planning docs (not published)
+  _dev/                Playwright test suites (not published)
+
+Jekyll skips underscore-prefixed dirs, which is the ONLY reason _docs
+and _dev are not on the public site.
+
+CURRENT TASK: porting studio mode to a Windows audio plugin.
+Flah's DAW is STUDIO ONE (not Reaper). It loads CLAP since 7.0 (Oct 2024).
+Flah builds the plugin himself on Windows (one cargo command, see vst/README.md);
+the device bridge shell is Linux and cannot see the Windows Rust install.
+
+
+================================================================
+2. STANDING RULES -- DO NOT VIOLATE
+================================================================
+
+HOW A PASS RUNS (since 2026-10-28): the loop is in the repo at .claude/CLAUDE.md (grill -> prototype if the feel is
+uncertain -> spec in _docs/specs -> build with dev-syntax after every edit -> sabotage-tested suite -> targeted runs
+from _dev/SUITES.md -> one sweep, no edits during it -> code-review -> ship -> retro when it went sideways).
+Words: _docs/GLOSSARY.md. Review rules: _docs/CODING_STANDARDS.md. Decisions: _docs/adr/. Old docs: _docs/retired/.
+
+WORKFLOW
+  - NEVER run deploy.bat or git push. deploy.bat is deleted. Flah
+    pushes himself, always.
+  - NEVER create a .nojekyll file. It would publish _docs, _dev and
+    _patterns.
+  - NEVER ask Flah to paste a GitHub token. Pushing from the device
+    bridge fails anyway ("could not read Username").
+  - Cloud /root/plinktest is NOT a git repo. Git lives only on the
+    device at $HOME/mnt/plinky.
+  - Flow: edit in cloud -> copy to /mnt/user-data/outputs/<name>/ ->
+    device_commit_files -> commit via device_bash -> Flah pushes.
+  - Git leaves .git/*.lock behind because deletes are blocked in that
+    folder. Clear it with:
+        mv .git/HEAD.lock .git/stale-head-lock
+    Do NOT request folder-wide delete permission to clean up a
+    lockfile -- that grants permanent deletes across the whole plinky
+    subtree for the session. Bad trade. Use mv.
+  - Staying on GitHub Pages. No custom domain until the app is done.
+  - END EVERY PASS WITH A PLAIN LIST OF FILES TO UPLOAD/DELETE ON
+    GITHUB, UNPROMPTED.
+
+STYLE
+  - Adam Friedland voice: short, lowercase, casual. Cussing is fine.
+    But triple-check facts, check sources, never guess.
+  - TLDRs, not reports. "fix bugs dont waste ur breath telling me
+    about the details."
+  - Ask before assuming intent / architecture -- but do NOT ask about
+    things that are answerable from the codebase.
+  - Simplest solution first. Don't touch unrelated code. Flag
+    uncertainty explicitly.
+  - NEVER replace hand-drawn artwork with flat vector or geometric
+    glyphs.
+  - NEVER change a design to make a test pass. Fix the thing, then
+    fix the test.
+  - UI copy: short, plain, concrete. No flavour text, no "AI words"
+    -- especially anything aimed at children.
+  - A TEST THAT PROVES A FEATURE RUNS IS NOT A TEST THAT IT WORKS.
+  - Don't describe his projects as a successor to or version of
+    anything else.
+  - (2026-10-26, Flah, all projects) Don't skimp, half-ass, guess or be
+    lazy. Study the problem, weigh the best options for each task, then
+    commit. Aim for state of the art; make it run smoothly and look
+    incredible.
+
+
+================================================================
+3. KEY DECISIONS, WITH REASONS
+================================================================
+
+Rust owns the physics, not the webview.
+  The tank IS the sequencer, not decoration. A DAW can close the
+  plugin window while the music keeps playing, and the host owns the
+  clock.
+
+GUI = webview (wxp), not a native Rust toolkit.
+  The UI is already HTML/CSS/canvas crayon art. egui/iced/vizia would
+  mean redrawing the entire app by hand.
+
+CLAP first, VST3 via clap-wrapper.
+  CLAP is MIT and the native Rust target. clap-wrapper gives
+  VST3/AU/AAX for free.
+
+Three crates, and slimehedron-core has ZERO dependencies.
+  wxp is 0.1.0-alpha.x and WRAC states it is "not a general-purpose
+  framework" with no API compatibility. If that bet goes bad, only
+  the wrapper gets thrown away. Core also compiles to WASM, so the
+  website can eventually run the same engine instead of two that
+  drift apart.
+
+MIDI IN IS REQUIRED (settled 2026-10-14).
+  The chord follower already exists in the web app: manualRoot,
+  manualActive, noteManual, noteFeed, pcToNearestDeg. In the plugin
+  the player improvises chords on a controller, the follower reads
+  the root, and THE BAND TRANSPOSES TO MATCH so the accompaniment
+  stays harmonic under their playing. This is the headline feature,
+  not a side effect.
+
+MIDI OUT PER CHANNEL IS REQUIRED.
+  Every band part (bass, comp, drums, melody) must be outputtable
+  live as raw MIDI on its own channel, so it can be recorded,
+  re-voiced or edited in the DAW.
+
+WINDOWS ONLY FOR NOW (settled 2026-10-14).
+  There is no Mac here to build or sign on. macOS is the last step,
+  not a parallel one. Nothing in the plan may assume a Mac.
+
+Everything in cents, not semitones.
+  Five of the 25 scales are microtonal (two maqams, neutral7,
+  slendro, 19-EDO). A semitone-based table cannot hold them.
+
+Seeded RNG instead of Math.random().
+  The audio thread must not allocate or lock, and a test that cannot
+  reproduce a note proves nothing.
+
+LICENSING IS CLEAR
+  VST3 SDK relicensed MIT by Steinberg (Oct 2025, SDK 3.8).
+  CLAP MIT. WRAC/wxp MIT. nice-plug ISC.
+  No conflict with Slimehedron's GPL-3.0-or-later.
+
+REJECTED STACKS
+  nih-plug   -- maintenance mode per its own README
+  nice-plug  -- active ISC fork on Codeberg, but README says
+                experimental, and its egui/iced/vizia GUIs cannot
+                carry the look
+  JUCE / C++ -- full rewrite
+
+
+================================================================
+4. WHAT EXISTS -- vst/ (committed 3e02c8f)
+================================================================
+
+  vst/
+    .gitignore                   target/ , slimehedron-render.wav
+    Cargo.toml                   workspace
+    slimehedron-core/
+      Cargo.toml                 [dependencies] DELIBERATELY EMPTY
+      src/lib.rs
+      src/rng.rs                 xorshift64*
+      src/music/mod.rs
+      src/music/pitch.rs
+      src/music/scales.rs        all 25 scales, in cents
+      src/music/chord_follow.rs  the ChordFollower
+      src/synth/mod.rs
+      src/synth/osc.rs           PolyBLEP
+      src/synth/biquad.rs        RBJ, Q capped at 12
+      src/synth/adsr.rs
+      src/synth/voice.rs         the ported playSynth
+      examples/render.rs         writes a WAV, no plugin tooling
+    slimehedron-plugin/          (milestone 1b, committed a00aef5)
+      Cargo.toml                 deps: slimehedron-core + clap-sys 0.5 (MIT/Apache)
+      src/lib.rs                 raw CLAP FFI: descriptor, factory, clap_entry,
+                                 note-ports (CLAP+MIDI in), audio-ports (1 stereo out)
+      src/engine.rs              safe Rust: 16 voices, note_on -> Voice::trigger(firm)
+    README.md                    build + install steps for Windows / Studio One
+    Cargo.lock                   committed so Windows builds the same clap-sys
+
+VERIFICATION ACTUALLY DONE (not just "it compiles"):
+  - cargo test -> 49 unit tests + 1 doctest, all green
+  - cargo run --example render -> prints C->0, Am->5, F->3, G->4
+    (correct scale degrees in C major) and writes an 8.8s WAV
+  - Goertzel spectral analysis of that WAV confirms every note's
+    dominant partial is the intended pitch, with the sub an octave
+    below. The pitches are actually right, not merely produced.
+
+To hear it on the MSI:
+    cd "C:\flah plugins\plinky\vst"
+    cargo run --example render
+  Writes slimehedron-render.wav in that folder.
+
+
+----------------------------------------------------------------
+vst/Cargo.toml  (verbatim)
+----------------------------------------------------------------
+
+[workspace]
+members = ["slimehedron-core"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+authors = ["FlahMusic (Flah)"]
+repository = "https://github.com/FlahMusic/Slimehedron"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+
+----------------------------------------------------------------
+ChordFollower -- the API that matters most (verbatim)
+----------------------------------------------------------------
+
+pub const WINDOW_MS: u64 = 1600;
+pub struct ChordFollower { notes: Vec<Played>, window_ms: u64, cap: usize }
+impl ChordFollower {
+    pub fn new() -> Self
+    pub fn with_window(window_ms: u64) -> Self
+    pub fn played(&mut self, pc: u8, at_ms: u64)
+    pub fn clear(&mut self)
+    pub fn active(&self, now_ms: u64) -> bool
+    pub fn root_pc(&self, now_ms: u64) -> Option<u8>
+    pub fn root_degree(&self, now_ms: u64, root_midi: i32, scale_cents: &[f32]) -> Option<usize>
+}
+
+Its tests assert musical outcomes, not execution: C major -> C,
+A minor -> A, G major vs E minor (they share two notes), F major,
+D minor, both inversions of C major, a single note, window expiry,
+a chord change taking over, degree mapping, pentatonic snapping.
+
+
+----------------------------------------------------------------
+Voice::trigger -- the ported playSynth (verbatim)
+----------------------------------------------------------------
+
+pub fn trigger(&mut self, freq: f32, vel: f32, imp: f32, firm: bool, s: VoiceSettings, rng: &mut Rng) {
+    let dud = !firm && rng.next_f32() < 0.05;      // 1-in-20 quiet drop; rain texture
+    let ej = 0.85 + rng.next_f32() * 0.3;           // envelope jitter
+    let shorten = 1.15 - imp * 0.4;                 // harder hits decay quicker
+    let peak = (vel/127.0) * 0.42 * (if dud {0.16} else {1.0}) * (1.0 - imp*0.18);
+    let detune = (rng.next_f32() * 8.0 - 4.0) / 100.0;  // +/-4 cents
+    self.target_hz = freq * 2f32.powf(detune / 12.0);
+    // pitch settles from freq*1.02 -> freq over 40ms
+    // filter sweeps cut_hz(cut+fenv) -> cut_hz(cut) over A+D
+}
+
+`firm` means a PERSON did this on purpose -- a firm note can NEVER
+dud. One test runs 200 seeds to prove it. A separate test runs 400
+seeds to prove a bouncing ball still CAN dud, or the rain model is
+gone.
+
+
+----------------------------------------------------------------
+The envelope is not a textbook ADSR
+----------------------------------------------------------------
+
+Linear ramp to peak, linear down to sustain, a caller-supplied HOLD,
+then exponential release. The hold is a bug fix: it used to be a flat
+0.05s, which made a whole note and a quarter note sound identical and
+left the note-duration lesson teaching nothing by ear.
+
+#[test]
+fn hold_actually_changes_the_length() {
+    let short = run(AdsrSettings { hold: 0.05, ..Default::default() }).len();
+    let long  = run(AdsrSettings { hold: 1.0,  ..Default::default() }).len();
+    let diff = long as f32 - short as f32;
+    assert!((diff - 0.95 * SR).abs() < SR * 0.05);
+}
+
+The biquad caps Q at 12 -- the web app's "kid-safe: can never scream
+or squeal". That cap is a product decision and came along on purpose.
+
+pub fn cut_hz(cut: f32) -> f32 { 60.0 * (18_000.0f32 / 60.0).powf(cut.clamp(0.0, 1.0)) }
+
+
+================================================================
+5. ORDER OF WORK
+================================================================
+
+(full version: _docs/slimehedron-vst-project.md)
+
+  1.  [DONE 2026-10-14] One note. Core only, no plugin, no UI, no
+      physics. Provable with nothing but Rust installed.
+  1b. [BUILT 2026-10-14, waiting on Flah's listen in Studio One]
+      7 plugin tests incl. one that loads via clap_entry like a DAW
+      and checks note timing + pitch (Goertzel). clap-validator:
+      21 pass / 0 fail / 23 skipped (no params/state). Type-checks
+      for x86_64-pc-windows-msvc. Held keys don't sustain yet (no
+      note-off; Voice has no release() -- comes with the tank).
+      Install path: C:\Program Files\Common Files\CLAP\Slimehedron.clap
+      (CLAP spec path; NOT verified that Studio One scans it).
+  2.  The tank, headless. Physics + geometry + note triggering driven
+      by the host clock. Render 8 bars to a WAV and listen.
+  3.  The webview shows up. wxp window, existing canvas drawing code
+      lifted over, state streamed from Rust. First time it looks like
+      Slimehedron.
+  4.  The band and the kits. Chord brain, bass, comp, 11 drum kits,
+      grooves.
+  4b. MIDI in and out. Host notes drive the chord follower, the band
+      transposes live, every band part emitted on its own MIDI
+      channel through the plugin's note output port.
+  5.  Effects and master chain. Tape, delay, reverb, limiter, the
+      0.891 output clamp.
+  6.  Parameters and automation. The ~40 S keys as CLAP params.
+  7.  Formats. clap-wrapper -> VST3. Mac/AU last.
+
+NOTE for the port: the web app changed under the plugin plan on
+2026-10-26 (bass synth, ride, wormhole portals, song clock). Port the
+CURRENT index.html behaviour, not the 2026-10-14 one.
+
+
+================================================================
+6. OPEN QUESTIONS
+================================================================
+
+  - Reverb: convolution (faithful, more work) or algorithmic (close,
+    cheap)?
+  - The goo: full fluid in the audio thread, or simplified? It damps
+    the balls, so "turn it off" changes the sound -- it is not free.
+
+Everything else on the VST side is settled.
+
+
+================================================================
+7. WEB APP -- CURRENT STATE
+================================================================
+
+All dev suites green as of the last pass: devices 832/0, lessons
+137/0, crowding 243/0, sweep 0 issues, a11y 35/0, tools 62/0, band
+97/0, midi 25/0, claims 14/0, goolook 2/0, perfmode 7/0, wavtap 12/0,
+plus about 25 more.
+
+Measured gains from the phase 11-12 engine work:
+
+  desktop frame gap        33.3ms  ->  16.7ms
+  phone @4x CPU throttle  116.7ms  ->  50ms
+  phone first paint         496ms  ->  168ms
+  phone long tasks on load 1114ms  ->  599ms
+  drawParticles, phone     64.4ms  ->  ~6.9ms
+  bytes, phone              797KB  ->  688KB
+
+Learn mode: 29 lessons + 3 games + 1 practice = 33 units, built on
+the Orff sequence (imitate -> explore -> improvise -> compose).
+
+
+2026-10-14 PHONE PASS (commit 61a724d), from Flah's iPhone screenshots:
+  - volume fader is the real master: new outVol node after tape, before
+    the limiter; master sits at fixed VOL_REF=0.4675 so the default mix is
+    identical. Drums/reverb/echo used to bypass master, so vol 0 still
+    peaked 0.79 and mute didn't mute drums.
+  - touch sliders: 28px handle on coarse pointers + touchRanges() (press
+    anywhere on the bar). iPhone range inputs ignore presses off the handle.
+  - Tools: circle of fifths fits (docked width cap was clipping it), chord
+    chips show names (44px touch floor inflated the corner x over them).
+  - drum machine: wraps like a line of music (beats 1-2 for every drum,
+    then 3-4; 16 across when >=560px), beat numbers, playhead (phPush from
+    drumSchedule), "last step" + KIT_LEN removed entirely.
+  - THE STUCK CHORDS: a dice roll in Tools saved CHORD_MODE to localStorage
+    and play mode followed it forever (53/53 bars the same 4 chords, key
+    never moved). cmActive() is now false in play mode.
+  - chord brain: CHORD_FN use/next weights for major + natural minor. The
+    tank melody is ~100% do-mi-sol (walls pulled to the tonic triad), so the
+    melody vote alone picked I/iii/vi. Measured: iii 29% -> 9-11%, V 15% ->
+    20-23%.
+  - key journey fires only at a chord boundary and lands on the new I.
+  - suites: new dev-phone.js (23 checks, sabotage-tested against the old
+    code). chordtest + harmony were transport-blind and failing on every
+    run; fixed. naming had a dead __dirname path. dev-topbar has 3
+    PRE-EXISTING failures (#studioBar/#chordBtn over the tank in studio on
+    tablet/phone) -- same on the old code, not touched.
+
+2026-10-14 DRUM PASS (commit c16ba50):
+  - kit: K s r(Side Stick) h(Closed Hat) o(Open Hat, choked by h) y(Ride)
+    x(Crash) ht lt(toms) cl(Clave) + c/C congas. DRUMN = GM numbers.
+    metal() = 808 six-square recipe, hiss() = noise burst.
+  - step grid = DAW pattern editor: rows = drums, sideways scroll
+    (.sgScroll, exempted in dev-devices), one ruler, KIT_BARS 1/2/4,
+    editableKit() copies all 4 bars (no flattening any more).
+  - HUMANIZE {dyn,time,ghost} knobs in #humanize; humanVoice(v,inBar)
+    returns t=0 on every inBar%4===0 (beat lock), cap min(22ms, .25 step).
+    KITFEEL per style: sw8 (jazz .85), sw16 (bossa .18), acc{}, ghostAt.
+    genreShift(inBar) also swings the bass and the comp.
+  - jazz = ride 0,4,6,8,12,14 + hat foot 4,12; bossa clave 0,3,6,10,13
+    (son clave with the 2-side's 2nd note one 16th later, Wikipedia);
+    disco open hat 2,6,10,14.
+  - FILLS NEVER PLAYED before this: barI wraps every 4 bars, fills are
+    every 8/16. Scheduler now uses gBar=(drumStep/bar)|0.
+  - SIG_PART: play-mode rhythm picture hops on the style's signature drum.
+  - theme: --veil dusk over the art, --panel lilac, --cream buttons,
+    --depth tokens; theme block is the LAST thing in the main <style>.
+  - play side columns: per-side --psBotL/--psBotR + zoom-to-fit, 44px floor.
+  - dev-a11y "chord actually changed" (needs 3 distinct chords in 17s) is
+    flaky by chance; passed on rerun. dev-lessons needs >400s timeout.
+
+2026-10-15 3D PASS (commit f2da226):
+  - TWO VIEWS, ONE TANK. VIEW.d3 (Preferences > "3D tank (testing)", or
+    ?view=3d / ?view=2d, saved in localStorage 'slimehedron-view3d').
+    2D IS THE DEFAULT and is the old tank, untouched. Rule from Flah: build
+    everything to work in 2D; 3D adds, never replaces. When 3D is clean it
+    becomes default and 2D is the performance fallback.
+  - 3D = physics in the box's own frame: x,y as 2D (side walls = shape
+    extruded, so notes + lessons unchanged), z 0..1 front->back glass.
+    Front/back panes play the sounding chord (back = root, front = high 3rd/5th),
+    soft, and do NOT feed noteHisto. Lessons force z=0.
+    View: P3(x,y,z) projection, tilt TILT=0.22 rad about an axis that precesses
+    once per 16 bars; screenToBox() un-projects taps; planeAt(z) affine for
+    goo (z=.5) and the front rim (z=0). Balls use cached sprites (ballSprite).
+  - SLIME_VIEW=3d node _dev/dev-x.js runs any suite in 3D (browser.js).
+    Both views green on every suite run; dev-goolook pins 2D on purpose.
+    dev-potato: 3D costs about the same as 2D (relative test).
+  - background art: back to the ORIGINAL white veil. Flah: lilac is for the
+    interface only, never the background image.
+  - crash only on the key-change downbeat (pop/rock/disco); hats one choke
+    group; glass rim on the selected .psBtn; play-mode spin tempo-locked
+    (1 turn / 8 bars).
+  - dev-lessons HOME and dev-a11y "chord changed" are timing-flaky; rerun.
+
+2026-10-15 SPACES PASS (commit 76bced8):
+  - 3D IS NOW THE DEFAULT (Flah's call). VIEW.d3 default true; 2D is a look
+    choice in the tank's corner menu (#spaceChip, fixed-position, finds a free
+    corner, opens on screen). 2D and 3D cost the same per frame, so 2D is NOT a
+    speed setting. Preferences row removed.
+  - "performance mode" = the LITE watchdog (fewer goo drops, no backdrop blur, no
+    shine). Kept, but silent: no toast, no name.
+  - auto switch #slimeBig: the 2026-10-11 tap floor (min-height:var(--tap) on all
+    buttons) stretched the 30px pill. Now the button is an invisible 44px hit box
+    and the pill is its ::before.
+  - THREE SPACES (TSPACE.pick auto|normal|portal|curved, TSPACE.cur; ?space=,
+    localStorage slimehedron-space; SLIME_SPACE env for suites):
+      portal: opposite walls glued by translation, exact pos/vel; only centrally
+        symmetric shapes (4,6,8,10,12,rhombus,parallelogram). Goo stays held.
+        [REPLACED 2026-10-26 by moving wormholes, every shape -- see below]
+      curved: Poincare disk, HYP.RD=R*1.18. Physics on the hyperboloid
+        (hypSub: cosh/sinh geodesic, Lorentz mirror, sinh(dist)=P.N). Regular
+        shapes sized so k meet per corner (hypCorner) -> echoes tile; echoes =
+        inversions in wall circles, cached Path2D. Convex shapes only. 3D = H2xR.
+      lessons always normal (_labOn()). Auto: ~1 in 3 new shapes in play
+        (rollSpace, dice too); studio auto = normal.
+  - NAME TRAP: there is already a `const SPACE` (slime trail spacing, ~line 7300).
+    The tank space is TSPACE.
+  - dev-space.js 74 checks, sabotage-tested (portal offset, portal velocity,
+    flat move, bad mirror, no tiling all caught). Full sweep green in 3D, 2D,
+    curved, portal. Flaky-on-timing: dev-band "struck notes" (24 vs >24),
+    dev-perfmode lite-vs-full frame time, dev-lessons HOME card - rerun passes.
+    dev-topbar: 2 pre-existing studio failures (was 3).
+
+2026-10-18 SOLIDS PASS (commit c05c9aa):
+  - REAL 3D ON THE GPU. three.js r186 (0.186.1, MIT), tree-shaken esbuild bundle
+    in vendor/three-slime.js (~579KB min, ~145KB gz; recipe in _dev/three-build/).
+    tank3d.js draws it; loaded with import() only when 3D is on; sw.js v116 caches
+    both. Camera matches P3 exactly. Fallback to the canvas draw3D on: no WebGL,
+    ?gl=0, failed import, lost context, a lesson, PIX mode, or 4 slow windows even
+    in LITE. Look: pearl glass (colour only when struck, Flah hated the rainbow),
+    fresnel, RoomEnvironment, fog, MarchingCubes goo, contact shadows.
+  - SOLIDS: every face is a note. A solid = plane set {n,d}; ops cut / flip (dual)
+    / puff; morph slides planes so every in-between frame is convex (V-E+F=2
+    checked). z=0 slice = the 2D walls, tagged by face. Cap 62 faces. Portal solids
+    glue twin faces [twins REMOVED 2026-10-26, wormholes instead]; curved solids
+    live in H3 (Klein planes -> Poincare ball, hypSolidSub). Grow = "shape: cut /
+    puff / flip" row in the corner menu.
+  - CORNER MENU: #spaceChip is now a 44px round cube icon that sits in a free
+    screen corner (bottom from right, bottom from left, up the right edge).
+  - CHORD CHIP says what it is: "A minor", "C7", "D drone", + key and scale word.
+  - WORLD HARMONY: modes get vamps (SCALE_VAMPS), blues = 12-bar dom7, hirajoshi /
+    in-sen / bhairav = drone (bhairav never leaves Sa). Play mode travels home
+    (major/minor) <-> away (13 scales) on the same tonic, never microtonal.
+  - SUITES: SLIME_GL=1 turns the GPU path on in a suite (default is the canvas,
+    window.__noGL, because swiftshader frames are ~240ms). New: dev-gl, dev-solid,
+    dev-world, all sabotage-tested. dev-solid only checks containment while
+    fillState==='fill' (the burst opens the tank on purpose).
+  - TIMING SUITES ON THIS BOX: dev-potato and dev-perfmode fail the same way on
+    the untouched pass-4 code (run as a control on 2026-10-18), so the box is
+    slow/noisy, not a regression. Real GPU speed needs Flah's phone.
+  - dev-topbar: same 2 pre-existing studio failures, confirmed on pass-4 code.
+
+2026-10-19 LAVA PASS (from Flah's tetrahedron screenshot):
+  - GLASS IS PASTEL NOW, not pearl-white: every wall/face its note's pastel (s .6 l .8), edges a deeper
+    shade (s .68 l .66), strike floods full colour. Fog pushed back (it washed everything white).
+    Canvas fallback glassTint matches (4th arg = edge shade). dev-gl checks rest colour (pearl read 6, pastel ~37).
+  - NO WHITE RINGS: the additive ball glow is gone (it added light to a pale page = white ring); trails are
+    normal-blended dots in the ball's colour; balls have a soft coat + own-colour glow. Canvas ballSprite halo is
+    the ball's colour too. dev-gl measures the ring over a mid-tone backdrop (on a near-white page it hides).
+  - THE GOO IN 3D IS A LAVA LAMP (index.html "THE GOO IN 3D"; 2D goo untouched, goo3D() = VIEW.d3 && !lesson):
+      drops have real depth; held GOO_IN=10px + r inside the real glass (solid planes, prism walls + panes,
+      Klein planes for curved solids, 3 bounceInside passes for curved prisms); 1-3 "hearts" drift on slow
+      cycles (LAVA), each beat (beatNow() off the audio clock) stretches each heart along a random axis,
+      squeezes across, springs back; harder on the downbeat and the fuller the tank. Balls shove goo (gooWake);
+      gooAt(x,y,z) is depth-aware (gooAt3 hash). measuredFill in 3D = pooled drops / (partCap*0.92).
+      [2026-10-26: ONE heart now, see feel pass]
+  - GL goo: marching-cubes field FITTED to the goo each update (snapped to whole cells) so small blobs stay
+    smooth; lumps near glass drawn smaller; skin CLIPPED to the glass (material.clippingPlanes, duck-typed
+    {normal,constant} because the bundle does not export Plane/Matrix3); clipped insides painted flat goo
+    colour so a cut reads as goo pressed on glass. No white sheen. api.gooOut() is a test hook.
+  - three.js trap: it caches shader programs by onBeforeCompile SOURCE TEXT, so closures with different
+    numbers shared one program. fresnel() now sets customProgramCacheKey.
+  - New dev-goo3d.js (containment in 7 shape/space combos, beat stretch, wander, hearts, depth, wake, burst,
+    2D untouched) - 6 sabotages caught. dev-gl +4 checks (ring, rest colour, clip planes, skin reach) - sabotaged.
+  - sw.js v117. LITE kicks in under software GL and cuts partCap, which can burst a tank early (pre-existing).
+
+2026-10-21 BEAT-LOCK PASS (Flah's old notes: "delay between slime/hit and note", "shapes too small for the slime"):
+  - THE DELAY WAS QUANTIZE: a ball's note waited for the next grid line (up to 375ms at the default 1/8;
+    187ms in auto mode) plus a goo setTimeout lag up to 120ms, while flash + splash happened at impact.
+    Flah chose: BOUNCES LAND ON THE BEAT. beatLock(b,now) steers each ball's speed (b.tq, 0.8..1.22, every 2nd
+    tick) so its next note-making hit (hitTicks: walls / faces / 3D panes; walked in the SPINNING frame via
+    _rotV when the shape turns) lands on a grid line (gridAhead, tickInterval(c) now takes the step index for
+    swing). qWait(): a note waits only if the next line is <=45ms away; otherwise it plays as it hits.
+    Gooed notes play instantly (goo lag removed). Curved spaces: not steered. Uses _tickT (the tick's own
+    time; a slow frame runs several ticks) - performance.now() and rAF time disagree in slow frames.
+    Measured: 100% of notes <=45ms after the hit (was median ~100ms); ~80-95% within 45ms of the grid
+    (steering off: 37-52%). dev-beatlock.js, sabotage-tested.
+  - GOO BY VOLUME in 3D: partCap = min(1600, tankVolume*GOO_SHARE(0.065)/3300, solids: 0.25 of the round room
+    in the middle). tankVolume: prism area*BOXD, flat solid sum(A*d/3) (checked exact vs formulas), curved
+    solid sampled. Octahedron was 1353 drops vs cube 902 (slice-area cap); now 607 vs 702. Hearts wander less
+    when big (LAVA.core). Fewer hearts in small shapes made it WORSE (bigger single blobs) - kept 1/2/3 by count.
+  - beatNow() subtracts AC.outputLatency so the goo pulses with what is heard.
+  - corner menu button hides a mote it lands on (dev-crowding caught a mote under it).
+  - Flaky on timing here: dev-3d "doubling the tempo doubles the spin" (passed on rerun).
+
+2026-10-22 SWEEP + REVIEW BRIEF:
+  - Full sweep, all 69 suites one at a time. Fixed: favicon 404 (rel=icon), studio strip over the tank on
+    tablets (placeStudioBar pads <main> under the wrapped strip; NOT on phones <=820px, where pushing the tank
+    down hides its bottom under the play button), canvas-3D goo upscaled the whole canvas each frame (now only
+    the goo's bounding box; LITE skips the second stamp and the shading - ~3x cheaper at 8x throttle), curved
+    prism containment ran 3 passes even when nothing moved, dev-claims counted JS/comments as stylesheet
+    reduced-motion rules, dev-potato timed tanks mid-burst/mid-gather (now: forced fill, 4 s settle, quietest of 3).
+  - Still open: dev-topbar studio/phone-sm (strip + chord button over the canvas's empty corner; reaches the
+    shape only in curved space), dev-potato curved-vs-normal ratio is noise-limited here.
+  - _docs/REVIEW-BRIEF.txt: brief for an outside AI (Freebuff; recommended Gemini 4 Argon, then GPT-6.1 Sol)
+    to review the 3D tank on a COPY of the folder and write _docs/REVIEW-NOTES.md.
+  - TRAP: never start a second run.sh while one is running - each suite pkills chromium and kills the other.
+
+2026-10-23 DAW PASS (commit a1b64e2) -- guidance sweep, break-testing, four studio tools Flah picked:
+  - MIXER card (#mixer, below Pattern): volume / mute / solo per part. MIX={mel,drums,bass,chords}; trackGain(k)
+    multiplies the triangle in applyMix (melBus, drumBus, bandMix=bass, padBus=chords). STUDIO ONLY: trackGain is 1
+    outside studio, applyMode calls applyMix. melEcho gain node feeds delayNode so muting the melody silences its
+    echo too. MIDI out is NOT muted (a DAW can still record the part).
+  - STEP LOUDNESS + CHANCE: STEP_VEL / STEP_PROB [kit][voice][step 0-63], missing = 1. Kept OUT of the kit objects
+    (every kit is iterated as {voice:[steps]}). Tap modes in #drumEditor (.deMode): on/off, loudness, chance; a lit
+    step cycles 100 -> 75 -> 50 -> 25, mirrored across repeats. Dot size = loudness, dashed edge = chance.
+    Scheduler: prob roll + *_sv in the 4/4 loop. setKitBars and revert carry/clear them.
+  - UNDO / REDO (#undoBtn #redoBtn at the start of the strip, ctrl+z / ctrl+shift+z / ctrl+y; a text box keeps its
+    own). Snapshot stack (100), coalesced at 400ms, top re-synced on pointerdown. AUTOMATION IS NOT AN EDIT: the
+    slime's MODS sliders, dlyTop in slime mode, the key while it travels (!_keyPinned) and the shape while "random
+    shape" is on are left out of the compare and never reapplied. flush() before any apply.
+  - SONG FILES (#songCard): one snapshot format for undo, autosave and .slime files (applyControls(o) is the old
+    restore, now a function). Files are untrusted: own-property checks against KITS / GRID_VOICES / CQUAL /
+    GROOVE_ALL, ints 0-63, values in range, 200KB cap, version check. __proto__ / constructor cannot get through.
+    Autosave: 'slimehedron-song' (kit edits, lengths, loudness, chance, mixer, pad, humanize, feel; chords keep
+    their own key). window._song is the test hook.
+  - HINTS: COACH.play / COACH.studio, arrow + ring, never over the target; a hint shows only while its target is
+    really on top (clipped to scrolling panels + elementFromPoint), hides under tools/dialogs, ends unseen when you
+    leave the room, scrolls side-panel cards into view.
+  - BREAK-PROOFING: silentAudio() when Web Audio is missing (+ notice), restore skips corrupt / out-of-range values,
+    activeKit() falls back to pop. Phone chord chip: long scale names wrap to two lines.
+  - Old "Mixer" card (delay + MIDI out) is now "Delay". Vocabulary allows step / song.
+  - New suites: dev-daw (signal measured on the buses, hostile files, autosave), dev-guide, dev-monkey, dev-hostile.
+    dev-daw sabotaged 8 ways, all caught. dev-surface re-accepted (studio 21 -> 25 controls).
+  - Still open: dev-topbar studio/phone-sm (pre-existing). _dev/.head-index.tmp is an empty scratch file I could
+    not delete -- Flah deletes it.
+
+2026-10-24 MAP + CRAYON PASS (commit 56706db). Flah's calls: crayon-drawn 3D; a lessons map like a game world map, with a dotted path; practice on side paths, a playground with no right/wrong; no words needed to learn, "any means necessary".
+  - LESSONS MAP (learn2.js home(), mapLayout()). The 23 taught lessons are stones on one sine-winding path of dots.
+    Walked dots are coloured in. The slime (slimelogo.png) stands on the first unfinished TAUGHT lesson. Coming back
+    from a lesson, it hops dot by dot (_mapAt remembers where it stood); no hop under reduced motion.
+    FREE_PLAY (make, rjam, jam, jammaj, jammin, compose) and GAME_AT (echo->notes, updown->steps, findhome->home,
+    review->pulse) hang on SIDE paths across the same row: the main path has only one x at any height, so a side
+    stone can never sit on the road. Block signs sit on their own row (GAP). Stones are anchored at the disc
+    centre (--dr). The counter now counts 23. .uCard, .nextUp and .uNext are kept, so the old suites still find them.
+    body.lm-map hides the peekers and motes.
+  - ART HOOKS: MAP_ART set in learn2.js. An id listed there loads art/<id>.png (l_<unit> on a stone, map_hop2 for
+    the walker). Raw Midjourney picks go in plinky/_art_in/ (do not commit raw files). Brief: _docs/ART-BRIEF.md,
+    sref = slimelogo.png.
+  - CRAYON 3D (tank3d.js, setLook; LOOK3D + window.setLook3D in index.html; corner menu #lookRow; ?look=crayon;
+    localStorage slimehedron-look). Our own GLSL via onBeforeCompile (crayonize). The bundle has no Lambert or Toon
+    material, so it uses MeshStandard roughness 1 with toon bands in the shader. Edges are crayRim with vertex
+    jitter (line boil 8/s, frozen under reduced motion). Glass is still the default. GPU only: the canvas fallback
+    has no crayon look.
+  - Gameplan: _docs/LEARN-3D-GAMEPLAN.md, and the project doc claude/learn-and-3d-gameplan.md.
+  - New suites: dev-map (4/4 sabotages caught) and dev-crayon (4/5; removing only the paper grain is still covered
+    by the hatching). dev-crayon freezes the tank: requestAnimationFrame stubbed and performance.now pinned, so the
+    frames are drawn by hand.
+  - Test fixes: dev-daw counts whole bars between beat-1 kicks; dev-chordbed mutes through MIX (applyMix now owns
+    padBus).
+  - Still open: dev-topbar studio/phone-sm and dev-potato noise (both pre-existing).
+  - TRAP: `pkill -f 'node _dev/dev-'` kills your own shell (exit 144). Never pkill with a pattern from your own command.
+  - TRAP: a background run.sh kills any Playwright you start alongside it. Stop it first, or wait.
+
+2026-10-25 3D POLISH PASS (commits 75236c3 + bfe8f4e), overnight, unattended:
+  - NOTES: colour set in sRGB (HUE.setHSL(...,T.SRGBColorSpace)). Set in linear light, the same numbers came out
+    washed-out pastel. Each note now has a deeper-hue rim (fresnel, smoothstep .3-.6) and a tight clearcoat glint,
+    is drawn 1.3x the physics ball (noteScale(); 1.5x in crayon), and its shadow on the back glass gets darker and
+    smaller as it nears the back.
+  - SQUASH: noteMatrix() reads each bounce from the motion (heading turns >37 degrees between frames; the normal
+    is the change in velocity) and flattens the note along it for 120ms. A portal never changes the heading, so it
+    never squashes. Off under reduced motion. [2026-10-26: wormhole exits DO squash now; dev-look3d updated]
+  - GOO COLOUR: liqRGB is an average of notes, which goes grey-brown. LQ is now read in sRGB with saturation and
+    lightness clamped. Every lump is the chord's hue nudged +-0.07, not the notes' own hues. AND MarchingCubes
+    never normalises its colour falloff (the skin sat between a coloured cell and an empty one, so it came out dim
+    and grey), so the colorArray is rescaled after mc.update() to the lumps' own brightness (gTop).
+    api.gooColors() is the test hook.
+  - CORNER MENU IN PICTURES: every choice is an SVG (cube/flat, glass/crayon, dice/plain/glued sides/bent sides)
+    with a small word under it. Grow buttons draw THE ACTUAL next solid (solidPic: projected, front edges solid,
+    back faint). The row reads "now -> cut puff flip back". growBack()/growPrev() pop the last grow step.
+    #spaceChip z-index 77 (above the side columns). The play coach has a third hint, on #spaceBtn.
+  - dev-solid: the curved dodecahedron fills with goo in ~7s and bursts on purpose, so the containment run holds
+    startBreak off (it was a flake, not a physics bug). dev-gl measures round the note as DRAWN (api.noteScale).
+  - New suites: dev-shapes (2 of 3 sabotages caught; the third, back never greys out, was a no-op sabotage) and
+    dev-look3d (4 of 4 caught: goo normalisation, the note-hue blend, the rim, the squash).
+  - Flaky on this box, all passing on rerun or as a control on HEAD: dev-harmony, dev-perfmode, dev-potato. Still
+    open: dev-topbar (pre-existing).
+  - Two empty scratch files (_dev/.head-index.tmp, _dev/.head-tank.tmp) could not be deleted: Flah deletes them.
+
+2026-10-25 DECLUTTER PASS (commit 8b7a856). Flah: "clean up the interface on all the sections to make things
+less daunting for new users ... not overwhelm with options unless u expand out for advanced settings":
+  - STUDIO SIDE PANEL opens on Pattern, Mixer, Song, Timing (+ Preferences button). Key & Scale (range),
+    Geometry, Instrument, Delay, Velocity, envelope and filter all live in ONE fold, <details id="advReveal">
+    "more settings", closed by default. Cards keep their ids; the per-card h2 fold (ADV_COLLAPSED) still works
+    inside it. 31 controls in the panel before you open anything (not counting the beat grid).
+  - HUMANIZE knobs fold behind their own title (<details id="hzFold">, built in the humanize IIFE).
+  - window._keepOpen(details): any <details data-keep id=...> remembers open/shut in localStorage
+    'slimehedron-open-<id>'. Defined at the top of the main script.
+  - START FRESH left the header. It is #freshBtn at the bottom of Preferences: first tap arms ("tap again to
+    clear", 4 s), second tap runs startFresh(). startFresh() now also removes slimehedron-song, -chords,
+    -groove, -chordbars (they survived the old reset, so the beat/mixer/chords came back) and cancels a queued
+    saveState. Recordings (IndexedDB) and look/view prefs stay. #resetBtn still exists and calls startFresh, but
+    is visibility:hidden on desktop (keeps its room: the transport row is centred, and removing it slid play/
+    record/slime switch 28px vs play mode -- dev-a11y congruence caught it) and display:none on phones.
+  - PLAY no longer shows #chordBtn (play never follows a written progression, cmActive() is studio-only). Same
+    trick: visibility:hidden, so play and studio put the transport in the same place.
+  - "send MIDI out" row on the Delay card is hidden; #midiT2 in Preferences mirrors and drives it.
+  - COACH: a tap INSIDE the side panel no longer lets the next hint scroll the panel to its card (it yanked the
+    panel back to the step grid when you opened "more settings"). That hint is skipped instead.
+  - Phone bottom sheet: padding-bottom 78px + safe area, so the last card clears the floating keyboard/menu
+    buttons. Phone studio header: only clear (x) at the right end now.
+  - New suite dev-declutter (folded by default, every control reachable with real taps, remembered, start fresh
+    asks twice + clears song/chords/groove + keeps look, play has no chord editor, MIDI out once, coach doesn't
+    yank the panel). 7 sabotages, all caught. Taps are real mouse clicks at the drawn spot after scrollIntoView:
+    Playwright's own click thinks things in the phone sheet are "outside of the viewport".
+  - dev-topbar FIXED (the long-standing studio/phone-sm failure): it compared against the CANVAS box, which on a
+    phone has empty margins. It now checks the circle the tank sweeps (R around CX,CY). Sabotage (chord button and
+    strip moved onto the tank) caught on phone sizes.
+  - dev-surface re-accepted: studio header 25 -> 24 controls, midi-prefs 17 -> 18 (start fresh moved there).
+    accessibility.html reduced-motion count 18 -> 19 (the humanize fold arrow). sw.js v124.
+  - TRAP: a closed <details> still lays out its contents for getBoundingClientRect. Use el.checkVisibility().
+  - Full sweep this pass: everything green except the ones fixed above.
+
+2026-10-26 FEEL PASS (commit 6738bd7). Flah: jazz ride "ear bleeding"; goo choppy and splits into several
+blobs; bass barely audible even with the triangle on bass only; portal mode looks like balls despawning;
+circle outline round curved shapes; pure-white top bar burns his eyes; shapes break too fast ("each one is its
+own song", ~64 bars); 3D lean still too flat. Also: 60fps+ on high-end machines.
+  - RIDE (dHit v==='y'): a sine bell tuned to the key's tonic (f0 880-1760 Hz from S.root), partials 1/2/3
+    (decays .085/.045/.028 s) plus a soft hiss tick. About closed-hat loudness. Was 43% of its energy above
+    5 kHz with a 1.2 s ring; now 0% and 0.37 s.
+  - BASS: register pinned E2..D#3 (bassRootMidi()), voice-leading window -800..700 cents, so no key drops it
+    to 31-60 Hz. bassNote = body sine (+ a sub only when f/2 >= 45 Hz) + a sawtooth PRESENCE layer through
+    HP 180 / LP 900 (BASS_PRESENCE 1.3, BASS_TRIM 0.42), so a phone speaker still hears the note. Kick duck
+    is 0.7 for 120 ms and only when the drums are audible (was 10 dB for 300 ms, even with drums muted).
+    MIDI out at bassRootMidi()+c/100. Phone level vs melody: 33-40 dB under -> 1-7 dB.
+  - GOO, ONE BLOB AND SMOOTH: one lava heart (nh=1). Physics: zero-garbage linked-list neighbour grid _RG with
+    a half-shell walk (13 cells, _HS/_pair, relax3D) and a flat density grid _GD (buildGooHash/gooAt3).
+    Drops keep ox/oy/oz and are drawn between ticks with _alpha. GPU (tank3d.js): the surface is rebuilt EVERY
+    frame from persistent k-means LUMPS (<=40, eased over time; gooPos/addLump write straight into mc.field
+    and palette, LSUB=24); mc.bounds limits marching cubes to the used box; only the used buffer range is
+    uploaded (addUpdateRange). Physics tick 3.95 -> ~0.6-1.0 ms, surface build ~1.3-1.7 ms, 60 Hz jerk p95
+    33 px -> under 1 px (the old renderer repeated half its frames).
+  - VENDOR PATCH STEP: vendor/three-slime.js is patched by _dev/three-build/patch-mc-bounds.py AFTER the
+    esbuild step so MarchingCubes.update() honours mc.bounds. Rebuild the bundle without it and the goo goes
+    back to the full-grid cost. entry.js says so.
+  - WORMHOLES (portal space; replaces portalCross, e.twin, solidTwins, polyCentral, SOLID.twin). WORM = two
+    round portals that walk wall to wall on each beat (eased over the first 60% of the beat, wormGlide, then
+    rest), shrink near corners, never overlap. Only a ball that hits an open hole goes in (wormAt/wormEnter
+    from the edge loop; solidSub returns 'warp'); transit wormDur = half a beat (240-520 ms); wormExit spits
+    it out of the OTHER hole with the velocity mapped frame A -> B (solids full 3D; prism xy only, keeps vz).
+    wormPull bends nearby balls toward a hole. wormView(b,now): suck-in 150 ms, spit-out 260 ms.
+    GPU: shader mouth disc, a stencil-masked funnel throat that always runs away from the camera (renderer
+    needs stencil:true; facing flip, renderOrder 6.5-6.7), glow points, motes. Canvas: wormPaint /
+    drawWorm2D / drawWorm3D. Hooks: window.__worm, api.worms(). Portal icon in the corner menu = two swirls.
+  - PORTAL SPACE NOW WORKS ON EVERY SHAPE (spaceFits portal = true). Was centrally symmetric only. Design
+    change -- flagged to Flah.
+  - CURVED SPACE: the big pale disc + rim round the shape is gone (canvas drawHorizon disc, GPU skyBall and
+    horizon rings). Echoes kept.
+  - SONG CLOCK: FILL_BARS=66 (x1.13 in 3D). fillBeats advances in fillPhysics whenever there are drops or
+    balls; fillAllowance() caps how many splash drops may join the goo, the rest are `fade` drops that fly
+    and vanish. commitReform resets it. Shapes burst at ~62-65 bars (was ~21).
+  - 3D LEAN: TILT 0.3 breathing up to 0.64 rad over 32 bars (TILT_SWING 0.34, _tiltNow). viewTick is
+    time-based (_vtLast); spin and wormholes are interpolated with _alpha (rot-_rotV*(1-_alpha)).
+  - BACKGROUND: bg-desktop.jpg/.webp cropped to the drawing (1456x670, rows 128-798), bg-mobile.jpg/.webp
+    (640x1235). White veil .4/.5 -> .1/.16, so the crayon art is in full colour. Phone #hdrChord gets a white
+    card so it still reads. The uncropped originals are in git history (before 6738bd7).
+  - PERF: place() only when dirty or every 30 frames; goo surface skips frames when gooAvg>6 (mcEvery 1/2).
+  - New suites: dev-bassmix (register, phone presence, duck, live mix; 8 sabotages caught), dev-goosmooth
+    (no repeated frames, step + jerk at 120/60 Hz, cost; old renderer and old relax caught), dev-portal
+    (eligibility, on-wall/open/apart, in/out visuals, exit at the other hole, speed + heading, pop, note,
+    bounce elsewhere, glide/rest, corner shrink, busy tank, GL visible vs holes hidden, lessons; sabotages
+    view/same/never/jump/all/gl caught). Changed: dev-drums (ride: nothing >5 kHz, centroid <2 kHz, decay
+    <0.5 s, <=1.4x hat, tuned to key, accent>soft), dev-goo3d (one mass + roundness, section 9 "~64 bars"
+    in 3D 80 / 3D 140 / 2D, drives _tickT), dev-3d (veil <=0.2, no paper band at the top, lean 17-37 deg,
+    clock-based), dev-space (portal rewritten), dev-solid (section 6 = wormhole cube), dev-look3d (portal
+    exits squash). sw.js v125.
+  - Sweep full3: 80 of 81 green; only dev-potato (curved/portal ratios flip between runs on this box --
+    noise, same as before). Real GPU frame rate still needs Flah's hardware.
+
+2026-10-27 FIRST-TIMER PASS (commit 5091208). Flah: "imagine opening excel or ableton for the first time ... make
+it FUN, not daunting ... not reinventing the wheel". Audit with sources (Resnick low floor/high ceiling/wide walls,
+NN/g progressive disclosure, Material "one filled button = the primary action", Incredibox/Song Maker share-by-link).
+Flah picked these from a list (he did NOT pick "drop the wave words in play" -- sine/saw/square labels stay):
+  - TAP INVITE: an empty play tank shows #tapInvite (mint dot + two lilac ripples, no words) on CX,CY, pointer-events
+    none. Gone for good after the first tank tap (localStorage 'slimehedron-tapped', window._tapInviteDone()).
+    Play only, not in lessons/tools/splash. Static under reduced motion.
+  - ONE TEMPO CONTROL: play is the SLOW / knob / FAST on every screen (the phone + landscape slider conversions are
+    gone; knob 40px on phones; the words are tappable -8/+8 BPM steps). Studio strip = #bpmNum + TAP only.
+    #bpmTop is NOT on the strip any more but still exists hidden in #triMixBar: it carries the saved tempo
+    (saveState saves ranges by id) and dev-daw uses it. bpmText(): "80", not "80.00"; a typed 87.5 stays 87.5.
+  - ONE KEY CONTROL: #keyTop lists 12 pitch classes (value 0-11, "G" not "G3"); picking one moves #root to the
+    nearest octave in 48..72. Register = new "octave" row (#octDn / #octUp "lower" / "higher") in Key & Scale under
+    more settings. Scale menu text is the bare name (no " · 7"). #cofWheel is display:none in studio (it lives in
+    Tools; .twHost rule wins). dev-naming forbids the key on screen twice, which is why octave is buttons, not #root.
+  - CHORD CHIP: play hides #hcKey (only the chord; a locked key still shows its lock). Studio sub = "in G lydian".
+    FIXED: the chip was stale until the next bar (forever while stopped) -- root/scale change listeners now repaint it.
+  - ONE LOUD BUTTON: #chordBtn is cream (--cream/--depth) like other secondary buttons; lilac only while your own
+    chords are the ones playing (.on).
+  - ONE "MORE" ON PHONE: the studio strip builds ONE #sbMoreAll (.sbExp) that toggles #studioBar.open, which shows
+    every group's .sbMore in place (step, scale, kit style). Per-group buttons are gone.
+  - SHARE A LINK (the #1 gap from the 2026-09-23 market doc): window._shareLink {packLink,unpackLink,openLink}.
+    Link = <origin+path>?m=<play|studio>#s=z<base64url(deflate-raw(JSON))> (j<base64url(JSON)> fallback without
+    CompressionStream). Payload = the song snapshot() + mode + look {v3, sp (TSPACE.cur||pick), lk} + on {d,b}
+    (drums / band on). ~750-900 chars. Nothing leaves the device (after the #). Opening: validated like a .slime file
+    (cleanControls/cleanExtras, app/kind/version, 12000-char cap, decompression read capped at MAX_FILE 200KB),
+    waits for the mode to boot, applies switches first (random shape would skip the shape), pins the key if the
+    slime is on, then applySong + explicit shape; undoable in studio; the hash is removed with replaceState.
+    Buttons: studio "share link" on the Song card; play #playShare (plane icon) next to clear on wide screens, on
+    phones at the end of the volume/tempo row (placePlayShare(), _narrowMQ) -- next to clear it covered the chord
+    name. Phones use navigator.share (pointer:coarse), desktops copy to the clipboard + toast "link copied".
+    Play wave buttons now follow #waveSeg (so a link / undo lights the right one).
+    NOT in the link: the solid grow history (cut/puff/flip), recordings.
+  - LESSONS MAP: TOP 40 -> 122 (desktop) / 118 (phone) so the slime on stone 1 and the first sign are not under the
+    sticky "Lessons 0 of 23" card; on phones the first sign goes above the slime instead of beside it.
+  - LANDING RETIRED: landing.html + slimehedron-mascot.png moved (git mv) to _docs/retired/ -- nothing linked to it
+    and it was a different art style. sw.js v126 no longer caches either. dev-claims/dev-crowding updated.
+  - Home "share slimehedron" button put back its own plane icon after "copied" (it swapped to an emoji).
+  - New suite dev-ux.js (66 checks, 9 of 9 sabotages caught: invite blocks taps, phone knob gone, key jumps
+    octaves, stale chip, link loses the beat, hash stays, map TOP 40, extras always shown, chords loud again).
+    dev-world: chip expectations now "in G major". accessibility.html reduced-motion 19 -> 20. dev-surface
+    re-accepted (studio 24 -> 21 controls).
+  - Sweep full4: 82 suites; green except dev-potato (curved ratio noise, as always) and dev-bassmix 4.[play jazz]
+    once (bass 5.4 dB over melody on a live mix; passed on rerun -- live-mix noise, not this pass).
+
+2026-10-27 HANDS-ON PASS (commit 139ca19). Flah: play was "too automated -- pick the sound and the genre and it just
+plays". Ideas sourced from Bloom (Eno/Chilvers), Incredibox, Blob Opera, Patatap. Flah picked: auto-notes toggle (off in
+play), flick-spin (record-style, physics axis only), hold to loop, strum the rim, chord jackpot. NOT picked: pop-a-note.
+  - AUTO-NOTES: #autoNotesBtn next to #slimeBig (note glyph, slime-coloured head, red dash when off). S.autoNotes gates
+    autoMelodyNote only; the slime still moves key/spin/shapes. Default OFF in play, ON in studio, remembered per room
+    ('slimehedron-autonotes-play'/'-studio'). Pressing it with the slime off turns the slime on.
+  - GESTURES ("HANDS ON THE TANK" in index.html, window._hands): pointerdown rings the nearest wall at once; a tap drops
+    its ball on LIFT (not on down). Drag inside = spin like a record (SPINU.pend applied on the physics tick); release
+    with a flick = momentum SPINU.w, decays with SPIN_TAU 1.7s + SPIN_FRIC (real stop). Cap SPIN_MAX 0.22 rad/tick.
+    Moving walls: spinContain() (prisms) pushes notes back in and reflects them off the moving wall; solidSub uses the
+    face velocity (SPINU.u); spinSwirl() drags notes round with the spin (goo drags harder) -> flung into walls = notes;
+    b.boost lets the speed normalizer carry the fling and decays 5%/tick; goo rotates at 55% of the hand's spin.
+    Fast flicks substep the rotation (up to 6). Curved space: contained but no fling (hypSub).
+    Hold 500ms still = seed (.tankSeed DOM, max 6): plays its spot (strike + ball) once a bar at the beat the finger
+    landed; tap a seed to remove; clear removes all; seeds do NOT feed the chord follower (_noFeed). Drag starting on
+    the rim / outside = strum (rings each wall passed). Keyboard: [ ] spin, shift+Enter plants a seed.
+    CHORD JACKPOT: user taps/strums in the last bar contain every chord tone and NOTHING else, judged 320ms after the
+    hand pauses -> walls flare, chord rolled up an octave, chip pulses, drum fill + crash (JACK.fill 1->2->0).
+    The walls lean to the home triad, so "mostly chord tones" was too easy (a full strum was 75%).
+  - Coach (play): slime switch text changed, + auto-notes, + gestures hint on #handSpot (invisible marker on the tank's
+    bottom edge, data-coach-pass so the coach accepts it).
+  - Small phones: header gaps 3px, slime pill 46-48px, chip 74px (<=380) / 60px with the short chord name "Am"
+    (<=370, _tinyMQ). Chords button drops its word below 1500px (the bar overflowed at 1440).
+  - New dev-hands.js (55 checks, 10/10 sabotages caught). dev-3d turns auto-notes on for its depth test; dev-crayon
+    sets 'slimehedron-tapped' (the tap invite faded in over its frozen frames: that was also its old flake).
+    accessibility.html reduced-motion 20 -> 21. dev-surface re-accepted (+1 control: auto-notes). sw v127.
+  - TRAP AGAIN: a `// comment` inserted mid-line killed the whole script (the coach onTop line). Use /* */.
+
+2026-10-28 PROCESS PASS (commits ac96cdb + the docs commit). Flah added the mattpocock skills (installed on the
+MSI, not in the cloud session) and asked to fortify the process. Researched the repo's skills from source.
+  - New gate _dev/dev-syntax.js: parses every inline <script> + learn2.js, sw.js, tank3d.js in ~1 s, no browser.
+    Sabotaged with the exact mid-line // trap in index.html and a broken tank3d.js: both caught.
+  - .claude/CLAUDE.md (46 lines, dot folder so Pages never publishes it): the pass loop mapped to the skills,
+    hard rules, and @imports of _docs/GLOSSARY.md + _docs/CODING_STANDARDS.md so Claude Code loads them every session.
+  - _docs/CODING_STANDARDS.md: harvested every still-true rule from the 849-line _docs/CLAUDE.md + the trap list.
+  - _docs/GLOSSARY.md: tank / music / process vocabulary. _docs/adr/ 0001-0006 (synth-only, Pages + underscore
+    folders, share-by-link SUPERSEDES the old "file not URL" rule, 3D default, play is the child's, plugin stack).
+  - _docs/specs/README.md (spec template), _dev/SUITES.md (which suites for what, gates, flaky list),
+    _docs/README.md (what each doc is: current / reference / retired).
+  - Retired to _docs/retired/: CLAUDE.md, HANDOFF.md, STATUS.md, SLIMEHEDRON_PROJECT.md, GAMEPLAN-MODES.md,
+    SOUND-ENGINE-V2.md, CURRICULUM.md, LESSONS.md, SYLLABUS.md, idea-share-a-jam-by-link.md, REVIEW-BRIEF.txt, SUP.txt.
+  - _docs/SLIMEHEDRON-HANDOFF.txt is now tracked and is this file (it was a stale untracked copy). Keep both in step.
+  - The faults this fixes, from the last three passes: the // trap (6x); suites still asserting old behaviour after a
+    deliberate change (dev-world, dev-3d, dev-crayon); header overflow found only in the 2-3 h sweep (1440 desktop,
+    360 phone); editing and running ad-hoc Playwright during a sweep; a guessed jackpot threshold; +1 control with no
+    subtraction; flaky suites tolerated instead of diagnosed.
+
+TRAPS THAT COST WHOLE SESSIONS -- DO NOT REPEAT
+
+  - offsetParent === null is NOT a visibility test. It is null for
+    every position:fixed element. This mistake was made twice in one
+    session.
+  - getBoundingClientRect inside a closed <details> is NOT zero. Use checkVisibility().
+  - flex:1 cannot take space back (default basis auto, and a flex
+    item will not shrink below its content). Use flex:1 1 0 with
+    min-width:0.
+  - Dev suites go stale and will silently guard the exact behaviour
+    you just fixed. One asserted "studio still starts jamming on its
+    own, by design" -- the bug Flah had filed.
+  - dev-goolook's ruler was broken three separate ways and read 0%
+    change on deliberate sabotage. Sabotage-test your measuring
+    instruments before trusting them.
+  - `pkill -f chromium` inside a bash command whose own text contains
+    "chromium" kills that shell (and any background runs). Put loops in a
+    script file.
+  - `pkill -f run.sh` kills your own shell too (its text contains run.sh). Use pkill -f 'run[.]sh g2'.
+  - Don't run ad-hoc Playwright scripts while a run.sh batch is going: run.sh pkills chromium between suites.
+  - Before blaming your code for a timing failure, run the same suite on the
+    previous commit as a control. The container speed changes between sessions.
+  - A pkill whose pattern text appears in its own command line kills that shell (exit 144).
+    Same for `pkill -f "http.server 8766"`.
+  - The app moves some controls BY ITSELF (slime MODS sliders, dlyTop, key travel, random shape).
+    Anything that compares snapshots over time (undo, tests) must leave those out.
+  - Stacking Playwright runs exhausts the container. Start the server
+    with (setsid python3 -m http.server 8765 >/tmp/srv.log 2>&1 &)
+    and pkill -f chromium between batches.
+  - The studio coach key is 'slimehedron-coach-studio' (play is 'slimehedron-coach'). A suite that only sets
+    the play key gets a studio hint that scrolls the side panel.
+  - NEVER put a `// comment` in the middle of a one-line statement: it comments out the rest of the line.
+    Happened 4+ times in the 2026-10-26 pass (voice leading, renderer try{}, the splash loop, a test). Use /* */.
+  - A syntax error in tank3d.js fails SILENTLY: GL never loads and the canvas fallback draws instead. Check
+    with `node --check` on a .mjs copy after every edit.
+  - Wormholes glide during the first 60% of each beat. A test that pins beatNow must pin it late in a beat
+    (x.8) or the holes are mid-move, and must keep it pinned through screenshots (a queued rAF fires once more).
+  - A test that calls simTick in a tight loop must set _tickT itself (wormhole exits use _tickT).
+  - browser.js reads SLIME_GL at launch: a GL test needs a fresh launch() after setting process.env.SLIME_GL.
+  - `pkill -f 'dev-u[x].js'` still kills your own shell when the SAME command line also contains "_dev/dev-ux.js".
+    Never pkill and launch the thing in one command.
+  - A Playwright click on a DISABLED button waits 30s and throws. Assert the disabled state instead of clicking it.
+  - #studioBar extras: the per-group .sbGrp.open is gone; it is #studioBar.open now.
+
+
+================================================================
+8. GIT STATE AS OF THIS WRITING
+================================================================
+
+origin/main may be behind by up to 7 commits. Flah pushes / uploads.
+
+  139ca19  hands on the tank: flick-spin, hold to loop, strum the rim, chord jackpot, auto-notes toggle; sw v127
+  5091208  first-timer pass: tap invite, one tempo/key control, plain chord chip, share-a-link, map header; landing retired; sw v126
+  6738bd7  wormholes, smooth one-blob goo, audible bass, clean ride, 64-bar shapes, full-colour art; sw v125
+  8b7a856  declutter studio: sound settings folded, start fresh in prefs; sw v124
+  bfe8f4e  notes squash when they hit a wall (not through a portal)
+  75236c3  3D pass: crisp vivid notes, candy goo, picture-first shape menu with back
+  9e7b16e  simple copy-paste slime prompts; walker art id map_walk
+  56706db  lessons map with a dotted path and side-path playgrounds; crayon look for the 3D tank
+  a1b64e2  studio mixer, undo/redo, song files, step loudness + chance; hints and break-proofing
+  e22d8db  bug sweep fixes + review brief for an outside AI
+  d1bab57  bounces land on the beat; goo sized to each shape's inside
+  40ec9d5  pastel glass, no white rings, lava-lamp goo that stays inside the shape
+  c05c9aa  real 3D solids (three.js), pearl glass, corner menu, chord names, world harmony
+  76bced8  3D default, corner menu, portal + curved spaces, auto switch fixed
+  f2da226  3D tank (opt-in), background restored, hat choke, rare crashes
+
+No .git/*.lock left after 139ca19 (checked; HEAD.lock renamed to .git/stale-*).
+bg-*.jpg/.webp: the cloud copy differs from the committed one (same size in pixels); the committed one is the truth.
+
+Untracked and left alone: TECHSCAN.md (repo root),
+_dev/.head-index.tmp and _dev/.head-tank.tmp (empty; Flah deletes them)

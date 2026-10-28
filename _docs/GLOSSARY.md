@@ -37,8 +37,22 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 - **Triangle mixer**: `#triMix` (melody / drums / band). **Mixer**: studio's per-part volume/mute/solo (`MIX`).
 - **Beat lock**: balls are steered so their hits land on the grid (`beatLock`, `b.tq`).
 
-## The work
-- **Pass**: one round of Flah's requests -> build -> sweep -> commit -> handoff -> GitHub file list.
-- **Suite**: a `_dev/dev-*.js` Playwright check. **Sweep**: every suite, one at a time (`/root/run.sh`).
+## The work (how a change gets made: `.claude/CLAUDE.md` has the full loop)
+- **Pass**: one round of Flah's requests, from questions to the GitHub upload list.
+- **Grill**: the question round before building. Facts the agent looks up itself; decisions go to Flah, all in one
+  round, each with a recommended answer. Ends when nothing is silently assumed.
+- **Spec**: what "done" means for one feature, written before the code: what a person can do, the numbers it must
+  hit, which suites prove it, which old suites it changes. Lives in `_docs/specs/`.
+- **Ticket**: one slice of a spec small enough to build and check in one sitting.
+- **Prototype**: a throwaway page that answers one "does this feel right" question. Never shipped; its verdict is.
+- **Suite**: a `_dev/dev-*.js` check (most drive a real browser). `_dev/SUITES.md` says which to run for what.
+- **Gate**: a suite that runs first because it is fast and catches the worst things (`dev-syntax`, `dev-loadtest`).
+- **Targeted run**: the suites for the area you changed. **Sweep**: every suite, one at a time, once, at the end.
 - **Sabotage test**: break the feature on purpose and confirm the suite goes red. A suite that cannot fail proves nothing.
-- **Handoff**: `SLIMEHEDRON-HANDOFF.txt` in the claude.ai project. The current truth; older `_docs/*.md` may be stale.
+- **Control run**: the same suite on the previous commit, to tell a regression from a flaky box.
+- **Flaky**: fails sometimes on unchanged code. Listed in `_dev/SUITES.md` until someone fixes the cause.
+- **Review**: two separate reads of the diff: against `_docs/CODING_STANDARDS.md`, and against the spec.
+- **Retro**: after a messy pass, what went wrong and which rule, check or doc stops it next time.
+- **ADR**: a decision record in `_docs/adr/`. Reversing one means a new ADR that supersedes it.
+- **Handoff**: `SLIMEHEDRON-HANDOFF.txt` (claude.ai project, mirrored in `_docs/`). The running history and state.
+- **Retired**: `_docs/retired/`, docs that describe an older app. Never read them as current.
