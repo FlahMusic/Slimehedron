@@ -47,13 +47,15 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     systems, and each ball's goo drag is Math.random. Settle all three in the milestone 2 grill.
   - dev-loadtest prints LOAD FAILED (paintCell: b.style.setProperty) on 139ca19 already. Not chased.
   - NOT open: dev-topbar studio/phone-sm (fixed 2026-10-25, passing since).
+  - Tracker set up 2026-10-28 (setup-matt-pocock-skills): specs + tickets as markdown in _docs/specs/<date-name>/,
+    one Status: line each (needs-info / ready / in-progress / done), no labels. Rules: _docs/agents/.
 
 ================================================================
 2. STANDING RULES -- DO NOT VIOLATE
 ================================================================
 
-HOW A PASS RUNS (since 2026-10-28): the loop is in the repo at _docs/CLAUDE.project.md, which Flah copies to
-.claude/CLAUDE.md for Claude Code (agents may not write into .claude/) (grill -> prototype if the feel is
+HOW A PASS RUNS (since 2026-10-28): the loop is in .claude/CLAUDE.md (in git since 2026-10-28),
+kept identical to _docs/CLAUDE.project.md: after any edit, copy the whole file over (grill -> prototype if the feel is
 uncertain -> spec in _docs/specs -> build with dev-syntax after every edit -> sabotage-tested suite -> targeted runs
 from _dev/SUITES.md -> one sweep, no edits during it -> code-review -> ship -> retro when it went sideways).
 Words: _docs/GLOSSARY.md. Review rules: _docs/CODING_STANDARDS.md. Decisions: _docs/adr/. Old docs: _docs/retired/.

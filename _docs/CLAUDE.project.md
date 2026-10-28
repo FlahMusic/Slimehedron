@@ -1,7 +1,7 @@
 # Slimehedron: read me first
 
-<!-- This file belongs at .claude/CLAUDE.md (Claude Code loads it every session; a dot folder is never published).
-     Agents are not allowed to write into .claude/, so the copy lives at _docs/CLAUDE.project.md: copy it over by hand. -->
+<!-- Lives at .claude/CLAUDE.md (Claude Code loads it every session; a dot folder is never published).
+     _docs/CLAUDE.project.md is an identical copy: after any edit here, copy the whole file over it. -->
 
 Slimehedron is a free, GPL, 100% synthesized browser music toy and children's music-theory app (play / studio / learn),
 plus a Rust audio-plugin port in `vst/`. Everything ships from this repo on GitHub Pages. Flah owns it.
@@ -47,3 +47,17 @@ Sandcastle (unattended agents in Docker) is for the Rust port later, not the web
   (`mv .git/HEAD.lock .git/stale-head-lock`), never ask for folder-wide delete permission to clear one.
 - Docs for agents go in `_docs/` or `.claude/`, never as `.md` in the repo root (the root is published).
 - Voice for replies: short, lowercase, casual (Adam Friedland), TLDR not report. Facts triple-checked and sourced.
+
+## Agent skills
+
+### Issue tracker
+
+Local markdown: one folder per feature in `_docs/specs/`, `spec.md` plus `issues/NN-slug.md`. See `_docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+No labels: one `Status:` line per file (`needs-info` / `ready` / `in-progress` / `done`). See `_docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `_docs/GLOSSARY.md` and `_docs/adr/`. See `_docs/agents/domain.md`.

@@ -1,7 +1,7 @@
 # _docs: what is here
 
-Not published (underscore folder). Agents: start at `../.claude/CLAUDE.md` (its master copy is `CLAUDE.project.md` here:
-agents cannot write into `.claude/`, so Flah copies it over).
+Not published (underscore folder). Agents: start at `../.claude/CLAUDE.md` (`CLAUDE.project.md` here is an identical copy:
+after any edit, copy the whole file over). Tracker rules: `agents/`.
 
 ## Current (kept up to date)
 - `SLIMEHEDRON-HANDOFF.txt`: state, decisions, every pass's notes, traps. Mirrors the claude.ai project copy.
