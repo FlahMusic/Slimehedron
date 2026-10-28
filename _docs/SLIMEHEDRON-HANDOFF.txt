@@ -1,5 +1,5 @@
 SLIMEHEDRON / PLINKY -- HANDOFF
-Written 2026-10-14, updated 2026-10-28 (process pass). Paste or upload this at the start of a new chat.
+Written 2026-10-14, updated 2026-10-28 (plugin step 2, tickets 01-02). Paste or upload this at the start of a new chat.
 
 
 ================================================================
@@ -38,15 +38,18 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
 ================================================================
   - Flah: try the hands-on play pass (spin, hold to loop, strum, chord jackpot, auto-notes) on a phone.
   - Flah: listen to VST milestone 1b in Studio One (built 2026-10-14, never confirmed).
-  - Next build: VST milestone 2, the tank headless. Grilled + specced 2026-10-28: _docs/specs/2026-10-28-tank-headless/
-    (spec + 6 tickets, all Status: ready; 3D tank only = ADR 0008). Start with ticket 01 (web numbers) and 02.
+  - VST milestone 2, the tank headless: _docs/specs/2026-10-28-tank-headless/. Tickets 01 + 02 DONE 2026-10-28
+    (web numbers in web-stats.json via _dev/dev-vstparity.js; vst/slimehedron-core/src/tank/ = walls, panes, balls,
+    beat lock, spin, quantize hold, walls open/heal; 13 tank tests, sabotaged). Next: 03 (melody), 04 (goo + cost test).
+    Flah decided 2026-10-28: the plugin keeps the walls opening every 8 bars / healing every 24 (else 7 balls jam).
   - Open question: reverb (convolution vs algorithmic, needed by milestone 5).
   - Flaky suites to diagnose: dev-potato, dev-bassmix [play jazz], dev-portal (icosa exit, holes stand out), dev-hands 1/3 (see _dev/SUITES.md).
-  - Bug, not fixed: every turn of the shape rebuilds the walls and resets e.broken / _brokenOrder, and play always
-    turns, so the crowd drain (open a wall, old notes leave) probably never works in play. Needs its own check first.
+  - Bug, not fixed: every turn of the shape rebuilds the walls and resets e.broken / _brokenOrder. CHECKED 2026-10-28
+    in studio with the slime on (spin 14): breakWall() opens a wall and 300 ms later it is shut again. So the drain
+    never works while the shape turns, in play or studio; with the walls shut the tank jams at 7 balls (~16 notes a bar, measured at spin 0).
   - ADR 0007 (goo: full) is thin: the 2D drag reads mMask (refreshed by the DRAW code), 2D and 3D are two goo
     systems, and each ball's goo drag is Math.random. Settle all three in the milestone 2 grill.
-  - dev-loadtest prints LOAD FAILED (paintCell: b.style.setProperty) on 139ca19 already. Not chased.
+  - NOT open: dev-loadtest LOAD FAILED (its fake DOM had no style.setProperty and no location; fixed 2026-10-28).
   - NOT open: dev-topbar studio/phone-sm (fixed 2026-10-25, passing since).
   - Tracker set up 2026-10-28 (setup-matt-pocock-skills): specs + tickets as markdown in _docs/specs/<date-name>/,
     one Status: line each (needs-info / ready / in-progress / done), no labels. Rules: _docs/agents/.

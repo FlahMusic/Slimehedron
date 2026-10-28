@@ -7,7 +7,7 @@ const scripts=[...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script
 const noop=()=>{};
 function fakeEl(){return new Proxy(function(){},{
   get(t,p){
-    if(p==='style')return new Proxy({},{get:()=>'',set:()=>true});
+    if(p==='style')return new Proxy({},{get:(t,k)=>(k==='setProperty'||k==='removeProperty'||k==='getPropertyValue')?(()=>''):'',set:()=>true});   /* a style has methods too (paintCell sets --vel at load) */
     if(p==='classList')return {add:noop,remove:noop,toggle:()=>false,contains:()=>false};
     if(p==='dataset')return {};
     if(p==='value')return '0'; if(p==='min')return '0'; if(p==='max')return '100';
@@ -49,6 +49,7 @@ global.AudioContext=global.webkitAudioContext=function(){return new Proxy({curre
 global.Image=function(){return fakeEl();};global.Blob=function(){};global.URL={createObjectURL:()=>'blob:',revokeObjectURL:noop};
 global.indexedDB={open:()=>({})};global.fetch=()=>Promise.resolve({});
 global.innerWidth=1200;global.innerHeight=800;global.devicePixelRatio=1;global.scrollTo=()=>{};global.getComputedStyle=()=>({getPropertyValue:()=>'#9fe6cf'});
+global.location={hash:'',search:'',href:'http://127.0.0.1/index.html',pathname:'/index.html',origin:'http://127.0.0.1',reload:noop,replace:noop};global.history={replaceState:noop,pushState:noop};   /* share links read the hash at load */
 global.LEARN={enter:noop,exit:noop,noteIn:noop};
 global.PointerEvent=global.Event=function(){return {};};
 let ok=true;

@@ -25,5 +25,6 @@
 pub mod music;
 pub mod rng;
 pub mod synth;
+pub mod tank;
 
 pub use rng::Rng;

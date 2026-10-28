@@ -1,5 +1,6 @@
 //! Music theory. Pure arithmetic, no audio — this is the half of Slimehedron that ports literally.
 
+pub mod chord;
 pub mod chord_follow;
 pub mod pitch;
 pub mod scales;

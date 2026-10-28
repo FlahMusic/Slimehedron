@@ -11,6 +11,10 @@ Status: ready
 - **Normal space, base spin** (`S.spin`, default 0, settable). Later steps: solids, portal, curved space, and hands
   (flick, seeds, strum).
 - **Fill and goo drag** (ADR 0007). **Burst/reform is not in this step** (its own spec, step 2b): a full tank stays full.
+- **Walls open and heal** (Flah, 2026-10-28, after ticket 01 measured it): a wall opens every 8 bars and the oldest
+  gap heals every 24, as with the slime on in the web app (`breakWall` / `repairWall`, never the home chord's root
+  wall, at most a third of the walls). Without it the tank jams at 7 balls and plays ~16 notes a bar; with it ~9.
+  The 128-bar whole-shape burst (`explodeReform`) stays in step 2b.
 - **DAW clock**: the tank runs while the DAW plays and freezes when it stops. Tempo comes from the DAW. Play from
   song position 0 resets everything to the random seed. Play from anywhere else carries on.
 - **Notes come from auto-notes** (`autoMelodyNote`: the motif melody, one roll per beat, as with the slime on in

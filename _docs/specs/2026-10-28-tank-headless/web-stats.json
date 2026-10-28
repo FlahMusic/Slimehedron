@@ -1,0 +1,109 @@
+{
+ "made": "2026-10-28",
+ "by": "_dev/dev-vstparity.js",
+ "bars": 200,
+ "runs": 5,
+ "seeds": [
+  11,
+  22,
+  33,
+  44,
+  55
+ ],
+ "walls": "break",
+ "start": {
+  "view": "3d",
+  "shape": 6,
+  "walls": 6,
+  "root": 55,
+  "scale": "major",
+  "octs": 2,
+  "bpm": 80,
+  "div": 0.0625,
+  "swing": 0.15,
+  "quantize": true,
+  "spin": 0,
+  "chaos": 0.12,
+  "velRand": true,
+  "velMin": 12,
+  "velMax": 94,
+  "curRootDeg": 0
+ },
+ "pinned": "lite look off, key journey off, MODS still, chord brain not called (home chord), no burst/reform, drums and band off, Math.random seeded, 60 Hz counter clock, measureFill every 10 ticks",
+ "defs": {
+  "hitsPerBar": "ball hits (walls + panes) per 4/4 bar",
+  "onGrid": "share of hits that sound within 20 ms of a 1/16 grid line (a queued note sounds on the next line)",
+  "paneShare": "share of hits that are pane chimes",
+  "gooLevel": "mean velocity of gooed wall hits / mean velocity of clean wall hits",
+  "fill64": "measuredFill after 64 bars (3D: pooled drops / (partCap*0.92))"
+ },
+ "stats": {
+  "hitsPerBar": {
+   "mean": 6.953,
+   "sd": 1.6544,
+   "n": 5
+  },
+  "onGrid": {
+   "mean": 0.7053,
+   "sd": 0.0164,
+   "n": 5
+  },
+  "paneShare": {
+   "mean": 0.2466,
+   "sd": 0.0112,
+   "n": 5
+  },
+  "gooLevel": {
+   "mean": 0.8823,
+   "sd": 0.0551,
+   "n": 5
+  },
+  "fill64": {
+   "mean": 0.8539,
+   "sd": 0.0725,
+   "n": 5
+  }
+ },
+ "perRun": [
+  {
+   "hitsPerBar": 7.325,
+   "onGrid": 0.6989761092150171,
+   "paneShare": 0.26552901023890785,
+   "gooLevel": 0.8063648901070125,
+   "fill64": 0.858016304347826,
+   "meanBalls": 4.471
+  },
+  {
+   "hitsPerBar": 9.35,
+   "onGrid": 0.6850267379679145,
+   "paneShare": 0.24812834224598931,
+   "gooLevel": 0.8412165364459911,
+   "fill64": 0.9252717391304348,
+   "meanBalls": 5.314166666666667
+  },
+  {
+   "hitsPerBar": 4.785,
+   "onGrid": 0.7272727272727273,
+   "paneShare": 0.2413793103448276,
+   "gooLevel": 0.9178763862732788,
+   "fill64": 0.7615489130434783,
+   "meanBalls": 3.3922777777777777
+  },
+  {
+   "hitsPerBar": 6.35,
+   "onGrid": 0.715748031496063,
+   "paneShare": 0.23858267716535433,
+   "gooLevel": 0.9167113792253369,
+   "fill64": 0.9225543478260869,
+   "meanBalls": 4.169111111111111
+  },
+  {
+   "hitsPerBar": 6.955,
+   "onGrid": 0.6994967649173257,
+   "paneShare": 0.2393961179007908,
+   "gooLevel": 0.9294894428359579,
+   "fill64": 0.8023097826086957,
+   "meanBalls": 4.2220555555555555
+  }
+ ]
+}

@@ -21,6 +21,7 @@ Every suite: `node _dev/<name>.js` from the project root, with a server on :8765
 | share links, recordings, MIDI | dev-ux (section 7), dev-takes, dev-wavtap, dev-midi, dev-midiexport, dev-manualnotes |
 | lessons / the map | dev-lessons (slow, ~7 min), dev-map, dev-learnmap, dev-curriculum, dev-playable, dev-cheat, dev-answerable, dev-oneanswer, dev-earwork, dev-explore, dev-jam, dev-rjam, dev-make, dev-compose, dev-newunits, dev-review, dev-rest, dev-staff, dev-nolab |
 | pages, copy, claims, offline | dev-claims, dev-naming, dev-links, dev-sw, dev-entry, dev-polish, dev-sweep, dev-monkey |
+| the tank's physics or auto-notes, when the plugin must match it | dev-vstparity (~6 min; rewrites `_docs/specs/2026-10-28-tank-headless/web-stats.json`, so commit the new numbers with the change). `SPEEDCHECK=1`: fast clock vs real clock. `SABOTAGE=quantoff` passes only if "share on grid" leaves the stored band (the instrument can tell). |
 
 ## 3. The sweep: every suite, once, at the end of a pass, with no edits while it runs
 In the cloud workspace: `/root/run.sh <log> -- <suites...>` writes `/tmp/<log>.log`. A full sweep takes 2-3 hours.

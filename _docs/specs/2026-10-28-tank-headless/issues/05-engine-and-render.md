@@ -12,3 +12,8 @@ a stop resets everything to the random seed.
 `examples/tank.rs` writes 8 bars to a WAV. Tests: two renders are identical. Stopped means silent after the tails.
 Parity: 200 bars × 5 seeds, every stat inside the web's ± 2 sd from `web-stats.json`. The sabotages from spec
 section 4 each go red.
+
+## Notes from ticket 02 (2026-10-28)
+- A hit carries `sound_ms`: a note quantize held starts on the next grid line (at most 45 ms later), not on its tick.
+  The web's queue also plays only one held note per rounded cents on a line.
+- Call `Tank::on_bar()` on every bar line of the DAW clock (walls open and heal).
