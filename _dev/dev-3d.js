@@ -106,6 +106,24 @@ const URL='http://127.0.0.1:8765/index.html';
  // 9. switching back to 2D flattens everything at once
  const back=await p.evaluate(()=>{setView3D(false);const z=balls.map(b=>b.z||0);setView3D(true);return z;});
  ok(back.every(v=>v===0),'switching to 2D puts every ball back on the flat tank');
+ // 10. BALL SPEED: THE MIDDLE GROUND, BY SIZE (ticket 13; Flah: "too fast on A and too slow on B, find a middle ground and
+ // adjust according to size of the geometry"). Measured before: the flat hexagon flew 3.82 px a tick in 3D, the same
+ // hexagon as a solid 3.39. Now both fly 3.6 at 80 bpm; a smaller shape flies slower (by its mean free path), never
+ // below 0.75 of the hexagon's; and the speed still follows the tempo.
+ await p.goto(URL+'?m=studio&view=3d');await p.waitForTimeout(1500);
+ const spd=await p.evaluate(async()=>{const out={};
+   for(const [name,bpm] of [['6',80],['prism6',80],['cube',80],['tetra',80],['6',160]]){const v=/^\d+$/.test(name)?parseInt(name,10):name;
+     if(isSolidName(String(v)))solidSet(String(v));S.shape=v;rebuild();balls.length=0;particles=[];S.bpm=bpm;
+     if(!S.slimeMode)$("slimeBig").click();S.autoNotes=true;setPlaying(true);
+     for(let i=0;i<5;i++)spawn(CX+(i-2)*30,CY);
+     const sp=[];await new Promise(res=>{const t0=performance.now(),iv=setInterval(()=>{for(const b of balls)if(!b.mute&&!b._under)sp.push(Math.hypot(b.vx,b.vy,(b.vz||0)*BOXD));
+       if(performance.now()-t0>4000){clearInterval(iv);res();}},100);});
+     out[name+'@'+bpm]=sp.reduce((a,x)=>a+x,0)/Math.max(1,sp.length);}
+   S.bpm=80;setPlaying(false);return out;});
+ const hx=spd['6@80'],ps=spd['prism6@80'];
+ ok(Math.abs(hx-3.6)<0.2&&Math.abs(ps-3.6)<0.2,'the hexagon flies the middle ground at 80 bpm: flat '+hx.toFixed(2)+', solid '+ps.toFixed(2)+' px a tick (was 3.82 and 3.39)');
+ ok(spd['tetra@80']<spd['cube@80']&&spd['cube@80']<ps&&spd['tetra@80']>=0.74*ps,'smaller shapes fly slower, never below 3/4: tetra '+spd['tetra@80'].toFixed(2)+', cube '+spd['cube@80'].toFixed(2));
+ ok(Math.abs(spd['6@160']/hx-2)<0.1,'and the tempo still sets the pace: 160 bpm flies '+(spd['6@160']/hx).toFixed(2)+'x as fast');
  ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
  await b.close();
  console.log('\n'+(FAIL.length?FAIL.length+' FAILURE(S)':'3d pass clean'));

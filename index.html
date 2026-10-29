@@ -4883,7 +4883,25 @@ function partCap(){let n=Math.min(1600,shapeArea()/120);
     // room in its middle: a pointed one (a tetrahedron) has much of its inside in corners a blob never reaches
   return Math.floor(n*(LITE?0.55:1));} // particle budget (perf + calm): fewer droplets = no overcrowded granular spazzing in the corners
 let measuredFill=0;
-function ballSpeed(){return (S.bpm/80)*3.4;} // steady, tempo-driven ball speed
+// BALL SPEED (ticket 13; Flah 2026-10-29: "too fast on A and too slow on B, find a middle ground and adjust according to
+// size of the geometry"). 3.6 px a tick in 3D at 80 bpm on the hexagon: the middle of what the 3D test page measured (the
+// flat hexagon flew 3.82, the same hexagon as a solid 3.39). Each shape's own pace goes by its mean free path, how far a
+// ball flies between walls on average (4V/S, Cauchy's formula), against the hexagon's: by the square root and within
+// 0.75..1.25, so a small shape slows a little and never crawls. The auto adjuster thins a small shape's notes the rest
+// of the way (ticket 15). Lessons and curved space keep the plain pace.
+const BALL_V=3.6,_sizeK={key:null,k:1};
+function sizeK(){if(!edges||edges._space==='curved'||_labOn())return 1;
+  const key=String(S.shape)+'|'+(edges._solid?SOLID.name:'');if(key===_sizeK.key)return _sizeK.k;
+  let V=0,A=0;
+  if(edges._solid){if(SOLID.from||!SOLID.planes.length)return _sizeK.k;   // mid-grow: keep the old pace until the new shape is whole
+    V=tankVolume();for(const f of solidFaces(SOLID.planes)){if(f.length<3)continue;let ax=0,ay=0,az=0;
+      for(let k=0;k<f.length;k++){const a=f[k].p,b=f[(k+1)%f.length].p;ax+=a[1]*b[2]-a[2]*b[1];ay+=a[2]*b[0]-a[0]*b[2];az+=a[0]*b[1]-a[1]*b[0];}
+      A+=Math.hypot(ax,ay,az)/2;}}
+  else{const v=edges._verts||[],a=shapeArea();let P=0;for(let i=0;i<v.length;i++){const p=v[i],q=v[(i+1)%v.length];P+=Math.hypot(q[0]-p[0],q[1]-p[1]);}
+    V=a*BOXD;A=2*a+P*BOXD;}
+  const hexA=1.5*Math.sqrt(3)*R*R,mfpHex=4*hexA*BOXD/(2*hexA+6*R*BOXD);
+  _sizeK.key=key;_sizeK.k=V>0&&A>0?Math.max(0.75,Math.min(1.25,Math.sqrt(4*V/A/mfpHex))):1;return _sizeK.k;}
+function ballSpeed(){return (S.bpm/80)*BALL_V*sizeK();} // steady, tempo-driven ball speed, in 3D
 let particles=[];  // {x,y,vx,vy,hue,r}
 let debris=[];     // (unused now — kept for compatibility)
 let fillState="fill"; // fill | break | reform
@@ -5585,7 +5603,7 @@ function step(){
     if(!b.mute){ // shot balls fly TRUE — no tempo normalizer, no drag, no goo — until first impact. then they're citizens.
     wormPull(b,ts);beatLock(b,_tickT||performance.now());const tsb=ts*(b.tq||1)*(1+(b.boost||0));if(b.boost){b.boost*=0.95;if(b.boost<0.02)b.boost=0;}   // boost: a spinning wall threw it; it calms back to the tempo's speed   // steady speed, give or take the little steer that lands the next bounce on the beat
     if(s3){const sp=Math.hypot(b.vx,b.vy,(b.vz||0)*BOXD)||1;const k=(tsb/sp)*(1-g)+g;b.vx*=k;b.vy*=k;b.vz=(b.vz||0)*k;}   // a solid: steady speed in all three directions
-    else{const sp=Math.hypot(b.vx,b.vy)||1;const k=(tsb/sp)*(1-g)+g;b.vx*=k;b.vy*=k;}
+    else{const vzp=VIEW.d3?(b.vz||0)*BOXD:0,xy=Math.sqrt(Math.max(tsb*tsb*0.25,tsb*tsb-vzp*vzp)),sp=Math.hypot(b.vx,b.vy)||1;const k=(xy/sp)*(1-g)+g;b.vx*=k;b.vy*=k;}   // a flat shape: the same steady speed in 3D, its drift toward the glass included
     if(g>0){b.vx*=(1-g*0.06);b.vy*=(1-g*0.015);} // drag grows with gravity so they land & settle instead of skating forever
     }
     // slime is thick: balls wading through the pool drag at their own per-ball rate, and deeper = thicker —

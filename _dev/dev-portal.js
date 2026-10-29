@@ -143,7 +143,7 @@ const URL='http://127.0.0.1:8765/index.html';
   const gl=await p.evaluate(()=>!!(window.__gl&&window.__gl.api&&window.__gl.api.worms));
   ok(gl,'7. the GPU tank is running');
   if(gl){for(const look of ['glass','crayon']){
-    const r=await p.evaluate(async look=>{window.setLook3D(look);const rs=document.getElementById('randShapeT');if(rs&&rs.classList.contains('on'))rs.click();
+    const r=await p.evaluate(async look=>{_reduced=true;window.setLook3D(look);   // the box tumbles (ticket 12) and each render() turns it: hold the view still, so the holes are where 'at' saysconst rs=document.getElementById('randShapeT');if(rs&&rs.classList.contains('on'))rs.click();
       const s=document.getElementById('shape');s.value='6';s.dispatchEvent(new Event('change'));await new Promise(r=>setTimeout(r,2400));startBreak=()=>{};fillState='fill';
       if(!S.playing)setPlaying(true);await new Promise(r=>setTimeout(r,1500));
       beatNow=()=>9.85;for(let i=0;i<40;i++)simTick(performance.now());   // hold a moment when both holes rest, fully open (kept: a frame already queued must not move them before the picture is taken)
