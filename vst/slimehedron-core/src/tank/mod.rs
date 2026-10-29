@@ -6,12 +6,18 @@
 //!
 //! The web app's pixel units and constants are kept as they are (a 720 px tank, `R` 300, `BR` 9, `BOXD` = R * 1.2)
 //! so the code ports line for line and the parity numbers mean the same thing on both sides.
-//! Not here yet: the goo (density reads 0) and the auto-notes melody. Not in this step at all: burst/reform, other
-//! spaces, solids, hands.
+//! Notes come from the auto-notes melody ([`melody`]): one roll a beat, a ball floated toward the wall it wants.
+//! The goo ([`goo`]) fills the tank over about 64 bars, slows the balls wading through it and softens their notes.
+//! Not in this step at all: burst/reform (a full tank stays full), other spaces, solids, hands.
 
 use crate::music::chord::home_chord;
 use crate::music::scales::{by_id, Scale};
 use crate::Rng;
+use goo::Goo;
+use melody::Melody;
+
+pub mod goo;
+pub mod melody;
 
 #[cfg(test)]
 mod tests;
@@ -56,13 +62,15 @@ pub struct TankSettings {
     pub vel_fix: u8,
     pub vel_min: u8,
     pub vel_max: u8,
+    /// The slime's auto-notes: the motif melody floats a new ball in, one roll a beat (the web's `autoMelodyNote`).
+    pub auto_notes: bool,
 }
 
 impl Default for TankSettings {
     /// Studio with the slime on, at the spec's start state.
     fn default() -> Self {
         TankSettings { walls: 6, scale: by_id("major").unwrap(), octs: 2, div: 0.0625, swing: 0.15, quantize: true,
-            spin: 0.0, chaos: 0.12, vel_rand: true, vel_fix: 100, vel_min: 12, vel_max: 94 }
+            spin: 0.0, chaos: 0.12, vel_rand: true, vel_fix: 100, vel_min: 12, vel_max: 94, auto_notes: true }
     }
 }
 
@@ -128,6 +136,8 @@ pub struct Ball {
     last_hit: f64,
     last_pane: f64,
     pane_n: u32,
+    /// How thick a goo this ball tolerates (0 = it has not met the goo yet). Each ball draws its own.
+    visc: f64,
 }
 
 pub struct Tank {
@@ -153,6 +163,15 @@ pub struct Tank {
     wall_bars: u64,
     last_break: f64,
     home_root_deg: i32,
+    /// The auto-notes singer and its beat clock (the web's `_melNext`, `_melStepN`).
+    melody: Melody,
+    mel_next: Option<f64>,
+    mel_step_n: u64,
+    /// The wall (as a degree across the octaves) the last floated note leaned toward. Tests read it.
+    aim_deg: i32,
+    goo: Goo,
+    /// The view's slow lean (the web's `_phi`): the balls fall toward its "down" as the goo grows heavy.
+    phi: f64,
 }
 
 impl Tank {
@@ -160,14 +179,21 @@ impl Tank {
         let mut t = Tank { s: settings, rng: Rng::new(seed), walls: [Wall::default(); MAX_WALLS], verts: [(0.0, 0.0); MAX_WALLS],
             n: 0, rot: 0.0, rot_v: 0.0, balls: Vec::with_capacity(MAXBALLS + 4), hits: Vec::with_capacity(MAX_HITS),
             bpm: 80.0, playing: true, now: 0.0, last_tick: 0.0, tick_count: 0, broken_order: [0; MAX_WALLS], broken_n: 0,
-            wall_bars: 0, last_break: f64::NEG_INFINITY, home_root_deg: 0 };
+            wall_bars: 0, last_break: f64::NEG_INFINITY, home_root_deg: 0,
+            melody: Melody::new(), mel_next: None, mel_step_n: 0, aim_deg: -1,
+            goo: Goo::new(0.0, 0.0), phi: 0.0 };
         t.s.walls = t.s.walls.clamp(3, MAX_WALLS);
         t.rebuild(false);
+        // a regular polygon: its area, and the way from the middle to a wall's midpoint
+        let n = t.n as f64;
+        let area = 0.5 * n * R * R * (std::f64::consts::TAU / n).sin();
+        let room = t.walls[..t.n].iter().map(|e| ((e.ax + e.bx) / 2.0 - CX).hypot((e.ay + e.by) / 2.0 - CY)).fold(f64::INFINITY, f64::min);
+        t.goo = Goo::new(area, room);
         t
     }
 
     /// Play from here: the grid starts on this moment (the web's `setPlaying(true)`).
-    pub fn start(&mut self, now_ms: f64) { self.last_tick = now_ms; self.now = now_ms; }
+    pub fn start(&mut self, now_ms: f64) { self.last_tick = now_ms; self.now = now_ms; self.mel_next = None; }
 
     pub fn walls(&self) -> &[Wall] { &self.walls[..self.n] }
     pub fn balls(&self) -> &[Ball] { &self.balls }
@@ -249,7 +275,7 @@ impl Tank {
     /// A new ball where the web's `zInit` puts one: at the front glass, drifting back.
     pub fn add_ball_at(&mut self, x: f64, y: f64, z: f64, vx: f64, vy: f64, vz: f64) -> bool {
         if self.balls.len() >= self.balls.capacity() { return false; }
-        self.balls.push(Ball { x, y, z, vx, vy, vz, tq: 1.0, tg: 0.0, bl: 0, last_hit: f64::NEG_INFINITY, last_pane: f64::NEG_INFINITY, pane_n: 0 });
+        self.balls.push(Ball { x, y, z, vx, vy, vz, tq: 1.0, tg: 0.0, bl: 0, last_hit: f64::NEG_INFINITY, last_pane: f64::NEG_INFINITY, pane_n: 0, visc: 0.0 });
         true
     }
 
@@ -340,7 +366,11 @@ impl Tank {
             self.rebuild(true);
             self.rot_v = d;
         } else { self.rot_v = 0.0; }
+        if self.s.auto_notes { self.auto_notes(now); }
         self.step(now);
+        self.goo.step(now, self.bpm, &self.walls[..self.n], &self.balls, &mut self.rng);
+        // the view leans round once every 16 bars (the web's `viewTick`, which the balls' gravity reads)
+        self.phi += std::f64::consts::TAU * (FIXED / 1000.0) / (16.0 * (4.0 * 60.0 / self.bpm).max(0.2));
         // a healing wall fades back in (the web does this in the 3D draw, wallUpkeep)
         for e in self.walls[..self.n].iter_mut() {
             if e.broken && e.reform > 0.0 { e.reform = (e.reform + 0.007).min(1.0); if e.reform >= 1.0 { e.broken = false; e.reform = 0.0; } }
@@ -349,10 +379,48 @@ impl Tank {
         &self.hits
     }
 
+    /// The slime's auto-notes (the web's transport): one roll a beat, a strong beat every other one. A note floats in
+    /// only while the air is fairly clear (fewer than 7 balls): 60% on a strong beat, 22% on a weak one.
+    fn auto_notes(&mut self, now: f64) {
+        let beat = 60000.0 / self.bpm.max(40.0);
+        let mut next = match self.mel_next { Some(m) if now - m <= beat * 4.0 => m, _ => now }; // (re)start without a burst
+        while now >= next {
+            let strong = self.mel_step_n % 2 == 0;
+            if self.balls.len() < 7 {
+                let roll = self.rand();
+                if roll < if strong { 0.6 } else { 0.22 } { self.auto_melody_note(strong); }
+            }
+            self.mel_step_n += 1;
+            next += beat;
+        }
+        self.mel_next = Some(next);
+    }
+
+    /// A gentle, floaty ball, leaned toward the wall that plays the melody's next note. The lean is wide, so the
+    /// geometry still decides a lot (the web's `autoMelodyNote`).
+    fn auto_melody_note(&mut self, strong: bool) {
+        let len = self.s.scale.degrees() as i32;
+        let root = self.home_root_deg;
+        let deg = { let rng = &mut self.rng; self.melody.next_deg(strong, len, root, &mut || rng.next_f32() as f64) };
+        let cents = self.cents_for_degree(deg);
+        let td = self.total_degrees();
+        let oct = ((cents / 1200.0).floor() as i32).min((td as f64 / len as f64).ceil() as i32 - 1).max(0);
+        let dd = (td - 1).min(oct * len + deg_of(self.s.scale, cents)); // the note-wall we lean toward
+        self.aim_deg = dd;
+        let ang = self.rot - std::f64::consts::FRAC_PI_2 + ((dd as f64 + 0.5) / td as f64) * std::f64::consts::TAU
+            + (self.rand() - 0.5) * 1.4;
+        let sp = self.ball_speed() * (0.45 + self.rand() * 0.3);
+        let r0 = R * 0.14 * self.rand();
+        if self.balls.len() >= MAXBALLS { return; } // full: skip this note, the open walls let old ones go
+        let vz = 0.003 + self.rand() * 0.004;
+        self.add_ball_at(CX + ang.cos() * r0, CY + ang.sin() * r0, 0.02, ang.cos() * sp, ang.sin() * sp, vz);
+    }
+
     fn step(&mut self, now: f64) {
         self.balls.retain(|b| b.x.is_finite() && b.y.is_finite() && b.vx.is_finite() && b.vy.is_finite());
         if self.balls.len() > MAXBALLS && !self.walls[..self.n].iter().any(|e| e.broken) { self.break_wall(); }
-        let g = 0.0; // gravity grows with the goo's fill (ticket 04); none yet
+        // AUTO gravity: a whisper, just enough drift that a full tank feels a touch heavier, never a fall
+        let g = self.goo.settle() * 0.09;
         let ts = self.ball_speed();
         let gy = g * 0.55;
         let mut bi = self.balls.len();
@@ -390,9 +458,15 @@ impl Tank {
                         self.walls[wi].flash = 1.0;
                         if now - b.last_hit > 60.0 {
                             b.last_hit = now;
-                            let goo = 0.0; // the goo is ticket 04
+                            // a goo-slathered hit rings softer and rounder
+                            let gd = self.goo.density(b.x, b.y, b.z);
+                            let under = gd > 0.3;
+                            let depth = if under { ((gd - 0.3) / 0.6).min(1.0) } else { 0.0 };
+                            if under && b.visc == 0.0 { b.visc = 0.80 + self.rand() * 0.12; }
+                            let goo = if under { ((0.35 + 0.65 * depth) * ((1.0 - b.visc) / 0.2)).min(1.0) } else { 0.0 };
                             let imp = (vn.abs() / if ts == 0.0 { 1.0 } else { ts }).min(1.0) * (1.0 - goo * 0.45);
                             self.trigger(e.cents, imp, goo, false, Some(wi), now);
+                            self.goo.splash(b.x, b.y, b.z, e.nx, e.ny, &mut self.rng); // the note's drops join the pool
                         }
                     }
                 }
@@ -405,6 +479,7 @@ impl Tank {
             if killed { self.balls.remove(bi); continue; }
             // the third dimension: between the front and the back pane
             if b.vz != 0.0 {
+                if g > 0.0 { let gv = self.gravity(); b.vx += gv[0] * gy; b.vz += gv[2] * gy / BOXD; } // the tilted box leans balls toward a pane
                 b.vz = b.vz.clamp(-0.012, 0.012);
                 if b.vz.abs() < 0.0015 { b.vz = if b.vz < 0.0 { -0.0015 } else { 0.0015 }; } // never parked against the glass
                 b.z += b.vz * b.tq;
@@ -418,6 +493,18 @@ impl Tank {
             let k = (tsb / sp) * (1.0 - g) + g;
             b.vx *= k;
             b.vy *= k;
+            if g > 0.0 { b.vx *= 1.0 - g * 0.06; b.vy *= 1.0 - g * 0.015; } // they land and settle instead of skating
+            // the goo is thick: a ball wading through it drags at its own rate, deeper = thicker, so a full tank
+            // plays looser than an empty one
+            let gd = self.goo.density(b.x, b.y, b.z);
+            if gd > 0.3 {
+                if b.visc == 0.0 { b.visc = 0.68 + self.rand() * 0.16; }
+                let depth = ((gd - 0.3) / 0.6).min(1.0);
+                let drag = (1.0 - (1.0 - b.visc) * (0.8 + 1.3 * depth)).max(0.55);
+                b.vx *= drag;
+                b.vy *= drag;
+                if b.vz != 0.0 { b.vz *= drag; }
+            }
             self.balls[bi] = b;
         }
     }
@@ -433,7 +520,20 @@ impl Tank {
             self.cents_for_degree(rd + if b.pane_n % 2 == 1 { 2 } else { 4 }) + 1200.0
         };
         self.trigger(c, 0.35, 0.0, true, None, now);
+        self.goo.splash(b.x, b.y, if back { 0.97 } else { 0.03 }, 0.0, -1.0, &mut self.rng);
     }
+
+    /// Down, as the leaning box feels it (the web's `boxGravity` off the `viewTick` turn): [x, y, z per unit].
+    fn gravity(&self) -> [f64; 3] {
+        let (ux, uy) = (self.phi.cos(), self.phi.sin());
+        let th = 0.3 + 0.34 * (0.5 - 0.5 * (self.phi * 0.5).cos()); // 16 bars to lean all the way in, 16 back
+        let (c, s) = (th.cos(), th.sin());
+        let k = 1.0 - c;
+        [ux * uy * k, c + uy * uy * k, -ux * s]
+    }
+
+    /// The goo, for tests and the engine.
+    pub fn goo(&self) -> &Goo { &self.goo }
 
     /// Knock a bouncing ball a little off its angle; its speed stays.
     fn jitter(&mut self, b: &mut Ball) {
@@ -515,7 +615,7 @@ impl Tank {
 
     /// BEAT LOCK: steer a ball's speed a little (never more than about a fifth) so its next note lands on a grid line.
     fn beat_lock(&self, b: &mut Ball, now: f64) {
-        let goo_here = 0.0; // the goo is ticket 04: a ball in it is not steered
+        let goo_here = self.goo.density(b.x, b.y, b.z); // a ball in the goo is not steered
         if !self.s.quantize || !self.playing || goo_here > 0.3 {
             b.tq += (1.0 - b.tq) * 0.2;
             b.tg = 0.0;

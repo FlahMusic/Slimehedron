@@ -25,3 +25,8 @@ repository = "https://github.com/FlahMusic/Slimehedron"
 opt-level = 3
 lto = true
 codegen-units = 1
+
+# The tank's goo is ~1600 drops a tick: unoptimized, its tests take minutes. Tests still build with debug asserts;
+# only the speed check needs `--release`.
+[profile.dev.package.slimehedron-core]
+opt-level = 2

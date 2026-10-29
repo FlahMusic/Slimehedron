@@ -17,3 +17,9 @@ section 4 each go red.
 - A hit carries `sound_ms`: a note quantize held starts on the next grid line (at most 45 ms later), not on its tick.
   The web's queue also plays only one held note per rounded cents on a line.
 - Call `Tank::on_bar()` on every bar line of the DAW clock (walls open and heal).
+
+## Notes from tickets 03-04 (2026-10-29)
+- The engine can run the goo inline (an offline render does not care about the 0.25 ms); 07 decides how the real-time
+  path spreads it. Keep the goo's step behind one call so 07 can move it.
+- `TankSettings::default()` has auto-notes on. Read the fill with `tank.goo().fill()`.
+- Goo level parity rests on ~3 gooed hits per 100 bars per run, on both sides: expect it to be the noisiest stat.

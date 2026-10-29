@@ -40,15 +40,16 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
   - Flah: listen to VST milestone 1b in Studio One (built 2026-10-14, never confirmed).
   - VST milestone 2, the tank headless: _docs/specs/2026-10-28-tank-headless/. Tickets 01 + 02 DONE 2026-10-28
     (web numbers in web-stats.json via _dev/dev-vstparity.js; vst/slimehedron-core/src/tank/ = walls, panes, balls,
-    beat lock, spin, quantize hold, walls open/heal; 13 tank tests, sabotaged). Next: 03 (melody), 04 (goo + cost test).
+    beat lock, spin, quantize hold, walls open/heal; 13 tank tests, sabotaged). 03 (auto-notes melody, note for note
+    the web's: _dev/dev-vstmelody.js) + 04 (the 3D goo) DONE 2026-10-29. Next: 05 (engine + WAV + parity).
+  - Flah: ticket 07 needs your call. The goo misses its 0.25 ms budget (0.67 ms a tick on a P-core of the i7-12700H).
+    Recommended: spread its work over the audio blocks, one tick late (no thread, stays deterministic; ADR 0009).
     Flah decided 2026-10-28: the plugin keeps the walls opening every 8 bars / healing every 24 (else 7 balls jam).
   - Open question: reverb (convolution vs algorithmic, needed by milestone 5).
   - Flaky suites to diagnose: dev-potato, dev-bassmix [play jazz], dev-portal (icosa exit, holes stand out), dev-hands 1/3 (see _dev/SUITES.md).
   - Bug, not fixed: every turn of the shape rebuilds the walls and resets e.broken / _brokenOrder. CHECKED 2026-10-28
     in studio with the slime on (spin 14): breakWall() opens a wall and 300 ms later it is shut again. So the drain
     never works while the shape turns, in play or studio; with the walls shut the tank jams at 7 balls (~16 notes a bar, measured at spin 0).
-  - ADR 0007 (goo: full) is thin: the 2D drag reads mMask (refreshed by the DRAW code), 2D and 3D are two goo
-    systems, and each ball's goo drag is Math.random. Settle all three in the milestone 2 grill.
   - NOT open: dev-loadtest LOAD FAILED (its fake DOM had no style.setProperty and no location; fixed 2026-10-28).
   - NOT open: dev-topbar studio/phone-sm (fixed 2026-10-25, passing since).
   - Tracker set up 2026-10-28 (setup-matt-pocock-skills): specs + tickets as markdown in _docs/specs/<date-name>/,

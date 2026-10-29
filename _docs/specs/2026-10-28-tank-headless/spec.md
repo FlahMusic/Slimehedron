@@ -42,7 +42,7 @@ Status: ready
 - **Cost**: the worst tick with a full tank (12 balls, the particle cap) takes **≤ 0.25 ms**. That is the median of
   the 20 slowest of 1000 ticks, in a release build, on Flah's machine (msi). If it misses, the goo moves to its own
   thread (ADR 0007). It is never simplified.
-- Nothing on the audio thread allocates once the tank exists (the same counting-allocator check as step 1).
+- Nothing on the audio thread allocates once the tank exists (a counting allocator, `vst/slimehedron-core/tests/tank_cost.rs`).
 - **Plugin**: DAW stopped means no new hits. Play from 0 twice gives identical output. A tempo change changes the
   ball speed within one tick. clap-validator still shows 0 failed.
 
@@ -60,7 +60,7 @@ No web suite asserts on this (`index.html` is untouched). In the plugin, `engine
 MIDI voice, so the step 1b tests stay and must still pass. `vst/README.md` "What it does right now" is updated.
 
 ## 6. Tickets
-`issues/01`...`06`, in order. 01 can run alongside 02–04.
+`issues/01`...`07`, in order. 01 can run alongside 02–04. 07 (added 2026-10-29: the goo missed its cost) comes before 06.
 
 ## 7. Not checked by a machine
 How the 8 bars sound next to the web app (Flah listens to both). That the plugin loads and follows play/stop in

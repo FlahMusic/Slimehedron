@@ -1,7 +1,7 @@
 # 06 The tank in Studio One
 
 Status: ready
-Blocked by: 05
+Blocked by: 05, 07
 Spec: `../spec.md`
 
 `slimehedron-plugin`: read the CLAP transport (tempo, playing, song position) each block, feed it to the core
