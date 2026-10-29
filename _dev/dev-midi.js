@@ -204,5 +204,21 @@ const b=await launch();
    'every default CC moves its control with no setup at all ('+moved.join(', ')+')');
  await ctx.close();}
 
+ // ---- no Web MIDI (Safari, every iPhone/iPad browser): the MIDI rows are gone, not greyed (Flah 2026-10-29: "keep
+ //      it tap focused with MIDI menu hidden on safari"; ADR 0011, no explainers). With MIDI they are all there. ----
+ for(const has of [false,true]){
+  const ctx=await b.newContext({viewport:{width:1440,height:900}});const p=await ctx.newPage();
+  await p.addInitScript(has?STUB:()=>{try{delete Navigator.prototype.requestMIDIAccess;}catch(e){}delete navigator.requestMIDIAccess;});
+  await p.goto('http://127.0.0.1:8765/index.html?m=studio');await p.waitForTimeout(2000);
+  const r=await p.evaluate(()=>{const d=$("prefsDlg");d.showModal();d.querySelectorAll('details').forEach(x=>x.open=true);
+    const vis=id=>{const e=$(id);return !!e&&e.checkVisibility();};
+    return {api:!!navigator.requestMIDIAccess,midi:['midiT2','midiPort','panicBtn','midiInT','midiIn','midiInCh','midiClkT','ccLearnBtn','mpeT','clkOutT','chMel'].filter(vis),
+      fresh:vis('freshBtn'),txt:/not supported|needs Chrome/i.test(d.innerText)};});
+  if(!has){
+   ok(!r.api&&r.midi.length===0,'no Web MIDI: no MIDI control shows in Preferences ('+(r.midi.join(', ')||'none')+')');
+   ok(r.fresh&&!r.txt,'no Web MIDI: the rest still shows, and nothing says MIDI is missing');
+  }else ok(r.midi.length===11,'with Web MIDI: every MIDI control shows ('+r.midi.length+' of 11)');
+  await ctx.close();}
+
 console.log(FAIL.length?('\n'+FAIL.length+' FAILURE(S)'):'\nthe rig can be driven, synced, and shut up');
 await b.close();process.exit(FAIL.length?1:0);})();

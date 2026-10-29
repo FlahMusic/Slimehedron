@@ -24,7 +24,8 @@ that controls tank as well in studio settings if needed." (grill answer 4)
 - **One Sync setting**: a tap-along measures the speakers' delay and shifts MIDI out and the visuals to match; it can
   also be nudged by hand. This is the MIDI offset (question 6) and the Bluetooth delay (question 10) in one control.
 - **MIDI: every option works, nothing explains itself** (ADR 0011). No help text about browsers, permissions,
-  Bluetooth or busy ports. Every path is tested instead.
+  Bluetooth or busy ports. Every path is tested instead. Where there is no Web MIDI (Safari, all iOS browsers),
+  the MIDI rows are hidden and the app stays tap-focused (done 2026-10-29, `dev-midi`).
 - **Studio tank controls**: screenshots and a cut/merge proposal first. Nothing is removed until Flah OKs it.
 - Flah's setups: phone and PC; Chrome and Safari; standard MIDI keyboards (KeyStep 37 class) by USB or through an
   interface; phone speaker, PC direct, line in, sometimes Bluetooth; iPad wanted. Studio One runs on its own for now.

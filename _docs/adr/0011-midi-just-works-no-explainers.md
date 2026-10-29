@@ -11,4 +11,7 @@ Status: accepted 2026-10-29 (Flah). Spec: `_docs/specs/2026-10-29-web-first/spec
 - Fact on record (2026-10-29): no iPhone/iPad browser has Web MIDI (caniuse: iOS Safari unsupported through 27.2;
   every iOS browser is WebKit), so the web app cannot see a keyboard there. MIDI on the iPad comes through apps that
   add Web MIDI, or the plugin later.
+- Where the browser has no Web MIDI (Safari, every iPhone/iPad browser), the MIDI rows are hidden, not greyed out,
+  and the app stays tap-focused (Flah, 2026-10-29: "dont worry about it then, just keep it tap focused with MIDI menu
+  hidden on safari"). `dev-midi` checks both ways.
 - Rules out: MIDI explainer copy. Bringing it back needs a new ADR.

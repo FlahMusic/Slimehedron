@@ -6653,10 +6653,11 @@ try{ccMap=JSON.parse(localStorage.getItem('slimehedron-cc')||'{}');}catch(e){}
     if(midiPref.on!==false)$("midiInT").classList.add('on');
     const _mi=()=>{if($("midiInT").classList.contains('on'))enableMidiIn();window.removeEventListener('pointerdown',_mi);window.removeEventListener('keydown',_mi);};
     window.addEventListener('pointerdown',_mi);window.addEventListener('keydown',_mi);
-  }else{ // no Web MIDI: quietly disable the rows, point people at the on-screen keyboard. NO scary toast.
-    const din=$("midiIn");if(din)din.innerHTML='<option>not supported in this browser</option>';
-    ['midiInT','midiClkT','midiT'].forEach(id=>{const t=$(id);if(t){t.style.opacity='.35';t.style.pointerEvents='none';t.title='MIDI needs Chrome, Edge, or Opera';}});
-    const mp=$("midiPort");if(mp)mp.innerHTML='<option>not supported in this browser</option>';
+  }else{ // no Web MIDI (Safari, every iPhone/iPad browser): the MIDI rows go, nothing says why (ADR 0011). Taps and keys still play.
+    ['midiT2','midiPort','panicBtn'].forEach(id=>{const r=$(id)&&$(id).closest('.row');if(r)r.hidden=true;});
+    ['midiInT','mpeT'].forEach(id=>{const f=$(id)&&$(id).closest('details');if(f)f.hidden=true;});
+    const hr=$("freshBtn")&&$("freshBtn").closest('.row').previousElementSibling;if(hr&&hr.tagName==='HR')hr.hidden=true;
+    const pb=$("prefsBtn");if(pb)pb.title='set once, not per song';
   }
 })();
 // ✕ = forget the saved mode and reload → you always land back on the three doors. one line, no new code paths.
