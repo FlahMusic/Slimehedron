@@ -34,6 +34,8 @@ Then rerun only what failed. A failure that passes on rerun goes on the flaky li
 - `dev-perfmode`, `dev-harmony`, dev-a11y "chord changed", dev-lessons HOME card: timing.
 - `dev-portal` [3d icosa] "comes out of the OTHER hole" (3 of 8 runs on 139ca19, same 11.6 / 40.9 px each time:
   a second, deterministic outcome) and "[glass]/[crayon] each one clearly stands out" (4 of 6 control runs). Not chased yet.
+- `dev-3d` 1. "they travel front to back through the box" (1 in 3 runs on the tumble commit: 2 of 6 balls past 0.8 of depth in 9 s).
+- `dev-crayon` needs `python3` with PIL; on Flah's Windows box `python3` is a Store alias (make a venv shim named python3).
 - `dev-hands` 1. "tap it and the slime plays notes" (1 in 7 s once) and 3. "a quarter turn" (97 degrees sits on the 0.12 rad edge).
 - Fixed 2026-10-27: `dev-crayon` (the tap invite faded in over its frozen frames) and `dev-portal` GL visibility.
 

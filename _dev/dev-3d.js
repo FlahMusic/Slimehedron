@@ -77,25 +77,32 @@ const URL='http://127.0.0.1:8765/index.html';
    let top=0;for(let y=0;y<12;y++)top+=rowWhite(y)/12;out[f]=top;}return out;});
  ok(Object.values(paper).every(v=>v<0.7),'the art starts with the drawing, no blank paper along the top ('+Object.entries(paper).map(([k,v])=>k+' '+(v*100).toFixed(0)+'% white').join(', ')+')');
 
- // 6b. THE BOX LEANS TOWARD YOU, AND BY THE CLOCK (Flah: the 3D "still feels too flat"). Over 32 bars the lean breathes
- // from under 20 degrees to over 30; and a 120 Hz screen turns it exactly as fast as a 60 Hz one (it used to be per frame)
- const lean=await p.evaluate(()=>{const real=performance.now.bind(performance);let T=real();performance.now=()=>T;
-   const secBar=drumBar()*drumStepDur(),run=(hz,secs)=>{const a0=_phi;for(let i=0;i<secs*hz;i++){T+=1000/hz;viewTick();}return _phi-a0;};
-   run(60,0.1);const d60=run(60,4),d120=run(120,4);
-   let lo=9,hi=0;for(let i=0;i<32*secBar*30;i++){T+=1000/30;viewTick();lo=Math.min(lo,_tiltNow);hi=Math.max(hi,_tiltNow);}
-   performance.now=real;return {d60,d120,lo:lo*180/Math.PI,hi:hi*180/Math.PI};});
- ok(lean.lo<20&&lean.hi>30,'over 32 bars the box leans from '+lean.lo.toFixed(0)+' to '+lean.hi.toFixed(0)+' degrees toward you');
- ok(Math.abs(lean.d120-lean.d60)<lean.d60*0.02,'and it turns by the clock: 4 s at 120 Hz turns it as far as 4 s at 60 Hz ('+lean.d60.toFixed(3)+' vs '+lean.d120.toFixed(3)+')');
+ // 6b. THE BOX TUMBLES, BY THE CLOCK (Flah 2026-10-29, the 3D test page: "i like the right side rate of spin and axis,
+ // more active like that"; ticket 12). While playing it turns on two axes at once: within 8 bars it has shown its side
+ // (a half turn round its upright) AND tipped over its top (past 90 degrees round the other). A 120 Hz screen turns it
+ // exactly as far as a 60 Hz one. Lessons and reduced motion keep the old still lean.
+ const tum=await p.evaluate(()=>{const real=performance.now.bind(performance);let T=real();performance.now=()=>T;const wasP=S.playing;S.playing=true;
+   const secBar=drumBar()*drumStepDur(),tick=hz=>{T+=1000/hz;viewTick();},M0=()=>[..._M];
+   const at=(hz,secs)=>{tick(hz);_tumble.a=0;_tumble.b=0;for(let i=0;i<secs*hz;i++)tick(hz);return M0();};   // the first tick only sets the frame clock
+   const m60=at(60,4),m120=at(120,4),drift=Math.max(...m60.map((v,i)=>Math.abs(v-m120[i])));
+   let side=9,top=9;_tumble.a=0;_tumble.b=0;for(let i=0;i<8*secBar*30;i++){tick(30);side=Math.min(side,_M[0]);top=Math.min(top,_M[4]);}
+   const lean=(set)=>{set(true);tick(30);const a=M0();for(let i=0;i<4*30;i++)tick(30);const b=M0();set(false);
+     return {deg:Math.acos(Math.max(-1,Math.min(1,b[8])))*180/Math.PI,still:a.every((v,i)=>Math.abs(v-b[i])<1e-3)};};
+   const red=lean(on=>{_reduced=on;}),lab0=_labOn,lab=lean(on=>{_labOn=on?()=>true:lab0;});
+   S.playing=wasP;performance.now=real;return {drift,side,top,red,lab};});
+ ok(tum.side<-0.9&&tum.top<0,'while playing the box tumbles on two axes within 8 bars (side '+tum.side.toFixed(2)+', top '+tum.top.toFixed(2)+')');
+ ok(tum.drift<1e-3,'and it turns by the clock: 4 s at 120 Hz turns it as far as 4 s at 60 Hz (off by '+tum.drift.toExponential(1)+')');
+ ok(tum.red.still&&tum.red.deg>10&&tum.red.deg<40,'reduced motion: the box holds a still lean ('+tum.red.deg.toFixed(0)+' degrees)');
+ ok(tum.lab.deg>10&&tum.lab.deg<45,'a lesson keeps the old lean, no tumble ('+tum.lab.deg.toFixed(0)+' degrees)');
 
  // 7. a tap in 3D lands where it looks like it lands
  const tap=await p.evaluate(()=>{const out=[];for(const [sx,sy] of [[360,360],[250,300],[470,430],[300,470]]){
    const [bx,by]=__screenToBox(sx,sy);const q=__P3(bx,by,0);out.push(Math.hypot(q[0]-sx,q[1]-sy));}return Math.max(...out);});
  ok(tap<0.5,'un-projecting a tap and drawing it again lands on the same pixel (worst '+tap.toFixed(3)+'px)');
- // 8. the axis is tilted and it wanders: the view keeps changing while the music plays
+ // 8. the view keeps changing while the music plays (for real, on the page's own frames)
  const tilt=await p.evaluate(async()=>{const a=[...(_M||[])];await new Promise(r=>setTimeout(r,1500));const b=[..._M];
-   return {tilted:Math.acos(Math.max(-1,Math.min(1,b[8])))*180/Math.PI,moved:a.some((v,i)=>Math.abs(v-b[i])>1e-4)};});
- ok(tilt.tilted>8&&tilt.tilted<25,'the spin axis leans ('+tilt.tilted.toFixed(1)+' degrees)');
- ok(tilt.moved,'and it wanders round over time, like a planet\'s');
+   return {moved:a.some((v,i)=>Math.abs(v-b[i])>1e-4)};});
+ ok(tilt.moved,'the box keeps turning while the music plays');
  // 9. switching back to 2D flattens everything at once
  const back=await p.evaluate(()=>{setView3D(false);const z=balls.map(b=>b.z||0);setView3D(true);return z;});
  ok(back.every(v=>v===0),'switching to 2D puts every ball back on the flat tank');

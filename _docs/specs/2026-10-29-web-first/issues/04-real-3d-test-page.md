@@ -1,6 +1,6 @@
 # 04 Real 3D: a test page to compare with today's tank
 
-Status: in-progress
+Status: done (2026-10-29)
 Type: prototype
 Blocked by: 01
 Spec: `../spec.md` (Decisions: real 3D)
@@ -25,3 +25,8 @@ and back become notes, balls get a real 3D heading) and replaces `viewTick` so t
 every 4/8/16/32 bars). Taps (`screenToBox`) and the goo's gravity (`boxGravity`) both read `_M`, so they follow.
 First look (headless, 80 bpm, hexagon): B plays 7.3 notes a bar with 7 balls and no wall open; it draws cleanly
 mid-tumble, icosa too. Waiting on Flah's ears and eyes.
+
+## Answer
+Flah, 2026-10-29: "i like the right side rate of spin and axis, more active like that" -> ticket 12. Ball speed: "too
+fast on A and too slow on B, find a middle ground and adjust according to size of the geometry" -> ticket 13. The goo
+spray is "gigantic" on both -> tickets 14 and 15. The page itself is kept on the branch `proto/3d-tumble`, not on main.

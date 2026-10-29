@@ -18,6 +18,14 @@ that controls tank as well in studio settings if needed." (grill answer 4)
 - **Real 3D gets a test page first** (ticket 04). Solids already bounce in real 3D in 3D view; the test page makes
   every shape a solid (each face a note, no chiming panes) and tumbles the box on two axes. Flah compares it with today's tank before anything is committed. If it wins, it gets its
   own spec and ADR, and the plugin's tank copy (tickets 01-04 of the tank-headless spec) is redone while it is paused.
+- **Test page verdict (ticket 04, Flah 2026-10-29)**: B's turn wins: "i like the right side rate of spin and axis,
+  more active like that". The box tumbles on two axes, once every 8 bars (ticket 12). Ball speed: "too fast on A and
+  too slow on B, find a middle ground and adjust according to size of the geometry" (ticket 13). Measured at 80 bpm:
+  A's hexagon 3.82 px a tick in 3D, B's 3.39; at one speed a tetra plays 26 notes a bar, a cube 17, an icosa 10.
+- **The goo (Flah)**: each note throws a small spray of a few droplets that slowly coagulate into the slime, at a
+  rate that makes sense for their size; the slime eats what joins it and swells, so it still fills on time (ticket 14).
+- **Each shape is 64 bars** (counted in bars, never tempo). An auto adjuster gives each shape its own note speed,
+  bigger shapes a bit busier, within ±25% of the hexagon's, gliding in over 4 bars from a phrase line (ticket 15).
 - **Spaces in studio**: on auto, studio mixes in portal and curved spaces only while the slime is on (1 reform in 3,
   as play). A shape or space picked by hand stays put: the slime's reform does not swap it. Derived, not asked: the
   hand pick works like the key pin (`_keyPinned`).
@@ -79,7 +87,8 @@ Numbers marked "after 01" are set from ticket 01's measurements (the "before"), 
   updated in the same pass.
 
 ## 6. Tickets
-`issues/01`...`11`. 01 first (it sets the numbers). 02, 03, 04, 09 can start right after 01. 11 is last.
+`issues/01`...`15`. 01 first (it sets the numbers). 02, 03, 04, 09 can start right after 01. 12-15 (from 04's
+verdict) start now: Flah asked for the 3D work first. 11 is last.
 
 ## 7. Not checked by a machine
 How the sparser tank sounds (02). Whether real 3D feels better (04, Flah decides). MIDI on real gear: KeyStep 37

@@ -268,6 +268,7 @@ const countTriggers=p=>p.evaluate(()=>{if(window.__trg)return;window.__trg=0;con
   await ctx.close();}
  {const ctx=await b.newContext({viewport:{width:1440,height:900}});await ctx.addInitScript(quiet);
   const p=await ctx.newPage();await p.goto(BASE+'?m=play&view=3d');await p.waitForTimeout(2500);
+  await p.evaluate(()=>{_reduced=true;});   // the box tumbles while playing (ticket 12) and carries a planted seed away: hold the view still to check WHERE it is planted
   await p.focus('#cv');await p.keyboard.press('ArrowUp');await p.keyboard.press('ArrowLeft');await p.keyboard.press('Shift+Enter');await p.waitForTimeout(300);
   const g=await p.evaluate(()=>{const d=$("aimDot"),s=_hands.SEEDS[0];if(!s)return null;
     return {dx:parseFloat(s.el.style.left)-parseFloat(d.style.left),dy:parseFloat(s.el.style.top)-parseFloat(d.style.top)};});

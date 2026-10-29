@@ -5987,9 +5987,21 @@ let _M=[1,0,0,0,1,0,0,0,1],_phi=0,_tiltNow=TILT,_ptrE={x:0,y:0},_vtLast=0;
 let _reduced=false;try{_reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
 // the axis wanders round once every 16 bars in play (it speeds up with the tempo, like the spin),
 // slowly elsewhere; the pointer leans it a little more so the box turns toward your hand
+// THE BOX TUMBLES (Flah 2026-10-29, after the 3D test page: "i like the right side rate of spin and axis, more active
+// like that"). Two axes at once, _M = Ry(a)*Rx(b): a full turn round the upright every TUMBLE_BARS bars, and round
+// the other axis 1/1.618 as fast, so a face never comes round the same way twice. Taps (screenToBox) and the goo's
+// gravity (boxGravity) read _M, so they turn with it. Lessons and reduced motion keep the still lean further down.
+const TUMBLE_BARS=8,_tumble={a:0.5,b:0.3};
 function viewTick(){
   let secBar=4*60/(S.bpm||80);try{secBar=drumBar()*drumStepDur();}catch(e){}
   const vn=performance.now(),vdt=Math.min(100,_vtLast?vn-_vtLast:16.7)/1000;_vtLast=vn;   // by the clock, not per frame: a 120 Hz screen used to turn it twice as fast
+  if(!_reduced&&!_labOn()){
+    if(S.playing){const T=TUMBLE_BARS*Math.max(0.2,secBar);_tumble.a+=(2*Math.PI)*vdt/T;_tumble.b+=(2*Math.PI)*vdt/(T*1.618);}
+    const ca=Math.cos(_tumble.a),sa=Math.sin(_tumble.a),cb=Math.cos(_tumble.b),sb=Math.sin(_tumble.b);
+    _M=[ca, sa*sb, sa*cb,
+        0,  cb,    -sb,
+        -sa,ca*sb, ca*cb];
+    return;}
   if(!_reduced&&S.playing)_phi+=(2*Math.PI)*vdt/(16*Math.max(0.2,secBar));
   const pe=1-Math.pow(0.95,vdt*60);_ptrE.x+=(_ptr.x-_ptrE.x)*pe;_ptrE.y+=(_ptr.y-_ptrE.y)*pe;
   const ax=Math.cos(_phi)+(_reduced?0:-_ptrE.y*0.6),ay=Math.sin(_phi)+(_reduced?0:_ptrE.x*0.6),al=Math.hypot(ax,ay)||1;
