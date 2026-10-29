@@ -1,5 +1,5 @@
 SLIMEHEDRON / PLINKY -- HANDOFF
-Written 2026-10-14, updated 2026-10-28 (plugin step 2, tickets 01-02). Paste or upload this at the start of a new chat.
+Written 2026-10-14, updated 2026-10-29 (priority switch: web first). Paste or upload this at the start of a new chat.
 
 
 ================================================================
@@ -36,6 +36,10 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
 ================================================================
 0. WHAT IS OPEN RIGHT NOW (update this block every pass; older "still open" lines below are history)
 ================================================================
+  - PRIORITY SWITCH 2026-10-29 (Flah): THE WEB APP FIRST. Brief: _docs/specs/2026-10-29-web-first/brief.md
+    (grill it, then spec + tickets). Goal: perfect the tank, the music, the look ("like Nintendo had a hand in it"),
+    lossless audio, rock-solid MIDI timing, many setups. The plugin is paused at 7668b1d; do not touch vst/.
+    When the tank is locked (dev-vstparity + dev-vstmelody rerun), the plugin resumes at tickets 05 / 07 / 06.
   - Flah: try the hands-on play pass (spin, hold to loop, strum, chord jackpot, auto-notes) on a phone.
   - Flah: listen to VST milestone 1b in Studio One (built 2026-10-14, never confirmed).
   - VST milestone 2, the tank headless: _docs/specs/2026-10-28-tank-headless/. Tickets 01 + 02 DONE 2026-10-28

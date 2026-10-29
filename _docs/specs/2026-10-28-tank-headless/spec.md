@@ -1,6 +1,8 @@
 # Plugin step 2: the headless tank
 
 Status: ready
+Paused 2026-10-29 (Flah): web first, see `../2026-10-29-web-first/brief.md`. Tickets 01-04 done at 7668b1d.
+Resume at 05 / 07 / 06 once the web tank is perfected and locked (`dev-vstparity` + `dev-vstmelody` rerun).
 
 ## 1. Ask
 "VST step 2, the tank headless. goo is settled (ADR 0007). grill only what's still undecided, then /to-spec and

@@ -47,6 +47,9 @@ Sandcastle (unattended agents in Docker) is for the Rust port later, not the web
   (`mv .git/HEAD.lock .git/stale-head-lock`), never ask for folder-wide delete permission to clear one.
 - Docs for agents go in `_docs/` or `.claude/`, never as `.md` in the repo root (the root is published).
 - Voice for replies: short, lowercase, casual (Adam Friedland), TLDR not report. Facts triple-checked and sourced.
+- **Plugin tripwire.** The plugin copies the web tank. A change to how the tank plays in `index.html` (physics, walls,
+  spin, goo, auto-notes melody) reruns `dev-vstparity` and `dev-vstmelody` in the same pass and commits the new
+  numbers, so the plugin's tests catch the drift. Web work that doesn't touch how the tank plays never needs this.
 
 ## Agent skills
 
