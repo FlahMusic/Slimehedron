@@ -137,8 +137,10 @@ makes a hit feel more forceful. Turn these into measured rules for the spec:
 ## 8. Grill answers (2026-10-29)
 4. Flah: the tank must turn in 3D "enough", the notes must interact in 3D, and non-euclidean spaces must be in the
    mix. Clean up weird visual clutter, bugs and redundant tank controls in studio settings.
-   Facts checked in the code: physics is a 2D polygon plus depth between the two panes (balls have z, panes play
-   chord tones); a solid (cube...) is a 2D slice whose walls play its faces' notes. The 3D look is the spin plus a
+   Facts checked in the code: a flat shape (the default hexagon) is a 2D polygon plus depth between the two panes
+   (balls have z, the panes play chord tones). A solid (cube, icosa...) in 3D view already runs real 3D physics:
+   every face is a plane, a ball reflects off it in 3D and plays its note (`solidSub`, `solid3D()`); only 2D view
+   uses the solid's middle slice. (Corrected 2026-10-29: round 2 first said a solid was always a slice.) The 3D look is the spin plus a
    view lean of 17-37 degrees that breathes over 32 bars (`viewTick`, TILT 0.3 + 0.34 swing). Non-euclidean spaces
    (portal, curved) only come in on their own in play, on 1 reform in 3 (`rollSpace`); studio on auto is always
    normal (`index.html` rollSpace, and the mode switch at the `auto only mixes spaces in play` line).

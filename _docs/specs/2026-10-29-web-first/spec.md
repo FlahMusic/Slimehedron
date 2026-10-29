@@ -15,8 +15,8 @@ that controls tank as well in studio settings if needed." (grill answer 4)
 ## 2. Decisions (grill 2026-10-29, Flah)
 - **Walls stay open while the shape spins** (the wall bug, brief section 4). The tank gets sparser; Flah listens
   before and after.
-- **Real 3D gets a test page first** (ticket 04). Balls fly in all three directions and bounce off a solid's real
-  faces, each face a note. Flah compares it with today's tank before anything is committed. If it wins, it gets its
+- **Real 3D gets a test page first** (ticket 04). Solids already bounce in real 3D in 3D view; the test page makes
+  every shape a solid (each face a note, no chiming panes) and tumbles the box on two axes. Flah compares it with today's tank before anything is committed. If it wins, it gets its
   own spec and ADR, and the plugin's tank copy (tickets 01-04 of the tank-headless spec) is redone while it is paused.
 - **Spaces in studio**: on auto, studio mixes in portal and curved spaces only while the slime is on (1 reform in 3,
   as play). A shape or space picked by hand stays put: the slime's reform does not swap it. Derived, not asked: the
