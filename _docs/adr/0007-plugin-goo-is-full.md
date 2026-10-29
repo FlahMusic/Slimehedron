@@ -1,6 +1,7 @@
 # 0007 The plugin runs the full goo, not a stand-in
 
 Status: accepted 2026-10-27 (Flah). Plan: `_docs/slimehedron-vst-project.md`.
+Amended by ADR 0009 (2026-10-29): the cost fix is the goo one tick late, spread over the audio blocks, not a thread.
 
 - The goo is physics, not decoration: it drags balls off the beat and changes when and how they ring. So the Rust
   core ports the real goo (the same particles and drag as `index.html`) and runs it on the fixed 60 Hz physics tick

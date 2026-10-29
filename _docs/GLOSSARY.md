@@ -15,7 +15,8 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 - **Tank**: the glass shape notes bounce in. Drawn by the canvas (`#cv`) or the GPU (`tank3d.js`, `#cvGL`).
 - **Wall**: one side of the shape. Every wall is a note (`edges[i].cents`). Ringing a wall = `LAB.strike(i)`.
 - **Shape**: a 2D polygon (prism in 3D) or a **solid** (cube, octahedron...). Grow ops: **cut / puff / flip**.
-- **Space**: `normal`, `portal` (two moving **wormholes**), `curved` (hyperbolic). `TSPACE`, not `SPACE` (that name is taken).
+- **Space**: `normal`, `portal` (two moving **wormholes**), `curved` (hyperbolic). `TSPACE`, not `SPACE` (that name is taken). On **auto**, play
+  mixes them in on 1 reform in 3; studio does too, but only while the slime is on. A shape or space picked by hand stays.
 - **View**: 3D (default) or 2D. **Look**: glass (default) or crayon. Both are looks, not speed settings.
 - **Ball / note**: a bouncing note. It plays when it hits a wall. **Shot** balls (`mute:1`) don't re-play their first hit.
 - **Goo / slime liquid**: the particles that fill the tank. When the tank is full it **bursts** and **reforms** into a new shape (~64 bars).
@@ -38,6 +39,8 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 - **Band**: bass + comp + pad (+ drums). **Kit**: a drum style (pop, rock, disco, bossa, jazz, ...).
 - **Triangle mixer**: `#triMix` (melody / drums / band). **Mixer**: studio's per-part volume/mute/solo (`MIX`).
 - **Beat lock**: balls are steered so their hits land on the grid (`beatLock`, `b.tq`).
+- **Sync**: the one setting that lines up MIDI out and the visuals with what you hear. A tap-along measures your
+  speakers' delay (Bluetooth is ~60-120 ms); the setting can also be nudged by hand. Not the MIDI clock.
 
 ## The plugin (`vst/`)
 - **Core**: `slimehedron-core`, the engine with no dependencies (no plugin, no window). Also builds to WASM.

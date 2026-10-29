@@ -1,6 +1,6 @@
 # Web first: perfect the tank, the music, the look, the timing
 
-Status: needs-info (grill this with Flah first, then /to-spec and /to-tickets)
+Status: done (grilled 2026-10-29; the spec is `spec.md`, tickets in `issues/`)
 Written 2026-10-29 by Cowork from Flah's ask. Facts below were checked in the code (index.html at 7668b1d) or
 against the sources listed at the bottom. Anything marked CHECK is not verified yet: measure it before you trust it.
 
@@ -133,3 +133,22 @@ makes a hit feel more forceful. Turn these into measured rules for the spec:
   is unverified)
 - https://nintendowire.com/news/2018/08/22/nintendo-talks-about-the-design-of-the-switchs-os-at-cedec-2018/
 - https://sourcegaming.info/2015/11/11/thoughts-on-hitstop-sakurais-famitsu-column-vol-490-1/
+
+## 8. Grill answers (2026-10-29)
+4. Flah: the tank must turn in 3D "enough", the notes must interact in 3D, and non-euclidean spaces must be in the
+   mix. Clean up weird visual clutter, bugs and redundant tank controls in studio settings.
+   Facts checked in the code: physics is a 2D polygon plus depth between the two panes (balls have z, panes play
+   chord tones); a solid (cube...) is a 2D slice whose walls play its faces' notes. The 3D look is the spin plus a
+   view lean of 17-37 degrees that breathes over 32 bars (`viewTick`, TILT 0.3 + 0.34 swing). Non-euclidean spaces
+   (portal, curved) only come in on their own in play, on 1 reform in 3 (`rollSpace`); studio on auto is always
+   normal (`index.html` rollSpace, and the mode switch at the `auto only mixes spaces in play` line).
+5. Flah: phone + PC; Chrome and Safari; standard MIDI keyboards (KeyStep 37 class); phone speaker or PC direct, line
+   in, sometimes Bluetooth. Studio One runs separately for now. Wants MIDI devices to work from the web, iPad too.
+   Fact: no iPad/iPhone browser has Web MIDI (caniuse: iOS Safari unsupported through 27.2; every iOS browser is
+   WebKit). Workaround apps exist (e.g. "MIDI Web Browser"). Sources: https://caniuse.com/midi ,
+   https://www.supersimplepiano.com/blog/web-midi-browser-compatibility-2026 (vendor blog, secondary).
+
+Round 2 (Flah): 1 yes (ADR 0009). 2 yes (ADR 0010). 3 yes. 6 yes, merged with 10 into one Sync setting. 7 yes, a
+test page first; Flah compares it with today before anything is committed. 8 yes, but only while the slime is on; a
+shape or space picked by hand stays put. 9 no explainers: "just make the options available and make sure the shit
+actually works as intended" (ADR 0011). 10 yes. 11 yes: screenshots and a proposal first, nothing removed until OK'd.

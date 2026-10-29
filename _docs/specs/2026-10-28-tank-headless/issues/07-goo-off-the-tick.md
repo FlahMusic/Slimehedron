@@ -1,8 +1,8 @@
 # 07 The goo off the audio thread's tick
 
-Status: needs-info
+Status: ready
 Blocked by: 04
-Spec: `../spec.md` (Done means: cost), ADR 0007
+Spec: `../spec.md` (Done means: cost), ADR 0007, ADR 0009
 
 A full tank's goo costs 0.67 ms a tick on a P-core of Flah's machine (1.1 ms on an E-core), against a 0.25 ms limit
 (ticket 04 notes). The spec says: then the goo moves to its own thread, never simplified. The core must stay free of
@@ -18,3 +18,6 @@ out while this one plays. Inaudible on paper; ticket 05's parity numbers check i
 
 Done when: the goo's work per audio block is at most 0.25 ms (the 20 slowest of 1000, release, Flah's machine), the
 `tank_cost` check is back on, and 05's parity still holds.
+
+## Answer
+Flah, 2026-10-29: spread it over the blocks, one tick late (ADR 0009). Build it when the plugin resumes.

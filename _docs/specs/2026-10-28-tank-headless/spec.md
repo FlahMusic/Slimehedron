@@ -42,8 +42,8 @@ Resume at 05 / 07 / 06 once the web tank is perfected and locked (`dev-vstparity
   hits per bar, the share of hits within 20 ms of the grid, the share of pane hits, gooed hits' level next to
   clean ones, and the fill after 64 bars.
 - **Cost**: the worst tick with a full tank (12 balls, the particle cap) takes **≤ 0.25 ms**. That is the median of
-  the 20 slowest of 1000 ticks, in a release build, on Flah's machine (msi). If it misses, the goo moves to its own
-  thread (ADR 0007). It is never simplified.
+  the 20 slowest of 1000 ticks, in a release build, on Flah's machine (msi). It missed (0.67 ms, ticket 04): the goo
+  runs one tick late, spread over the audio blocks (ADR 0009, ticket 07). It is never simplified.
 - Nothing on the audio thread allocates once the tank exists (a counting allocator, `vst/slimehedron-core/tests/tank_cost.rs`).
 - **Plugin**: DAW stopped means no new hits. Play from 0 twice gives identical output. A tempo change changes the
   ball speed within one tick. clap-validator still shows 0 failed.
