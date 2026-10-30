@@ -49,6 +49,12 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     (web numbers in web-stats.json via _dev/dev-vstparity.js; vst/slimehedron-core/src/tank/ = walls, panes, balls,
     beat lock, spin, quantize hold, walls open/heal; 13 tank tests, sabotaged). 03 (auto-notes melody, note for note
     the web's: _dev/dev-vstmelody.js) + 04 (the 3D goo) DONE 2026-10-29. Next: 05 (engine + WAV + parity).
+  - WEB FIRST, BUILT 2026-10-29 (Flah asked for the 3D work first, ahead of ticket 01's measuring): Safari/iOS hide
+    the MIDI rows (ADR 0011); the box tumbles on two axes, once every 8 bars (12); ball speed 3.6 px a tick on the
+    hexagon, scaled by each shape's mean free path (13); walls stay open while the shape turns (02: hexagon 14.4 ->
+    9.4 notes a bar); small droplets that coagulate, the slime swells on the bar clock (14); taps land inside the
+    tumbling box at their depth. Next: 15 (auto adjuster), then 01 (measure), 03, 05-10. The 3D test page lives on
+    the branch proto/3d-tumble (never merge). The plugin's tank copy is now behind on tumble, speed, goo, walls.
   - Plugin ticket 07 decided 2026-10-29: the goo runs one tick late, spread over the audio blocks (ADR 0009).
     Flah decided 2026-10-28: the plugin keeps the walls opening every 8 bars / healing every 24 (else 7 balls jam).
   - Plugin reverb decided 2026-10-29: the web's noise-built room, convolved (ADR 0010).
