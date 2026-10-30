@@ -26,7 +26,7 @@ const GL=!!process.env.SLIME_GL;
    await p.goto(URL+q);await p.waitForTimeout(1500);return {ctx,p,errs};};
  // how far each pooled drop sits inside the glass (px; must be at least its radius + GOO_IN)
  const MEASURE=()=>{window.__gooWorst=function(){let worst=-1e9;const c=Math.cos(rot),s=Math.sin(rot);
-   for(const p of particles){if(!p.pooled)continue;const need=p.r+GOO_IN;let past=-1e9;
+   for(const p of particles){if(!p.pooled&&!p.d)continue;const need=p.r+GOO_IN;let past=-1e9;   // the slime's drops and the droplets on their way to it (ticket 14)
      if(edges._solid){
        if(edges._space==='curved'){const RB=HYP.RD,K=HKR(),u=[(p.x-CX)/RB,(p.y-CY)/RB,(p.z-0.5)*BOXD/RB],r2=u[0]**2+u[1]**2+u[2]**2,k=u.map(x=>2*x/(1+r2));
          for(const pl of SOLID.planes){const n=pl.n,v=(n[0]*c-n[1]*s)*k[0]+(n[0]*s+n[1]*c)*k[1]+n[2]*k[2]-(pl.d/K-2*need/RB);past=Math.max(past,v*RB/2);}}
@@ -50,12 +50,12 @@ const GL=!!process.env.SLIME_GL;
     let worst=-1e9,maxN=0,ticks=0;startBreak=function(){};   // no burst mid-test: this is about holding it
     fillBeats=40*beatsPerBar();   // well into the shape's song, where every splash may still feed the goo (see EACH SHAPE IS A SONG)
     const T0=performance.now();   // the physics' own clock moves with the ticks (a ball in a wormhole comes out by that clock)
-    for(let i=0;i<900;i++){_tickT=T0+i*16.67;simTick(_tickT);ticks++;if(i%10===0){worst=Math.max(worst,__gooWorst());let n=0;for(const q of particles)if(q.pooled)n++;maxN=Math.max(maxN,n);}}
+    for(let i=0;i<900;i++){_tickT=T0+i*16.67;simTick(_tickT);ticks++;if(i%10===0){worst=Math.max(worst,__gooWorst());let n=0;for(const q of particles)if(q.pooled||q.d)n++;maxN=Math.max(maxN,n);}}   // droplets count: since ticket 14 they slide in slowly
     // and topped right up, squeezed in from everywhere at once
     for(let i=0;i<partCap()*0.9-particles.length;i++)particles.push({x:CX+(Math.random()-0.5)*R,y:CY+(Math.random()-0.5)*R,z:Math.random(),vx:(Math.random()-0.5)*8,vy:(Math.random()-0.5)*8,vz:0,r:8,hue:Math.random(),pooled:true,age:80});
     for(let i=0;i<300;i++){_tickT=T0+(900+i)*16.67;simTick(_tickT);if(i%10===0)worst=Math.max(worst,__gooWorst());}
     return {worst,maxN,n:particles.length,space:edges._space,solid:!!edges._solid,fill:fillState};},shape);
-  ok(r.space===space&&r.fill==='fill'&&r.maxN>40,'['+shape+' '+space+'] goo builds up from the balls\' splashes ('+r.maxN+' drops, then topped up to '+r.n+')');
+  ok(r.space===space&&r.fill==='fill'&&r.maxN>40,'['+shape+' '+space+'] goo builds up from the balls\' splashes ('+r.maxN+' drops and droplets, then topped up to '+r.n+')');
   ok(r.worst<=0.5,'['+shape+' '+space+'] every drop stays inside the glass, the whole time (deepest '+r.worst.toFixed(2)+'px past where it may go)');
   ok(errs.length===0,'['+shape+' '+space+'] no page errors'+(errs.length?': '+errs[0]:''));
   await ctx.close();}
@@ -138,19 +138,42 @@ const GL=!!process.env.SLIME_GL;
   ok(errs.length===0,'no page errors in 2D'+(errs.length?': '+errs[0]:''));
   await ctx.close();}
 
+ // ---- 10. SMALL DROPLETS THAT COAGULATE (ticket 14; Flah 2026-10-29: the spray off a note was "gigantic"; it should be
+ // "a small spray of a few droplets from each note slowly coagulating into that bigger one", at a rate that makes sense
+ // for their size). A hit throws 3-5 droplets, together about a third of a ball's volume; landed droplets bead, slide
+ // toward the slime and merge (volume kept); the slime eats them. No goo is made or lost on the way.
+ {const {ctx,p,errs}=await open('?m=studio&view=3d&space=normal');
+  const r=await p.evaluate(()=>{const sel=document.getElementById('shape');sel.value='6';sel.dispatchEvent(new Event('change'));
+    S.slimeMode=false;S.rain=false;S.randomShape=false;S.spin=0;rot=0;rebuild();setPlaying(true);balls.length=0;startBreak=function(){};
+    particles.length=0;fillState='fill';fillBeats=20*beatsPerBar();GOOV.sprayed=0;GOOV.eaten=0;GOOV.merged=0;
+    const vol=q=>4.18879*q.r*q.r*q.r,drops=()=>particles.filter(q=>q.d);
+    _splashZ=0.5;splash(CX+150,CY,-1,0,0.3);const one=drops().map(q=>q.r);
+    for(let i=1;i<8;i++){_splashZ=0.2+i*0.08;splash(CX+Math.cos(i)*150,CY+Math.sin(i)*150,-Math.cos(i),-Math.sin(i),i/8);}
+    const n0=drops().length,r0=Math.max(...drops().map(q=>q.r));let rMax=r0,nMin=n0;
+    const T0=performance.now();for(let i=0;i<900;i++){_tickT=T0+i*16.67;simTick(_tickT);const d=drops();nMin=Math.min(nMin,d.length);for(const q of d)rMax=Math.max(rMax,q.r);}
+    const left=drops().reduce((a,q)=>a+vol(q),0);
+    return {one,oneVol:one.reduce((a,x)=>a+4.18879*x*x*x,0)/BALL_VOL,n0,nMin,r0,rMax,sprayed:GOOV.sprayed,eaten:GOOV.eaten,merged:GOOV.merged,left,pooled:particles.filter(q=>q.pooled).length};});
+  ok(r.one.length>=3&&r.one.length<=5&&Math.max(...r.one)<=4.5,'a note throws a small spray: '+r.one.length+' droplets, the biggest '+Math.max(...r.one).toFixed(1)+' px across the radius (a ball is 9)');
+  ok(r.oneVol>=0.25&&r.oneVol<=0.45,'together about a third of the ball ('+(r.oneVol*100).toFixed(0)+'% of its volume)');
+  ok(r.merged>=3,'landed droplets run together into bigger beads ('+r.merged+' merges; the biggest bead '+r.rMax.toFixed(1)+' px, the biggest droplet '+r.r0.toFixed(1)+')');
+  ok(r.eaten>0&&r.pooled>0,'and the beads reach the middle and become the slime ('+r.pooled+' drops of slime)');
+  ok(Math.abs(r.left+r.eaten-r.sprayed)<=r.sprayed*0.01,'no goo is made or lost on the way (sprayed '+r.sprayed.toFixed(0)+' px^3 = beads '+r.left.toFixed(0)+' + eaten '+r.eaten.toFixed(0)+')');
+  ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
+  await ctx.close();}
+
  // ---- 9. EACH SHAPE IS A SONG: a busy tank lives about 64 bars before it bursts, at any tempo, 3D and 2D ----
  // (it used to burst in about 20 bars). Driven tick by tick on a pinned clock, 8 balls bouncing the whole time.
- for(const [view,bpm] of [['3d',80],['3d',140],['2d',80]]){const {ctx,p,errs}=await open('?m=play&view='+view+'&space=normal');
-  const r=await p.evaluate(async bpm=>{const s=document.getElementById('shape');s.value='6';s.dispatchEvent(new Event('change'));await new Promise(r=>setTimeout(r,1500));
+ for(const [view,bpm,nb,hush] of [['3d',80,8],['3d',140,8],['2d',80,8],['3d',80,2],['3d',80,1,8]]){const {ctx,p,errs}=await open('?m=play&view='+view+'&space=normal');   // nb 2: a quiet tank; hush 8: one ball, then silence from bar 8 (the slime swells by itself, ticket 14)
+  const r=await p.evaluate(async([bpm,nb,hush])=>{const s=document.getElementById('shape');s.value='6';s.dispatchEvent(new Event('change'));await new Promise(r=>setTimeout(r,1500));
     setBpm(bpm);if(!S.playing)setPlaying(true);await new Promise(r=>setTimeout(r,300));
-    fillState='fill';particles.length=0;measuredFill=0;fillBeats=0;balls.length=0;for(let i=0;i<8;i++)spawn(CX+Math.cos(i)*60,CY+Math.sin(i)*60);
+    fillState='fill';particles.length=0;measuredFill=0;fillBeats=0;balls.length=0;for(let i=0;i<nb;i++)spawn(CX+Math.cos(i)*60,CY+Math.sin(i)*60);
     let broke=null,ticks=0,T=performance.now(),fill32=0;const sb=startBreak;startBreak=function(){broke=ticks;};
     const real=performance.now.bind(performance);performance.now=()=>T;const barT=60/S.bpm*4*60;
-    try{while(broke==null&&ticks<barT*120){T+=1000/60;_tickT=T;simTick(T);ticks++;if(ticks%600===0&&balls.length<8)spawn(CX,CY);
+    try{while(broke==null&&ticks<barT*120){T+=1000/60;_tickT=T;simTick(T);ticks++;if(hush&&ticks>barT*hush)balls.length=0;else if(ticks%600===0&&balls.length<nb)spawn(CX,CY);
       if(ticks%60===0)measureFill();if(Math.abs(ticks-barT*32)<0.5)fill32=fillFrac();}}
     finally{performance.now=real;startBreak=sb;}
-    return {bars:ticks/barT,broke:broke!=null,fill32};},bpm);
-  ok(r.broke&&r.bars>=56&&r.bars<=72,'['+view+' '+bpm+' bpm] a busy tank bursts after about 64 bars ('+r.bars.toFixed(1)+' bars)');
+    return {bars:ticks/barT,broke:broke!=null,fill32};},[bpm,nb,hush]);
+  ok(r.broke&&r.bars>=56&&r.bars<=72,'['+view+' '+bpm+' bpm, '+nb+' balls'+(hush?', silent from bar '+hush:'')+'] a tank bursts after about 64 bars ('+r.bars.toFixed(1)+' bars)');
   ok(r.fill32<0.7,'['+view+' '+bpm+' bpm]   half way through, the goo is about half way up ('+r.fill32.toFixed(2)+' full at bar 32)');
   ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
   await ctx.close();}

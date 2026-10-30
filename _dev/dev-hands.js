@@ -311,6 +311,21 @@ const countTriggers=p=>p.evaluate(()=>{if(window.__trg)return;window.__trg=0;con
   ok(bad.length===0,'9. ['+w+'px] the top bar fits, nothing on top of anything'+(bad.length?' ('+bad.join(', ')+')':''));
   await ctx.close();}
 
+ // 12. WALLS STAY OPEN WHILE THE SHAPE TURNS (web-first ticket 02). Every turn step rebuilt the walls shut, so a wall
+ // breakWall() opened was closed again within a tick and the drain never worked while the shape spun (checked
+ // 2026-10-28: open, and 300 ms later shut). Now it stays open until repairWall() heals it; healing still works.
+ {const ctx=await b.newContext({viewport:{width:1440,height:900}});await ctx.addInitScript(quiet);
+  const p=await ctx.newPage();await p.goto(BASE+'?m=studio&view=2d');await p.waitForTimeout(2500);
+  const w=await p.evaluate(async()=>{const s=document.getElementById('shape');s.value='6';s.dispatchEvent(new Event('change'));await new Promise(r=>setTimeout(r,300));
+    if(S.slimeMode)$("slimeBig").click();S.spin=14;setPlaying(true);_lastBreak=0;breakWall();   /* slime off: it opens and heals walls on its own clock */const open0=edges.filter(e=>e.broken).length,r0=rot;
+    const bar=drumBar()*drumStepDur()*1000;await new Promise(r=>setTimeout(r,bar*2));
+    const open2=edges.filter(e=>e.broken).length,queued=_brokenOrder.length,inEdges=_brokenOrder.every(e=>edges.includes(e)),turned=rot-r0;
+    repairWall();await new Promise(r=>setTimeout(r,3500));   /* a healing wall grows back over ~2.4 s (0.007 a tick) */const healed=edges.filter(e=>e.broken).length;
+    setPlaying(false);return {open0,open2,queued,inEdges,turned,healed};});
+  ok(w.open0===1&&w.open2===1&&Math.abs(w.turned)>0.1,'12. an open wall stays open while the shape turns ('+w.open0+' open, 2 bars and '+(w.turned*180/Math.PI).toFixed(0)+' degrees later '+w.open2+')');
+  ok(w.queued===1&&w.inEdges&&w.healed===0,'12. and it still heals when its turn comes (queued '+w.queued+', '+w.healed+' open after repairWall)');
+  await ctx.close();}
+
  await b.close();
  console.log('\n'+(FAIL.length?FAIL.length+' FAILURE(S)':'hands on the tank'));
  process.exit(FAIL.length?1:0);})();

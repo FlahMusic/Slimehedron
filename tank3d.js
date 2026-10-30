@@ -508,7 +508,7 @@ export function start(){
     for(let i=LUMPS.length-1;i>=0;i--){const L=LUMPS[i];
       if(L.n>0&&!L.dying){L.tx=L.sx/L.n;L.ty=L.sy/L.n;L.tz=L.sz/L.n;
         // as big as its drops' spread, and always big enough to overlap its neighbours: one skin, not beads
-        L.tr=Math.max(PR*1.6,1.18*Math.sqrt(L.s2/L.n)+PR*1.1);L.hx+=(L.shx/L.n-L.hx)*kr;L.hy+=(L.shy/L.n-L.hy)*kr;}
+        L.tr=Math.min(Math.max(PR*1.6,1.18*Math.sqrt(L.s2/L.n)+PR*1.1),8.5*Math.cbrt(L.n)*1.35);   /* never bigger than the goo it holds (8.5 cbrt(n): n packed drops), or a few drops by the glass read as one huge blob */L.hx+=(L.shx/L.n-L.hx)*kr;L.hy+=(L.shy/L.n-L.hy)*kr;}
       else L.tr=0;
       let room=1e9;for(const g of glass)room=Math.min(room,g[3]-(g[0]*L.tx+g[1]*L.ty+g[2]*L.tz));
       const tr=Math.min(L.tr,Math.max(PR*0.5,room/1.3));   // near the glass a lump is drawn smaller, so the skin meets the glass
@@ -649,7 +649,7 @@ export function start(){
     ballMesh.count=n;ballMesh.instanceMatrix.needsUpdate=true;if(ballMesh.instanceColor)ballMesh.instanceColor.needsUpdate=true;
     // spray that has not landed yet: little droplets at their own depth
     for(const p of particles){if(p.pooled)continue;hueCol(p.hue||0,0.7,0.62,HUE);gooPos(p,_q);
-      drops.add(_q[0],_q[1],_q[2],5.2,HUE.r,HUE.g,HUE.b,p.fade?0.95*Math.max(0,1-p.age/34):0.95);}   // spray that will not join the goo fades as it flies
+      drops.add(_q[0],_q[1],_q[2],p.d?p.r*2:5.2,HUE.r,HUE.g,HUE.b,p.fade?0.95*Math.max(0,1-p.age/34):0.95);}   // a droplet or bead at its true size (THE SPRAY)   // spray that will not join the goo fades as it flies
     shadows.done();trails.done();drops.done();drawWorms(now,fill);
     gooClip(fill,solid);if(!(++mcTick%(gooAvg>6?Math.max(2,mcEvery):mcEvery)))gooUpdate();mc.visible=particles.length>0;
     // broken open: the walls are loose glass slabs

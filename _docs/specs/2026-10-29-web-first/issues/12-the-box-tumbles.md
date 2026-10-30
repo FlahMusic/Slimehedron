@@ -16,3 +16,9 @@ turning by frames, tumbling under reduced motion. dev-hands 11g held the view st
 seed away within 300 ms; it is planted exactly on the marker, 0.0 px). Targeted runs clean: dev-hands, dev-solid,
 dev-portal, dev-space, dev-crayon, dev-fluid, dev-beatlock. dev-3d's depth check failed once in 3 runs (SUITES.md).
 Not checked by a machine: how the tumble feels on a phone; the plugin's port (`phi` lean) is now out of date.
+
+## Follow-up (2026-10-29): taps at every pose
+dev-revive caught it: a tap landed on the FRONT glass's plane, which the tumble often shows edge-on, so a tap in the
+middle of the tank landed far outside it (14 of 16 poses, measured). `screenToBox` now meets the plane through the
+box's middle that faces the camera and returns a depth too; a tap's ball and a seed start at that depth, and seeds
+are drawn there. dev-3d 7: 0 of 64 taps miss across 16 poses, 0.000 px off; sabotage (the old mapping) misses 40.
