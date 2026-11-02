@@ -30,7 +30,8 @@ behind each rule are in `_docs/retired/CLAUDE.md` and `SLIMEHEDRON-HANDOFF.txt`.
 
 ## Code
 - **Never put a `// comment` in the middle of a one-line statement.** It comments out the rest of the line. Use
-  `/* */` inside lines. It has happened six times. `node _dev/dev-syntax.js` after every edit.
+  `/* */` inside lines. It has happened ten times (four on 2026-11-02, two of them still parsing). `node _dev/dev-syntax.js`
+  after every edit: it now also flags code inside any `//` comment.
 - A syntax error in `tank3d.js` fails silently (the canvas fallback draws instead).
 - One element per control: move nodes, never clone them. One renderer per thing. One definition per string
   (a duplicate key later in `LANG` silently wins).

@@ -143,7 +143,7 @@ const URL='http://127.0.0.1:8765/index.html';
   const gl=await p.evaluate(()=>!!(window.__gl&&window.__gl.api&&window.__gl.api.worms));
   ok(gl,'7. the GPU tank is running');
   if(gl){for(const look of ['glass','crayon']){
-    const r=await p.evaluate(async look=>{_reduced=true;window.setLook3D(look);   // the box tumbles (ticket 12) and each render() turns it: hold the view still, so the holes are where 'at' saysconst rs=document.getElementById('randShapeT');if(rs&&rs.classList.contains('on'))rs.click();
+    const r=await p.evaluate(async look=>{_reduced=true;window.setLook3D(look);   /* the box tumbles (ticket 12) and each render() turns it: hold the view still, so the holes are where 'at' says */const rs=document.getElementById('randShapeT');if(rs&&rs.classList.contains('on'))rs.click();
       const s=document.getElementById('shape');s.value='6';s.dispatchEvent(new Event('change'));await new Promise(r=>setTimeout(r,2400));startBreak=()=>{};fillState='fill';
       if(!S.playing)setPlaying(true);await new Promise(r=>setTimeout(r,1500));
       S.autoNotes=false;balls.length=0;particles.length=0;   /* only glass and holes in the picture: the goo and balls behind a hole changed its colour from run to run (0.11-0.25), the flake in SUITES.md */
