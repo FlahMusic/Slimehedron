@@ -55,6 +55,12 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     9.4 notes a bar); small droplets that coagulate, the slime swells on the bar clock (14); taps land inside the
     tumbling box at their depth. Next: 15 (auto adjuster), then 01 (measure), 03, 05-10. The 3D test page lives on
     the branch proto/3d-tumble (never merge). The plugin's tank copy is now behind on tumble, speed, goo, walls.
+  - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
+    _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
+    on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto
+    adjuster (15: each shape its own pace; excess melody balls MELT into the slime; escaped balls no longer block new
+    notes), ticket 03 (studio mixes spaces with the slime on; a hand-picked shape stays). Plugin tripwire rerun each
+    time (web-stats.json: 8.05 hits a bar +-0.07). Next: the look pass (screenshots under review), then 01/05-10.
   - Plugin ticket 07 decided 2026-10-29: the goo runs one tick late, spread over the audio blocks (ADR 0009).
     Flah decided 2026-10-28: the plugin keeps the walls opening every 8 bars / healing every 24 (else 7 balls jam).
   - Plugin reverb decided 2026-10-29: the web's noise-built room, convolved (ADR 0010).
