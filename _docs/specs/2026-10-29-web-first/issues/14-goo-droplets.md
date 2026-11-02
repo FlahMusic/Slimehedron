@@ -23,3 +23,11 @@ dev-goo3d section 10 (spray size and volume, merges, eaten into slime, nothing m
 tank and a tank silent from bar 8 still burst at ~64 bars). Section 1 now counts droplets as goo and checks they
 stay inside the glass too. Sabotages caught: drops a ball's size; no merging; no self-swell (silent tank: 120 bars).
 Not caught by a machine: the lump size cap (renderer; screenshots only), and how it feels.
+
+## Pass 2 (2026-11-02)
+- Clutter: droplets lived a median 6.3 s, ~48 in the air, 7% of hits sprayed nothing (cap full). Now they bead sooner
+  and slide 1.2 px a tick at 4 px: median 2.9 s, ~26 in the air, none dropped. dev-goo3d 10b; sabotage (old slide) red.
+- Cost: a full tank's tick was ~6.5 ms on Flah's laptop (Chrome profiler: 52-70% pushing ~1400 packed drops apart), so a
+  4x slower phone could not keep 60 ticks a second. The 3D goo's drops are now PR3=10 (same volume, ~half the drops):
+  ~3-3.7 ms a tick. A typed-array rewrite of the pass gave identical numbers but only 14% (then 0%), so it was dropped.
+  The slime's MODS wobble now runs 15 times a second with the same glide (0.8 -> 0.23 ms a tick).

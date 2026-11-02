@@ -494,7 +494,7 @@ export function start(){
       let best=null,bd=-1;for(let t=0;t<12;t++){const p=particles[(Math.random()*particles.length)|0];if(!p||!p.pooled)continue;gooPos(p,_q);
         let d=1e18;for(const L of LUMPS){if(L.dying)continue;const dx=_q[0]-L.tx,dy=_q[1]-L.ty,dz=_q[2]-L.tz;d=Math.min(d,dx*dx+dy*dy+dz*dz);}
         if(d>bd){bd=d;best=[_q[0],_q[1],_q[2]];}}
-      if(!best)break;LUMPS.push({x:best[0],y:best[1],z:best[2],tx:best[0],ty:best[1],tz:best[2],r:0,tr:PR*1.5,hx:1,hy:0,h:0,n:0,dying:false,sx:0,sy:0,sz:0,s2:0,shx:0,shy:0});}}
+      if(!best)break;LUMPS.push({x:best[0],y:best[1],z:best[2],tx:best[0],ty:best[1],tz:best[2],r:0,tr:PR3*1.5,hx:1,hy:0,h:0,n:0,dying:false,sx:0,sy:0,sz:0,s2:0,shx:0,shy:0});}}
     // too many: the emptiest ones shrink away
     let alive=_alive;alive.length=0;for(const L of LUMPS)if(!L.dying)alive.push(L);
     if(alive.length>K){alive.sort((a,b)=>a.n-b.n);for(let i=0;i<alive.length-K;i++)alive[i].dying=true;
@@ -508,10 +508,10 @@ export function start(){
     for(let i=LUMPS.length-1;i>=0;i--){const L=LUMPS[i];
       if(L.n>0&&!L.dying){L.tx=L.sx/L.n;L.ty=L.sy/L.n;L.tz=L.sz/L.n;
         // as big as its drops' spread, and always big enough to overlap its neighbours: one skin, not beads
-        L.tr=Math.min(Math.max(PR*1.6,1.18*Math.sqrt(L.s2/L.n)+PR*1.1),8.5*Math.cbrt(L.n)*1.35);   /* never bigger than the goo it holds (8.5 cbrt(n): n packed drops), or a few drops by the glass read as one huge blob */L.hx+=(L.shx/L.n-L.hx)*kr;L.hy+=(L.shy/L.n-L.hy)*kr;}
+        L.tr=Math.min(Math.max(PR3*1.6,1.18*Math.sqrt(L.s2/L.n)+PR3*1.1),CORE3*Math.cbrt(L.n)*1.35);   /* never bigger than the goo it holds (CORE3 cbrt(n): n packed drops), or a few drops by the glass read as one huge blob */L.hx+=(L.shx/L.n-L.hx)*kr;L.hy+=(L.shy/L.n-L.hy)*kr;}
       else L.tr=0;
       let room=1e9;for(const g of glass)room=Math.min(room,g[3]-(g[0]*L.tx+g[1]*L.ty+g[2]*L.tz));
-      const tr=Math.min(L.tr,Math.max(PR*0.5,room/1.3));   // near the glass a lump is drawn smaller, so the skin meets the glass
+      const tr=Math.min(L.tr,Math.max(PR3*0.5,room/1.3));   // near the glass a lump is drawn smaller, so the skin meets the glass
       L.x+=(L.tx-L.x)*kp;L.y+=(L.ty-L.y)*kp;L.z+=(L.tz-L.z)*kp;L.r+=(tr-L.r)*kr;
       if((L.dying||L.n===0)&&L.r<0.6)LUMPS.splice(i,1);}
     const tA=performance.now();mc.reset();const tB=performance.now();

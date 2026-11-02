@@ -52,7 +52,7 @@ const GL=!!process.env.SLIME_GL;
     const T0=performance.now();   // the physics' own clock moves with the ticks (a ball in a wormhole comes out by that clock)
     for(let i=0;i<900;i++){_tickT=T0+i*16.67;simTick(_tickT);ticks++;if(i%10===0){worst=Math.max(worst,__gooWorst());let n=0;for(const q of particles)if(q.pooled||q.d)n++;maxN=Math.max(maxN,n);}}   // droplets count: since ticket 14 they slide in slowly
     // and topped right up, squeezed in from everywhere at once
-    for(let i=0;i<partCap()*0.9-particles.length;i++)particles.push({x:CX+(Math.random()-0.5)*R,y:CY+(Math.random()-0.5)*R,z:Math.random(),vx:(Math.random()-0.5)*8,vy:(Math.random()-0.5)*8,vz:0,r:8,hue:Math.random(),pooled:true,age:80});
+    for(let i=0;i<partCap()*0.9-particles.length;i++)particles.push({x:CX+(Math.random()-0.5)*R,y:CY+(Math.random()-0.5)*R,z:Math.random(),vx:(Math.random()-0.5)*8,vy:(Math.random()-0.5)*8,vz:0,r:PR3,hue:Math.random(),pooled:true,age:80});
     for(let i=0;i<300;i++){_tickT=T0+(900+i)*16.67;simTick(_tickT);if(i%10===0)worst=Math.max(worst,__gooWorst());}
     return {worst,maxN,n:particles.length,space:edges._space,solid:!!edges._solid,fill:fillState};},shape);
   ok(r.space===space&&r.fill==='fill'&&r.maxN>40,'['+shape+' '+space+'] goo builds up from the balls\' splashes ('+r.maxN+' drops and droplets, then topped up to '+r.n+')');
@@ -67,7 +67,7 @@ const GL=!!process.env.SLIME_GL;
   // 3. THE BEAT. The clock is driven by hand so the test sees every beat: 50 ticks a beat.
   const beat=await p.evaluate(()=>{let T=0;beatNow=()=>T;splash=function(){};
     particles.length=0;for(let i=0;i<300;i++){const a=Math.random()*6.28,c=Math.random()*2-1,r=Math.cbrt(Math.random())*60,s=Math.sqrt(1-c*c);
-      particles.push({x:CX+Math.cos(a)*s*r,y:CY+Math.sin(a)*s*r,z:0.5+c*r/BOXD,vx:0,vy:0,vz:0,r:8,hue:Math.random(),pooled:true,age:80,h:0});}
+      particles.push({x:CX+Math.cos(a)*s*r,y:CY+Math.sin(a)*s*r,z:0.5+c*r/BOXD,vx:0,vy:0,vz:0,r:PR3,hue:Math.random(),pooled:true,age:80,h:0});}
     const shape=()=>{let mx=0,my=0,mz=0,n=0;for(const q of particles){if(q.h!==0)continue;mx+=q.x;my+=q.y;mz+=q.z*BOXD;n++;}mx/=n;my/=n;mz/=n;
       // how stretched the heart is: its spread along its longest axis over its shortest (power iteration on the covariance)
       const C=[[0,0,0],[0,0,0],[0,0,0]];for(const q of particles){if(q.h!==0)continue;const v=[q.x-mx,q.y-my,q.z*BOXD-mz];for(let i=0;i<3;i++)for(let j=0;j<3;j++)C[i][j]+=v[i]*v[j]/n;}
@@ -86,34 +86,34 @@ const GL=!!process.env.SLIME_GL;
   // 4b. ONE MASS. It used to bud a second and a third heart as it grew (Flah: "piles up into multiple diff blobs
   // instead of conglomerating into one"). Drop two separate clumps in, far apart: they must flow into one.
   const one=await p.evaluate(()=>{particles.length=0;
-    for(const side of [-1,1])for(let i=0;i<330;i++)particles.push({x:CX+side*R*0.45+(Math.random()-0.5)*50,y:CY+(Math.random()-0.5)*50,z:0.5+(Math.random()-0.5)*0.2,vx:0,vy:0,vz:0,r:8,hue:Math.random(),pooled:true,age:80});
+    for(const side of [-1,1])for(let i=0;i<330;i++)particles.push({x:CX+side*R*0.45+(Math.random()-0.5)*50,y:CY+(Math.random()-0.5)*50,z:0.5+(Math.random()-0.5)*0.2,vx:0,vy:0,vz:0,r:PR3,hue:Math.random(),pooled:true,age:80});   // PR3: the 3D goo's drop size (2026-11-02)
     for(let i=0;i<360;i++)simTick(performance.now());
     const P=particles.filter(q=>q.pooled),N=P.length,par=new Int32Array(N).map((_,i)=>i),f=i=>{while(par[i]!==i)i=par[i]=par[par[i]];return i;};
-    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const a=P[i],c=P[j],dx=a.x-c.x,dy=a.y-c.y,dz=(a.z-c.z)*BOXD;if(dx*dx+dy*dy+dz*dz<(2.6*PR)**2)par[f(i)]=f(j);}
+    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){const a=P[i],c=P[j],dx=a.x-c.x,dy=a.y-c.y,dz=(a.z-c.z)*BOXD;if(dx*dx+dy*dy+dz*dz<(2.6*PR3)**2)par[f(i)]=f(j);}
     const cnt={};for(let i=0;i<N;i++){const r=f(i);cnt[r]=(cnt[r]||0)+1;}const sz=Object.values(cnt).sort((a,b)=>b-a);
     // and it is ROUND: a single heart packs its drops close round one middle; three hearts on necks spread them out.
     // rms distance from the middle, over the radius a ball of that many packed drops would have
     let mx=0,my=0,mz=0;for(const q of P){mx+=q.x;my+=q.y;mz+=(q.z-0.5)*BOXD;}mx/=N;my/=N;mz/=N;
     let s2=0;for(const q of P)s2+=(q.x-mx)**2+(q.y-my)**2+((q.z-0.5)*BOXD-mz)**2;
-    const ball=Math.cbrt(N/0.6)*PR,spread=Math.sqrt(s2/N)/(Math.sqrt(0.6)*ball);
+    const ball=Math.cbrt(N/0.6)*PR3,spread=Math.sqrt(s2/N)/(Math.sqrt(0.6)*ball);
     return {n:N,biggest:sz[0],pieces:sz.length,hearts:LAVA.n,spread};});
   ok(one.biggest>=one.n*0.97,'two clumps of goo flow together into ONE mass ('+one.biggest+' of '+one.n+' drops in the biggest piece, '+one.pieces+' piece(s), '+one.hearts+' heart)');
   ok(one.spread<1.2,'and it is one round heart, not several on necks (spread '+one.spread.toFixed(2)+'x a single packed ball)');
   // 5. depth
   const depth=await p.evaluate(()=>{particles.length=0;for(let i=0;i<260;i++){const a=Math.random()*6.28,c=Math.random()*2-1,r=Math.cbrt(Math.random())*50,s=Math.sqrt(1-c*c);
-      particles.push({x:CX+Math.cos(a)*s*r,y:CY+Math.sin(a)*s*r,z:0.5+c*r/BOXD,vx:0,vy:0,vz:0,r:8,hue:0,pooled:true,age:80});}
+      particles.push({x:CX+Math.cos(a)*s*r,y:CY+Math.sin(a)*s*r,z:0.5+c*r/BOXD,vx:0,vy:0,vz:0,r:PR3,hue:0,pooled:true,age:80});}
     buildGooHash();return {mid:gooAt(CX,CY,0.5),front:gooAt(CX,CY,0.04),back:gooAt(CX,CY,0.96),side:gooAt(CX+150,CY,0.5)};});
   ok(depth.mid>0.5,'a ball inside the goo is in it (density '+depth.mid.toFixed(2)+')');
   ok(depth.front<0.1&&depth.back<0.1&&depth.side<0.1,'a ball in front of it, behind it or beside it is not ('+[depth.front,depth.back,depth.side].map(x=>x.toFixed(2)).join(', ')+')');
   // 6. a ball pushes the goo aside
   const wake=await p.evaluate(()=>{balls.length=0;spawn(CX-30,CY);const B=balls[0];B.z=0.5;B.vx=4;B.vy=0;B.vz=0;
     for(const q of particles){q.vx=q.vy=q.vz=0;}gooWake();let near=0,pushed=0,far=0,farMoved=0;
-    for(const q of particles){const d=Math.hypot(q.x-B.x,q.y-B.y,(q.z-B.z)*BOXD);if(d<BR+PR){near++;if(Math.hypot(q.vx,q.vy,q.vz)>0.1)pushed++;}else if(d>BR+PR+12){far++;if(Math.hypot(q.vx,q.vy,q.vz)>0)farMoved++;}}
+    for(const q of particles){const d=Math.hypot(q.x-B.x,q.y-B.y,(q.z-B.z)*BOXD);if(d<BR+PR3){near++;if(Math.hypot(q.vx,q.vy,q.vz)>0.1)pushed++;}else if(d>BR+PR3+12){far++;if(Math.hypot(q.vx,q.vy,q.vz)>0)farMoved++;}}
     balls.length=0;return {near,pushed,far,farMoved};});
   ok(wake.near>0&&wake.pushed===wake.near&&wake.farMoved===0,'a ball shoves the goo it passes through ('+wake.pushed+'/'+wake.near+' drops at the ball moved), and nothing further off ('+wake.farMoved+'/'+wake.far+')');
   // 7. it still fills and bursts
   const burst=await p.evaluate(()=>{startBreak=window.__sb;pressure=0;particles.length=0;
-    for(let i=0;i<partCap()*0.95;i++)particles.push({x:CX+(Math.random()-0.5)*100,y:CY+(Math.random()-0.5)*100,z:0.5,vx:0,vy:0,vz:0,r:8,hue:Math.random(),pooled:true,age:80});
+    for(let i=0;i<partCap()*0.95;i++)particles.push({x:CX+(Math.random()-0.5)*100,y:CY+(Math.random()-0.5)*100,z:0.5,vx:0,vy:0,vz:0,r:PR3,hue:Math.random(),pooled:true,age:80});
     measureFill();const ff=fillFrac();for(let i=0;i<80&&fillState==='fill';i++)simTick(performance.now());return {ff,state:fillState};});
   ok(burst.ff>=0.9&&burst.state!=='fill','a full tank still bursts (fill '+burst.ff.toFixed(2)+', then '+burst.state+')');
   ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
@@ -158,6 +158,25 @@ const GL=!!process.env.SLIME_GL;
   ok(r.merged>=3,'landed droplets run together into bigger beads ('+r.merged+' merges; the biggest bead '+r.rMax.toFixed(1)+' px, the biggest droplet '+r.r0.toFixed(1)+')');
   ok(r.eaten>0&&r.pooled>0,'and the beads reach the middle and become the slime ('+r.pooled+' drops of slime)');
   ok(Math.abs(r.left+r.eaten-r.sprayed)<=r.sprayed*0.01,'no goo is made or lost on the way (sprayed '+r.sprayed.toFixed(0)+' px^3 = beads '+r.left.toFixed(0)+' + eaten '+r.eaten.toFixed(0)+')');
+  ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
+  await ctx.close();}
+
+ // ---- 10b. THE SPRAY DOES NOT CLUTTER (2026-11-02). Slow droplets piled up: ~48 in the air, half lived over 6 s, and 7%
+ // of hits sprayed nothing because the cap was full (a screenshot read as confetti). Over 32 bars of a busy tank with the
+ // slime on: half are slime within 3.5 s, at most 35 in the air on average, and no hit loses its spray.
+ {const {ctx,p,errs}=await open('?m=studio&view=3d&space=normal');
+  const r=await p.evaluate(()=>{const s=document.getElementById('shape');s.value='6';s.dispatchEvent(new Event('change'));
+    if(!S.slimeMode)$("slimeBig").click();S.autoNotes=true;_keyPinned=true;S.spin=14;setPlaying(true);startBreak=function(){};
+    const real=performance.now.bind(performance);let T=real();performance.now=()=>T;
+    const ages=[],born=new WeakMap();let tick=0,alive=0,n=0,capped=0;
+    const sp=splash;splash=function(){const n0=particles.length;const r=sp.apply(this,arguments);if(particles.length===n0&&fillState==='fill')capped++;for(let i=n0;i<particles.length;i++)born.set(particles[i],tick);return r;};
+    const barT=60/S.bpm*beatsPerBar()*60;
+    try{for(let bar=0;bar<40;bar++){if(bar%8===7){_lastBreak=0;breakWall();}
+      for(let i=0;i<barT;i++){const before=particles.filter(q=>q.d);T+=1000/60;update(T);tick++;
+        if(bar>=8){const now=new Set(particles.filter(q=>q.d));for(const q of before)if(!now.has(q)&&born.has(q))ages.push((tick-born.get(q))/60);alive+=now.size;n++;}}}}
+    finally{performance.now=real;splash=sp;}
+    ages.sort((a,b)=>a-b);return {p50:ages[ages.length>>1],alive:alive/n,capped,gone:ages.length};});
+  ok(r.p50<=3.5&&r.alive<=35&&r.capped===0,'the spray does not clutter: half the droplets are slime within '+r.p50.toFixed(1)+' s, '+r.alive.toFixed(0)+' in the air on average, '+r.capped+' hits sprayed nothing ('+r.gone+' droplets watched)');
   ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
   await ctx.close();}
 

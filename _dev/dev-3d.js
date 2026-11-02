@@ -88,9 +88,13 @@ const URL='http://127.0.0.1:8765/index.html';
    let side=9,top=9;_tumble.a=0;_tumble.b=0;for(let i=0;i<8*secBar*30;i++){tick(30);side=Math.min(side,_M[0]);top=Math.min(top,_M[4]);}
    const lean=(set)=>{set(true);tick(30);const a=M0();for(let i=0;i<4*30;i++)tick(30);const b=M0();set(false);
      return {deg:Math.acos(Math.max(-1,Math.min(1,b[8])))*180/Math.PI,still:a.every((v,i)=>Math.abs(v-b[i])<1e-3)};};
+   // never faster than 45 degrees a second, at any tempo (research 2026-11-02): the angle between two views 1 s apart
+   const ang=(A,B)=>{let tr=0;for(let i=0;i<3;i++)for(let j=0;j<3;j++)tr+=A[i*3+j]*B[i*3+j];return Math.acos(Math.max(-1,Math.min(1,(tr-1)/2)))*180/Math.PI;};
+   const bpm0=S.bpm;const fast={};for(const bp of [80,200,300]){S.bpm=bp;tick(60);let worst=0;for(let s=0;s<6;s++){const A=M0();for(let i=0;i<60;i++)tick(60);worst=Math.max(worst,ang(A,M0()));}fast[bp]=worst;}S.bpm=bpm0;
    const red=lean(on=>{_reduced=on;}),lab0=_labOn,lab=lean(on=>{_labOn=on?()=>true:lab0;});
-   S.playing=wasP;performance.now=real;return {drift,side,top,red,lab};});
+   S.playing=wasP;performance.now=real;return {drift,side,top,red,lab,fast};});
  ok(tum.side<-0.9&&tum.top<0,'while playing the box tumbles on two axes within 8 bars (side '+tum.side.toFixed(2)+', top '+tum.top.toFixed(2)+')');
+ ok(tum.fast[300]<=45.5&&tum.fast[80]<tum.fast[200],'it never turns faster than 45 degrees a second (80 bpm '+tum.fast[80].toFixed(0)+', 200 bpm '+tum.fast[200].toFixed(0)+', 300 bpm '+tum.fast[300].toFixed(0)+' degrees a second)');
  ok(tum.drift<1e-3,'and it turns by the clock: 4 s at 120 Hz turns it as far as 4 s at 60 Hz (off by '+tum.drift.toExponential(1)+')');
  ok(tum.red.still&&tum.red.deg>10&&tum.red.deg<40,'reduced motion: the box holds a still lean ('+tum.red.deg.toFixed(0)+' degrees)');
  ok(tum.lab.deg>10&&tum.lab.deg<45,'a lesson keeps the old lean, no tumble ('+tum.lab.deg.toFixed(0)+' degrees)');

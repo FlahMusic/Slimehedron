@@ -4873,14 +4873,19 @@ function jitter(b){if(S.chaos<=0)return;const sp=Math.hypot(b.vx,b.vy);const a=M
 
 // ---------- granular particles + burst ----------
 const PR=8, GRAV=0.17;
+// THE 3D GOO'S DROPS ARE BIGGER: PR3, not PR. The same volume of slime in about half as many drops (1.25^3 = 1.95x the
+// volume each), because pushing ~1400 packed drops apart was ~70% of a full tank's tick (measured 2026-11-02: 5.3 ms a
+// tick on Flah's laptop, so ~21 ms on a phone 4x slower, past a 16.7 ms frame). Every size in the 3D goo goes by PR3:
+// one packed drop is DROP3 px^3 and a packed heart of n drops is CORE3 cbrt(n) across. The flat 2D tank keeps PR.
+const PR3=10,DROP3=3300*(PR3/PR)**3,CORE3=8.5*PR3/PR;
 let gX=0,gY=GRAV,liquidH=0; // tiltable gravity + how high the liquid sits (drives the filter morph)
 function shapeArea(){return (edges&&edges._area)?edges._area:(R*R*2.6);} // real polygon area (works for heart/star/etc, never NaN)
 function partCap(){let n=Math.min(1600,shapeArea()/120);
   // THE 3D TANK HOLDS GOO BY VOLUME. Counting by the middle slice's area gave an octahedron (a wide slice, a
   // small inside) twice the goo of a cube, so the slime swamped it. Now every shape gets the same share of
   // its own inside: the goo is always in proportion to the room the balls have.
-  if(typeof goo3D==='function'&&goo3D()){const v=tankVolume();if(v>0){const ru=Math.max(20,Math.min(...gooRoom())-GOO_IN-PR);
-    n=Math.min(1600,v*GOO_SHARE/3300,edges._solid?0.25*4.18879*ru*ru*ru/3300:1e9);}}   // ~3300 px^3: one packed drop. A solid also counts the round
+  if(typeof goo3D==='function'&&goo3D()){const v=tankVolume();if(v>0){const ru=Math.max(20,Math.min(...gooRoom())-GOO_IN-PR3);
+    n=Math.min(1600,v*GOO_SHARE/DROP3,edges._solid?0.25*4.18879*ru*ru*ru/DROP3:1e9);}}   // DROP3 px^3: one packed drop. A solid also counts the round
     // room in its middle: a pointed one (a tetrahedron) has much of its inside in corners a blob never reaches
   return Math.floor(n*(LITE?0.55:1));} // particle budget (perf + calm): fewer droplets = no overcrowded granular spazzing in the corners
 let measuredFill=0;
@@ -4936,6 +4941,8 @@ function fillAllowance(){return Math.min(1,fillBars()/(goo3D()?FILL_BARS*1.13:FI
 // grows by the cube root); the slime eats what reaches it. Eating lets the slime swell by what the bar clock allows
 // (fillAllowance), and with few notes it swells a little each beat by itself, so it is full round bar 60-64 whatever
 // plays. GOOV counts the volume sprayed and eaten (a test checks none is made or lost on the way).
+// one maker for every goo drop, so each has every field (they used to be made in four places with different fields)
+function mkDrop(x,y,z,vx,vy,vz,hue,r,age,pooled,h,d){return {x,y,z,vx,vy,vz,ox:x,oy:y,oz:z,sx:x,sy:y,hue,r,age,pooled,fade:false,h,d,bead:false,gone:false};}
 const BALL_VOL=4.18879*BR*BR*BR,GOOV={sprayed:0,eaten:0,merged:0},DROP_MAX=80;
 function splash(x,y,inx,iny,hue){
   if(fillState!=="fill")return; // no new fill while it's broken open
@@ -4943,13 +4950,13 @@ function splash(x,y,inx,iny,hue){
   if(goo3D()){let nd=0;for(const p of particles)if(p.d)nd++;if(nd>=DROP_MAX)return;
     const n=3+((Math.random()*3)|0),v=BALL_VOL/3/n,r=Math.cbrt(v/4.18879);GOOV.sprayed+=v*n;
     for(let i=0;i<n;i++){const sp=1.2+Math.random()*2.2,tx=-iny,ty=inx,tang=(Math.random()-0.5)*3.2,px=x+(Math.random()-0.5)*6,py=y+(Math.random()-0.5)*6;
-      particles.push({x:px,y:py,z:_splashZ,vx:inx*sp+tx*tang,vy:iny*sp+ty*tang,vz:(Math.random()-0.5)*1.5,hue:(hue+(Math.random()-0.5)*0.05+1)%1,r,age:0,pooled:false,d:1,bead:false});}
+      particles.push(mkDrop(px,py,_splashZ,inx*sp+tx*tang,iny*sp+ty*tang,(Math.random()-0.5)*1.5,(hue+(Math.random()-0.5)*0.05+1)%1,r,0,false,0,1));}
     return;}
   let feed=0;for(const p of particles)if(!p.fade)feed++;
   const keep=Math.max(0,Math.min(5,Math.floor(fillAllowance()-feed)));   // how many of these drops may join the goo
   for(let i=0;i<5;i++){if(i>=keep&&particles.length>=partCap()*1.15)break;/* spray that only fades is capped too */const sp=1.4+Math.random()*2.6, tx=-iny, ty=inx, tang=(Math.random()-0.5)*3.6; // 5 droplets/hit (was 10) — plenty of splash, far less pile-up
     const px=x+(Math.random()-0.5)*8, py=y+(Math.random()-0.5)*8;
-    particles.push({x:px,y:py,z:_splashZ,sx:px,sy:py,vx:inx*sp+tx*tang,vy:iny*sp+ty*tang,hue:(hue+(Math.random()-0.5)*0.05+1)%1,r:2,age:0,pooled:false,fade:i>=keep});} // droplets wear the note's color
+    const q=mkDrop(px,py,_splashZ,inx*sp+tx*tang,iny*sp+ty*tang,0,(hue+(Math.random()-0.5)*0.05+1)%1,2,0,false,0,0);q.fade=i>=keep;particles.push(q);} // droplets wear the note's color
 }
 // deflect a mover inward off the solid boundary
 function bounceInside(o){ // deflect inward off intact walls; broken walls let stuff spill through
@@ -5153,7 +5160,7 @@ function lavaTick(pooledN){
   if(fb!==LAVA.beat){const first=LAVA.beat==null;LAVA.beat=fb;
     if(!first){const down=((fb%bpb)+bpb)%bpb===0,fill=Math.min(1,pooledN/Math.max(1,partCap()*0.9));
       for(let j=0;j<3;j++){LAVA.ax[j]=randUnit();LAVA.kick[j]=(0.5+0.5*fill)*(down?1.35:1)*(0.8+Math.random()*0.4);}}}
-  for(let j=0;j<3;j++){const a=j*2.39996,w=0.09+0.031*j,cr=(LAVA.core[j]||0)+GOO_IN+PR;   // golden-angle apart, each on its own slow cycle
+  for(let j=0;j<3;j++){const a=j*2.39996,w=0.09+0.031*j,cr=(LAVA.core[j]||0)+GOO_IN+PR3;   // golden-angle apart, each on its own slow cycle
     const amp=(k,f)=>Math.min(room[k]*f,Math.max(0,room[k]-cr));   // a big heart wanders less: it never shoves itself against the glass
     const H=LAVA.hearts[j];H[0]=amp(0,0.42)*Math.sin(b*w+a);H[1]=amp(1,0.5)*Math.sin(b*w*0.63+a*1.7);H[2]=amp(2,0.42)*Math.sin(b*w*1.21+a*2.3);}
   LAVA.phase=b-fb;LAVA.room=room;return LAVA;}
@@ -5200,7 +5207,7 @@ function _pair(p,q){if(p.d||q.d)return;let dx=q.x-p.x,dy=q.y-p.y,dz=(q.z-p.z)*BO
   if(d2<min*min&&d2>1e-8){const d=Math.sqrt(d2),push=(min-d)/2;dx/=d;dy/=d;dz/=d;
     p.x-=dx*push;p.y-=dy*push;p.z-=dz*push/BOXD;q.x+=dx*push;q.y+=dy*push;q.z+=dz*push/BOXD;
     const rvx=(p.vx-q.vx)*0.25,rvy=(p.vy-q.vy)*0.25,rvz=(p.vz-q.vz)*0.25;p.vx-=rvx;p.vy-=rvy;p.vz-=rvz;q.vx+=rvx;q.vy+=rvy;q.vz+=rvz;}}
-function relax3D(){const cell=2*PR,N=particles.length;if(!N)return;_rgBuild(cell);const G=_RG,head=G.head,next=G.next,nx=G.nx,ny=G.ny,nz=G.nz;
+function relax3D(){const cell=2*PR3,N=particles.length;if(!N)return;_rgBuild(cell);const G=_RG,head=G.head,next=G.next,nx=G.nx,ny=G.ny,nz=G.nz;
   const cA=_RG.ca||(_RG.ca=new Int32Array(0));if(cA.length<N*3)_RG.ca=new Int32Array(N*6);const C=_RG.ca;
   for(let i=0;i<N;i++){const p=particles[i];   // the cell each drop was binned in (positions move as pairs are pushed; the grid is not rebuilt mid-pass, as before)
     let a=Math.floor((p.x-G.ox)/cell),b=Math.floor((p.y-G.oy)/cell),c=Math.floor(((p.z-0.5)*BOXD-G.oz)/cell);
@@ -5210,7 +5217,7 @@ function relax3D(){const cell=2*PR,N=particles.length;if(!N)return;_rgBuild(cell
     for(let h=0;h<13;h++){const o=_HS[h],gx=ca+o[0],gy=cb+o[1],gz=cc+o[2];if(gx<0||gy<0||gz<0||gx>=nx||gy>=ny||gz>=nz)continue;
       for(let j=head[(gz*ny+gy)*nx+gx];j!==-1;j=next[j])_pair(p,particles[j]);}}}
 // a ball moving through the goo shoves it aside and drags a little of it along
-function gooWake(){if(!balls.length)return;const reach=BR+PR+6;
+function gooWake(){if(!balls.length)return;const reach=BR+PR3+6;
   for(const b of balls){if(b.mute||b.warp)continue;const bz=b.z==null?0.5:b.z,vz=(b.vz||0)*BOXD;
     for(const p of particles){if(!p.pooled)continue;const dx=p.x-b.x;if(dx>reach||dx<-reach)continue;const dy=p.y-b.y;if(dy>reach||dy<-reach)continue;
       const dz=(p.z-bz)*BOXD;if(dz>reach||dz<-reach)continue;const d=Math.sqrt(dx*dx+dy*dy+dz*dz)||1;if(d>=reach)continue;const f=1-(d/reach)*(d/reach);
@@ -5230,11 +5237,11 @@ function gooStep3D(now){
   const L=lavaTick(pooledN),H=L.hearts,nh=1;LAVA.n=nh;
   const env=S.playing?Math.exp(-L.phase*10):0,cnt=[0,0,0],t=now*0.001;
   for(const p of particles)if(p.pooled&&p.h!=null&&p.h<nh)cnt[p.h]++;
-  const core=cnt.map(c=>8.5*Math.cbrt(Math.max(1,c)));LAVA.core=core;   // how big a packed heart of that many drops is
+  const core=cnt.map(c=>CORE3*Math.cbrt(Math.max(1,c)));LAVA.core=core;   // how big a packed heart of that many drops is
   for(const p of particles){p.ox=p.x;p.oy=p.y;p.oz=p.z==null?0.5:p.z;}   // where each drop was: drawn between ticks, like the balls
   for(const p of particles){if(p.d)continue;p.age++;if(p.vz==null)p.vz=0;if(p.z==null)p.z=0.5;
     if(!p.pooled&&!p.fade&&(p.age>40||(p.age>10&&Math.hypot(p.vx,p.vy,p.vz)<1.2))){p.pooled=true;p.h=nearestHeart(p,nh);}
-    if(p.pooled){if(p.r<PR)p.r+=0.12;
+    if(p.pooled){if(p.r<PR3)p.r+=0.15;
       if(p.h==null||p.h>=nh||Math.random()<0.004)p.h=nearestHeart(p,nh);   // matter drifts between hearts that pass close
       const A=H[p.h],rx=p.x-CX-A[0],ry=p.y-CY-A[1],rz=(p.z-0.5)*BOXD-A[2],d=Math.sqrt(rx*rx+ry*ry+rz*rz)||1,c=core[p.h]*0.75;
       if(d>c){const k=0.012*(d-c)/d;p.vx-=rx*k;p.vy-=ry*k;p.vz-=rz*k;}
@@ -5256,13 +5263,13 @@ function dropStep3D(L,pooledN){
   const G=boxGravity(),A=L.hearts[0],core=L.core[0]||8.5;let credit=Math.floor(fillAllowance()-pooledN),gone=false;
   for(const p of particles){if(!p.d)continue;p.age++;
     if(!p.bead){p.vx+=G[0]*GRAV;p.vy+=G[1]*GRAV;p.vz+=G[2]*GRAV;p.vx*=0.985;p.vy*=0.985;p.vz*=0.985;   // flies, and falls the way the world's down is
-      if(p.age>40||(p.age>10&&Math.hypot(p.vx,p.vy,p.vz)<1.2))p.bead=true;}
-    else{const rx=p.x-CX-A[0],ry=p.y-CY-A[1],rz=(p.z-0.5)*BOXD-A[2],d=Math.sqrt(rx*rx+ry*ry+rz*rz)||1,a=0.04*Math.min(4,(p.r/4)*(p.r/4));
-      p.vx=(p.vx-rx/d*a)*0.9;p.vy=(p.vy-ry/d*a)*0.9;p.vz=(p.vz-rz/d*a)*0.9;   // slides home: 0.4 px a tick at 4 px (across the tank in about 3 bars at 80 bpm), faster as it grows
+      if(p.age>30||(p.age>10&&Math.hypot(p.vx,p.vy,p.vz)<1.2))p.bead=true;}
+    else{const rx=p.x-CX-A[0],ry=p.y-CY-A[1],rz=(p.z-0.5)*BOXD-A[2],d=Math.sqrt(rx*rx+ry*ry+rz*rz)||1,a=0.12*Math.min(4,(p.r/4)*(p.r/4));
+      p.vx=(p.vx-rx/d*a)*0.9;p.vy=(p.vy-ry/d*a)*0.9;p.vz=(p.vz-rz/d*a)*0.9;   // slides home: 1.2 px a tick at 4 px, faster as it grows (measured 2026-11-02: half are slime within 2.9 s of the hit, ~26 in the air)
       if(credit>0&&(d<core*0.8+p.r+6||(pooledN&&gooAt3(p.x,p.y,p.z)>0.3))){   // it reached the slime (or is the first, and starts it)
         const v=4.18879*p.r*p.r*p.r;GOOV.eaten+=v;p.gone=true;gone=true;
         const add=Math.min(credit,1+Math.floor(v/(BALL_VOL/12)));credit-=add;
-        for(let k=0;k<add;k++)particles.push({x:p.x+(Math.random()-0.5)*4,y:p.y+(Math.random()-0.5)*4,z:p.z,vx:0,vy:0,vz:0,hue:p.hue,r:2,age:60,pooled:true,h:0});
+        for(let k=0;k<add;k++)particles.push(mkDrop(p.x+(Math.random()-0.5)*4,p.y+(Math.random()-0.5)*4,p.z,0,0,0,p.hue,2,60,true,0,0));
         continue;}}
     p.x+=p.vx;p.y+=p.vy;p.z+=p.vz/BOXD;gooContain3D(p);}
   // beads that touch run together into one
@@ -5278,7 +5285,7 @@ function dropStep3D(L,pooledN){
   // with few notes the slime swells a little each beat by itself, so it still fills on the bar clock
   if(L.beat!==_swellBeat){_swellBeat=L.beat;
     if(pooledN>0&&credit>0){const add=Math.ceil(credit*0.12);for(let k=0;k<add;k++){const q=particles[(Math.random()*particles.length)|0];if(!q||!q.pooled)continue;
-      particles.push({x:q.x+(Math.random()-0.5)*6,y:q.y+(Math.random()-0.5)*6,z:q.z,vx:0,vy:0,vz:0,hue:q.hue,r:2,age:60,pooled:true,h:q.h||0});}}}
+      particles.push(mkDrop(q.x+(Math.random()-0.5)*6,q.y+(Math.random()-0.5)*6,q.z,0,0,0,q.hue,2,60,true,q.h||0,0));}}}
   if(gone)particles=particles.filter(q=>!q.gone);}
 // ---------- ball stepping ----------
 // THE REVIVE SWEEP.
@@ -6056,12 +6063,15 @@ let _reduced=false;try{_reduced=matchMedia('(prefers-reduced-motion: reduce)').m
 // like that"). Two axes at once, _M = Ry(a)*Rx(b): a full turn round the upright every TUMBLE_BARS bars, and round
 // the other axis 1/1.618 as fast, so a face never comes round the same way twice. Taps (screenToBox) and the goo's
 // gravity (boxGravity) read _M, so they turn with it. Lessons and reduced motion keep the still lean further down.
-const TUMBLE_BARS=8,_tumble={a:0.5,b:0.3};
+// Never faster than 45 degrees a second (research 2026-11-02, _docs/research/2026-11-02-tank-perfection.md: motion
+// sickness from a turning scene peaks near 60 degrees a second; 45 is our margin). The two axes together turn about
+// 1.176 x 360 degrees per TUMBLE_BARS, so a turn takes at least TUMBLE_MIN_S seconds: only tempos past ~200 bpm reach it.
+const TUMBLE_BARS=8,TUMBLE_MIN_S=1.176*360/45,_tumble={a:0.5,b:0.3};
 function viewTick(){
   let secBar=4*60/(S.bpm||80);try{secBar=drumBar()*drumStepDur();}catch(e){}
   const vn=performance.now(),vdt=Math.min(100,_vtLast?vn-_vtLast:16.7)/1000;_vtLast=vn;   // by the clock, not per frame: a 120 Hz screen used to turn it twice as fast
   if(!_reduced&&!_labOn()){
-    if(S.playing){const T=TUMBLE_BARS*Math.max(0.2,secBar);_tumble.a+=(2*Math.PI)*vdt/T;_tumble.b+=(2*Math.PI)*vdt/(T*1.618);}
+    if(S.playing){const T=Math.max(TUMBLE_MIN_S,TUMBLE_BARS*Math.max(0.2,secBar));_tumble.a+=(2*Math.PI)*vdt/T;_tumble.b+=(2*Math.PI)*vdt/(T*1.618);}
     const ca=Math.cos(_tumble.a),sa=Math.sin(_tumble.a),cb=Math.cos(_tumble.b),sb=Math.sin(_tumble.b);
     _M=[ca, sa*sb, sa*cb,
         0,  cb,    -sb,
@@ -7958,11 +7968,14 @@ const MODS=[
   {id:'chaos',rate:0.02,c:22,d:14}, // gentle ball-wobble drift: varied impact angles = varied drop timbres, organically
   {id:'swingSl',rate:0.016,c:22,d:9} // swing breathes 13–31%: the groove leans and relaxes like a human drummer
 ]; // delay stays off the wobble list — the liquid level drives it
-function slimeModStep(now){
+// the MODS wobble is slow (seconds per swing), and each move fires the slider's input handler: 15 times a second is the
+// same glide for an eighth of the work (measured 2026-11-02: 0.8 ms a tick at 60 a second)
+let _modN=0;
+function slimeModStep(now){if((_modN++)%4)return;
   for(let i=0;i<MODS.length;i++){const m=MODS[i],inp=document.getElementById(m.id);if(!inp)continue;
     if(inp.dataset.touched&&(now-(+inp.dataset.touched)<4500||+inp.dataset.touched>_slimeOnAt))continue; // touched this slime session = yours for the whole jam
     const target=m.c+Math.sin(now/1000*m.rate*6.283+i*1.7)*m.d;
-    const nv=parseFloat(inp.value)+(target-parseFloat(inp.value))*0.02;
+    const nv=parseFloat(inp.value)+(target-parseFloat(inp.value))*0.0776;   // 1-(0.98)^4: the same glide as 0.02 a tick, run every 4th tick
     inp.value=nv;inp.dispatchEvent(Object.assign(new Event('input'),{_wob:1})); // tagged: wobble must not starve the settings-saver debounce
   }
 }
