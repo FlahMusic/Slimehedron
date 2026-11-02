@@ -13,6 +13,7 @@ Every suite: `node _dev/<name>.js` from the project root, with a server on :8765
 | the header / transport / any control's size | dev-topbar, dev-a11y, dev-devices, dev-phone, dev-surface, dev-crowding |
 | play mode, the tank gestures, auto-notes | dev-hands, dev-ux, dev-firsttouch, dev-firstfive, dev-controls, dev-guide |
 | tank physics, spin, shapes, spaces | dev-hands, dev-space, dev-solid, dev-portal, dev-beatlock, dev-revive, dev-fluid |
+| auto-notes pace per shape (the auto adjuster) | dev-autoadjust (~4 min, seeded) |
 | the goo | dev-goo3d, dev-goosmooth, dev-goolook, dev-gl |
 | the 3D look / GPU tank | dev-gl, dev-look3d, dev-crayon, dev-3d, dev-shapes, dev-potato |
 | harmony, keys, scales, the chord chip | dev-chordtest, dev-harmony, dev-harmony2, dev-world, dev-tuning, dev-band, dev-melody |

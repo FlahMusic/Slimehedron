@@ -4828,7 +4828,7 @@ let _lastBreak=0;
 function breakWall(){
   const now=performance.now(); if(now-_lastBreak<650)return; _lastBreak=now; // THROTTLE: ball-spam pushed balls.length over MAXBALLS every frame → breakWall fired ~60x/s, flickering walls open/closed = the "glitchy geometry". one break per ~0.65s max.
   const live=edges.filter(e=>!e.broken);
-  const brokenNow=edges.length-live.length; if(brokenNow>=Math.max(1,Math.floor(edges.length*0.34))||live.length<=3)return; // cap open gaps at ~1/3 of the walls (porous, not dissolved) and never below 3 solid walls
+  const brokenNow=edges.length-live.length; const auto=S.slimeMode&&S.autoNotes!==false;if(brokenNow>=(auto?1:Math.max(1,Math.floor(edges.length*0.34)))||live.length<=3||(auto&&edges.length<6))return;   /* with auto-notes on, one gap at a time and none in a shape of under 6 walls: the auto adjuster thins the balls itself (THE AUTO ADJUSTER), and a third of a hexagon's rim, or one of a tetrahedron's four faces, open lost most new notes out of it */ // cap open gaps at ~1/3 of the walls (porous, not dissolved) and never below 3 solid walls
   const rootDeg=((curRootDeg%scaleObj().c.length)+scaleObj().c.length)%scaleObj().c.length;
   const cand=live.filter(e=>degOf(e.cents)!==rootDeg); // don't break the tonic wall — harmony stays grounded
   const e=(cand.length?cand:live)[(Math.random()*(cand.length?cand.length:live.length))|0];
@@ -4857,7 +4857,8 @@ function zInit(){return {z:0.02,pz:0.02,vz:0.003+Math.random()*0.004};} // every
 function velForHit(){return S.velRand?Math.round(S.velMin+Math.random()*(S.velMax-S.velMin)):S.velFix;}
 let pendingNotes=[];
 var _noFeed=false;   // a seed's loop rings walls without telling the chord follower someone is playing
-function trigger(cents,imp,goo,now,pane){if(!pane&&!_noFeed)noteFeed(cents);goo=goo||0;let vel=Math.round(velForHit()*(1-goo*0.3)); // gooed notes land softer too
+var _mute=false;     // a ball on its way out (THE AUTO ADJUSTER) bounces without a note
+function trigger(cents,imp,goo,now,pane){if(_mute&&!now)return;if(!now)AUTO.hits++;if(!pane&&!_noFeed)noteFeed(cents);goo=goo||0;let vel=Math.round(velForHit()*(1-goo*0.3)); // gooed notes land softer too
   if(pane)vel=Math.max(1,Math.round(vel*0.62)); // a glass pane is a soft chime under the walls, never a lead
   // A HAND GETS A FIRM NOTE. velForHit() can hand back 12 of 127 because the random range exists to
   // make rain sound like rain. A child who deliberately touches a wall and gets a note at 9% level
@@ -4895,8 +4896,8 @@ let measuredFill=0;
 // ball flies between walls on average (4V/S, Cauchy's formula), against the hexagon's: by the square root and within
 // 0.75..1.25, so a small shape slows a little and never crawls. The auto adjuster thins a small shape's notes the rest
 // of the way (ticket 15). Lessons and curved space keep the plain pace.
-const BALL_V=3.6,_sizeK={key:null,k:1};
-function sizeK(){if(!edges||edges._space==='curved'||_labOn())return 1;
+const BALL_V=3.6,_sizeK={key:null,k:1,mfp:0};
+function sizeK(){if(!edges||edges._space==='curved'||_labOn()){_sizeK.mfp=0;return 1;}
   const key=String(S.shape)+'|'+(edges._solid?SOLID.name:'');if(key===_sizeK.key)return _sizeK.k;
   let V=0,A=0;
   if(edges._solid){if(SOLID.from||!SOLID.planes.length)return _sizeK.k;   // mid-grow: keep the old pace until the new shape is whole
@@ -4906,7 +4907,7 @@ function sizeK(){if(!edges||edges._space==='curved'||_labOn())return 1;
   else{const v=edges._verts||[],a=shapeArea();let P=0;for(let i=0;i<v.length;i++){const p=v[i],q=v[(i+1)%v.length];P+=Math.hypot(q[0]-p[0],q[1]-p[1]);}
     V=a*BOXD;A=2*a+P*BOXD;}
   const hexA=1.5*Math.sqrt(3)*R*R,mfpHex=4*hexA*BOXD/(2*hexA+6*R*BOXD);
-  _sizeK.key=key;_sizeK.k=V>0&&A>0?Math.max(0.75,Math.min(1.25,Math.sqrt(4*V/A/mfpHex))):1;return _sizeK.k;}
+  _sizeK.key=key;_sizeK.mfp=V>0&&A>0?4*V/A:0;_sizeK.k=V>0&&A>0?Math.max(0.75,Math.min(1.25,Math.sqrt(4*V/A/mfpHex))):1;return _sizeK.k;}
 function ballSpeed(){return (S.bpm/80)*BALL_V*sizeK();} // steady, tempo-driven ball speed, in 3D
 let particles=[];  // {x,y,vx,vy,hue,r}
 let debris=[];     // (unused now — kept for compatibility)
@@ -5580,7 +5581,9 @@ function step(){
   const g=settleAmt()*0.09, ts=ballSpeed(), gy=g*0.55, s3=solid3D();
   if(s3){_solidOpen.clear();for(const e of edges)if(e.broken&&(e.reform||0)<0.55&&e.face!=null)_solidOpen.add(e.face);}   // an open wall of the slice opens its face
   for(let bi=balls.length-1;bi>=0;bi--){
-    const b=balls[bi];_noFeed=!!b.seed;   // a seed's note rings its walls without steering the chord brain
+    const b=balls[bi];_noFeed=!!b.seed;_mute=!!b.leave;
+    if(b.leave){b.melt=(b.melt==null?1:b.melt)-1/36;   // melting into the slime (THE AUTO ADJUSTER): gone in about 0.6 s
+      if(b.melt<=0){_splashZ=b.z==null?0.5:b.z;splash(b.x,b.y,0,-1,b.hue);_splashZ=0.5;balls.splice(bi,1);continue;}}   // a seed's note rings its walls without steering the chord brain
     if(b.warp){const w=b.warp;b.px=b.x;b.py=b.y;if(s3)b.pz=b.z;   // in the other dimension: no physics until the far hole spits it out
       if(!WORM.on||(_tickT||performance.now())-w.t0>=w.dur)wormExit(b,!WORM.on);continue;}
     b.r=BR;
@@ -5671,7 +5674,7 @@ function step(){
       b._under=under;
     }else b._under=false;
   }
-  _noFeed=false;
+  _noFeed=false;_mute=false;
 }
 
 // ---------- transport / rain ----------
@@ -5714,7 +5717,7 @@ function hitTicks(b){let best=Infinity;
     if(prev[k]>0&&r<=0){const hit=t-DT*r/(r-prev[k]);if(hit<best)best=hit;}prev[k]=r;}   // first wall the ball meets, between two samples by straight line
   return best;}
 function beatLock(b,now){
-  if(!S.quantize||!S.playing||b.mute||_labOn()||(fillState==="fill"&&gooAt(b.x,b.y,b.z)>0.3)){b.tq=(b.tq||1)+(1-(b.tq||1))*0.2;b.tg=0;return;}
+  if(b.leave||!S.quantize||!S.playing||b.mute||_labOn()||(fillState==="fill"&&gooAt(b.x,b.y,b.z)>0.3)){b.tq=(b.tq||1)+(1-(b.tq||1))*0.2;b.tg=0;return;}
   if((b._bl=(b._bl||0)+1)%2)return;   // steering every other tick is plenty, and halves the cost
   const tq=b.tq||1,n=hitTicks(b);
   if(!(n<1e5)){b.tq=tq+(1-tq)*0.2;b.tg=0;return;}
@@ -5747,9 +5750,11 @@ function transport(now){
     const beat=60000/Math.max(40,S.bpm);
     if(!_melNext||now-_melNext>beat*4)_melNext=now; // (re)start / recover from a hidden tab without a burst
     while(now>=_melNext){
-      const strong=(_melStepN%2===0);
-      // only float a new note when the air is fairly clear AND we roll for it → open, singable spacing (no pile-up)
-      if(balls.length<7 && (strong?Math.random()<0.6:Math.random()<0.22))autoMelodyNote(strong);
+      const strong=(_melStepN%2===0);autoBeat(_melStepN);
+      // only float a new note when the air is fairly clear AND we roll for it → open, singable spacing (no pile-up);
+      // how clear and how often is each shape's own (THE AUTO ADJUSTER)
+      const room=autoRoom(),inn=ballsIn(),lift=inn<room-1?1.6:1;   // well under the room: notes drop more readily, to fill it
+      if(inn<room && (strong?Math.random()<Math.min(0.95,0.6*lift):Math.random()<Math.min(0.95,0.22*lift)))autoMelodyNote(strong);
       _melStepN++;_melNext+=beat; // ONE grid step per BEAT (was per 8th) → roughly a note every beat or two, with rests
     }}else _melNext=0;
   }else if(S.rain&&balls.length===0&&!manualHold)spawnRain(); // non-slime rain toy: unchanged
@@ -6002,7 +6007,7 @@ function drawBalls(){ // every ball its own vivid hue; in the goo they wade — 
     if(wv&&wv.x!=null){bx=CX+wv.x;by=CY+wv.y;}
     if(wv){const hb=Math.round(b.hue*360),a=Math.atan2(wv.n[1],wv.n[0]);ctx.fillStyle=`hsl(${hb},88%,58%)`;ctx.beginPath();
       ctx.ellipse(bx,by,Math.max(0.3,BR0*wv.sx),Math.max(0.3,BR0*wv.sy),a,0,7);ctx.fill();continue;}   // stretched along the hole's axis
-    const BR=BR0*ballScale(bx,by);   // curved space: a ball shrinks toward the rim (1 everywhere else)
+    const BR=BR0*ballScale(bx,by)*(b.melt==null?1:Math.max(0,b.melt));   // curved space: a ball shrinks toward the rim (1 everywhere else); a melting one shrinks away
     for(let i=0;i<tl;i++){const [tx,ty]=b.trail[i];const f=i/tl;
       if(under){ctx.fillStyle=`hsla(${bh},65%,58%,${(f*0.4).toFixed(3)})`;ctx.beginPath();ctx.arc(tx,ty,BR*(0.4+0.95*f),0,7);ctx.fill();} // thick wake dragging through the goo
       else{ctx.fillStyle=`hsla(${bh},90%,64%,${(f*0.25).toFixed(3)})`;ctx.beginPath();ctx.arc(tx,ty,BR*(0.2+0.55*f),0,7);ctx.fill();}}
@@ -6228,7 +6233,7 @@ function drawBalls3D(){
     if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR*2.2){bx=b.x;by=b.y;bz=b.z||0;}
     const wv=wormView(b,performance.now());if(wv&&wv.hide)continue;   // in the other dimension
     if(wv&&wv.x!=null){bx=CX+wv.x;by=CY+wv.y;bz=wv.z/BOXD+0.5;}
-    const s=P3(bx,by,bz),X=s[0],Y=s[1],r=BR*s[2]*ballScale(bx,by,bz)*(wv?Math.sqrt(wv.sx*wv.sy):1);
+    const s=P3(bx,by,bz),X=s[0],Y=s[1],r=BR*s[2]*ballScale(bx,by,bz)*(wv?Math.sqrt(wv.sx*wv.sy):1)*(b.melt==null?1:Math.max(0,b.melt));
     ctx.globalAlpha=1-0.3*bz;                                              // further back = a little hazier
     for(let i=0;i<tl;i++){const t=b.trail[i],f=i/tl,q=P3(t[0],t[1],t[2]||0);
       ctx.fillStyle=under?`hsla(${bh},65%,58%,${(f*0.4).toFixed(3)})`:`hsla(${bh},90%,64%,${(f*0.25).toFixed(3)})`;
@@ -7268,6 +7273,47 @@ function clampDeg(d,lo,hi){return d<lo?lo+1:(d>hi?hi-1:d);}
 // spawn a GENTLE, floaty ball (same soft physics as the original rain — NO aggressive blast) but nudge its drift toward
 // the melodically-sensible note-wall. keeps the ethereal, controlled-chaos motion; the geometry + bounces still decide
 // the happy accidents, we just lean the aim so the line comes out singable instead of random-octave spam.
+// THE AUTO ADJUSTER (web-first ticket 15; Flah 2026-10-29: "each shape takes on its own slightly individual speed of
+// note playing ... smoothly adjusts to fit this timeframe regardless of BPM, as its based on number of bars"). Each shape
+// aims at its own notes a bar: 8 on the hexagon (the middle of the 7-9 the tank played with its walls working), times
+// the cube root of its volume against the hexagon's, held to 6..10 (25% either way). Every 4-bar phrase it compares the
+// last 4 bars with the aim and sets a new knob, which glides in over the next 4 bars; the knob sets how many balls may
+// fly (autoRoom), and the melody drops notes more readily while the tank is well under that. It counts in the melody's own beats, so the tempo never changes it, and a new shape
+// starts its own count. The swell (THE SPRAY) lands the burst on time whatever this does.
+const AUTO={k:1,k0:1,kT:1,ki:1,g0:0,hits:0,bb:0,bars:[],bbs:[],bar:-1,key:null};
+function autoAim(){const V=tankVolume(),hex=1.5*Math.sqrt(3)*R*R*BOXD;return 8*Math.max(0.75,Math.min(1.25,Math.cbrt(V>0?V/hex:1)));}
+function autoBeat(step){
+  const bpb=beatsPerBar(),bar=Math.floor(step/bpb),key=String(S.shape)+'|'+(edges._space||'');
+  if(key!==AUTO.key){AUTO.key=key;AUTO.bars.length=0;AUTO.bbs.length=0;AUTO.hits=0;AUTO.bb=0;AUTO.bar=bar;AUTO.ki=1;
+    // a new shape starts from what its physics predicts: a ball crosses its mean free path (4V/S) at ballSpeed, so it
+    // sings ballSpeed x ticks a bar / mfp notes a bar (the first measurement, 4 bars in, corrects it)
+    sizeK();const mfp=_sizeK.mfp;if(mfp>0){const per=ballSpeed()*bpb*3600/Math.max(40,S.bpm||80)/mfp;AUTO.k=AUTO.k0=AUTO.kT=Math.max(0.12,Math.min(2,autoAim()/per/7));AUTO.g0=step;}}
+  AUTO.bb+=ballsIn();   // ball-beats: how many balls were singing (in the tank), beat by beat
+  if(bar!==AUTO.bar){AUTO.bars.push(AUTO.hits);AUTO.bbs.push(AUTO.bb);AUTO.hits=0;AUTO.bb=0;AUTO.bar=bar;if(AUTO.bars.length>8){AUTO.bars.shift();AUTO.bbs.shift();}
+    // each ball makes so many notes a bar in THIS shape at THIS speed (measured over the phrase); the room is the number
+    // of balls the aim needs, and the knob is that room over 7
+    // (the rate is read over the last 8 bars: a small shape has only a ball or two, and 4 bars of them is too few notes)
+    if(bar%4===0&&AUTO.bars.length>=4){const L=AUTO.bars.length,sum=a=>a.reduce((x,y)=>x+y,0),n=sum(AUTO.bars),ballBars=sum(AUTO.bbs)/bpb,n4=sum(AUTO.bars.slice(L-4));
+      const perBall=ballBars>1?n/ballBars:0,aim=autoAim();
+      // ...and a slow trim for what that misses (a fresh ball has not sung yet, the room is a whole number of balls)
+      if(n4>0)AUTO.ki=Math.max(0.7,Math.min(1.5,AUTO.ki*Math.pow(aim/(n4/4),0.3)));
+      AUTO.k0=AUTO.k;AUTO.kT=perBall>0?Math.max(0.12,Math.min(2,aim/perBall/7*AUTO.ki)):AUTO.kT;AUTO.g0=step;}}
+  AUTO.k=AUTO.k0+(AUTO.kT-AUTO.k0)*Math.min(1,(step-AUTO.g0)/(4*bpb));
+  // fewer notes means fewer balls, not only fewer new ones: balls only leave through an open wall, which a solid's
+  // balls rarely find (measured: an icosahedron held 7 balls at the lowest knob). Over the room, the oldest of the
+  // melody's own balls goes quiet and melts into the slime: it shrinks away in ~0.6 s and its goo sprays into the tank.
+  // (Sending it out through a gap was tried: in a solid it rarely found one, and they piled up to MAXBALLS.)
+  // Never a ball a hand dropped, never a seed.
+  let mine=0,old=null;for(const b of balls)if(b.auto&&!b.leave&&ballIn(b)){mine++;if(!old)old=b;}
+  if(old&&mine>autoRoom())old.leave=1;}   // over the room: the oldest melts into the slime, quietly (see the ball step)
+function autoRoom(){return Math.max(1,Math.floor(7*AUTO.k+(_melStepN*0.618)%1));}   // dithered beat by beat, so 1.5 balls means 1 and 2 by turns
+// a ball still in the tank (not one flying off through an open wall: it makes no notes, and it used to count against the
+// room for ~3 s, so the tank fell quiet right after a wall opened -- measured: 3-4 balls "in" it, 0-3 notes a bar)
+function ballIn(b){if(b.warp)return true;
+  if(solid3D()){const c=Math.cos(rot),s=Math.sin(rot),x=b.x-CX,y=b.y-CY,z=((b.z==null?0.5:b.z)-0.5)*BOXD;
+    for(const pl of SOLID.planes){const n=pl.n;if((n[0]*c-n[1]*s)*x+(n[0]*s+n[1]*c)*y+n[2]*z>pl.d+BR)return false;}return true;}
+  return !edges||!edges._verts||inPoly(b.x,b.y,edges._verts);}
+function ballsIn(){let n=0;for(const b of balls)if(!b.leave&&ballIn(b))n++;return n;}   // the balls that can sing: in the tank, not on their way out
 function autoMelodyNote(strong){
   if(!S.slimeMode||manualHold)return;
   const deg=nextMelodyDeg(strong),cents=centsForDegree(deg);
@@ -7279,7 +7325,7 @@ function autoMelodyNote(strong){
   // spawn a touch off-center in the aim direction so it eases outward, floating, instead of teleport-shooting from the middle
   const r0=R*0.14*Math.random(), sx=CX+Math.cos(ang)*r0, sy=CY+Math.sin(ang)*r0;
   if(balls.length>=MAXBALLS)return; // full? just skip this note — the wall-drain releases old ones; never a vanish-flash
-  balls.push(Object.assign({x:sx,y:sy,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,hue:((hueIdx++)%12)/12,trail:[]},zInit())); // NO mute: it floats & sings on wall hits exactly like a normal ball
+  balls.push(Object.assign({x:sx,y:sy,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,hue:((hueIdx++)%12)/12,trail:[],auto:1},zInit())); // NO mute: it floats & sings on wall hits exactly like a normal ball
 }
 function playNote(midi,vel){ // one door for every performance: computer keyboard, MIDI, anything later
   initAudio();if(AC&&AC.state==='suspended')AC.resume();

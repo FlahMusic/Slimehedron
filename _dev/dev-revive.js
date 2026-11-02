@@ -95,11 +95,11 @@ ok(rms>SILENT,'and it still makes a sound afterwards (peak RMS '+rms.toFixed(5)+
 
 const box=await p.evaluate(()=>{const r=document.getElementById('cv').getBoundingClientRect();
   return {x:r.left+r.width*0.5,y:r.top+r.height*0.38};});
-const nBefore=await p.evaluate(()=>balls.length);
+const nBefore=await p.evaluate(()=>{window.__before=new Set(balls);return balls.length;});   // since 2026-11-02 the auto adjuster may melt a melody ball in the same moment: count the NEW ball, not the total
 await p.mouse.click(box.x,box.y);
 await p.waitForTimeout(400);
-const nAfter=await p.evaluate(()=>balls.length);
-ok(nAfter>nBefore,'and it still responds to a touch ('+nBefore+' -> '+nAfter+' balls)');
+const nNew=await p.evaluate(()=>balls.filter(b=>!window.__before.has(b)&&!b.auto).length);
+ok(nNew>=1,'and it still responds to a touch ('+nNew+' new ball from the tap, '+nBefore+' there before)');
 
 // ---------- 4. NO RENDERER DAMAGE ----------
 // A NaN that reaches createRadialGradient throws. If the sweep missed, this fills up.

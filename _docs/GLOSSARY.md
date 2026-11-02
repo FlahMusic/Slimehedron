@@ -39,6 +39,8 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 - **Band**: bass + comp + pad (+ drums). **Kit**: a drum style (pop, rock, disco, bossa, jazz, ...).
 - **Triangle mixer**: `#triMix` (melody / drums / band). **Mixer**: studio's per-part volume/mute/solo (`MIX`).
 - **Beat lock**: balls are steered so their hits land on the grid (`beatLock`, `b.tq`).
+- **Auto adjuster**: gives each shape its own pace with auto-notes on (`AUTO`, `autoRoom`): a notes-a-bar aim from its
+  size, a room of balls, and over the room the melody's oldest ball **melts** into the slime. Counts bars, not seconds.
 - **Sync**: the one setting that lines up MIDI out and the visuals with what you hear. A tap-along measures your
   speakers' delay (Bluetooth is ~60-120 ms); the setting can also be nudged by hand. Not the MIDI clock.
 

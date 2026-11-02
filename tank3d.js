@@ -628,7 +628,7 @@ export function start(){
       let bx=lerpX(b),by=lerpY(b),bz=(b.pz==null?(b.z||0):b.pz+((b.z||0)-b.pz)*_alpha);
       if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR*2.2){bx=b.x;by=b.y;bz=b.z||0;}
       const wv=window.wormView?wormView(b,now):null;if(wv&&wv.hide){if(SQ.has(b))SQ.delete(b);continue;}   // in the other dimension: not here at all
-      let r=BR*ballScale(bx,by,bz)*noteScale(),x=bx-CX,y=by-CY,z=zl(bz);const under=fill&&gooAt(b.x,b.y,b.z)>0.3;
+      let r=BR*ballScale(bx,by,bz)*noteScale()*(b.melt==null?1:Math.max(0,b.melt)),x=bx-CX,y=by-CY,z=zl(bz);const under=fill&&gooAt(b.x,b.y,b.z)>0.3;
       if(wv&&wv.x!=null){x=wv.x;y=wv.y;z=wv.z;}
       noteMatrix(b,x,y,z,r,now);
       if(wv){const nn=wv.n;let t1=Math.abs(nn[2])<0.9?[-nn[1],nn[0],0]:[1,0,0];const l=Math.hypot(...t1);t1=t1.map(q=>q/l);
