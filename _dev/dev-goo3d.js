@@ -148,12 +148,12 @@ const GL=!!process.env.SLIME_GL;
     particles.length=0;fillState='fill';fillBeats=20*beatsPerBar();GOOV.sprayed=0;GOOV.eaten=0;GOOV.merged=0;
     const vol=q=>4.18879*q.r*q.r*q.r,drops=()=>particles.filter(q=>q.d);
     _splashZ=0.5;splash(CX+150,CY,-1,0,0.3);const one=drops().map(q=>q.r);
-    for(let i=1;i<8;i++){_splashZ=0.2+i*0.08;splash(CX+Math.cos(i)*150,CY+Math.sin(i)*150,-Math.cos(i),-Math.sin(i),i/8);}
+    for(let i=1;i<16;i++){_splashZ=0.2+(i%8)*0.08;splash(CX+Math.cos(i)*150,CY+Math.sin(i)*150,-Math.cos(i),-Math.sin(i),i/16);}   // 16 hits: 2-3 droplets each since 2026-11-02
     const n0=drops().length,r0=Math.max(...drops().map(q=>q.r));let rMax=r0,nMin=n0;
     const T0=performance.now();for(let i=0;i<900;i++){_tickT=T0+i*16.67;simTick(_tickT);const d=drops();nMin=Math.min(nMin,d.length);for(const q of d)rMax=Math.max(rMax,q.r);}
     const left=drops().reduce((a,q)=>a+vol(q),0);
     return {one,oneVol:one.reduce((a,x)=>a+4.18879*x*x*x,0)/BALL_VOL,n0,nMin,r0,rMax,sprayed:GOOV.sprayed,eaten:GOOV.eaten,merged:GOOV.merged,left,pooled:particles.filter(q=>q.pooled).length};});
-  ok(r.one.length>=3&&r.one.length<=5&&Math.max(...r.one)<=4.5,'a note throws a small spray: '+r.one.length+' droplets, the biggest '+Math.max(...r.one).toFixed(1)+' px across the radius (a ball is 9)');
+  ok(r.one.length>=2&&r.one.length<=3&&Math.max(...r.one)<=5,'a note throws a small spray: '+r.one.length+' droplets, the biggest '+Math.max(...r.one).toFixed(1)+' px across the radius (a ball is 9)');
   ok(r.oneVol>=0.25&&r.oneVol<=0.45,'together about a third of the ball ('+(r.oneVol*100).toFixed(0)+'% of its volume)');
   ok(r.merged>=3,'landed droplets run together into bigger beads ('+r.merged+' merges; the biggest bead '+r.rMax.toFixed(1)+' px, the biggest droplet '+r.r0.toFixed(1)+')');
   ok(r.eaten>0&&r.pooled>0,'and the beads reach the middle and become the slime ('+r.pooled+' drops of slime)');

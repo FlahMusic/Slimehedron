@@ -182,7 +182,7 @@ header .spacer{flex:1}
 /* THE KEY LOCK. Picking a key by hand stops the slime wandering off it — correct, but it used to be a
    silent one-way latch: the only way back was toggling auto-play off and on, which nobody would guess,
    and the symptom was "it stays in one scale forever". Now the chip says so, and tapping it releases. */
-body.keyPinned #hdrChord{border-color:var(--accent);background:rgba(179,136,240,.16)}
+body.keyPinned #hdrChord{border-color:var(--accent);background:linear-gradient(rgba(179,136,240,.16),rgba(179,136,240,.16)),rgba(255,255,255,.72)}   /* the tint over the chip's own backing: alone it let the crayon page show through (2026-11-02 screenshot review) */
 body.keyPinned #hcKey::before{content:"\1F512\FE0E";margin-right:3px;font-size:9px}
 body.mode-play:not(.keyPinned) #hcKey{display:none}   /* play: just the chord. A locked key still shows its lock */
 #hdrChord b{font:800 17px system-ui,sans-serif;color:var(--ink);letter-spacing:.2px;white-space:nowrap;max-width:118px;overflow:hidden;text-overflow:ellipsis}
@@ -4935,9 +4935,10 @@ function fillBars(){return fillBeats/Math.max(1,beatsPerBar());}
 function fillAllowance(){return Math.min(1,fillBars()/(goo3D()?FILL_BARS*1.13:FILL_BARS))*partCap();}   // the 3D tank reads 'nine tenths full' a little sooner (by volume), so its clock is stretched to land on the same bar
 // THE SPRAY (ticket 14; Flah 2026-10-29: the spray off a note was "gigantic"; it should be "a small spray of a few droplets
 // from each note slowly coagulating into that bigger one", at a rate that makes sense for their size). In 3D a hit throws
-// 3-5 droplets, together a third of the ball's volume (BALL_VOL): about 4 px across the radius, where a ball is 9. Before,
+// 2-3 droplets, together a third of the ball's volume (BALL_VOL): about 4.5 px across the radius, where a ball is 9. Before,
 // each hit threw 5 drops of a ball's volume each, and the renderer drew landed ones as blobs sized by their spread. They
-// fly and fall toward the world's down (the box tumbles), land, bead, and slide toward the slime, a big bead faster than
+// fly and fall toward the world's down (the box tumbles), land, bead, and slide toward the slime (2-3 a hit since the
+// 2026-11-02 screenshot review: 3-5 in every note's colour read as sprinkles; a landed bead takes the slime's colour), a big bead faster than
 // a small one (Stokes: speed goes with the square of the size); beads that touch run together (volume kept, so the radius
 // grows by the cube root); the slime eats what reaches it. Eating lets the slime swell by what the bar clock allows
 // (fillAllowance), and with few notes it swells a little each beat by itself, so it is full round bar 60-64 whatever
@@ -4949,7 +4950,7 @@ function splash(x,y,inx,iny,hue){
   if(fillState!=="fill")return; // no new fill while it's broken open
   if(hue==null)hue=Math.random();feedLiquidHue(hue);
   if(goo3D()){let nd=0;for(const p of particles)if(p.d)nd++;if(nd>=DROP_MAX)return;
-    const n=3+((Math.random()*3)|0),v=BALL_VOL/3/n,r=Math.cbrt(v/4.18879);GOOV.sprayed+=v*n;
+    const n=2+((Math.random()*2)|0),v=BALL_VOL/3/n,r=Math.cbrt(v/4.18879);GOOV.sprayed+=v*n;
     for(let i=0;i<n;i++){const sp=1.2+Math.random()*2.2,tx=-iny,ty=inx,tang=(Math.random()-0.5)*3.2,px=x+(Math.random()-0.5)*6,py=y+(Math.random()-0.5)*6;
       particles.push(mkDrop(px,py,_splashZ,inx*sp+tx*tang,iny*sp+ty*tang,(Math.random()-0.5)*1.5,(hue+(Math.random()-0.5)*0.05+1)%1,r,0,false,0,1));}
     return;}

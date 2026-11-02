@@ -624,6 +624,7 @@ export function start(){
     // balls
     shadows.reset();trails.reset();drops.reset();
     let n=0;
+    const shGlass=fill&&edges._space!=='curved'?glassList():null;   // the glass the shadows fall on, once a frame
     for(const b of balls){if(n>=MAXB)break;
       let bx=lerpX(b),by=lerpY(b),bz=(b.pz==null?(b.z||0):b.pz+((b.z||0)-b.pz)*_alpha);
       if(b.px!=null&&Math.hypot(b.x-b.px,b.y-b.py)>BR*2.2){bx=b.x;by=b.y;bz=b.z||0;}
@@ -638,17 +639,18 @@ export function start(){
       HUE.setHSL(b.hue,under?0.7:0.86,under?0.52:0.6,T.SRGBColorSpace);ballMesh.setColorAt(n,HUE);   // balls wear their raw hue, as in 2D. In sRGB, as the 2D sprite does: set in linear light the same numbers came out washed-out pastel
       const tl=wv?0:b.trail.length;for(let i=0;i<tl;i++){const t=b.trail[i],f=i/tl;
         trails.add(t[0]-CX,t[1]-CY,zl(t[2]||0),r*(0.5+1.1*f),HUE.r,HUE.g,HUE.b,f*0.32);}
-      if(fill&&!solid&&!wv)shadows.add(x+3,y+5,zl(0.995),r*(2.6-1.0*bz),0.42,0.3,0.62,0.02+0.12*bz*bz);   // a soft lilac shadow on the back glass: darker and smaller the closer the ball is to it
-      else if(fill&&solid&&!wv&&edges._space!=='curved'){   // a solid: a soft shadow straight down on whichever face is underneath
-        const G=boxGravity(),c=Math.cos(rot),sn=Math.sin(rot);let best=1e9,bn=null;
-        for(const pl of SOLID.planes){const n=pl.n,nx=n[0]*c-n[1]*sn,ny=n[0]*sn+n[1]*c,nd=nx*G[0]+ny*G[1]+n[2]*G[2];
-          if(nd<=0.05)continue;const t=(pl.d-(nx*x+ny*y+n[2]*z))/nd;if(t>0&&t<best){best=t;bn=1;}}
-        if(bn){const sx=x+G[0]*best,sy=y+G[1]*best,sz=z+G[2]*best,fade=Math.max(0,1-best/(SOLID_R*1.6));
+      // a soft shadow straight down (the world's down: the box tumbles) on whichever glass is underneath, prism or solid.
+      // A prism used to drop it on its back glass at a fixed offset, which only read right while the box faced you; once
+      // it tumbled, the shadows floated as grey discs (2026-11-02 screenshot review). A ball outside the glass has none.
+      if(shGlass&&!wv){const G=boxGravity();let best=1e9,inside=true;
+        for(const q of shGlass){const s=q[0]*x+q[1]*y+q[2]*z-q[3];if(s>BR){inside=false;break;}const nd=q[0]*G[0]+q[1]*G[1]+q[2]*G[2];
+          if(nd<=0.05)continue;const t=-s/nd;if(t>0&&t<best)best=t;}
+        if(inside&&best<1e9){const sx=x+G[0]*best,sy=y+G[1]*best,sz=z+G[2]*best,fade=Math.max(0,1-best/(R*1.6));
           shadows.add(sx,sy,sz,r*(2.2+best/60),0.22,0.13,0.4,0.28*fade);}}
       n++;}
     ballMesh.count=n;ballMesh.instanceMatrix.needsUpdate=true;if(ballMesh.instanceColor)ballMesh.instanceColor.needsUpdate=true;
     // spray that has not landed yet: little droplets at their own depth
-    for(const p of particles){if(p.pooled)continue;hueCol(p.hue||0,0.7,0.62,HUE);gooPos(p,_q);
+    for(const p of particles){if(p.pooled)continue;if(p.d&&p.bead)HUE.setRGB(liqRGB[0]/255,liqRGB[1]/255,liqRGB[2]/255,T.SRGBColorSpace);else hueCol(p.hue||0,0.7,0.62,HUE);gooPos(p,_q);   // a landed bead is slime already: the slime's colour
       drops.add(_q[0],_q[1],_q[2],p.d?p.r*2:5.2,HUE.r,HUE.g,HUE.b,p.fade?0.95*Math.max(0,1-p.age/34):0.95);}   // a droplet or bead at its true size (THE SPRAY)   // spray that will not join the goo fades as it flies
     shadows.done();trails.done();drops.done();drawWorms(now,fill);
     gooClip(fill,solid);if(!(++mcTick%(gooAvg>6?Math.max(2,mcEvery):mcEvery)))gooUpdate();mc.visible=particles.length>0;
