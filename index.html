@@ -5695,7 +5695,11 @@ function tickInterval(c){if(c==null)c=tickCount;let beat=60/S.bpm;let d=S.div*4*
 // QLATE: a hit this soon after a grid line counts as on it (ms). QWAIT: the most a note ever waits for the next one.
 // _rotV: how far the shape turned this tick (the walls move, so a hit comes sooner or later than a straight line says).
 // _tickT: the moment the current physics tick stands for (a slow frame runs several ticks at once).
-const QLATE=40,QWAIT=45;let _rotV=0,_tickT=0;
+// QWAIT was 45. A note that waits trails its bounce, and the broadcast lip-sync standard puts the point where sound
+// trailing picture is noticed at 125 ms (ITU-R BT.1359-1; _docs/research/2026-11-02-tank-perfection.md): 100 ms keeps
+// sight and sound one moment and lets more hits that beat lock missed land on the grid (measured 2026-11-02 in studio
+// with the slime on: 89-91% of hits within 20 ms of a grid line, the misses almost all early hits that played at once).
+const QLATE=40,QWAIT=100;let _rotV=0,_tickT=0;
 // does a ball's note, hitting right now, wait for the grid? Only when the next line is moments away. A hit just
 // after a line, or one the steering could not land (a corner, a double hit), plays as it happens: sight and
 // sound never come apart by more than a frame or two.

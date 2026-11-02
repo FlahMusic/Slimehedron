@@ -3,7 +3,7 @@
 //  Quantize used to hold a ball's note to the next grid line, up to a whole step (375ms at 1/8) after the
 //  ball visibly hit the wall. Now balls steer their speed a little so they reach walls ON the grid.
 //  Measured with the real clock, balls really flying, in the flat tank, the 3D box and a 3D solid:
-//    1. sight and sound: no note ever sounds more than 45ms after its ball hit the wall
+//    1. sight and sound: no note ever sounds more than 100ms after its ball hit the wall (QWAIT; lip-sync is noticed at 125)
 //    2. still musical: most notes still land within 45ms of a grid line (the steering is doing it)
 //    3. no ball is steered faster or slower than about a fifth
 //    4. a ball in the goo plays as it hits; quantize off plays as it hits and steers nothing
@@ -30,7 +30,7 @@ const SECS=+(process.env.SECS||20);
    const iv=setInterval(()=>{for(const x of balls){const q=x.tq||1;tqMin=Math.min(tqMin,q);tqMax=Math.max(tqMax,q);}},50);
    await new Promise(r=>setTimeout(r,secs*1000));trigger=t0;clearInterval(iv);
    const dry=rec.filter(x=>!x.goo);
-   return {n:rec.length,dry:dry.length,late:dry.filter(x=>x.delay>45).length,worst:Math.max(0,...dry.map(x=>x.delay)),
+   return {n:rec.length,dry:dry.length,late:dry.filter(x=>x.delay>100).length,tight:dry.filter(x=>x.grid<=20).length,worst:Math.max(0,...dry.map(x=>x.delay)),
      onGrid:dry.filter(x=>x.grid<=45).length,tqMin,tqMax,goo:rec.filter(x=>x.goo).map(x=>x.delay)};},[shape,secs,quant]);
 
  for(const [view,shape] of [['2d','6'],['3d','6'],['3d','icosa']]){
@@ -38,8 +38,11 @@ const SECS=+(process.env.SECS||20);
   const {ctx,p,errs}=await open(view);
   const r=await RUN(p,shape,SECS,true);
   ok(r.dry>=25,L+'balls are bouncing and playing ('+r.dry+' notes in '+SECS+'s)');
-  ok(r.late===0,L+'no note sounds more than 45ms after its ball hit (worst '+r.worst.toFixed(0)+'ms; it used to be up to a whole step)');
-  ok(r.onGrid>=r.dry*0.75,L+'and the music is still on the grid: '+r.onGrid+'/'+r.dry+' notes within 45ms of a grid line');
+  ok(r.late===0,L+'no note sounds more than 100ms after its ball hit (worst '+r.worst.toFixed(0)+'ms; lip-sync is noticed at 125, ITU-R BT.1359; it used to be up to a whole step)');
+  ok(r.onGrid>=r.dry*0.75&&r.tight>=r.dry*0.9,L+'and the music is on the grid: '+r.tight+'/'+r.dry+' notes within 20ms of a grid line');
+  // the wait itself: a hit 80 ms before the next grid line waits for it (the lip-sync rule allows it), 110 ms before plays now
+  const qw=await p.evaluate(()=>{const nx=lastTick+tickInterval(),t0=_tickT;_tickT=nx-80;const a=qWait();_tickT=nx-110;const c=qWait();_tickT=t0;return {a,c,step:tickInterval()};});
+  ok(qw.a&&!qw.c,L+'a hit 80ms before the grid line waits for it, one 110ms before plays at once (step '+qw.step.toFixed(0)+'ms)');
   ok(r.tqMin>=0.79&&r.tqMax<=1.23,L+'no ball is steered by more than about a fifth (speed x'+r.tqMin.toFixed(2)+' to x'+r.tqMax.toFixed(2)+')');
   ok(errs.length===0,L+'no page errors'+(errs.length?': '+errs[0]:''));
   await ctx.close();}
