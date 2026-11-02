@@ -3685,7 +3685,7 @@ const KITBASS={
   industrial: [{0:'R'},{0:'R'}]                                                        // placeholder — industrial uses a special DRONE routine (long held notes + a 4th-bar fill), see the scheduler
 };
 let _bassGroove=0,_bassBars=0,_lastBassCents=null,_lastBassFreq=null;
-let _slimeBars=0,_wallBars=0,_keyPinned=false; // _keyPinned: user picked a key/scale by hand → slime stops rotating until slime is toggled off/on
+let _slimeBars=0,_wallBars=0,_keyPinned=false,_shapePinned=false; // _shapePinned: a shape picked by hand stays through every burst (web-first ticket 03) until the slime is switched on again // _keyPinned: user picked a key/scale by hand → slime stops rotating until slime is toggled off/on
 // HOW OFTEN THE KEY TRAVELS.
 // This used to be a flat 64 bars, which sounds reasonable until you do the arithmetic: at the default
 // 80 BPM a 4/4 bar is 3 seconds, so 64 bars is THREE AND A HALF MINUTES. Nobody sits through that, which
@@ -5019,7 +5019,7 @@ const KIDCYCLE=['12','8','6','10','5','rhombus','4','trapezoid'];let kidIdx=0;
 const KIDCYCLE3D=['icosa','12','cube','8','dodeca','6','octa','10','tetra','5','rhombus','4'];   // in 3D the real solids come round too // rounded/fundamental shapes only — no concave gimmicks that trap balls
 function beginReform(now){ // last drop fell — pick the next shape, every shard springs home from the wreckage
   fillState="reform";reformStart=now;
-  if(S.randomShape){
+  if(S.randomShape&&!_shapePinned){
     if(S.mode==='play'){ // KIDS: lead with the rounded & beloved shapes (research: kids favor round/curved/symmetric + heart/star) to hold attention
       const cyc=VIEW.d3?KIDCYCLE3D:KIDCYCLE;nextShape=cyc[kidIdx%cyc.length];kidIdx++;prevShape=String(S.shape);}
     else{const pool=["3","4","5","6","7","8","9","10","11","12","rhombus","trapezoid","parallelogram"].concat(VIEW.d3?SOLID_SEEDS:[]).filter(v=>v!==String(S.shape)&&v!==prevShape);
@@ -5036,7 +5036,7 @@ function beginReform(now){ // last drop fell — pick the next shape, every shar
 let _nextSpace='normal';
 function rollSpace(shapeVal){
   if(TSPACE.pick!=='auto')return TSPACE.pick;
-  if(S.mode!=='play')return 'normal';
+  if(S.mode!=='play'&&!S.slimeMode)return 'normal';   // studio mixes spaces in only while the slime is on (web-first ticket 03)
   if(Math.random()>=1/3)return 'normal';
   const v=shapeVerts(String(shapeVal)),ok=['portal','curved'].filter(sp=>spaceFits(shapeVal,sp,v));
   return ok.length?ok[(Math.random()*ok.length)|0]:'normal';}
@@ -6045,7 +6045,7 @@ window.setView3D=function(on){VIEW.d3=!!on;try{localStorage.setItem('slimehedron
 window.setSpace=function(pick){if(pick!=='auto'&&!SPACES.includes(pick))return;TSPACE.pick=pick;
   try{localStorage.setItem('slimehedron-space',pick);}catch(e){}
   TSPACE.cur=pick==='auto'?(edges&&edges._space)||'normal':pick;
-  if(pick==='auto'&&S.mode!=='play')TSPACE.cur='normal';
+  if(pick==='auto'&&S.mode!=='play'&&!S.slimeMode)TSPACE.cur='normal';
   rebuild();for(const b of balls){if(!inPoly(b.x,b.y,edges._verts)){b.x=CX;b.y=CY;b.px=CX;b.py=CY;b.trail.length=0;}}   // nobody gets left outside the new walls
   particles=particles.filter(p=>inPoly(p.x,p.y,edges._verts));
   if(window._spaceChip)window._spaceChip();};
@@ -6542,7 +6542,7 @@ bindToggle("clkOutT","clkOut",on=>{ if(on&&S.playing)clockStart(); else clockSto
 {const pb=$("panicBtn");if(pb)pb.addEventListener('click',e=>{e.preventDefault();midiPanic();
   try{toast('all notes off sent');}catch(err){}});}
 
-$("shape").addEventListener('change',e=>{const v=e.target.value;S.shape=/^\d+$/.test(v)?parseInt(v):v;rebuild();particles=[];debris=[];frags=null;fillState="fill";measuredFill=0;});
+$("shape").addEventListener('change',e=>{const v=e.target.value;_shapePinned=true;   /* picked by hand (the reform sets the menu without this event) */S.shape=/^\d+$/.test(v)?parseInt(v):v;rebuild();particles=[];debris=[];frags=null;fillState="fill";measuredFill=0;});
 $("newShapeBtn").addEventListener('click',()=>{ // kids' dice: always a DIFFERENT shape, instantly
   const sel=$("shape"),n=sel.options.length;
   sel.selectedIndex=(sel.selectedIndex+1+Math.floor(Math.random()*(n-1)))%n;
@@ -6639,7 +6639,7 @@ $("dly").addEventListener('input',()=>{const t=$("dlyTop");if(t&&!dlyGrab)t.valu
 // ---------- modes: one engine, three doors — the class on <body> decides what shows ----------
 function applyMode(m){S.mode=m;
   try{applyMix();}catch(e){}   // the studio mixer applies in studio only
-  if(TSPACE.pick==='auto'&&m!=='play'&&TSPACE.cur!=='normal'){TSPACE.cur='normal';try{rebuild();}catch(e){}}   // auto only mixes spaces in play
+  if(TSPACE.pick==='auto'&&m!=='play'&&!S.slimeMode&&TSPACE.cur!=='normal'){TSPACE.cur='normal';try{rebuild();}catch(e){}}   // auto only mixes spaces in play
   if(window._spaceChip)window._spaceChip();
   document.body.classList.remove('mode-play','mode-learn','mode-studio');
   document.body.classList.add('mode-'+m);
@@ -7488,7 +7488,7 @@ addEventListener('keydown',e=>{
 // SOLID_MAXF: past that the notes stop being tellable apart.
 function growBase(){const b=String(S.shape);if(/^\d+$/.test(b))return 'prism'+b;return isSolidName(b)?b:null;}
 function growNext(op){const b=growBase();return b?b+'.'+op:null;}
-function growSolid(op){const base=growBase(),name=growNext(op);if(!name||SOLID.from||fillState!=="fill")return false;
+function growSolid(op){const base=growBase(),name=growNext(op);if(!name||SOLID.from||fillState!=="fill")return false;_shapePinned=true;
   if(solidFaceCount(name)>SOLID_MAXF)return false;
   if(base!==SOLID.name)solidSet(base);
   solidSet(name,true);S.shape=name;rebuild();formGlow=1;   // the edges glow while it grows
@@ -7512,7 +7512,7 @@ window.growBack=growBack;
   const why={curved:'curved needs a shape with no dents'};   // (portal fits every shape now: two wormholes, nothing glued)
   function paint(){
     const sp=edges?edges._space:'normal';
-    txt.textContent=(VIEW.d3?'3D':'2D')+' \u00b7 '+(TSPACE.pick==='auto'&&sp==='normal'&&S.mode==='play'?'auto':sp);
+    txt.textContent=(VIEW.d3?'3D':'2D')+' \u00b7 '+(TSPACE.pick==='auto'&&sp==='normal'&&(S.mode==='play'||S.slimeMode)?'auto':sp);
     menu.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.view==='3d')===VIEW.d3)));
     const lr=$("lookRow");if(lr){lr.hidden=!(VIEW.d3&&GLV.want);lr.querySelectorAll('[data-look]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.look===LOOK3D.v)));}   // the crayon look is drawn on the graphics card only
     const autoBtn=menu.querySelector('[data-space="auto"]');if(autoBtn)autoBtn.hidden=S.mode!=='play';
@@ -8860,7 +8860,7 @@ $("slimeBig").addEventListener('click',()=>{
   el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop'); // restart squish even on rapid toggles
   setKnobFace('surprise');clearTimeout(el._faceT);el._faceT=setTimeout(()=>{el.classList.remove('pop');setKnobFace('happy');},600);
   initAudio();if(AC&&AC.state==="suspended")AC.resume();setSlimeProcessing(S.slimeMode);
-  if(S.slimeMode){if(!S.playing)setPlaying(true);setSliderValue('spin',14);_slimeBars=0;_keyPinned=false;_melDeg=null;_melNext=0;_melStepN=0;_melStep16=0;_melMotif=[];_melLastLeap=0; // reset the vocalist so it starts fresh on the tonic
+  if(S.slimeMode){if(!S.playing)setPlaying(true);setSliderValue('spin',14);_slimeBars=0;_keyPinned=false;_shapePinned=false;_melDeg=null;_melNext=0;_melStepN=0;_melStep16=0;_melMotif=[];_melLastLeap=0; // reset the vocalist so it starts fresh on the tonic
 
     _modSnap={};for(const m of MODS){const inp=$(m.id);if(inp)_modSnap[m.id]=inp.value;}_slimeOnAt=performance.now(); // remember the patch before the wobble borrows it
     S.quantize=true;$("quantT").classList.add('on');setDivUI(0.0625); // lock everything to 1/16 grid while slimin'

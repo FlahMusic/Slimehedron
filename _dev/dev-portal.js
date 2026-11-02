@@ -146,6 +146,7 @@ const URL='http://127.0.0.1:8765/index.html';
     const r=await p.evaluate(async look=>{_reduced=true;window.setLook3D(look);   // the box tumbles (ticket 12) and each render() turns it: hold the view still, so the holes are where 'at' saysconst rs=document.getElementById('randShapeT');if(rs&&rs.classList.contains('on'))rs.click();
       const s=document.getElementById('shape');s.value='6';s.dispatchEvent(new Event('change'));await new Promise(r=>setTimeout(r,2400));startBreak=()=>{};fillState='fill';
       if(!S.playing)setPlaying(true);await new Promise(r=>setTimeout(r,1500));
+      S.autoNotes=false;balls.length=0;particles.length=0;   /* only glass and holes in the picture: the goo and balls behind a hole changed its colour from run to run (0.11-0.25), the flake in SUITES.md */
       beatNow=()=>9.85;for(let i=0;i<40;i++)simTick(performance.now());   // hold a moment when both holes rest, fully open (kept: a frame already queued must not move them before the picture is taken)
       window.requestAnimationFrame=()=>0;window.__gl.api.render();window.__gl.api.render();
       const c=document.getElementById('cv').getBoundingClientRect(),k=c.width/W;

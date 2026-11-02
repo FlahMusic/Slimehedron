@@ -130,13 +130,24 @@ const URL='http://127.0.0.1:8765/index.html';
   const roll=await p.evaluate(()=>{setSpace('auto');const out={normal:0,portal:0,curved:0,bad:0};
     for(let i=0;i<600;i++){const sh=['12','8','6','10','5','rhombus','4','trapezoid'][i%8],sp=rollSpace(sh);out[sp]++;if(!spaceFits(sh,sp))out.bad++;}
     setSpace('portal');const held=[...Array(50)].every(()=>rollSpace('6')==='portal');
-    applyMode('studio');setSpace('auto');const st=[...Array(50)].every(()=>rollSpace('6')==='normal');applyMode('play');
-    return {...out,held,st};});
+    applyMode('studio');const sl=S.slimeMode;S.slimeMode=false;setSpace('auto');const st=[...Array(50)].every(()=>rollSpace('6')==='normal');   // web-first ticket 03: studio with the slime OFF stays normal...
+    S.slimeMode=true;let sm=0;for(let i=0;i<600;i++){const sh=['12','8','6','10','5','rhombus','4','trapezoid'][i%8];if(rollSpace(sh)!=='normal')sm++;}S.slimeMode=sl;applyMode('play');   // ...and with it ON mixes them in like play
+    return {...out,held,st,sm:sm/600};});
   const odd=(roll.portal+roll.curved)/600;
   ok(odd>0.25&&odd<0.42,'on auto in play, about one new shape in three lands in a portal or curved space ('+(odd*100).toFixed(0)+'%: '+roll.portal+' portal, '+roll.curved+' curved)');
   ok(roll.bad===0,'and only ever in a space that shape can be');
+  // a shape picked by hand stays through the burst (web-first ticket 03): the reform keeps it; the slime switched on again lets go
+  const pin=await p.evaluate(()=>{applyMode('studio');S.randomShape=true;if(!S.slimeMode)$("slimeBig").click();
+    const sel=document.getElementById('shape');sel.value='8';sel.dispatchEvent(new Event('change'));
+    const kept=[...Array(6)].map(()=>{frags=[{mx:CX,my:CY,ang:0,len:20,vx:0,vy:0,va:0,cents:0,hue:0,flash:0}];beginReform(performance.now());return nextShape;});
+    $("slimeBig").click();$("slimeBig").click();   // off and on: a new jam
+    const freed=[...Array(6)].map(()=>{frags=[{mx:CX,my:CY,ang:0,len:20,vx:0,vy:0,va:0,cents:0,hue:0,flash:0}];beginReform(performance.now());return nextShape;});
+    fillState='fill';applyMode('play');return {kept,freed};});
+  ok(pin.kept.every(s=>s==='8'),'a shape picked by hand stays through every burst ('+pin.kept.join(' ')+')');
+  ok(pin.freed.some(s=>s!=='8'),'until the slime is switched on again ('+pin.freed.join(' ')+')');
   ok(roll.held,'a picked space holds through every new shape');
-  ok(roll.st,'studio on auto stays normal');
+  ok(roll.st,'studio on auto stays normal while the slime is off');
+  ok(roll.sm>0.25&&roll.sm<0.42,'and with the slime on, studio mixes spaces in like play ('+(roll.sm*100).toFixed(0)+'% of new shapes)');
   await ctx.close();}
 
  // ---- 5. the corner menu ----
