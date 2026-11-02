@@ -100,7 +100,7 @@ const ARGS=['--autoplay-policy=no-user-gesture-required','--enable-unsafe-swifts
   ok(clip&&clip.clip===clip.glass&&clip.glass===6,'the goo is clipped to every face of the cube it is in ('+(clip&&clip.clip)+' clip planes for '+(clip&&clip.glass)+' faces)');
   ok(clip&&clip.reach<=4,'and pressed hard against the glass, its skin reaches at most '+4+'px past it before the clip ('+(clip?clip.reach.toFixed(1):'?')+'px)');
   // ---- 4b. a real solid is drawn as glass faces, and a struck face lights up ----
-  const sol=await p.evaluate(()=>{fillState='fill';frags=null;pressure=0;const s=document.getElementById('shape');s.value='icosa';s.dispatchEvent(new Event('change'));balls.length=0;particles.length=0;
+  const sol=await p.evaluate(()=>{_reduced=true;fillState='fill';   /* the box tumbles while playing (web-first 12): between the two pictures it turned, so hold the view still */frags=null;pressure=0;const s=document.getElementById('shape');s.value='icosa';s.dispatchEvent(new Event('change'));balls.length=0;particles.length=0;
     for(let i=0;i<SOLID.flash.length;i++)SOLID.flash[i]=0;draw();const r=cv.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,st:window.__gl.api.stats()};});
   const f0=await p.screenshot({clip:{x:sol.x-120,y:sol.y-120,width:240,height:240}});
   await p.evaluate(()=>{for(let i=0;i<SOLID.flash.length;i++)SOLID.flash[i]=1;window.__gl.api.render();});
@@ -132,6 +132,19 @@ const ARGS=['--autoplay-policy=no-user-gesture-required','--enable-unsafe-swifts
     return {api:!!window.__gl.api,gl:!!g&&getComputedStyle(g).display!=='none',ink,balls:balls.length};});
   ok(!r.api&&!r.gl&&r.ink>20,'['+tag+'] the canvas draws the 3D tank instead ('+r.ink+' inked samples, '+r.balls+' balls)');
   ok(errs.length===0,'['+tag+'] no page errors'+(errs.length?': '+errs[0]:''));
+  await ctx.close();}
+ // ---- 5d. an open wall's rim fades out, never drawn black (2026-11-02: the rims were darkened by how open their wall
+ // was, and on a rim drawn opaque that is BLACK: two thick black edges on the pastel hexagon) ----
+ {const {ctx,p,errs}=await open('?m=studio&view=3d&space=normal');await p.waitForTimeout(1500);
+  const r=await p.evaluate(async()=>{const s=document.getElementById('shape');s.value='6';s.dispatchEvent(new Event('change'));
+    for(let i=0;i<40&&!window.__gl.api;i++)await new Promise(r=>setTimeout(r,250));if(!window.__gl.api)return null;
+    edges.forEach(e=>{e.broken=false;e.reform=0;});edges[2].broken=true;edges[2].reform=0;for(let i=0;i<3;i++)draw();
+    const st=window.__gl.api.rimState();if(!st)return null;let openN=0,openA=0,otherMin=1,dark=0;
+    st.own.forEach((w,t)=>{const a=st.a[t];if(w===2){openN++;openA=Math.max(openA,a);}else otherMin=Math.min(otherMin,a);
+      if(a>0.02&&Math.max(st.col[t*3],st.col[t*3+1],st.col[t*3+2])<0.15)dark++;});
+    return {openN,openA,otherMin,dark};});
+  ok(r&&r.openN>0&&r.openA<0.02&&r.otherMin>0.98&&r.dark===0,'an open wall\'s rim fades out and no rim is drawn black ('+JSON.stringify(r)+')');
+  ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
   await ctx.close();}
  await b.close();
  console.log('\n'+(FAIL.length?FAIL.length+' FAILURE(S)':'gl pass clean'));

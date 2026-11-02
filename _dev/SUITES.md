@@ -41,6 +41,7 @@ Then rerun only what failed. A failure that passes on rerun goes on the flaky li
   (control 2026-11-02 on a810fb2 too). Goo and balls are now cleared before the picture. Real fix: compare the hole
   with the same spot in the same frame by colour difference, not a saturation ratio.
 - `dev-crayon` needs `python3` with PIL; on Flah's Windows box `python3` is a Store alias (make a venv shim named python3).
+- `dev-gl` (needs SLIME_GL=1; runs on Flah's GPU) "the goo is a real 3D surface": 96-120 triangles some runs (fails 1 in 2; also before the tumble, 7d3f3bb).
 - `dev-hands` 3. "a flick keeps it spinning": 0.00 turns a second once (2026-11-02, right after a long run of suites), then 0.77 and 1.14 on reruns; the flick reads pointer timing.
 - `dev-hands` 1. "tap it and the slime plays notes" (1 in 7 s once) and 3. "a quarter turn" (97 degrees sits on the 0.12 rad edge).
 - Fixed 2026-10-27: `dev-crayon` (the tap invite faded in over its frozen frames) and `dev-portal` GL visibility.

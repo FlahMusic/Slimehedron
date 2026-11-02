@@ -66,10 +66,10 @@ export function start(){
   // glowing rims and soft points: our own small shaders (unlit, so they read as light)
   const rimMat=new T.ShaderMaterial({transparent:true,depthWrite:false,
     uniforms:{uT:{value:0}},
-    vertexShader:`attribute vec3 color;attribute float dash;varying vec3 vC;varying float vD;
-      void main(){vC=color;vD=dash;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-    fragmentShader:`uniform float uT;varying vec3 vC;varying float vD;
-      void main(){float a=1.0;if(vD>=0.0){float f=fract(vD/23.0-uT*0.9);if(f>0.55)discard;}
+    vertexShader:`attribute vec3 color;attribute float dash;attribute float ra;varying vec3 vC;varying float vD;varying float vA;
+      void main(){vC=color;vD=dash;vA=ra;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
+    fragmentShader:`uniform float uT;varying vec3 vC;varying float vD;varying float vA;
+      void main(){if(vA<0.02)discard;float a=vA;if(vD>=0.0){float f=fract(vD/23.0-uT*0.9);if(f>0.55)discard;}
         gl_FragColor=vec4(vC,a);
         #include <colorspace_fragment>
       }`});
@@ -155,15 +155,15 @@ export function start(){
   const craySolid=(side)=>crayonize(new T.MeshStandardMaterial({roughness:1,metalness:0,envMapIntensity:0.15,vertexColors:true,transparent:true,side,depthWrite:false,emissive:0xffffff,emissiveIntensity:0.0}),{hatch:side===T.FrontSide?0.5:0.3});
   // the edges: the same beams, each corner nudged a pixel or two on every boil, waxy and broken along the stroke
   const crayRim=new T.ShaderMaterial({transparent:true,depthWrite:false,uniforms:{uT:{value:0},uSeed:CR.seed,uPx:CR.px},
-    vertexShader:`attribute vec3 color;attribute float dash;uniform float uSeed;varying vec3 vC;varying float vD;
+    vertexShader:`attribute vec3 color;attribute float dash;attribute float ra;uniform float uSeed;varying vec3 vC;varying float vD;varying float vA;
       float jh(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,37.719))+uSeed*7.13)*43758.5453);}
-      void main(){vC=color;vD=dash;vec3 p=position+(vec3(jh(position),jh(position+1.3),jh(position+2.7))-0.5)*2.4;
+      void main(){vC=color;vD=dash;vA=ra;vec3 p=position+(vec3(jh(position),jh(position+1.3),jh(position+2.7))-0.5)*2.4;
         gl_Position=projectionMatrix*modelViewMatrix*vec4(p,1.0);}`,
-    fragmentShader:CR_GLSL+`uniform float uT;varying vec3 vC;varying float vD;
-      void main(){if(vD>=0.0){float f=fract(vD/23.0-uT*0.9);if(f>0.55)discard;}
+    fragmentShader:CR_GLSL+`uniform float uT;varying vec3 vC;varying float vD;varying float vA;
+      void main(){if(vA<0.02)discard;if(vD>=0.0){float f=fract(vD/23.0-uT*0.9);if(f>0.55)discard;}
         vec2 q=gl_FragCoord.xy/uPx;float g=crN(q*0.42+uSeed)*0.55+crN(q*1.6)*0.45;
         if(g<0.2)discard;                                   // the paper showing through the wax
-        gl_FragColor=vec4(pow(vC,vec3(1.5))*0.85,smoothstep(0.2,0.45,g));
+        gl_FragColor=vec4(pow(vC,vec3(1.5))*0.85,smoothstep(0.2,0.45,g)*vA);
         #include <colorspace_fragment>
       }`});
   const crayW=()=>CRAY?1.7:1;   // crayon strokes are a little heavier than glass rims
@@ -177,7 +177,7 @@ export function start(){
       P.push(...A,...B,...C2,...A,...C2,...D2);const df=dashFrom==null||dashFrom<0?-1:dashFrom,da=df,db=df<0?-1:df+L;D.push(da,da,db,da,db,db);}
     return L;}
   // ---------- the glass box (rebuilt only when the shape changes) ----------
-  let walls=[],wallKey='',rims=null,rimCol=null,backPane=null,frontPane=null,horizon=null;
+  let walls=[],wallKey='',rims=null,rimCol=null,rimA=null,backPane=null,frontPane=null,horizon=null;
   const HUE=new T.Color();
   function hueCol(t,s,l,out){return (out||new T.Color()).setHSL(auroraHue(t)/360,s,l);}
   // PASTEL GLASS. Every wall and face is tinted its own note's pastel, and its edges are a deeper shade of the
@@ -225,6 +225,7 @@ export function start(){
         for(let j=n0;j<P.length;j+=3)owner.push(i);}});   // one owner per VERTEX
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(P,3));
     rimCol=new Float32Array(P.length);g.setAttribute('color',new T.BufferAttribute(rimCol,3));
+    rimA=new Float32Array(P.length/3).fill(1);g.setAttribute('ra',new T.BufferAttribute(rimA,1));
     g.setAttribute('dash',new T.Float32BufferAttribute(D,1));g.userData.owner=owner;
     rims=new T.Mesh(g,CRAY?crayRim:rimMat);rims.renderOrder=7;spin.add(rims);
     if(edges._space==='curved')buildHorizon();}
@@ -272,7 +273,7 @@ export function start(){
     // (the faint glass sphere at infinity drew a big circle round every curved solid; Flah: take it out)
     if(skyBall)skyBall.visible=curved;
     const rg=new T.BufferGeometry();rg.setAttribute('position',new T.Float32BufferAttribute(P,3));
-    solidRimCol=new Float32Array(P.length);rg.setAttribute('color',new T.BufferAttribute(solidRimCol,3));rg.setAttribute('dash',new T.Float32BufferAttribute(D,1));
+    solidRimCol=new Float32Array(P.length);rg.setAttribute('color',new T.BufferAttribute(solidRimCol,3));rg.setAttribute('ra',new T.BufferAttribute(new Float32Array(P.length/3).fill(1),1));   /* the rim shaders read an opacity (see the prism's rims) */rg.setAttribute('dash',new T.Float32BufferAttribute(D,1));
     solidRimOwner=ow;solidRims=new T.Mesh(rg,CRAY?crayRim:rimMat);solidRims.renderOrder=7;solidRims.frustumCulled=false;spin.add(solidRims);}
   function updateSolid(ph,now){const td=totalDegrees()||1,col=solidCol,own=solidFaceOf;let last=-1,r=0,g=0,b=0,a=0;
     for(let t=0;t<own.length;t++){const i=own[t];if(i!==last){last=i;const fl=Math.min(1,(SOLID.flash[i]||0)*1.4);
@@ -611,12 +612,12 @@ export function start(){
       glassCol(e.hue+ph,lit,m.color,0.6,0.8);glassCol(e.hue+ph,lit,m.emissive,0.6,0.78);
       m.emissiveIntensity=0.22+lit*0.8;
       m.opacity=(lite?0.32:0.24)*gone+lit*0.25;walls[i].visible=!solid&&fill&&gone>0.02;}
-    if(rims&&!solid){const own=rims.geometry.userData.owner,col=rimCol;
+    if(rims&&!solid){const own=rims.geometry.userData.owner,col=rimCol;let rg=1;
       let last=-1;for(let t=0;t<own.length;t++){const e=edges[own[t]];if(!e)continue;
-        if(own[t]!==last){last=own[t];const lit=Math.min(1,(e.flash||0)*1.4+formGlow*0.6),gone=e.broken?(e.reform||0):1;
-          glassCol(e.hue+ph,lit,HUE,0.68,0.66);HUE.multiplyScalar(gone);}
-        const j=t*3;col[j]=HUE.r;col[j+1]=HUE.g;col[j+2]=HUE.b;}
-      rims.geometry.attributes.color.needsUpdate=true;rims.visible=fill;}
+        if(own[t]!==last){last=own[t];const lit=Math.min(1,(e.flash||0)*1.4+formGlow*0.6);rg=e.broken?(e.reform||0):1;
+          glassCol(e.hue+ph,lit,HUE,0.68,0.66);}   // an open wall's rim fades out (it used to be darkened, which drew it BLACK: 2026-11-02)
+        const j=t*3;col[j]=HUE.r;col[j+1]=HUE.g;col[j+2]=HUE.b;rimA[t]=rg;}
+      rims.geometry.attributes.color.needsUpdate=true;rims.geometry.attributes.ra.needsUpdate=true;rims.visible=fill;}
     if(rims&&solid)rims.visible=false;rimMat.uniforms.uT.value=crayRim.uniforms.uT.value=(now-t0)/1000;
     if(backPane){backPane.visible=fill&&!solid;const bm=backPane.material;bm.opacity=0.22+_pane.back*0.35;bm.emissiveIntensity=_pane.back*0.8;}
     if(frontPane){frontPane.visible=fill&&!solid;const fm=frontPane.material;fm.opacity=(CRAY?0.02:0.05)+_pane.front*0.22;if(!CRAY)fm.emissiveIntensity=_pane.front*0.5;}
@@ -678,7 +679,7 @@ export function start(){
   function gooColors(){if(!mc||!mc.count)return null;const ca=mc.colorArray,h={h:0,s:0,l:0},C=new T.Color();let sx=0,sy=0,ss=0,sl=0,n=0;
     for(let i=0;i<mc.count;i+=7){C.setRGB(ca[i*3],ca[i*3+1],ca[i*3+2]);C.getHSL(h,T.SRGBColorSpace);sx+=Math.cos(h.h*6.2832)*h.s;sy+=Math.sin(h.h*6.2832)*h.s;ss+=h.s;sl+=h.l;n++;}
     return {spread:1-Math.hypot(sx,sy)/Math.max(1e-6,ss),sat:ss/n,light:sl/n,n};}
-  return {render,setLite,setLook,show,canvas:glc,gooOut,gooColors,get noteScale(){return noteScale();},squash(){const m=sqMax;sqMax=0;return m;},get look(){return CRAY?'crayon':'glass';},get lost(){return lost;},
+  return {render,setLite,setLook,show,canvas:glc,gooOut,gooColors,rimState(){return rims&&rimA?{a:rimA,own:rims.geometry.userData.owner,col:rimCol}:null;},get noteScale(){return noteScale();},squash(){const m=sqMax;sqMax=0;return m;},get look(){return CRAY?'crayon':'glass';},get lost(){return lost;},
     gooBuild(){gooUpdate();return gooMs;},
     worms(){return wormMeshes.map(m=>({on:m.visible,at:[m.matrix.elements[12],m.matrix.elements[13],m.matrix.elements[14]].map(Math.round),size:Math.round(Math.hypot(m.matrix.elements[0],m.matrix.elements[1],m.matrix.elements[2])),open:m.material.uniforms.uOpen.value}));},   // test hook: the two wormholes as drawn   // test hook: rebuild the goo's surface alone (no drawing), and how long it took
     gooShape(){if(!mc||!mc.count)return null;const pa=mc.positionArray;let sx=0,sy=0,sz=0,x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;const n=mc.count;
