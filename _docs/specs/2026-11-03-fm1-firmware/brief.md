@@ -95,8 +95,8 @@ Keep it 100% synthesized (Slimehedron's rule). Off limits by default:
 - GRAIN presets, until checked: CHECK whether GRAIN plays samples.
 Flah decides if any of those are allowed.
 
-Starting map (names from SLOOP's `firmware/src/ui.c` and `SLOOP.md`; every pick gets tuned by ear in the browser
-preview, Flah approves):
+Starting map (names from SLOOP's `firmware/src/ui.c` and `SLOOP.md`). These are only the first candidates; the
+machine matching below picks and sets the final values:
 
 | Slimehedron part | FM-1 sound to start from |
 | --- | --- |
@@ -127,6 +127,34 @@ by ear against the web app's kit.
   SYN1-SYN4 kit. Never add samples.
 - Keep Slimehedron's GROOVE patterns (the step data in `index.html` `KITS`): only the sounds change. Check
   `THIRD-PARTY.md` before copying the patterns derived from casio-music-data.
+
+**Match by measurement, not by ear (Flah, 2026-11-03: "get it to similar dB as ours on the first output, I'm not
+going to fine-comb each preset").** Flah does ONE listen at the end, not one per sound. Claude Code does the matching
+itself:
+1. **Reference renders from the web app.** For each part (tank melody, pane chime, bass, pad, comp, and every kit
+   piece used: kick, snare, hats, etc.), render single notes at a few pitches and velocities, plus 8 bars of the
+   start-state song with all parts. Use the app's own WAV tap (`dev-wavtap` / the PCM recorder) or an
+   OfflineAudioContext. Store them in `fm1/ref/` with the settings used.
+2. **Candidate renders from the FM-1 build.** The same notes through each candidate preset or kit, rendered in
+   fm1-emu's batch runner (WAV out) or the browser preview.
+3. **Measure both the same way:**
+   - loudness (RMS and integrated LUFS) and peak;
+   - brightness (spectral centroid);
+   - attack time and decay time (to -20 dB and -40 dB);
+   - for drums, the same per piece.
+   Script it (Python, numpy/scipy), and sabotage the script once (feed it a +6 dB copy and check it reports +6 dB).
+4. **Auto-pick and auto-set.** For each part, pick the candidate with the smallest weighted distance, then adjust
+   ONLY existing preset values (level / volume, filter cutoff, decay / release, drum TUNE and DECAY) until it's
+   within tolerance. Tolerances: loudness within ±1 dB, peak within ±1 dB, centroid within ±15%, decay within ±20%.
+   Write the result as a new preset or kit (e.g. "SLIME", "SH POP") in the engine's own table, so the factory
+   presets stay as they were.
+5. **The mix.** Match the web app's part balance: each part's loudness relative to the melody, in the 8-bar render,
+   within ±1.5 dB. The web mix defaults (melody / drums / band) are in `S.wM / S.wD / S.wK`. Master output never
+   above the web's ceiling: peak ≤ -1 dBFS (the web clamps at 0.891).
+6. **Report one table:** each part, the chosen sound, and its numbers vs the web app's, pass/fail. Commit the
+   reference WAVs' measurements (not the WAVs, if they're big) so a later change can't drift silently.
+7. **Then Flah listens once** to the web 8 bars and the FM-1 8 bars back to back. Anything he flags gets fixed in
+   the same loop.
 
 Track layout:
 - SLOOP has 3 synth tracks + drums, and 8 synth voices shared between them. Starting point: track 1 = tank
