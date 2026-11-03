@@ -81,14 +81,64 @@ What this changes in the plan:
 - The browser preview is the fast loop: change, build, hear it in seconds. fm1-emu (section 7) stays the judge for
   timing and CPU, because the preview runs on the PC's CPU, not the FM-1's.
 
+## 3c. Sounds: use the FM-1 firmware's engines and presets, not a port of ours (Flah, 2026-11-03)
+Decision: we do NOT port Slimehedron's synth voice or drums. Every sound comes from SLOOP's engines (ANALOG, DIGITAL
+= 4-op FM, FM6, PHASE, LOFI, VOICE, TRIO, WHEEL, PHYS, NOISE) and its synthesised drum kits. Where no preset fits,
+make a new preset in the engine's own preset table: same format as the existing ones, e.g. the
+`{"808 BOOM", ...}` rows in `firmware/src/eng_analog.c`. This saves flash and CPU, and the sounds are already
+level-matched and tested.
+
+Keep it 100% synthesized (Slimehedron's rule). Off limits by default:
+- drum kits 1-5 (ACOUSTIC, DEEP, TIGHT, BRIGHT, DUST), which are CC0 recordings;
+- presets on the SAMPLE engine (GRAND PNO, DUSTY PNO, LOFI KEYS, UP BASS, DEEP BASS, VIBES, LOFI FLUTE, HORN STAB,
+  STRING STB, SCRATCH, GM KIT);
+- GRAIN presets, until checked: CHECK whether GRAIN plays samples.
+Flah decides if any of those are allowed.
+
+Starting map (names from SLOOP's `firmware/src/ui.c` and `SLOOP.md`; every pick gets tuned by ear in the browser
+preview, Flah approves):
+
+| Slimehedron part | FM-1 sound to start from |
+| --- | --- |
+| tank melody (soft triangle + sub, short pluck, filter sweep) | a new ANALOG preset "SLIME": triangle + sub, low-pass, short decay. Try MARIMBA / KALIMBA / FM PLUCK first in case one already fits |
+| pane chimes (soft, high, chord tones) | GLOCKEN or CELESTA, quieter |
+| bass | SUB BASS or MONO BASS (ANALOG) |
+| pad / chord bed | WARM PAD or SINE PAD (ANALOG) |
+| comp / plucked chords | SOFT KEYS (PHASE) or RHODES (DIGITAL) |
+
+Drums: Slimehedron's 11 kits mapped to SLOOP's synthesised kits (kit number from `SLOOP.md`). Each one is CHECKed
+by ear against the web app's kit.
+
+| Slimehedron kit | SLOOP kit |
+| --- | --- |
+| chip | 31 CHIP |
+| beep | 32 ARCADE |
+| pop | 9 80S |
+| rock | 9 80S or 10 VINTAGE (kit 1 ACOUSTIC is sampled, off by default) |
+| disco | 21 DISCO |
+| bossa | 28 LATIN |
+| samba | 28 LATIN |
+| conga | 28 LATIN or 29 TRIBAL |
+| march | 10 VINTAGE |
+| industrial | 34 INDUSTR |
+| jazz | 37 JAZZ (brushes) |
+
+- If a kit misses, use SLOOP's drum synth (tune / decay per sound, or the web editor's drum-kit page) to make it a
+  SYN1-SYN4 kit. Never add samples.
+- Keep Slimehedron's GROOVE patterns (the step data in `index.html` `KITS`): only the sounds change. Check
+  `THIRD-PARTY.md` before copying the patterns derived from casio-music-data.
+
+Track layout:
+- SLOOP has 3 synth tracks + drums, and 8 synth voices shared between them. Starting point: track 1 = tank
+  melody + pane chimes, track 2 = bass, track 3 = pad / comp, track 4 = drums. Pane chimes share track 1 at a lower
+  velocity unless a 4th synth slot is cheap.
+- The 12-ball cap on the web becomes "voices available on track 1". MEASURE it, don't assume it.
+
 ## 4. The port (what comes along, what changes)
 - **Engine in C, from the web app.** The Rust core can't target pi32v2, so it is a blueprint only (its tests and
-  `web-stats.json` say what "right" sounds like). Port the same pieces:
-  - walls = notes in cents, plus the per-track tuning hook for microtonal scales;
-  - the 60 Hz tick, beat lock, quantize hold, auto-notes melody, and pane chords;
-  - the synth voice: triangle + sub, PolyBLEP, RBJ filter with Q capped at 12, the hold envelope;
-  - drums, bass and pad from Slimehedron's own synthesized voices.
-  If the budget won't hold the band, use the SDK's `drum808` / `bass303` first and say so.
+  `web-stats.json` say what "right" sounds like). Port the TANK and the MUSIC LOGIC only: walls = notes in cents
+  (plus the per-track tuning hook for microtonal scales), the 60 Hz tick, beat lock, quantize hold, the auto-notes
+  melody, pane chords, and the chord brain. The SOUNDS come from the FM-1 firmware's engines (section 3c).
 - **Physics and drawing on separate cores.** Audio in the ISR on core 0; the tank tick and the screen on core 1
   (Felucca already does dual-core). The audio thread never waits on the screen.
 - **2.5D look.** Yes, it saves a lot:
@@ -140,8 +190,8 @@ What this changes in the plan:
    fm1_open? Recommended: fork SLOOP (section 3b).
 2. The control map in section 5: OK as is? Recommended: yes, then tune by hand on the device.
 3. Goo on the FM-1: lighter but real (fewer drops), or off with a toggle? Recommended: lighter but real.
-4. Band: Slimehedron's own synth drums/bass/pad, falling back to the SDK's 808/303 only if they don't fit?
-   Recommended: yes.
+4. Sounds: OK with the starting map in section 3c, and keep the CC0-sample kits (1-5) and SAMPLE presets OFF?
+   Recommended: yes, synth only.
 5. Do you own an FM-1 now, and is it on V15?
 
 ## Sources
