@@ -45,6 +45,42 @@ folder `fm1/`. Never touch `index.html` or `vst/` from here.
 - **Recovery exists:** the `MvaveFM1Unbricker` tool (Windows/Linux) and the FM-1 Transporter (an RP2040 on the USB
   lines). Don't rely on them; see section 7.
 
+## 3b. From Floyd Steinberg's video (2026-11-01, "The M-VAVE FM-1 is a turning point / how to vibe code your own firmware")
+The workflow he shows, which many community firmwares now use:
+- **Build on Windows through WSL (Ubuntu):**
+  1. `sudo apt install build-essential wget xz-utils python3 python3-pip git`.
+  2. Get the JieLi **Linux** toolchain from pkgman.jieliapp.com and unpack it to `~/.jieli/`. His folder was
+     `jieli-linux-toolchains-20260730.1`.
+  3. Symlink `/opt/jieli/pi32v2` to it, and export `JIELI_TOOLCHAIN` in `~/.bashrc`.
+  4. Check it with `/opt/jieli/pi32v2/bin/clang --version`.
+  5. Clone the AC79 SDK. The repo name is cut off in the description: `github.com/jeffreywugz/fw-AC7…`. CHECK the
+     full name; Felucca's BUILDING.md says which SDK files are needed.
+- **Start from a working firmware and change it, rather than from zero.** He clones `isod89/sloop-fm1` and builds it
+  with `./build.sh`, then edits it with an AI assistant in VS Code (WSL extension, a `tasks.json` build task,
+  Ctrl+Shift+B).
+- **Test in the browser emulator before any hardware:**
+  1. Install Emscripten.
+  2. Run `python3 tools/build_preview.py`, then `python3 web/make_site.py build/felucca.fwsc dev build/site`.
+  3. Serve it: `python3 -m http.server 8766 --bind 127.0.0.1 --directory build/site`.
+  4. Open `http://localhost:8766/webapp/editor/?mock=1` and press Connect. The firmware's DSP runs as WebAssembly in
+     an AudioWorklet at 44.1 kHz, and mock mode sends no MIDI.
+- No warnings in the video about AI code quality or flashing. Our own rules (section 7) cover that.
+
+What this changes in the plan:
+- **SLOOP (`isod89/sloop-fm1`, GPL-3.0-only) is a better starting point than either base in section 3.** It's a
+  Felucca fork that already does a lot of what we need:
+  - a four-track groovebox: three synth tracks and a drum track;
+  - 8 synth voices plus 6 drum voices;
+  - sound on BOTH cores since v2.7 (andrerezemini's work, which also freed ~38 KB of RAM), and from 2.7.1 it drops to
+    one core instead of crashing when core 2 misses a deadline;
+  - host tests (`tests/run_tests.sh`) and the browser preview above.
+  Build our firmware as a SLOOP/Felucca fork: replace the groovebox screen with the tank, add our tank engine and
+  voices as an engine, keep their hardware layer, sequencer clock, MIDI, storage and tests. Credit both upstreams.
+- Toolchain: Flah's MSI builds through WSL with the Linux toolchain (SLOOP also ships `INSTALL-SLOOP.bat` for
+  Windows). That makes section 8 question 1 mostly moot; ask it as "fork SLOOP (recommended) or start from fm1_open".
+- The browser preview is the fast loop: change, build, hear it in seconds. fm1-emu (section 7) stays the judge for
+  timing and CPU, because the preview runs on the PC's CPU, not the FM-1's.
+
 ## 4. The port (what comes along, what changes)
 - **Engine in C, from the web app.** The Rust core can't target pi32v2, so it is a blueprint only (its tests and
   `web-stats.json` say what "right" sounds like). Port the same pieces:
@@ -100,8 +136,8 @@ folder `fm1/`. Never touch `index.html` or `vst/` from here.
   up presets, uses a direct data cable, and the unbricker is downloaded and ready.
 
 ## 8. Questions for Flah (one round, recommended answers)
-1. Base on the official SDK (Windows-native) or on Felucca's open hardware layer? Recommended: official, unless our
-   audio can't bypass its closed engine.
+1. Fork SLOOP (Felucca family, open hardware layer, dual-core audio, browser preview) or start from M-VAVE's
+   fm1_open? Recommended: fork SLOOP (section 3b).
 2. The control map in section 5: OK as is? Recommended: yes, then tune by hand on the device.
 3. Goo on the FM-1: lighter but real (fewer drops), or off with a toggle? Recommended: lighter but real.
 4. Band: Slimehedron's own synth drums/bass/pad, falling back to the SDK's 808/303 only if they don't fit?
@@ -112,6 +148,9 @@ folder `fm1/`. Never touch `index.html` or `vst/` from here.
 - https://github.com/m-vave/fm1_open (README, `sdk/include/fm1.h`, `fm1_block.h`, `app/board/*`, `app/screen.c`, linker)
 - https://github.com/hugelton/Felucca (BUILDING.md, docs/ARCHITECTURE.md, docs/PLUGINS.md, tests/cpu_baseline.txt)
 - https://github.com/joakimeriksson/fm1-emu/wiki
+- https://github.com/isod89/sloop-fm1
+- https://www.youtube.com/watch?v=uENkYmfIx9o (Floyd Steinberg; description read via
+  https://www.matrixsynth.com/2026/11/the-m-vave-fm-1-is-turning-point-heres.html)
 - https://thesynthsource.com/fm1-custom-firmware-install-guide/
 - https://github.com/aroum/fm1-custom-fw
 - https://github.com/AL-255/FM-1-RE
