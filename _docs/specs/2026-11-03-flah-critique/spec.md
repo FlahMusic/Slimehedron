@@ -18,6 +18,8 @@ mix notes in `brief.md` sections 1-3.
 - Jazz kit: hi-hat instead of the ride. Snare lower and stick-like on jazz, plus any kit the mix measurement flags.
   Bossa clave down. Every kit to measured levels (research: `_docs/research/2026-11-04-mix-levels.md`).
 - The voice (speechSynthesis) is removed: words on screen, a "listen" button for every sound to be judged.
+- Standard words and views (Flah 2026-11-04): teach industry and theory standard concepts in small blocks, with the
+  words and views a DAW uses (ticket 15).
 - Learn units may be merged or cut; `units-audit.md` and this spec say which and why. The Orff order stays.
 
 ## 3. Done means
@@ -46,8 +48,8 @@ Glossary ("auto-notes: off in play", "tap invite"), suites on the tap invite and
 expects speech, the boom-tap units' suites, and kit tests that expect the jazz ride. Each ticket lists its own.
 
 ## 6. Tickets
-`issues/01`...`14`. Order: 01-03 play, 04-05 drums and mix, 06 voice, 07-13 the named learn breakages, 14 the logic
-pass on every unit (after the audit lands).
+`issues/01`...`15`. Order: 01-03 play, 04-05 drums and mix, 06 voice, 07-13 the named learn breakages, 14 the logic
+pass on every unit (after the audit lands), 15 standard words and views (with 14).
 
 ## 7. Not checked by a machine
 How the new snare and the levels sound (Flah listens once); whether the bubble copy reads right to a kid; whether the
