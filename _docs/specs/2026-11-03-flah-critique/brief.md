@@ -1,6 +1,6 @@
 # Flah's critique, 2026-11-03: play mode, the mix, and ALL of learn mode
 
-Status: needs-info (grill section 6 in one round, then /to-spec + /to-tickets)
+Status: done (grilled 2026-11-04; spec.md and issues/)
 Written by Cowork from Flah's voice notes. His words are quoted where the tone matters. Unit ids are from
 `learn2.js`. Flah's verdict on learn mode: "that whole part is half-assed. Fix it and make it better."
 Priority: this goes ahead of everything else on the web side. The FM-1 side track stays where it is
@@ -108,3 +108,9 @@ explore → improvise → compose; `_docs` has the pedagogy notes).
 3. **Chord colours.** Key = hue and chord type = shade, same in play and studio? Recommended: yes.
 4. **Learn units that fail the rules:** fix them all, or allowed to merge and cut weak ones? Recommended: allowed to
    merge or cut, the spec says which.
+
+## 7. Answers (Flah, 2026-11-04)
+1. A: the voice is removed; words on screen, and a "listen" button for every sound the kid must judge.
+2. The snare goes lower and more stick-like on the jazz kit, plus any kit the mix measurement flags.
+3. Yes: key = hue, chord type = shade, the same in play and studio.
+4. Weak units may be merged or cut; the spec says which and why.
