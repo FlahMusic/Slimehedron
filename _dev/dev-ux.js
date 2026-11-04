@@ -46,7 +46,7 @@ const hit=(a,b)=>a&&b&&a.l<b.r-1&&b.l<a.r-1&&a.t<b.b-1&&b.t<a.b-1;
   ok(inv&&inv.pe==='none',L+'and it does not get in the way of the touch');
   const c=[inv.cx,inv.cy];
   if(mob)await p.touchscreen.tap(c[0],c[1]);else await p.mouse.click(c[0],c[1]);
-  await p.waitForTimeout(900);
+  await p.waitForTimeout(1300);   // since critique ticket 01 the bubble glides to the notes toggle, then goes
   const after=await p.evaluate(()=>({balls:balls.length,inv:!!document.querySelector('#tapInvite.on')}));
   ok(after.balls>0&&!after.inv,L+'a tap right on it drops a ball, and the hint goes ('+after.balls+' balls)');
   await p.evaluate(()=>{balls.length=0;});await p.reload();await p.waitForTimeout(3200);

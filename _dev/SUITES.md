@@ -14,6 +14,7 @@ Every suite: `node _dev/<name>.js` from the project root, with a server on :8765
 | play mode, the tank gestures, auto-notes | dev-hands, dev-ux, dev-firsttouch, dev-firstfive, dev-controls, dev-guide |
 | tank physics, spin, shapes, spaces | dev-hands, dev-space, dev-solid, dev-portal, dev-beatlock, dev-revive, dev-fluid |
 | auto-notes pace per shape (the auto adjuster) | dev-autoadjust (~4 min, seeded) |
+| play mode's first minute (slime on, the tap bubble, the notes toggle under the tank) | dev-play, dev-firsttouch, dev-ux 1 |
 | the goo | dev-goo3d, dev-goosmooth, dev-goolook, dev-gl |
 | the 3D look / GPU tank | dev-gl, dev-look3d, dev-crayon, dev-3d, dev-shapes, dev-potato |
 | harmony, keys, scales, the chord chip | dev-chordtest, dev-harmony, dev-harmony2, dev-world, dev-tuning, dev-band, dev-melody |

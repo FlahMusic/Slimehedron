@@ -25,7 +25,8 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 - **Seed**: hold-to-loop marker. Rings its spot once a bar. Does not feed the chord follower.
 - **Strum**: a drag that starts on the rim and rings each wall it passes.
 - **Chord jackpot**: the player's own taps/strums in one bar are exactly the sounding chord's tones -> reward.
-- **Tap invite**: the pulse on an empty play tank. Gone forever after the first tap.
+- **Tap invite / tap bubble**: "tap to play notes and spin the shapes" on an empty play tank (`#tapInvite`). After the
+  first tap it glides to the notes toggle and is gone for good. The slime is already on in play; nothing sounds before a touch.
 
 ## The music
 - **Key / root**: `S.root` (MIDI note; the key menu shows the pitch class, the octave row sets the register).
@@ -33,7 +34,8 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 - **Chord brain**: picks the band's chord each bar (`curRootDeg`). **Chord follower**: `noteFeed()` lets played notes steer it.
 - **Key journey**: the slime moves the key every ~90 s (not when pinned, `_keyPinned`).
 - **Slime / slime mode**: the auto-jammer switch (`#slimeBig`, `S.slimeMode`): moves key, spin, shapes, sound knobs (**MODS**).
-- **Auto-notes**: the slime dropping notes by itself (`#autoNotesBtn`, `S.autoNotes`). Off in play, on in studio.
+- **Auto-notes**: the slime dropping notes by itself (`#autoNotesBtn`, `S.autoNotes`). Off in play, on in studio. In play the
+  toggle sits just under the tank, with the word "notes".
   It is a melody with motifs (`autoMelodyNote`), and it only runs while the slime is on.
 - **Rain**: the old steady note drop (`spawnRain`, `S.rain`). Runs only while the slime is off. Not auto-notes.
 - **Band**: bass + comp + pad (+ drums). **Kit**: a drum style (pop, rock, disco, bossa, jazz, ...).

@@ -33,8 +33,8 @@ const countTriggers=p=>p.evaluate(()=>{if(window.__trg)return;window.__trg=0;con
   const c=await centre(p);
   await p.mouse.click(c.x,c.y);await p.waitForTimeout(1500);   // first touch: the band (and the slime) come in
   const s0=await p.evaluate(()=>({slime:S.slimeMode,auto:S.autoNotes,pressed:$("autoNotesBtn").getAttribute('aria-pressed'),vis:$("autoNotesBtn").checkVisibility(),
-    next:$("autoNotesBtn").previousElementSibling&&$("autoNotesBtn").previousElementSibling.id}));
-  ok(s0.vis&&s0.next==='slimeBig','1. the note button sits right next to the slime switch');
+    next:$("autoNotesBtn").previousElementSibling&&$("autoNotesBtn").previousElementSibling.id,slot:$("autoNotesBtn").parentNode.id}));
+  ok(s0.vis&&s0.slot==='notesSlot','1. in play the note button sits under the tank (critique ticket 01; dev-play checks where)');
   ok(s0.slime&&!s0.auto&&s0.pressed==='false','1. play opens with the slime on but NOT dropping notes ('+JSON.stringify(s0)+')');
   const n=await p.evaluate(async()=>{balls.length=0;const spawned=[];const o=autoMelodyNote;window.autoMelodyNote=function(){spawned.push(1);return o.apply(this,arguments);};
     await new Promise(r=>setTimeout(r,7000));const a=spawned.length;
@@ -139,7 +139,7 @@ const countTriggers=p=>p.evaluate(()=>{if(window.__trg)return;window.__trg=0;con
   await p.click('#clearBtn');await p.waitForTimeout(400);
   ok(await p.evaluate(()=>_hands.SEEDS.length===0&&!document.querySelector('.tankSeed:not(.gone)')),'5. clear takes every seed away');
   // strum: from outside the shape, across the right-hand edge and round
-  await p.evaluate(()=>{balls.length=0;window.__walls=new Set();const o=LAB.strike;LAB.strike=function(i,v){window.__walls.add(i);return o.apply(this,arguments);};});
+  await p.evaluate(()=>{_reduced=true;S.spin=0;_hands.SPINU.w=0;rot=0;rebuild();balls.length=0;window.__walls=new Set();const o=LAB.strike;   /* and the shape at a known turn: a 109-degree swipe crosses 2 or 3 of the hexagon's walls depending on it */   /* the box tumbles from the moment play opens (critique 01): the swipe is a fixed circle on screen, so hold the view still */LAB.strike=function(i,v){window.__walls.add(i);return o.apply(this,arguments);};});
   const r0=await p.evaluate(()=>rot);
   await p.mouse.move(c.x+c.R*1.15,c.y-c.R*0.6);await p.mouse.down();
   for(let i=1;i<=24;i++){const a=-0.55+i/24*1.9;await p.mouse.move(c.x+c.R*1.0*Math.cos(a),c.y+c.R*1.0*Math.sin(a));await p.waitForTimeout(16);}

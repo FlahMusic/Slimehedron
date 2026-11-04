@@ -75,7 +75,7 @@ const allErrs=[];
  const st=await p.evaluate(()=>({playing:S.playing,drum:drumOn,band:bandOn,slime:S.slimeMode}));
  const rms=await p.evaluate(()=>window.__rms(2500));
  ok(rms<=SILENT,'play mode opens SILENT — the app does not play itself (peak RMS '+rms.toFixed(5)+')');
- ok(!st.drum&&!st.band&&!st.slime,'play mode opens with kit, band and slime all OFF ('+JSON.stringify(st)+')');
+ ok(!st.drum&&!st.band&&st.slime,'play mode opens with kit and band OFF and the slime ON, still silent (critique ticket 01) ('+JSON.stringify(st)+')');
  allErrs.push(...p.__errs.map(e=>'silent-open: '+e));await p.close();}
 
 // ---------- 2. THE CHILD'S TAP SOUNDS, FAST ----------
