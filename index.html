@@ -3358,7 +3358,7 @@ function updateChordPill(){const p=document.getElementById('chordPill');if(!p||p
   const nx=document.getElementById('chordNext');
   nx.parentElement.style.visibility=(nextRootDeg!=null&&nextRootDeg!==curRootDeg)?'visible':'hidden';
   nx.textContent=nextRootDeg!=null?chordName(nextRootDeg):'';
-  document.getElementById('chordProgI').style.background=`linear-gradient(90deg,${aurora(curRootDeg/n,62)},${aurora((nextRootDeg==null?curRootDeg:nextRootDeg)/n,62)})`; // bar fills FROM this chord's colour INTO the next one's
+  document.getElementById('chordProgI').style.background=`linear-gradient(90deg,${chordCss(curRootDeg)},${chordCss(nextRootDeg==null?curRootDeg:nextRootDeg)})`; // bar fills FROM this chord's colour INTO the next one's (THE CHORD COLOUR)
 }
 // minor vs major tonality of the current scale, for correct wheel labeling (Am vs C). checks the 3rd degree:
 // a flat/minor 3rd (~300 cents) = minor family (minor pentatonic, aeolian, dorian, phrygian, locrian); else major.
@@ -3560,16 +3560,34 @@ function updateWheel(){const w=document.getElementById('cofWheel');if(!w||w.hidd
 function degRGB(d){const td=totalDegrees(),h=auroraHue((((d%td)+td)%td)/td),s=0.74,l=0.62; // same color wheel the walls and notes already use
   const a=s*Math.min(l,1-l),f=nn=>{const k=(nn+h/30)%12;return (l-a*Math.max(-1,Math.min(k-3,9-k,1)))*255;};
   return [f(0),f(8),f(4)];}
-function chordRGB(rd){const r=[0,0,0];for(const d of [rd,rd+2,rd+4]){const c=degRGB(d);r[0]+=c[0]/3;r[1]+=c[1]/3;r[2]+=c[2]/3;}return r;} // C+E+G's colors mixed = the chord's color
-let liqRGB=[178,205,240]; // eased every frame so the color glides between chords, never snaps
+// THE CHORD COLOUR (critique ticket 02; Flah 2026-11-04: "Color = key (hue) + chord type (shade)", the same in play and
+// studio). It used to be the three notes' colours averaged, and three hues spread round the wheel average to GREY, which is
+// what the droplets and the slime showed. Now: the chord's root picks the hue (round the circle of fifths, so neighbouring
+// chords sit next to each other), and its type picks the shade. One table; the slime, the droplets, the beads and the chord
+// bar all read it. Never below CHORD_SAT_MIN saturation: never grey.
+const CHORD_SHADE={major:[0.78,0.62],minor:[0.64,0.47],'7':[0.72,0.54],maj7:[0.66,0.70],add9:[0.82,0.69],m7:[0.6,0.52],
+  diminished:[0.5,0.40],augmented:[0.86,0.57],suspended:[0.58,0.60],other:[0.62,0.58]},CHORD_SAT_MIN=0.45;
+function hslRGB(h,s,l){const a=s*Math.min(l,1-l),f=n=>{const k=(n+h*12)%12;return (l-a*Math.max(-1,Math.min(k-3,9-k,1)))*255;};return [f(0),f(8),f(4)];}
+function chordHSLPQ(pc,qual){const sh=CHORD_SHADE[qual]||CHORD_SHADE.other,pos=((pc*7)%12+12)%12;   // fifths order: C G D A E ...
+  return [auroraHue(pos/12),Math.max(CHORD_SAT_MIN,sh[0]),sh[1]];}
+function chordColourPQ(pc,qual){const c=chordHSLPQ(pc,qual);return hslRGB(c[0],c[1],c[2]);}
+// from one chord's colour to the next ROUND THE WHEEL: in red-green-blue the halfway point of two far hues is grey (measured
+// 2026-11-04: the live slime dipped to 0.22 chroma between chords; the table never goes under 0.40)
+function hslMix(a,b,t){const dh=((b[0]-a[0]+1.5)%1)-0.5;return [(a[0]+dh*t+1)%1,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];}
+function chordQual(rd){const harm=scaleObj().harm||'triad';if(harm==='blues')return '7';const w=chordFull(rd).word;
+  return {major:'major',minor:'minor',diminished:'diminished',augmented:'augmented',suspended:'suspended'}[w]||'other';}
+function chordPc(rd){return (((S.root+Math.round(centsForDegree(rd)/100))%12)+12)%12;}
+function chordHSL(rd){if(cmActive()&&_cmCur)return chordHSLPQ(_cmCur.pc,_cmCur.qual==='m'?'minor':(_cmCur.qual||'major'));
+  return chordHSLPQ(chordPc(rd),chordQual(rd));}
+function chordRGB(rd){const c=chordHSL(rd);return hslRGB(c[0],c[1],c[2]);}
+function chordCss(rd){const c=chordRGB(rd);return 'rgb('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+')';}
+let liqRGB=[178,205,240],liqHSL=null; // eased every frame so the color glides between chords, never snaps (round the wheel: liqHSL)
 function liquidColor(){
   let tgt;
-  if(bandOn&&drumBar()){const f=(drumStep%drumBar())/drumBar(),c1=chordRGB(curRootDeg),c2=chordRGB(nextRootDeg==null?curRootDeg:nextRootDeg);
-    tgt=[0,1,2].map(i=>c1[i]+(c2[i]-c1[i])*f);} // mid-bar the pool is literally between the two chords
-  else{const n=scaleObj().c.length,acc=[0,0,0];let w=0; // no band: blend the colors of whatever notes dominate the melody
-    for(let i=0;i<n;i++){if(noteHisto[i]<=0.01)continue;const c=degRGB(i);acc[0]+=c[0]*noteHisto[i];acc[1]+=c[1]*noteHisto[i];acc[2]+=c[2]*noteHisto[i];w+=noteHisto[i];}
-    tgt=w>0.5?[acc[0]/w,acc[1]/w,acc[2]/w]:liqRGB;}
-  for(let i=0;i<3;i++)liqRGB[i]+=(tgt[i]-liqRGB[i])*0.06;
+  if(bandOn&&drumBar()){const f=(drumStep%drumBar())/drumBar();
+    tgt=hslMix(chordHSL(curRootDeg),chordHSL(nextRootDeg==null?curRootDeg:nextRootDeg),f);} // mid-bar the pool is literally between the two chords
+  else tgt=chordHSL(curRootDeg);   // no band: the chord the brain is on (blending the melody's notes went grey)
+  liqHSL=liqHSL?hslMix(liqHSL,tgt,0.06):tgt.slice();const c=hslRGB(liqHSL[0],liqHSL[1],liqHSL[2]);liqRGB[0]=c[0];liqRGB[1]=c[1];liqRGB[2]=c[2];
   const P=(m,al)=>`rgba(${(liqRGB[0]+(255-liqRGB[0])*m)|0},${(liqRGB[1]+(255-liqRGB[1])*m)|0},${(liqRGB[2]+(255-liqRGB[2])*m)|0},${al})`; // toward white = pastel
   const D=(m,al)=>`rgba(${(liqRGB[0]*(1-m))|0},${(liqRGB[1]*(1-m))|0},${(liqRGB[2]*(1-m))|0},${al})`;                                     // toward dark = depth
   return {crest:P(0.55,0.88),mid:P(0.22,0.94),deep:D(0.24,0.97),lip:P(0.78,0.8),blob:P(0.3,0.85)};}

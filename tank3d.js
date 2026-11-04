@@ -651,7 +651,7 @@ export function start(){
       n++;}
     ballMesh.count=n;ballMesh.instanceMatrix.needsUpdate=true;if(ballMesh.instanceColor)ballMesh.instanceColor.needsUpdate=true;
     // spray that has not landed yet: little droplets at their own depth
-    for(const p of particles){if(p.pooled)continue;if(p.d&&p.bead)HUE.setRGB(liqRGB[0]/255,liqRGB[1]/255,liqRGB[2]/255,T.SRGBColorSpace);else hueCol(p.hue||0,0.7,0.62,HUE);gooPos(p,_q);   // a landed bead is slime already: the slime's colour
+    for(const p of particles){if(p.pooled)continue;if(p.d)HUE.setRGB(liqRGB[0]/255,liqRGB[1]/255,liqRGB[2]/255,T.SRGBColorSpace);else hueCol(p.hue||0,0.7,0.62,HUE);gooPos(p,_q);   /* a droplet is the slime: the chord's colour (THE CHORD COLOUR), never the note's */
       drops.add(_q[0],_q[1],_q[2],p.d?p.r*2:5.2,HUE.r,HUE.g,HUE.b,p.fade?0.95*Math.max(0,1-p.age/34):0.95);}   // a droplet or bead at its true size (THE SPRAY)   // spray that will not join the goo fades as it flies
     shadows.done();trails.done();drops.done();drawWorms(now,fill);
     gooClip(fill,solid);if(!(++mcTick%(gooAvg>6?Math.max(2,mcEvery):mcEvery)))gooUpdate();mc.visible=particles.length>0;

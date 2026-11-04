@@ -55,6 +55,25 @@ const TOGGLE=()=>{const b=document.getElementById('autoNotesBtn'),r=b.getBoundin
   ok(!s.slot&&s.bySwitch&&s.vis,L+'studio keeps it next to the slime switch ('+JSON.stringify(s)+')');
   ok(errs.length===0,L+'no page errors'+(errs.length?': '+errs[0]:''));
   await ctx.close();}
+ // 5. THE CHORD COLOUR (critique ticket 02; Flah: "Color = key (hue) + chord type (shade)", never grey). The table: every
+ // key and chord type is above the grey line, and two types in one key never share a colour. Then the live slime (the
+ // droplets are drawn in it): sampled over 16 bars of play with the band on and off, it never goes grey.
+ {const ctx=await b.newContext({viewport:{width:1000,height:900}});await ctx.addInitScript(()=>{try{localStorage.setItem('slimehedron-coach','1');localStorage.setItem('slimehedron-tapped','1');}catch(e){}});
+  const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
+  await p.goto(BASE+'?m=play');await p.waitForTimeout(2500);
+  const r=await p.evaluate(()=>{const sat=c=>(Math.max(c[0],c[1],c[2])-Math.min(c[0],c[1],c[2]))/255;   /* chroma: how far from grey (HSL saturation calls a pale wash colourful) */
+    const Q=Object.keys(CHORD_SHADE);let minSat=1,sameKeyMin=1e9;
+    for(let pc=0;pc<12;pc++){const cs=Q.map(q=>chordColourPQ(pc,q));for(const c of cs)minSat=Math.min(minSat,sat(c));
+      for(let i=0;i<cs.length;i++)for(let j=i+1;j<cs.length;j++)sameKeyMin=Math.min(sameKeyMin,Math.hypot(cs[i][0]-cs[j][0],cs[i][1]-cs[j][1],cs[i][2]-cs[j][2]));}
+    // the old way, for the record: the three notes' colours averaged
+    const old=[0,1,2,3,4,5,6].map(rd=>{const a=[0,0,0];for(const d of [rd,rd+2,rd+4]){const c=degRGB(d);a[0]+=c[0]/3;a[1]+=c[1]/3;a[2]+=c[2]/3;}return sat(a);});
+    const real=performance.now.bind(performance);let T=real();performance.now=()=>T;const live=[];
+    for(const band of [false,true]){if(band!==bandOn)$("bandBtn").click();for(let i=0;i<16*180;i++){T+=1000/60;update(T);if(i%30===0){liquidColor();live.push(sat(liqRGB));}}}
+    performance.now=real;return {minSat,sameKeyMin,oldMin:Math.min(...old),liveMin:Math.min(...live.slice(10))};});
+  ok(r.minSat>=0.3&&r.sameKeyMin>=12,'every key and chord type has its own colour, none grey (lowest chroma '+r.minSat.toFixed(2)+'; two types in one key at least '+r.sameKeyMin.toFixed(0)+' apart; the old averaged colours went down to '+r.oldMin.toFixed(2)+')');
+  ok(r.liveMin>=0.3,'and the live slime and its droplets never go grey (lowest chroma over 32 bars '+r.liveMin.toFixed(2)+')');
+  ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
+  await ctx.close();}
  await b.close();
  console.log('\n'+(FAIL.length?FAIL.length+' FAILURE(S)':'play pass clean'));
  process.exit(FAIL.length?1:0);})();
