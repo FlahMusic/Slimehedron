@@ -2508,10 +2508,11 @@ const SCALES={
 // so it stops padding out the everyday list, and every entry carries its note count.
 const SCALE_GROUPS=[
   ["Start here",        ["major","minor","pentaMaj","pentaMin","blues"]],
-  ["Modes & moods",     ["dorian","mixolydian","lydian","phrygian","locrian","harmMin","melMin","wholeTone","chromatic"]],
-  ["Around the world",  ["hirajoshi","inSen","iwato","hijaz","bhairav"]],
-  ["Between the notes", ["maqamRast","maqamBayati","slendro","pelog","neutral7","edo19"]]
+  ["Modes & moods",     ["dorian","mixolydian","lydian","phrygian","locrian","harmMin","melMin","hijaz","wholeTone","chromatic"]],
+  // ADVANCED (critique ticket 03): drones and the scales between the notes. Studio only; play never offers them.
+  ["Advanced: drones & between the notes", ["hirajoshi","inSen","iwato","bhairav","maqamRast","maqamBayati","slendro","pelog","neutral7","edo19"]]
 ];
+const ADV_SCALES=new Set(SCALE_GROUPS[SCALE_GROUPS.length-1][1]);
 const NOTE_NAMES=["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 
 const S={
@@ -3315,9 +3316,13 @@ function chordReadout(){
   if(harm==='drone')name=f.root+' drone';
   else if(harm==='blues')name=f.root+'7';
   else if(harm==='neutral')name=f.root+' neutral';
-  else{const w={major:'major',minor:'minor',diminished:'dim',augmented:'aug',suspended:'sus'}[f.word];name=w?f.root+' '+w:f.root;}
+  else{const w={major:'major',minor:'minor',diminished:'dim',augmented:'aug',suspended:'sus'}[f.word];name=w?f.root+' '+w:f.root;
+    const x=chordExtNow(curRootDeg);if(x)name=f.root+(x==='add9'&&f.word==='minor'?' minor':'')+' '+EXT_WORD[x];}   // "G 7", "C maj7", "A m7", "D add9"
   return {name,sub:keyNameNow()+' '+scaleWord()};}
 let nextRootDeg=null; // the brain decides one bar ahead so the pill can show where we're going
+let _chordExt={rd:-1,ext:''};   // the colour the band put on the sounding chord: '' | 7 | maj7 | m7 | m7b5 | add9 | suspended
+const EXT_WORD={'7':'7',maj7:'maj7',m7:'m7',m7b5:'m7\u266d5',add9:'add9',suspended:'sus4'};
+function chordExtNow(rd){return _chordExt&&_chordExt.rd===rd?_chordExt.ext:'';}
 function chordName(rd){const c0=centsForDegree(rd),a=((Math.round((centsForDegree(rd+2)-c0)/100))%12+12)%12,b=((Math.round((centsForDegree(rd+4)-c0)/100))%12+12)%12;
   const root=NOTE_NAMES[(((S.root+Math.round(c0/100))%12)+12)%12];
   // name the triad by its real intervals. pentatonic often stacks {0,3,7} or {0,4,7} through gapped degrees →
@@ -3574,7 +3579,7 @@ function chordColourPQ(pc,qual){const c=chordHSLPQ(pc,qual);return hslRGB(c[0],c
 // from one chord's colour to the next ROUND THE WHEEL: in red-green-blue the halfway point of two far hues is grey (measured
 // 2026-11-04: the live slime dipped to 0.22 chroma between chords; the table never goes under 0.40)
 function hslMix(a,b,t){const dh=((b[0]-a[0]+1.5)%1)-0.5;return [(a[0]+dh*t+1)%1,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];}
-function chordQual(rd){const harm=scaleObj().harm||'triad';if(harm==='blues')return '7';const w=chordFull(rd).word;
+function chordQual(rd){const harm=scaleObj().harm||'triad';if(harm==='blues')return '7';const x=chordExtNow(rd);if(x&&CHORD_SHADE[x])return x;const w=chordFull(rd).word;
   return {major:'major',minor:'minor',diminished:'diminished',augmented:'augmented',suspended:'suspended'}[w]||'other';}
 function chordPc(rd){return (((S.root+Math.round(centsForDegree(rd)/100))%12)+12)%12;}
 function chordHSL(rd){if(cmActive()&&_cmCur)return chordHSLPQ(_cmCur.pc,_cmCur.qual==='m'?'minor':(_cmCur.qual||'major'));
@@ -3734,7 +3739,9 @@ window._keyJourneyBars=keyJourneyBars;
 // (minor if the trip was dark, major if it was bright) and the home key can step round the circle of
 // fifths. Never microtonal in play: those stay in studio, where someone chose them.
 const PLAY_HOME=['major','minor'];
-const PLAY_AWAY=['dorian','mixolydian','lydian','pentaMaj','pentaMin','blues','harmMin','hirajoshi','inSen','hijaz','bhairav','phrygian','wholeTone'];
+// no drone scales in play (critique ticket 03: "G drone" means nothing to a kid): hirajoshi, in sen and bhairav live in
+// studio's Advanced scales now
+const PLAY_AWAY=['dorian','mixolydian','lydian','pentaMaj','pentaMin','blues','harmMin','hijaz','phrygian','wholeTone'];
 let _awayLog=[];
 function playScaleStep(){const cur=S.scale;
   if(PLAY_HOME.includes(cur)){let pool=PLAY_AWAY.filter(k=>!_awayLog.includes(k));if(!pool.length){_awayLog=[];pool=PLAY_AWAY.slice();}
@@ -4257,13 +4264,19 @@ function bandBar(t,barI){ // RENDERS the chord the brain picked. Audio only — 
     if(n===7){
       let col=null;try{col=feelFor(typeof drumKit!=='undefined'?drumKit:'pop').colour;}catch(e){}
       col=col||{seventh:.2,ninth:.15,sus:.15};
-      if(col.v7&&rd===4%n){rawDegs.push((rd+6)%n);}        // the five chord, with its seventh
+      let ext='';
+      if(col.v7&&rd===4%n){rawDegs.push((rd+6)%n);ext='7th';}        // the five chord, with its seventh
       else{
         const r=Math.random(),a=col.seventh||0,b=a+(col.ninth||0),c=b+(col.sus||0);
-        if(r<a)rawDegs.push((rd+6)%n);                      // 7th
-        else if(r<b)rawDegs.push((rd+1)%n);                 // 9th
-        else if(r<c)rawDegs[1]=(rd+3)%n;                    // sus4 instead of the third
+        if(r<a){rawDegs.push((rd+6)%n);ext='7th';}                      // 7th
+        else if(r<b){if((((Math.round((centsForDegree(rd+1)-centsForDegree(rd))/100))%12)+12)%12===2){rawDegs.push((rd+1)%n);ext='add9';}}   // 9th, only a whole step up (on vii it was a flat 9th, a clash; the name gave it away)
+        else if(r<c){rawDegs[1]=(rd+3)%n;ext='suspended';}              // sus4 instead of the third
       }
+      // ...and REMEMBERS it, so the chord's name and colour say what is sounding (critique ticket 03: play never
+      // showed a 7th or an add9, though the band was playing them). A 7th is named by its real intervals.
+      if(ext==='7th'){const st=d=>((Math.round((centsForDegree(rd+d)-centsForDegree(rd))/100))%12+12)%12,t3=st(2),t5=st(4),t7=st(6);
+        ext=t7===11?'maj7':(t3===3&&t5===6?'m7b5':(t3===3?'m7':'7'));}
+      _chordExt={rd,ext};
     }
   }
   // voice leading: each pad voice moves to its NEAREST octave of the new chord tone — chords glide instead of leaping
@@ -6601,7 +6614,11 @@ $("root").addEventListener('change',e=>{const v=parseInt(e.target.value);S.root=
      separate "octave" row (lower / higher) under more settings. #root (hidden) still holds the exact note. */
   const rs=$("root"),rootPc=()=>((+rs.value%12)+12)%12;
   kt.innerHTML=NOTE_NAMES.map((n,i)=>'<option value="'+i+'">'+n.replace('#','\u266f')+'</option>').join('');
-  st.innerHTML=$("scale").innerHTML;
+  // play's menu leaves out the Advanced group (no drones for a kid); studio's has it all
+  const fillTop=()=>{const v=$("scale").value;st.innerHTML=$("scale").innerHTML;
+    if(document.body.classList.contains('mode-play'))st.querySelectorAll('optgroup').forEach(g=>{if(/^Advanced/.test(g.label))g.remove();});
+    st.value=ADV_SCALES.has(v)&&document.body.classList.contains('mode-play')?'major':v;};
+  fillTop();window._fillScaleTop=fillTop;
   const od=$("octDn"),ou=$("octUp");
   const sync=()=>{kt.value=String(rootPc());const r=+rs.value;if(od)od.disabled=r-12<48;if(ou)ou.disabled=r+12>72;};
   const setRoot=r=>{if(!(r>=48&&r<=72))return;rs.value=String(r);rs.dispatchEvent(new Event('change'));};
@@ -6690,6 +6707,7 @@ function applyMode(m){S.mode=m;
     if(sw&&grp&&sw.parentElement!==grp)grp.insertBefore(sw,sep||null);
     const an=$("autoNotesBtn");if(an&&sw&&an.previousElementSibling!==sw)sw.after(an);
     try{if(window._notesSlot)window._notesSlot.place();}catch(e){}   /* the notes toggle and its held spot follow the room at once, not on the next half-second tick (a race dev-topbar caught) */
+    try{if(m==='play'&&ADV_SCALES.has(S.scale)){const sc=$("scale");sc.value='major';sc.dispatchEvent(new Event('change'));}if(window._fillScaleTop)window._fillScaleTop();}catch(e){}   /* play: never a drone */
     loadAutoNotes();
     const cb2=$("chordBtn");
     if(cb2&&grp&&cb2.parentElement!==grp)grp.appendChild(cb2);}catch(e){}

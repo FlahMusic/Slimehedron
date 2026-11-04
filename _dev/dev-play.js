@@ -74,6 +74,26 @@ const TOGGLE=()=>{const b=document.getElementById('autoNotesBtn'),r=b.getBoundin
   ok(r.liveMin>=0.3,'and the live slime and its droplets never go grey (lowest chroma over 32 bars '+r.liveMin.toFixed(2)+')');
   ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
   await ctx.close();}
+ // 6. PLAY'S CHORDS (critique ticket 03): 7ths and add9s show up in the chord's name (the band was playing them, nothing
+ // said so); never "drone"; play's scale menu and its key journey hold no drone scale; studio keeps them under Advanced.
+ {const ctx=await b.newContext({viewport:{width:1000,height:900}});await ctx.addInitScript(()=>{try{localStorage.setItem('slimehedron-coach','1');localStorage.setItem('slimehedron-tapped','1');}catch(e){}});
+  const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
+  await p.goto(BASE+'?m=play');await p.waitForTimeout(2500);
+  const r=await p.evaluate(()=>{initAudio();if(!bandOn)$("bandBtn").click();const names={};let drone=0;   /* the band comes in at the first touch in play */
+    for(let i=0;i<300;i++){curRootDeg=i%7;try{bandBar(AC.currentTime+0.5,i);}catch(e){}const n=chordReadout().name;names[n]=(names[n]||0)+1;if(/drone/i.test(n))drone++;}
+    const all=Object.keys(names),sevenths=all.filter(n=>/ (7|maj7|m7)/.test(n)).length,add9=all.filter(n=>/add9/.test(n)).length;
+    const flat9=[];S.scale='major';for(let i=0;i<300;i++){curRootDeg=6;try{bandBar(AC.currentTime+0.5,i);}catch(e){}if(chordExtNow(6)==='add9')flat9.push(i);}   /* vii of major: the diminished chord */
+    const menu=[...document.querySelectorAll('#scaleTop option')].map(o=>o.value),adv=[...ADV_SCALES];
+    const journey=new Set();for(let i=0;i<400;i++){S.scale=i%2?'minor':'major';journey.add(playScaleStep().scale);}
+    return {sevenths,add9,drone,kinds:all.length,sample:all.slice(0,12),flat9:flat9.length,menuAdv:menu.filter(v=>ADV_SCALES.has(v)),journeyAdv:[...journey].filter(v=>ADV_SCALES.has(v)||(SCALES[v]&&SCALES[v].harm==='drone'))};});
+  ok(r.sevenths>0&&r.add9>0&&!r.sample.concat(Object.keys(r.names||{})).some(n=>/dim add9/.test(n)),'play\'s chords now say when they are 7ths and add9s ('+r.kinds+' chord names in 300 bars, e.g. '+r.sample.join(', ')+')');
+  ok(r.flat9===0,'and never a 9th that clashes: the vii chord takes no add9 (it was a flat 9th) ('+r.flat9+' in 300 bars)');
+  ok(r.drone===0&&r.menuAdv.length===0&&r.journeyAdv.length===0,'and play never says "drone": none in the names, the scale menu or the key journey ('+JSON.stringify({menu:r.menuAdv,journey:r.journeyAdv})+')');
+  await p.goto(BASE+'?m=studio');await p.waitForTimeout(2500);
+  const s=await p.evaluate(()=>{const g=[...document.querySelectorAll('#scaleTop optgroup')].find(x=>/^Advanced/.test(x.label));return g?[...g.querySelectorAll('option')].map(o=>o.value):[];});
+  ok(s.includes('hirajoshi')&&s.includes('slendro'),'studio keeps them, under Advanced ('+s.length+' scales)');
+  ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
+  await ctx.close();}
  await b.close();
  console.log('\n'+(FAIL.length?FAIL.length+' FAILURE(S)':'play pass clean'));
  process.exit(FAIL.length?1:0);})();
