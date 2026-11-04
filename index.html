@@ -5234,6 +5234,10 @@ function _gdKey(a,b,c){const G=_GD;return (a<0||b<0||c<0||a>=G.nx||b>=G.nx||c>=G
 function gooAt3(x,y,z){const G=_GD;if(!G.n)return 0;const cx=Math.floor((x-G.ox)/GOOC),cy=Math.floor((y-G.oy)/GOOC),cz=Math.floor(((z-0.5)*BOXD-G.oz)/GOOC);let s=0;
   for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)for(let k=-1;k<=1;k++){const q=_gdKey(cx+i,cy+j,cz+k);if(q>=0)s+=G.a[q];}
   return Math.min(1,s*4.18879/(27*GOOC*GOOC*GOOC)*1.9);}   // packed drops read about 1, the skin of a heart about 0.5
+// THE BEAT'S SQUASH, SOFTER (Flah 2026-11-03, look question 5: the slime stretched into a streak on every beat and snapped
+// back; at most about twice as long as wide). Measured with the same volume of slime: the kick at full strength peaked at
+// 4.9:1 (3.1:1 on average just after a beat); at 0.35 it peaks at 1.7:1, 1.4:1 just after, 1.2:1 at rest.
+const BEAT_SQUASH=0.35;
 function gooStep3D(now){
   let pooledN=0;for(const p of particles)if(p.pooled)pooledN++;
   const L=lavaTick(pooledN),H=L.hearts,nh=1;LAVA.n=nh;
@@ -5247,7 +5251,7 @@ function gooStep3D(now){
       if(p.h==null||p.h>=nh||Math.random()<0.004)p.h=nearestHeart(p,nh);   // matter drifts between hearts that pass close
       const A=H[p.h],rx=p.x-CX-A[0],ry=p.y-CY-A[1],rz=(p.z-0.5)*BOXD-A[2],d=Math.sqrt(rx*rx+ry*ry+rz*rz)||1,c=core[p.h]*0.75;
       if(d>c){const k=0.012*(d-c)/d;p.vx-=rx*k;p.vy-=ry*k;p.vz-=rz*k;}
-      if(env>0.01){const a=LAVA.ax[p.h],ka=LAVA.kick[p.h]*env,al=rx*a[0]+ry*a[1]+rz*a[2],sx=a[0]*al,sy=a[1]*al,sz=a[2]*al;
+      if(env>0.01){const a=LAVA.ax[p.h],ka=LAVA.kick[p.h]*env*BEAT_SQUASH,al=rx*a[0]+ry*a[1]+rz*a[2],sx=a[0]*al,sy=a[1]*al,sz=a[2]*al;
         // the beat: a sharp stretch along its axis, a squeeze across it, a breath out - then the spring pulls it home before the next one
         p.vx+=ka*(0.045*sx-0.024*(rx-sx)+0.01*rx);p.vy+=ka*(0.045*sy-0.024*(ry-sy)+0.01*ry);p.vz+=ka*(0.045*sz-0.024*(rz-sz)+0.01*rz);}
       p.vx+=0.035*Math.sin(t*1.3+p.y*0.035+p.h);p.vy+=0.035*Math.sin(t*1.1+p.z*BOXD*0.035);p.vz+=0.035*Math.sin(t*0.9+p.x*0.035);   // a slow shimmer: never a perfect ball

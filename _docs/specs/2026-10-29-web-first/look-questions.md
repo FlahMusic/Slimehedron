@@ -1,6 +1,6 @@
 # Look questions for Flah
 
-Status: needs-info
+Status: done (answered 2026-11-03)
 Asked 2026-11-02, from the screenshot review of the web-first look pass. Each is Flah's call (art direction).
 Recommended answer after each.
 
@@ -12,4 +12,7 @@ Recommended answer after each.
 6. A pale green slime almost disappears on the green grass: always keep the slime a shade darker than what's behind it? Recommended: yes.
 
 ## Answers
-(none yet)
+Flah, 2026-11-03: "all yes, also i dont even see a crayon/glass toggle? if this isnt used just forget the crayon shit and
+focus on optimizing this to look clean". So 1, 2, 4, 5, 6 yes; 3 is replaced: the tank's crayon look is removed and glass
+is the only look (ADR 0012). The crayon art of the page itself (background, stickers, mascots) stays.
+(The switch was a "look" row in the tank's corner view menu, shown only in 3D with the graphics-card renderer.)
