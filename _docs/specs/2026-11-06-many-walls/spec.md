@@ -1,6 +1,6 @@
 # Many walls (orbs, whole microtonal tunings, a heat-aware renderer)
 
-Status: in-progress. Research: `_docs/research/2026-11-06-many-walls.md`.
+Status: done (this pass). Next: GPU goo, WebGPU/TSL. Research: `_docs/research/2026-11-06-many-walls.md`.
 
 ## 1. Ask (Flah, 2026-11-06)
 "real crazy mathematic almost psychedelic shapes that can support all the tones in microtonal scales, so having a
@@ -33,7 +33,9 @@ phones ... modern and futuristic yet playful."
 ## 4. Proof
 - `dev-orb` (new): face counts for N = 12..124, one note per face, bottom-to-top order, rebuild on scale change,
   curved orb, goo clip count. Sabotage: orb N off by one, faces out of order, clip cap removed.
-- `dev-governor` (new): a 120 Hz fake with heavy work halves the draws; dpr steps down and back. Sabotage: no cap.
+- `dev-governor` (new): the skip rule on fake 120 Hz numbers, no skips at 60 Hz, dpr 2 -> 1 under 14 ms frames in
+  under 5 s and back up after 3+ s. Sabotaged 4 ways. Headless Chrome runs at 60 Hz only, so the skip on a real 120 Hz
+  screen is checked by the rule, not end to end.
 - `cargo test` (plugin), `make test` style host build for `fm1/` (gcc).
 
 ## 5. Changes old behaviour
@@ -44,4 +46,4 @@ phones ... modern and futuristic yet playful."
 
 ## 7. Not checked by a machine
 How a 93-face orb looks turning on a phone; whether 31-EDO walls are tellable apart by ear; heat over 20 minutes on
-a real phone (no thermometer in a browser).
+a real phone (no thermometer in a browser); the frame skip on a real 90/120 Hz phone.

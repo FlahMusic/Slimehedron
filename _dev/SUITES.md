@@ -20,6 +20,7 @@ Every page a suite opens presses a lesson's pulsing "listen" button the moment i
 | play mode's first minute (slime on, the tap bubble, the notes toggle under the tank) | dev-play, dev-firsttouch, dev-ux 1 |
 | the goo | dev-goo3d, dev-goosmooth, dev-goolook, dev-gl |
 | the 3D look / GPU tank | dev-gl, dev-look3d, dev-crayon, dev-3d, dev-shapes, dev-potato |
+| the frame loop, render cost, pixel ratio (the render governor) | dev-governor, dev-perfmode, dev-potato, dev-phone, dev-gl |
 | harmony, keys, scales, the chord chip | dev-chordtest, dev-harmony, dev-harmony2, dev-world, dev-tuning, dev-band, dev-melody |
 | drums, bass, mix, audio | dev-mix (slow, ~25 min for 11 kits; `node _dev/dev-mix.js pop,jazz` for some), dev-drums, dev-bassmix, dev-chordbed, dev-sound, dev-fidelity, dev-realaudio, dev-audible, dev-silence, dev-ceiling |
 | studio tools (mixer, undo, song files, step grid) | dev-daw, dev-declutter, dev-hostile, dev-tools, dev-chords |

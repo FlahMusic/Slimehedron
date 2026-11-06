@@ -5939,6 +5939,30 @@ window.__lite=LITE;   // readable by the dev suites; nothing in the app reads it
 // never calls this; it exists so a suite can pin the path it means to measure.
 window.__setLite=(v)=>{LITE=!!v;_liteLocked=true;window.__lite=LITE;
   try{document.body.classList.toggle('lite',LITE);}catch(e){}};
+// ---- THE RENDER GOVERNOR: run hard, stay cool (spec 2026-11-06-many-walls, ticket 02) ----
+// A phone slows itself down when it gets hot, and heat is work per second. The watchdog above only acts once frames
+// are already late; this acts on the WORK inside each frame (sim + draw), before they are. Two levers:
+//  - physics is a fixed 60 Hz tick, so on a 90/120 Hz screen every other frame redraws the tick before it. When a
+//    frame's work is over half the 60 Hz budget, a frame with no new tick is not drawn (never two in a row).
+//  - the GPU tank's pixel ratio steps 2 -> 1.5 -> 1.25 -> 1 when the work stays over 60% of the budget for about a
+//    second, and back up after about five seconds under 35%.
+// A browser that can tell how hot the device is (PressureObserver 'thermals', Chrome) steps down at once on
+// 'serious' or 'critical' and holds there until it cools. LITE and its watchdog are untouched.
+const GOV_B=1000/60;   // the 60 Hz frame budget, ms
+const GOV={work:0,dt:GOV_B,lvl:0,hot:0,cool:0,n:0,heat:'nominal',prevSkip:false,skipped:0,drawn:0,DPR:[2,1.5,1.25,1]};
+window.__gov=GOV;window.__dprCap=GOV.DPR[0];   // read by dev-governor; __dprCap by tank3d.js
+function govFrame(work){GOV.work+=(work-GOV.work)*0.1;
+  if(++GOV.n<30)return;GOV.n=0;   // judged every 30 drawn frames, about half a second
+  const held=GOV.heat==='serious'||GOV.heat==='critical';
+  if(GOV.work>GOV_B*0.6){GOV.cool=0;if(++GOV.hot>=2&&GOV.lvl<3){GOV.lvl++;GOV.hot=0;}}
+  else if(GOV.work<GOV_B*0.35&&!held){GOV.hot=0;if(++GOV.cool>=10&&GOV.lvl>0){GOV.lvl--;GOV.cool=0;}}
+  else{GOV.hot=0;GOV.cool=0;}
+  window.__dprCap=GOV.DPR[GOV.lvl];}
+// skip this frame? a screen over ~83 Hz (frames under 12 ms), a busy frame, no new tick, and the last one was drawn
+function govSkip(dt,work,prevSkip,ticks){return dt<12&&work>GOV_B*0.5&&!prevSkip&&!ticks;}
+try{if(window.PressureObserver&&(PressureObserver.knownSources||[]).includes('thermals')){
+  new PressureObserver(rs=>{const s=rs[rs.length-1].state;GOV.heat=s;
+    if(s==='critical')GOV.lvl=3;else if(s==='serious')GOV.lvl=Math.max(GOV.lvl,2);window.__dprCap=GOV.DPR[GOV.lvl];}).observe('thermals').catch(()=>{});}}catch(e){}
 let mMask=null; // the fill mask doubles as the goo map: geometry-agnostic, works on triangles, circles, whatever
 function measureFill(){ // barrel-in-a-rainstorm: read the real water line off an offscreen stamp of the pool
   // Stamped STRAIGHT into the 36x36 mask. This used to paint every pooled particle at full size
@@ -6435,10 +6459,18 @@ function loop(now){
       if(avg<22)_fastRun++;else _fastRun=0;
       if(_fastRun>=8){LITE=false;window.__lite=false;document.body.classList.remove('lite');_slowRun=0;}
     }}}
+  if(_lastFrame)GOV.dt+=(Math.min(100,now-_lastFrame)-GOV.dt)*0.1;
   _lastFrame=now;
-  if(S.playing){try{update(now);}catch(e){console.error('sim tick error (loop kept alive):',e);}} // one bad tick can NEVER freeze the app
-  try{draw();}catch(e){console.error('draw error (loop kept alive):',e);}
-  try{seedDraw();}catch(e){}
+  const w0=performance.now();let ticks=0;
+  if(S.playing){try{ticks=update(now)||0;}catch(e){console.error('sim tick error (loop kept alive):',e);}} // one bad tick can NEVER freeze the app
+  // the governor's first lever: a fast screen, a busy frame and no new tick -> nothing new to draw, skip it (see GOV)
+  const skip=govSkip(GOV.dt,GOV.work,GOV.prevSkip,ticks);
+  GOV.prevSkip=skip;
+  if(skip)GOV.skipped++;
+  else{GOV.drawn++;
+    try{draw();}catch(e){console.error('draw error (loop kept alive):',e);}
+    try{seedDraw();}catch(e){}
+    govFrame(performance.now()-w0);}
   if(S.playing&&(drumOn||bandOn)&&AC){ // a slime bounces on every beat, in time with the music
     const bp=(drumStep-(drumTime-AC.currentTime)/drumStepDur())/drumSPB(),fb=Math.floor(bp);
     if(fb!==_beatIdx){_beatIdx=fb;if(fb>0&&window._bounceSlime)window._bounceSlime();
@@ -6496,6 +6528,7 @@ function update(now){ // shared by the rAF loop (visible) and the worker heartbe
   while(_acc>=FIXED&&n<MAXTICKS){_tickT=now-_acc+FIXED;simTick(now);_acc-=FIXED;n++;}   // _tickT: the moment this tick stands for (a slow frame runs several)
   if(n>=MAXTICKS)_acc=0; // fell way behind (tab stalled) — drop the backlog instead of spiraling
   _alpha=Math.max(0,Math.min(1,_acc/FIXED)); // how far into the NEXT tick the next frame will be
+  return n;   // ticks run (the render governor skips a busy frame with none)
 }
 requestAnimationFrame(loop);
 // background groove: rAF freezes in hidden tabs, but worker timers don't — so a worker heartbeat

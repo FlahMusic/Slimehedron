@@ -1,5 +1,5 @@
 # 01 Orbs: a wall per note
-Status: in-progress
+Status: done
 - `seedPlanes('orbN')`: Fibonacci lattice, N planes. `isSolidName` takes `orb\d+`. Menu value `orb` resolves to
   `orb` + clamp(totalDegrees(), 12, 124) in `buildEdges`, so scale/range changes rebuild it.
 - `solidFaceDegrees` maps an orb's faces one note each (no chord-tone snapping), bottom to top.

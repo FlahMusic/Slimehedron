@@ -929,6 +929,30 @@ was red on 139ca19 and is green now:
     drums, chordtest, harmony. *portal flaky on 139ca19 too (control runs). Not checked by a machine: how the
     longer wall glow looks in motion on a turning play tank.
 
+MANY WALLS PASS (2026-11-06, sw v144). Flah: shapes with a wall for every microtonal note, push the browser to its
+limit without overheating phones (the junkyard-phone floor is dropped), and keep web / plugin / FM-1 as three
+separate branches of files. Spec + research: _docs/specs/2026-11-06-many-walls/, _docs/research/2026-11-06-many-walls.md.
+  - Web: ORBS (`orbN`, Fibonacci lattice, 12..124 faces, one note per face, bottom to top). Studio's shape menu
+    "orb (a wall per note)" sizes itself to the tank's notes (buildEdges resolves "orb"). Whole tunings edo19all,
+    edo24, edo31 (drone harmony, Advanced group). Curved space takes orbs (Klein-flat faces, Poincare-ball drawing).
+    The goo is not clip-planed past 24 faces (GOO_CLIPMAX, tank3d.js): the physics inset holds it.
+  - Fixed on the way: a solid kept its old notes when the scale or range changed under the same shape (SOLID.td);
+    lessons capped the polygon at 12 sides, so a whole tuning lost notes (dev-learnmap caught it).
+  - Web: the RENDER GOVERNOR (GOV, index.html next to LITE): skips a busy frame with no new physics tick on a
+    90/120 Hz screen, steps the GPU pixel ratio 2/1.5/1.25/1 on the work inside frames, PressureObserver 'thermals'
+    where the browser has it. LITE and its watchdog untouched.
+  - Plugin: vst/slimehedron-core/src/tank/solid.rs (the solid maths, not yet wired into the tank's physics: the
+    core tank is still the prism, ADR 0008). Tested against `_dev/solid-ref.json` (node _dev/solid-ref.js lifts the
+    web's own code out of index.html). Whole tunings in scales.rs.
+  - FM-1: fm1/core (C99, no malloc: solid.c, draw.c banded 240x240 RGB565), fm1/host (WSL gcc build, check.js).
+    ~98 KB with view and band. Device build waits for brief question 1 (SLOOP vs fm1_open).
+  - Suites: dev-orb, dev-governor (new, both sabotaged). Targeted green: dev-solid, shapes, space, learnmap,
+    chordtest, harmony2, world, tuning, band, melody. dev-harmony "[play] tank is populated" fails on 7ec61dc too
+    (control run, 19/30): not this pass. dev-potato "curved costs at most a third more" fails on 7ec61dc too (5 failures there, 2 here).
+  - Playwright is not installed on Flah's pc; this pass used a scratch install via NODE_PATH. gcc is in WSL Ubuntu.
+  - Not checked by a machine: a 93-face orb turning on a phone; whether 31-EDO walls are tellable apart by ear;
+    the frame skip on a real 120 Hz phone; heat over 20 minutes.
+
 
 ================================================================
 8. GIT STATE AS OF THIS WRITING
