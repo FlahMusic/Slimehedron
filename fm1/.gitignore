@@ -1,0 +1,5 @@
+host/solidtest_double
+host/solidtest_float
+host/dump_*.json
+host/*.ppm
+host/*.png
