@@ -80,7 +80,6 @@ await p.waitForTimeout(3000);
 const BLOCK=8, BLOCKS=4;
 const CASES=[
   {id:'home',    cheat:'bottom', label:'The Tonic'},
-  {id:'findhome',cheat:'bottom', label:'Find the Tonic'},
   {id:'steps',   cheat:'lit',    label:'Steps and Skips (tap whatever is lit)'},
   {id:'steps',   cheat:'walk',   label:'Steps and Skips (march up the ladder)'},
   {id:'high',    cheat:'bottom', label:'Pitch'},
@@ -98,7 +97,7 @@ for(const c of CASES){
 }
 console.log('');
 // and the honest way must still work, or we have only made it impossible
-for(const id of ['home','findhome','steps','high']){
+for(const id of ['home','steps','high']){   // findhome is part 2 of home now (ADR 0014)
   const r=await run(p,id,'listen',10);
   ok(!r.err&&r.right===10,'['+id+'] a child who actually hears it gets 10/10 ('+(r.err||r.right+'/10')+')');
 }
@@ -114,7 +113,7 @@ const abc=await p.evaluate(async()=>{
   if(window._lab_ready)window._lab_ready();
   for(let w=0;w<40&&window._labHintDeg==null;w++)await sleep(100);
   const out=[];
-  for(let k=0;k<7;k++){
+  for(let k=0;k<4;k++){   // five rounds a run now: stay inside one
     // wait for the question rather than guessing a delay: a roaming lesson sounds the tonic first
     for(let w=0;w<30&&window._labHintDeg==null;w++)await sleep(100);
     const rungs=[...document.querySelectorAll('.lgRung')];

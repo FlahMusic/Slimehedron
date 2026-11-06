@@ -48,13 +48,11 @@ const SPY=()=>{
 // lessons whose answer is a note/choice the child must HEAR
 const EAR=[
   {id:'home',     rounds:26},
-  {id:'findhome', rounds:26},
   {id:'high',     rounds:24},
   {id:'notes',    rounds:24},
   {id:'steps',    rounds:24},
   {id:'majorscale',rounds:24},
   {id:'minorscale',rounds:24},
-  {id:'staff',    rounds:24},
 ];
 (async()=>{
 const b=await launch();

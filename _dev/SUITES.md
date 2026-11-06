@@ -2,6 +2,8 @@
 
 Every suite: `node _dev/<name>.js` from the project root, with a server on :8765
 (`python3 -m http.server 8765`). One at a time: each one kills chromium when it starts.
+Every page a suite opens presses a lesson's pulsing "listen" button the moment it pulses (`listenKid` in
+`browser.js`), like a kid who always listens first. `SLIME_LISTEN=wait` turns that off (dev-learn3 does).
 
 ## 1. Gates: always first, after every edit (about a second, no browser)
 - `dev-syntax`: every script parses (the mid-line `//` trap).
@@ -18,10 +20,10 @@ Every suite: `node _dev/<name>.js` from the project root, with a server on :8765
 | the goo | dev-goo3d, dev-goosmooth, dev-goolook, dev-gl |
 | the 3D look / GPU tank | dev-gl, dev-look3d, dev-crayon, dev-3d, dev-shapes, dev-potato |
 | harmony, keys, scales, the chord chip | dev-chordtest, dev-harmony, dev-harmony2, dev-world, dev-tuning, dev-band, dev-melody |
-| drums, bass, mix, audio | dev-drums, dev-bassmix, dev-chordbed, dev-sound, dev-fidelity, dev-realaudio, dev-audible, dev-silence, dev-ceiling |
+| drums, bass, mix, audio | dev-mix (slow, ~25 min for 11 kits; `node _dev/dev-mix.js pop,jazz` for some), dev-drums, dev-bassmix, dev-chordbed, dev-sound, dev-fidelity, dev-realaudio, dev-audible, dev-silence, dev-ceiling |
 | studio tools (mixer, undo, song files, step grid) | dev-daw, dev-declutter, dev-hostile, dev-tools, dev-chords |
 | share links, recordings, MIDI | dev-ux (section 7), dev-takes, dev-wavtap, dev-midi, dev-midiexport, dev-manualnotes |
-| lessons / the map | dev-lessons (slow, ~7 min), dev-map, dev-learnmap, dev-curriculum, dev-playable, dev-cheat, dev-answerable, dev-oneanswer, dev-earwork, dev-explore, dev-jam, dev-rjam, dev-make, dev-compose, dev-newunits, dev-review, dev-rest, dev-staff, dev-nolab |
+| lessons / the map | dev-learn3 (no voice, listen first; runs without the listen-pressing driver), dev-lessons (slow, ~7 min), dev-map, dev-learnmap, dev-curriculum, dev-playable, dev-cheat, dev-answerable, dev-oneanswer, dev-earwork, dev-explore, dev-jam, dev-rjam, dev-make, dev-compose, dev-newunits, dev-review, dev-rest, dev-staff, dev-nolab |
 | pages, copy, claims, offline | dev-claims, dev-naming, dev-links, dev-sw, dev-entry, dev-polish, dev-sweep, dev-monkey |
 | the tank's physics or auto-notes, when the plugin must match it | dev-vstparity (~6 min; rewrites `_docs/specs/2026-10-28-tank-headless/web-stats.json`, so commit the new numbers with the change). `SPEEDCHECK=1`: fast clock vs real clock. `SABOTAGE=quantoff` passes only if "share on grid" leaves the stored band (the instrument can tell). |
 | the web's auto-notes melody (`setDeg` / `noDrone` / `nextMelodyDeg`) | dev-vstmelody (1 s, no browser; rewrites `vst/slimehedron-core/src/tank/melody_golden.txt`, then `cargo test melody` in `vst/` must pass or the plugin's melody has drifted from the web's). |

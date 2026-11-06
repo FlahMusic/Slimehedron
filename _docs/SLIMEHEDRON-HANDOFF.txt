@@ -55,15 +55,29 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     9.4 notes a bar); small droplets that coagulate, the slime swells on the bar clock (14); taps land inside the
     tumbling box at their depth. Next: 15 (auto adjuster), then 01 (measure), 03, 05-10. The 3D test page lives on
     the branch proto/3d-tumble (never merge). The plugin's tank copy is now behind on tumble, speed, goo, walls.
-  - TOP PRIORITY 2026-11-04: Flah's critique, _docs/specs/2026-11-03-flah-critique/ (brief, spec, 15 tickets, units-audit.md,
-    research _docs/research/2026-11-04-mix-levels.md). DONE: 01 play opens slime on / notes off, tap bubble -> notes toggle
-    under the tank (dev-play); 02 one chord colour (root hue, type shade), fades round the wheel (no grey); 03 chords name
-    7/maj7/m7/add9/sus4, no flat-9 on vii, no drone in play (studio Advanced scales). NEXT: 04+05 drums and the mix
-    (plan: offline-render every kit piece, melody, chords, bass through the real mix, K-weighted, thresholds from the
-    research; drums route via drumBus, initDrums ~line 2828, dHit ~3020, applyMix ~6900; the jazz ride is 3 sines on the
-    tonic, the bossa clave a 2.5 kHz sine at 0.34), then 06 no voice, 07-13 learn fixes, 14 logic pass, 15 standard words.
-    Also pending: look answers 6 (slime contrast), 1/2/4 (stickers, mascots, phone tank), remove the crayon look (ADR 0012),
-    the FM1 grill (6 questions asked, unanswered).
+  - Flah's critique, _docs/specs/2026-11-03-flah-critique/ (brief, spec, 15 tickets, units-audit.md, logic-pass.md,
+    ui-words.md; research _docs/research/2026-11-04-mix-levels.md). ALL 15 TICKETS DONE (2026-11-05), each ticket file
+    says how it was proven and sabotaged:
+    01-03 play defaults, chord colour, chord names (earlier commits).
+    04-05 the mix under the melody: every kit measured piece by piece at the real output, K-weighted (dev-mix, new,
+    ~25 min): drums 10-15 LU under the melody, every piece 10+ (soft kits 13+), the loudest hit 3+ under the melody's
+    median (aimed at 5: it swings +-1.5 LU run to run with the fills), bass 8 under, chords 11-14 under (final run 2026-11-05: all 11 kits pass). KIT_DB is a
+    fader AFTER the drum glue compressor (drumTrim); PIECE_DB trims per hit before it (mostly the kick). Jazz: no ride
+    anywhere (pattern, fills, jackpot), a lower stick snare; the bossa clave halved. NOT CHECKED BY A MACHINE: how it
+    sounds. The whole app is quieter with the drums down; Flah listens once.
+    06 no voice anywhere; LISTEN FIRST: a round judged by ear waits for listen (it pulses). Suites get listenKid
+    (browser.js) which presses it at once; SLIME_LISTEN=wait turns it off (dev-learn3).
+    07 u_make plays each pick on its step (playSynth takes a start time). 08/09 Copy the Beat: a drum grid (ADR 0013).
+    10 howlong: a lead-in, then the note alone. 11 read units: lead-in + 4/4 step grid with a hopping ball. 12 Play It
+    Again lists everything finished. 13 back acts on the press. 14 (Flah 2026-11-05, ADR 0014): Make a Loop stays #2;
+    merges as a part 2 (updown->high, findhome->home, intervals->chords, song->countbar; 27 lessons); 3 or 5 rounds,
+    never 10; minor and modes kept, moved last (no study shows kids cannot hear them); no same round twice running;
+    one feedback pair; staff is reading now (see the note, press its letter). 15 the DAW words (ui-words.md):
+    velocity in the step grid; lessons end naming the concept and the DAW element. One drum colour code (kick
+    purple, snare red, hi-hat yellow) in learn and studio.
+    Still open (logic-pass.md): extra taps in the read units, rjam's call on a grid, kept loops/tunes in review,
+    compose saving. Pending from Flah: the FM1 grill (5 questions in the fm1 brief, section 8), the look answers
+    (6 slime contrast, 1/2/4 stickers, mascots, phone tank), removing the crayon look (ADR 0012).
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

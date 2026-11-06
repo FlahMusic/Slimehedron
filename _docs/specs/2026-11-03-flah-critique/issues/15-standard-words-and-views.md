@@ -1,6 +1,6 @@
 # 15 Intuitive UI: standard music words and views, taught in small blocks
 
-Status: ready
+Status: done (2026-11-05)
 Spec: `../spec.md` (Decisions); Flah 2026-11-04: "we arent reinventing the wheel, just making industry and theory
 standard stuff easy to understand by breaking down the blocks of understanding into core concepts, but they should
 still be taught in a way that applies and helps build understanding of context that you would see in a DAW or
@@ -18,3 +18,7 @@ professional music software"
    at the end of the block ("this is the grid you'll see in every music program").
 Check: `ui-words.md` complete and cited; a suite greps the shown labels for the old words that were replaced; the
 learn units that teach a concept end on the standard word. Subtraction budget applies.
+
+Done: ui-words.md (cited: Ableton, Logic, FL Studio manuals, Open Music Theory). "loudness" -> "velocity" in the
+step grid (same 8-letter width); 17 concept lessons end on the standard word and, where one exists, the DAW element.
+dev-learn3 15 (static). Subtraction budget: no control added.

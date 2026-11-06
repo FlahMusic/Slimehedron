@@ -17,7 +17,7 @@
 const {launch}=require('./browser');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 const URL='http://127.0.0.1:8765/index.html?m=learn';
-const FREE=['make','rjam','jam','jammaj','jammin','compose'],SIDE=FREE.concat(['echo','updown','findhome','review']);
+const FREE=['make','rjam','jam','jammaj','jammin','compose'],SIDE=FREE.concat(['echo','review']);   // updown, findhome: part 2 of high and home now (ADR 0014)
 const done=ids=>{const P={};for(const id of ids)P[id]={hits:9,tries:9,at:Date.now()};return JSON.stringify(P);};
 
 (async()=>{const b=await launch();
@@ -29,7 +29,7 @@ const done=ids=>{const P={};for(const id of ids)P[id]={hits:9,tries:9,at:Date.no
   const L='['+tag+'] ';
   const r=await p.evaluate(SIDE=>{
     const st=[...document.querySelectorAll('#lmMap .lmStone')];
-    const units=LEARN2.UNITS.map(u=>u.id);
+    const units=LEARN2.UNITS.filter(u=>u.tier!=='part').map(u=>u.id);   // a part runs inside its lesson, never on the map
     const count={};st.forEach(s=>{count[s.dataset.u]=(count[s.dataset.u]||0)+1;});
     const side=st.filter(s=>s.classList.contains('lmSide')).map(s=>s.dataset.u);
     const main=st.filter(s=>!s.classList.contains('lmSide')).map(s=>s.dataset.u);

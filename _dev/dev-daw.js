@@ -75,7 +75,7 @@ const URL='http://127.0.0.1:8765/index.html?m=studio';
  await p.click('.deMode button[data-mode="vel"]');
  for(let i=0;i<3;i++)await p.click('#stepGrid .sgCell[data-v="K"][data-i="0"]');
  const cell=await p.$eval('#stepGrid .sgCell[data-v="K"][data-i="0"]',el=>({vt:el.dataset.vt,w:parseFloat(getComputedStyle(el,'::after').width),lbl:el.getAttribute('aria-label')}));
- ok(cell.vt==='25'&&/loudness 25/.test(cell.lbl),'three taps in loudness mode set the step to 25, and it says so ('+cell.vt+', "'+cell.lbl+'")');
+ ok(cell.vt==='25'&&/velocity 25/.test(cell.lbl),'three taps in velocity mode set the step to 25, and it says so ('+cell.vt+', "'+cell.lbl+'")');
  const wOn=await p.$eval('#stepGrid .sgCell[data-v="h"][data-i="0"]',el=>parseFloat(getComputedStyle(el,'::after').width));
  ok(cell.w<wOn-3,'a quiet step has a smaller dot ('+cell.w+'px vs '+wOn+'px)');
  h=await collect(5000);

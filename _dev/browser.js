@@ -71,7 +71,9 @@ async function launch(opts){
     {const nc=br.newContext.bind(br);
       br.newContext=async(...a)=>{const c=await nc(...a);
         await c.addInitScript(([v,sp,g])=>{try{if(!g)window.__noGL=true;if(v)localStorage.setItem('slimehedron-view3d',v);if(sp)localStorage.setItem('slimehedron-space',sp);}catch(e){}},
-          [view==='3d'?'1':view==='2d'?'0':'',['normal','portal','curved'].includes(space)?space:'',gl]);return c;};}
+          [view==='3d'?'1':view==='2d'?'0':'',['normal','portal','curved'].includes(space)?space:'',gl]);
+        if(process.env.SLIME_LISTEN!=='wait')await c.addInitScript(listenKid);   // see listenKid below
+        return c;};}
     return br;
   }catch(err){
     console.error('\n  Could not start a browser for the tests.');
@@ -84,4 +86,13 @@ async function launch(opts){
   }
 }
 
-module.exports={launch,EXEC,findExecutable};
+// A KID WHO ALWAYS PRESSES "LISTEN" FIRST. A round you judge by ear waits for the listen button (critique ticket 06):
+// it pulses (.lgListen.go) and answers are ignored until it is pressed. Suites that drive lessons to test something
+// else get this on every page (launch() adds it): the moment a listen button starts pulsing, it is pressed, before any
+// answer. SLIME_LISTEN=wait turns it off, for the suites that test the waiting itself (dev-learn3).
+function listenKid(){
+  const press=()=>{const l=document.querySelector('.lgListen.go');if(l)l.click();};
+  const go=()=>{try{new MutationObserver(press).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});}catch(e){}};
+  if(document.body)go();else document.addEventListener('DOMContentLoaded',go);
+}
+module.exports={launch,EXEC,findExecutable,listenKid};

@@ -82,6 +82,8 @@ for(const id of MUST_MOVE){
   await p.waitForTimeout(2000);await askQuestions(p);
   const keys=new Set();
   for(let i=0;i<24;i++){
+    await p.evaluate(()=>{if(document.querySelector('.lgDone')){const a=document.querySelector('[data-a2="again"]');if(a)a.click();}});   // 5 rounds a run now: go again
+    await askQuestions(p);
     const k=await p.evaluate(()=>window._labRoam&&window._labRoam());
     if(k!=null)keys.add(k);
     // some of these lessons answer on a ladder and some on two or three big buttons. The point of

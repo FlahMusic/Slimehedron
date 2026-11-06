@@ -121,13 +121,14 @@ const askQuestions=async(page)=>{
       await new Promise(r=>setTimeout(r,P*1000*0.2));}
     return +(document.querySelector('.lgCount')||{textContent:'0'}).textContent.split('/')[0].trim();});
   ok(onBeat>=3,'[beat] tapping ON the beat is credited ('+onBeat+' of 4)');
+  // a miss no longer takes the count back to 0 (that was a streak: Flah's logic pass), so judge what an off-beat tap ADDS
   const offBeat=await p.evaluate(async()=>{
-    const P=window._labBeatP||0.5;
+    const P=window._labBeatP||0.5,before=+(document.querySelector('.lgCount')||{textContent:'0'}).textContent.split('/')[0].trim();
     for(let i=0;i<3;i++){
       const wait=Math.max(0,(window._labNextBeat-AC.currentTime)*1000)+P*500; // dead between two beats
       await new Promise(r=>setTimeout(r,wait));
       window._lab_tap();}
-    return +(document.querySelector('.lgCount')||{textContent:'0'}).textContent.split('/')[0].trim();});
+    return +(document.querySelector('.lgCount')||{textContent:'0'}).textContent.split('/')[0].trim()-before;});
   ok(offBeat===0,'[beat] and tapping BETWEEN beats is not ('+offBeat+' credited)');
 
   // 7. one short instruction, narrated
@@ -155,6 +156,8 @@ const askQuestions=async(page)=>{
 
  // ---- THE READING LESSONS: the notation has to be legible and the counts have to be right ----
  {const {ctx,p}=await go(393,852,'howlong');
+  // the note now comes after a four-click lead-in (critique ticket 10): press listen, wait out the lead-in
+  await p.evaluate(()=>{const l=document.querySelector('.lgListen');if(l)l.click();});await p.waitForTimeout(3300);
   const r=await p.evaluate(()=>{const art=document.querySelector('.lgNoteArt');
     const circles=[...document.querySelectorAll('.lgCounts i')];
     const btns=[...document.querySelectorAll('[data-cnt]')].map(b=>{const q=b.getBoundingClientRect();

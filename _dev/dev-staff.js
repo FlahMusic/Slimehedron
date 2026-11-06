@@ -44,16 +44,25 @@ p.on('pageerror',e=>{FAIL.push('pageerror: '+e.message);console.log('  FAIL  pag
 await p.goto('http://127.0.0.1:8765/index.html?l=staff');
 await p.waitForTimeout(3200);await askQuestions(p);
 
-const geo=await p.evaluate(()=>{
+// FIVE LINES IS READING NOW (Flah's logic pass, rule 1): the note is drawn and the kid presses its letter. So each
+// note's place is read off the drawn note itself, over enough rounds to see all eight.
+const geo=await p.evaluate(async()=>{
   const lines=[...document.querySelectorAll('.stLine')].map(l=>+l.getAttribute('y1')).sort((a,b)=>a-b);
-  const gap=lines[1]-lines[0];
-  return {lines,gap,clef:!!document.querySelector('.stClef'),
-    hits:[...document.querySelectorAll('.stHit')].map(h=>({st:+h.dataset.st,
-      y:+h.getAttribute('y')+(+h.getAttribute('height'))/2,
-      h:+h.getAttribute('height')}))};});
+  const seen={},stems=[];const kr=document.querySelector('.stKey').getBoundingClientRect(),clef0=!!document.querySelector('.stClef'),keys0=document.querySelectorAll('.stKey').length;
+  for(let k=0;k<60&&Object.keys(seen).length<8;k++){
+    if(document.querySelector('.lgDone')){document.querySelector('[data-a2="again"]').click();await new Promise(r=>setTimeout(r,900));}   // 5 rounds a run: again
+    const st=window._labHintDeg,g=document.querySelector('.stNote');
+    if(g&&st!=null){const e=g.querySelector('ellipse'),r=g.querySelector('rect');seen[st]=+e.getAttribute('cy');
+      if(r)stems.push({st,down:(+r.getAttribute('y'))>(+e.getAttribute('cy'))});}
+    const key=document.querySelector('.stKey[data-st="'+st+'"]');
+    if(key)key.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true}));
+    await new Promise(r=>setTimeout(r,900));}
+
+  return {lines,gap:lines[1]-lines[0],clef:clef0,seen,stems,keys:keys0,key:{w:kr.width,h:kr.height}};});
 ok(geo.lines.length===5,'a staff has five lines ('+geo.lines.length+')');
 ok(geo.clef,'and a clef');
-ok(geo.hits.length===8,'there are eight places to tap, middle C up to the next C ('+geo.hits.length+')');
+ok(geo.keys===8&&geo.key.w>=44&&geo.key.h>=44,'eight letters to press, middle C up to the next C, each big enough ('+geo.keys+', '+Math.round(geo.key.w)+'x'+Math.round(geo.key.h)+')');
+ok(Object.keys(geo.seen).length===8,'all eight notes came up ('+Object.keys(geo.seen).length+')');
 
 const L=geo.lines, gap=geo.gap;
 const classify=(y)=>{
@@ -64,38 +73,17 @@ const classify=(y)=>{
   if(y<L[0])return 'above';
   return 'space';};
 let wrong=[];
-geo.hits.sort((a,b)=>a.st-b.st).forEach((h,i)=>{
-  const got=classify(h.y), want=TRUTH[i].where;
-  if(got!==want)wrong.push(TRUTH[i].n+': expected '+want+', got '+got);});
+for(let i=0;i<8;i++){const y=geo.seen[i];if(y==null)continue;const got=classify(y),want=TRUTH[i].where;
+  if(got!==want)wrong.push(TRUTH[i].n+': expected '+want+', got '+got);
+  console.log('    '+TRUTH[i].n.padEnd(3)+' '+got);}
 ok(wrong.length===0,'every note sits where a musician would read it'+(wrong.length?' — '+wrong.join('; '):''));
-geo.hits.sort((a,b)=>a.st-b.st).forEach((h,i)=>console.log('    '+TRUTH[i].n.padEnd(3)+' '+classify(h.y)));
-
-// the tap targets must not overlap or a child aiming at G could score F
-const ys=geo.hits.map(h=>h.y).sort((a,b)=>a-b);
-let minGap=1e9;for(let i=1;i<ys.length;i++)minGap=Math.min(minGap,ys[i]-ys[i-1]);
-ok(minGap>=gap/2,'the tap zones are a half-space apart and do not overlap ('+minGap+' vs '+(gap/2)+')');
-const tapPx=await p.evaluate(()=>{const r=document.querySelector('.stHit').getBoundingClientRect();
-  return {w:Math.round(r.width),h:Math.round(r.height)};});
-console.log('    tap target on screen: '+tapPx.w+'x'+tapPx.h+'px');
 
 // stems: up below the middle line, down on or above it
-const stems=await p.evaluate(async()=>{
-  const out=[];
-  for(let k=0;k<26;k++){
-    const st=window._labHintDeg;
-    const g=document.querySelector('.stNote');
-    if(g){const e=g.querySelector('ellipse'),r=g.querySelector('rect');
-      if(e&&r)out.push({st,down:(+r.getAttribute('y'))>(+e.getAttribute('cy'))});}
-    const hit=document.querySelector('.stHit[data-st="'+st+'"]');
-    if(hit)hit.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
-    await new Promise(r=>setTimeout(r,330));
-  }
-  return out;});
-const bad=stems.filter(x=>x.down!==(x.st>=6));
-ok(stems.length>6,'we saw enough notes to judge stems ('+stems.length+')');
+const bad=geo.stems.filter(x=>x.down!==(x.st>=6));
+ok(geo.stems.length>6,'we saw enough notes to judge stems ('+geo.stems.length+')');
 ok(bad.length===0,'stems flip at the middle line'+(bad.length?' — wrong on steps '+[...new Set(bad.map(x=>x.st))].join(','):''));
 
-// and it cannot be beaten by tapping one spot
+// and it cannot be beaten by pressing one letter
 const p2=await ctx.newPage();
 await p2.goto('http://127.0.0.1:8765/index.html?l=staff');
 await p2.waitForTimeout(3000);
@@ -103,12 +91,13 @@ const cheat=await p2.evaluate(async()=>{
   let right=0,n=20;
   for(let k=0;k<n;k++){
     const want=window._labHintDeg;
-    const h=document.querySelector('.stHit[data-st="4"]');   // always tap G
+    const h=document.querySelector('.stKey[data-st="4"]');   // always press G
+    if(document.querySelector('.lgDone')){document.querySelector('[data-a2="again"]').click();await new Promise(r=>setTimeout(r,900));k--;continue;}
     if(want===4)right++;
-    if(h)h.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
-    await new Promise(r=>setTimeout(r,330));}
+    if(h)h.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true}));
+    await new Promise(r=>setTimeout(r,1300));}
   return Math.round(right/n*100);});
-ok(cheat<40,'tapping the same line every time does not clear it ('+cheat+'%)');
+ok(cheat<40,'pressing the same letter every time does not clear it ('+cheat+'%)');
 
 // ---- READING A MELODY: the lesson that used to claim "you played a tune off the page" while
 // containing no pitches at all. It must show a real tune, in order, and refuse a wrong note.

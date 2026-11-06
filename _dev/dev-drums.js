@@ -100,15 +100,16 @@ const URL='http://127.0.0.1:8765/index.html';
  ok(clBars.size>=5,'and the clave is there every bar ('+clBars.size+' of 6)');
  ok(!bo.some(h=>h.v==='s'&&h.a>0.5),'bossa has no loud snare backbeat');
 
- // JAZZ: ride on 1 2 &2 3 4 &4, the "&" swung late, hat foot on 2 and 4
+ // JAZZ: the swing part on 1 2 &2 3 4 &4, the "&" swung late, on the hi-hat. No ride: it is three sines on the tonic
+ // and sounds like a note (Flah 2026-11-03, critique ticket 04)
  const jz=await run('jazz',6);
- const ride=jz.filter(h=>h.v==='y');
+ ok(!jz.some(h=>h.v==='y'),'jazz plays no ride at all ('+jz.filter(h=>h.v==='y').length+' ride hits in 6 bars)');
+ const ride=jz.filter(h=>h.v==='h');
  const rideSteps=[...new Set(ride.map(h=>h.step))].sort((a,b)=>a-b);
- ok(JSON.stringify(rideSteps)==='[0,4,6,8,12,14]','jazz ride plays "ding, ding-a ding, ding-a" '+JSON.stringify(rideSteps));
+ ok(JSON.stringify(rideSteps)==='[0,4,6,8,12,14]','the jazz hi-hat plays "ding, ding-a ding, ding-a" '+JSON.stringify(rideSteps));
  const stepDur=60/220/4, and=ride.filter(h=>h.step===6||h.step===14).map(h=>h.off/stepDur);
  const andAvg=and.reduce((a,c)=>a+c,0)/Math.max(1,and.length);
- ok(andAvg>0.4&&andAvg<0.75,'the ride\'s "&" lands late, in the triplet spot ('+andAvg.toFixed(2)+' of a 16th late; straight=0, full triplet=0.67)');
- ok([...new Set(jz.filter(h=>h.v==='h').map(h=>h.step))].join()==='4,12','the hi-hat foot closes on 2 and 4');
+ ok(andAvg>0.4&&andAvg<0.75,'the hat\'s "&" lands late, in the triplet spot ('+andAvg.toFixed(2)+' of a 16th late; straight=0, full triplet=0.67)');
 
  // DISCO: four on the floor, open hats on every "&"
  const di=await run('disco',4);

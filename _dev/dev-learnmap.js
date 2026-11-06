@@ -15,7 +15,7 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
  await p.click('.modeCard[data-m="learn"]');await p.waitForTimeout(1200);
 
  // 1. every real unit, as the child actually opens it
- for(const u of await p.evaluate(()=>LEARN2.UNITS.map(x=>x.id))){
+ for(const u of await p.evaluate(()=>LEARN2.UNITS.filter(x=>x.tier!=='part').map(x=>x.id))){   // parts run inside their lesson
    await p.click(`[data-a2="unit"][data-u="${u}"]`);await p.waitForTimeout(1500);
    const r=await p.evaluate(()=>{
      const td=totalDegrees(),got=edges.map(e=>e.deg);

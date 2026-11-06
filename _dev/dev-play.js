@@ -89,8 +89,8 @@ const TOGGLE=()=>{const b=document.getElementById('autoNotesBtn'),r=b.getBoundin
   ok(r.sevenths>0&&r.add9>0&&!r.sample.concat(Object.keys(r.names||{})).some(n=>/dim add9/.test(n)),'play\'s chords now say when they are 7ths and add9s ('+r.kinds+' chord names in 300 bars, e.g. '+r.sample.join(', ')+')');
   ok(r.flat9===0,'and never a 9th that clashes: the vii chord takes no add9 (it was a flat 9th) ('+r.flat9+' in 300 bars)');
   ok(r.drone===0&&r.menuAdv.length===0&&r.journeyAdv.length===0,'and play never says "drone": none in the names, the scale menu or the key journey ('+JSON.stringify({menu:r.menuAdv,journey:r.journeyAdv})+')');
-  await p.goto(BASE+'?m=studio');await p.waitForTimeout(2500);
-  const s=await p.evaluate(()=>{const g=[...document.querySelectorAll('#scaleTop optgroup')].find(x=>/^Advanced/.test(x.label));return g?[...g.querySelectorAll('option')].map(o=>o.value):[];});
+  const ps=await ctx.newPage();await ps.goto(BASE+'?m=studio');   /* a fresh tab: the 300 bars of band just scheduled on p kept it from navigating away */await p.waitForTimeout(2500);
+  const s=await ps.evaluate(()=>{const g=[...document.querySelectorAll('#scaleTop optgroup')].find(x=>/^Advanced/.test(x.label));return g?[...g.querySelectorAll('option')].map(o=>o.value):[];});
   ok(s.includes('hirajoshi')&&s.includes('slendro'),'studio keeps them, under Advanced ('+s.length+' scales)');
   ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
   await ctx.close();}

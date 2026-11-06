@@ -117,8 +117,10 @@ const src=fs.readFileSync('learn2.js','utf8');
  const plainNeeds=[...src.matchAll(/readUnit\(\{[\s\S]{0,200}?need:\d+|need:(\d+)/g)]
    .map(x=>x[1]).filter(x=>x!==undefined).map(Number);
  const attempts=plainNeeds.concat(readVals);
- ok(attempts.length>0&&Math.min(...attempts)>=10,
-   'every lesson asks at least 10 times — repetition is the point ('+[...new Set(attempts)].sort((a,b)=>a-b).join(', ')+')');
+ // Flah 2026-11-05 (ADR 0014): 3 or 5 rounds, never 10 ("dont make it where u have to do the same shit 10 times"); a part 2
+ // adds 2-3 more. Finishing credits the attempts the mastery gate still wants (seen()).
+ const rounds=[...src.matchAll(/need:(\d+)|const need=(\d+)|scaleLadder\([^)]*,(\d+)\)/g)].map(m=>+(m[1]||m[2]||m[3]));
+ ok(rounds.length>10&&rounds.every(n=>n>=2&&n<=5),'every lesson asks 3 or 5 times (a part 2 adds 2-3), never 10 ('+[...new Set(rounds)].sort((a,b)=>a-b).join(', ')+')');
 
  // ---- 5. SPACING: review refuses to run on today's material ----
  const sp=await p.evaluate(async()=>{
@@ -158,25 +160,15 @@ const src=fs.readFileSync('learn2.js','utf8');
    +(personPraise.length?': "'+personPraise.join('", "')+'"':''));
  ok(praise.every(x=>x&&x.length>0),'every feedback slot has words in it');
 
- // ---- 7. SAY IT BEFORE YOU PLAY IT — the one practice found on every continent ----
+ // ---- 7. COPY THE BEAT: the rhythm echo is a drum grid (ADR 0013; it was spoken BOOM/TAP syllables) ----
  const say=await p.evaluate(()=>{
    const U=window.LEARN2.UNITS.find(u=>u.id==='sayplay');
    const L=window.LEARN2.LANG.en;
    return {exists:!!U,first:window.LEARN2.UNITS.filter(u=>u.tier==='lesson').indexOf(U),
-           low:L.sp_low,high:L.sp_high};});
- ok(say.exists,'there is a say-it-then-play-it lesson — konnakol, bols, kuchi shoga, gu-eum and usul all do this');
- ok(say.first>=0&&say.first<=2,'and it comes early, where the oral traditions put it (position '+say.first+')');
- // Hughes 2000: vowels track pitch by second formant (i-e-a-o-u runs high to low), voiced stops mark low
- // sounds and voiceless ones mark high. The syllables must obey that or they are just noises.
- ok(/^[dbg]/i.test(say.low||''),'the LOW syllable opens on a voiced stop, as every one of those systems does ("'+say.low+'")');
- ok(/^[tkp]/i.test(say.high||''),'the HIGH syllable opens on a voiceless stop ("'+say.high+'")');
- // The letters are a PROXY for the phoneme, and the proxy was too tight: /ae/ -- the vowel in "tap" --
- // is a near-open FRONT vowel with a high second formant (~1700-2000 Hz, against ~800-1200 for /u/), so
- // it satisfies Hughes' rule exactly as /e/ and /i/ do. The low-syllable check still demands a back
- // vowel, so nothing can pass both.
- const BACK=/[ou]/i, FRONT=/[iea]/i;
- ok(BACK.test(say.low||''),'the low syllable carries a back vowel (lower second formant)');
- ok(FRONT.test(say.high||''),'the high syllable carries a front vowel (higher second formant)');
+           names:[L.ge_kick,L.ge_snare,L.ge_hat],old:[L.sp_low,L.sp_high].filter(Boolean)};});
+ ok(say.exists,'there is a copy-the-beat lesson: hear a drum beat, put it on a drum grid');
+ ok(say.first>=0&&say.first<=2,'and it comes early, an echo before anything is read (position '+say.first+')');
+ ok(say.names.join()==='kick,snare,hi-hat'&&say.old.length===0,'its rows are the real drum names, no syllables ('+say.names.join(' / ')+')');
 
  // ---- 8. claims we must NOT make ----
  // The falling minor third being "the natural interval of childhood all over the world" traces to a

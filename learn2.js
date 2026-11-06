@@ -31,9 +31,9 @@
       (developers.google.com/building-for-kids/designing-engaging-apps). Every leading product obeys it a
       different way - Simply Piano and Prodigies open each lesson with a VIDEO instead of a sentence,
       Duolingo Music's first screen is a five-key keyboard with the target key highlighted AND labelled.
-      We cannot ship video, so every instruction here is SPOKEN ALOUD (speech(), below - the browser's
-      own voice, no network, no files) while the target wall and key glow. The written line stays for
-      the adult reading over the child's shoulder; it is never the only channel.
+      We cannot ship video. The browser's own voice used to read each line aloud; it was taken out (Flah
+      2026-11-03: a different voice on every device, and it talked over the sound to judge). So the
+      picture carries the instruction (the target glows), the line is short, and sounds wait for "listen".
 
    6. EVERY LESSON ENDS, AND THE ENDING IS AN EVENT. Simply Piano sells "5-Min Workouts", Melodics'
       daily unit is 5 minutes, Prodigies calls its preschool lessons "bite-sized... made for preschool
@@ -76,9 +76,11 @@ const LANG={
     // helpless responses, lower persistence and more negative affect than process feedback, because it
     // makes self-worth contingent on the last result. So every line here describes what the child DID.
     // Nothing in this file may ever tell a child what they ARE.
-    yes:['got it','that is the one','you found it','yes'],
-    notYet:['not that one. here it is again','listen again, then try','close. one more go'],
-    onceMore:'one more round',
+    // One pair everywhere (Flah 2026-11-03, the logic pass rule 2): "Good job!" says the answer was right, not what
+    // the child is; "Close, listen and try again!" says what to do next.
+    yes:['Good job!'],
+    notYet:['Close, listen and try again!'],
+    onceMore:'Close, listen and try again!',
     noRush:'take your time',
     // ---- LESSON TITLES ----
     // A title is the CONCEPT'S REAL NAME. Checked against how musictheory.net names its lessons ("Note
@@ -89,10 +91,10 @@ const LANG={
     // SUBTITLE is the plain sentence. "How long?" and "Bright and dark" told a child nothing they could
     // carry to a piano teacher, a band room, or the next app.
     u_pulse:'Steady Beat', u_pulseSub:'find the pulse and tap with it',
-    u_sayplay:'Say It, Play It', u_sayplaySub:'say a rhythm before you play it',
+    u_sayplay:'Copy the Beat', u_sayplaySub:'hear a drum beat, then put it on the grid',
     u_howlong:'Long and Short', u_howlongSub:'how long a note is held \u2014 note duration',
     hl_do:'How many counts was that note?',
-    hl_name:'A note\u2019s shape tells you how long to hold it. That is its DURATION.',
+    hl_name:'A note\u2019s shape tells you how long to hold it. That is its DURATION. In a piano roll, a longer note is a longer bar.',
     note_q:'a QUARTER note \u2014 1 count', note_h:'a HALF note \u2014 2 counts',
     note_dh:'a DOTTED HALF note \u2014 3 counts', note_w:'a WHOLE note \u2014 4 counts',
     note_r:'a QUARTER REST \u2014 1 count of silence',
@@ -103,25 +105,25 @@ const LANG={
     mk_kept:'Kept it. Make another if you want.',
     mk_tally:'{n} kept',
     mk_done:'all done',
-    mk_name:'You made a four-beat loop. Nothing you play here is wrong.',
+    mk_name:'You made a four-beat LOOP. Nothing you play here is wrong. Music apps loop bars just like this.',
     u_staff:'Five Lines', u_staffSub:'the ladder, drawn on five lines \u2014 the staff',
-    st_do:'Tap the note you hear.',
+    st_do:'Which note is this? Press its letter.',
     u_melody:'Read a Tune', u_melodySub:'play a real tune off the page',
     ml_do:'Play the notes, left to right.',
-    ml_name:'You played a tune straight off the page.',
+    ml_name:'You played a tune straight off the page. That is READING MUSIC.',
     song_ode:'Ode to Joy',
     st_name:'The STAFF is five lines. A note sits ON a line or IN a space.',
     u_split:'Two in One Beat', u_splitSub:'two sounds in the time of one',
     sb_do:'Two taps where the notes are joined up.',
-    sb_name:'Two EIGHTH NOTES fill one beat. Count "1 and".',
+    sb_name:'Two EIGHTH NOTES fill one beat. Count "1 and". A step grid set to 1/8 shows them.',
     u_tempo:'Fast and Slow', u_tempoSub:'how fast the beat goes \u2014 tempo',
     tp_hear:'Listen.', tp_do:'Was that fast or slow?',
     tp_fast:'fast', tp_slow:'slow',
-    tp_name:'TEMPO is how fast the beat goes. It is measured in BPM.',
+    tp_name:'TEMPO is how fast the beat goes. It is measured in BPM, the number at the top of every music app.',
     u_dynamic:'Loud and Soft', u_dynamicSub:'how loud a note is played \u2014 dynamics',
     dy_hear:'Listen.', dy_do:'Was that loud or soft?',
     dy_loud:'loud', dy_soft:'soft',
-    dy_name:'DYNAMICS are how loud you play. Soft is PIANO, loud is FORTE.',
+    dy_name:'DYNAMICS are how loud you play. Soft is PIANO, loud is FORTE. A music app calls how hard a note is played its VELOCITY.',
     sh_hear:'Listen to the top of the scale.',
     sh_nat:'natural', sh_harm:'harmonic', sh_mel:'melodic',
     md_hear:'Listen.', md_dor:'Dorian', md_mix:'Mixolydian',
@@ -129,7 +131,7 @@ const LANG={
     rs_name:'A REST is silence you count. This one lasts 1 beat.',
     u_countbar:'Count to Four', u_countbarSub:'four beats to a bar',
     cb_do:'Tap on the big numbers. Count the small ones.',
-    cb_name:'Four beats in a BAR. The 4/4 is the TIME SIGNATURE.',
+    cb_name:'Four beats in a BAR. The 4/4 is the TIME SIGNATURE. Music apps number the bars along the top.',
     u_song:'Read a Rhythm', u_songSub:'a real tune, played as its rhythm',
     sg_do:'Tap each note as it lights up.',
     sg_name:'You read the RHYTHM of a real tune off the page.',
@@ -150,18 +152,16 @@ const LANG={
     u_minorshapes:'Raise a Note', u_minorshapesSub:'raise the seventh, then the sixth \u2014 harmonic and melodic minor',
     u_modes:'More Scales', u_modesSub:'Dorian and Mixolydian \u2014 modes',
     u_review:'Play It Again', u_reviewSub:'things you learned earlier',
-    // say-it-first: the METHOD is borrowed (konnakol, bols, kuchi shoga, gu-eum, usul all vocalise a
-    // rhythm before playing it); the SYLLABLES are English so the child is saying words they own.
-    // They still follow Hughes 2000's acoustic logic: voiced stop + back vowel for the low drum,
-    // voiceless stop + front vowel for the high one, so the word sounds like the drum.
-    sp_low:'BOOM', sp_high:'TAP',
-    sp_hear:'BOOM is the low drum. TAP is the high one.',
-    sp_listen:'Listen. Say it with me.',
-    sp_say:'Say it out loud, then tap it out.',
-    sp_name:'Saying a rhythm first makes it easier to play. Those words are RHYTHM SYLLABLES.',
+    // Copy the Beat (was Say It, Play It): the drum grid, real drum names (ADR 0013)
+    ge_kick:'kick', ge_snare:'snare', ge_hat:'hi-hat', ge_check:'check',
+    ge_intro:'A row for each drum, a box for each beat. Press listen: after the count-in, the beat plays once.',
+    ge_hear:'Count in, then listen.',
+    ge_do:'Tap the boxes where you heard each drum, then check.',
+
+    ge_name:'A row for each drum and a column for each beat is a DRUM GRID. Every drum machine and music app has one.',
     // --- what each lesson says, one short line, the thing to DO at the end of it ---
     high_do:'Tap the note you hear.',
-    high_name:'How high or low a note sounds is its PITCH.',
+    high_name:'How high or low a note sounds is its PITCH. In a piano roll, higher notes sit higher up.',
     nt_do:'Tap the note you hear.',
     nt_p1:'a new note on top', nt_p2:'a new note at the bottom', nt_p3:'one more, and that is all five',
     nt_name:'DO RE MI SO LA \u2014 five notes. That is the MAJOR PENTATONIC SCALE.',
@@ -198,15 +198,14 @@ const LANG={
     jam_key:'Every note here belongs to the key.',   // seven notes: "no wrong note" would be a lie
     jam_tally:'{n} notes',
     jam_done:'all done',
-    jam_name:'You made that up. Nothing you play here is wrong.',
+    jam_name:'You made that up: that is IMPROVISING. Nothing you play here is wrong.',
     u_rjam:'Your Turn: Drums',
     u_rjamSub:'make up your own beat \u2014 improvising',
-    rj_low:'low', rj_high:'high', rj_shake:'shake',
     rj_mine:'Listen. Then it is your turn.',
     rj_yours:'Your turn. Play any beat.',
     rj_free:'There is no wrong beat here.',
     rj_tally:'{n} hits',
-    rj_name:'You made that beat up. Nothing you play here is wrong.',
+    rj_name:'You made that beat up: that is IMPROVISING. Nothing you play here is wrong.',
     u_compose:'Write a Tune',
     u_composeSub:'put the notes down yourself \u2014 composing',
     cm_do:'Press a letter. The note goes on the staff.',
@@ -221,16 +220,16 @@ const LANG={
     u_chordsSub:'notes stacked on each other \u2014 chords',
     ch_hear:'Listen to the stack.',
     ch_do:'How many notes?',
-    ch_name:'Notes stacked up make a chord. The band plays them behind you the whole time.',
+    ch_name:'Notes stacked up make a CHORD. The band plays them behind you the whole time.',
     ex_do:'Play them. Any of them, as many as you like.',
     exc_do:'Press them. Hear what each one sounds like.',
     ex_ready:'ask me questions',
     rev_do:'Play one again.',
     rev_name:'You still had it.',
     rev_ago:'{n} days ago',
-    rev_ago1:'yesterday',
+    rev_ago1:'yesterday', rev_today:'today',
     rev_none:'nothing to review yet',
-    rev_noneSub:'Finish a lesson. Come back tomorrow.',
+    rev_noneSub:'Finish a lesson and it shows up here, to play again.',
     g_echo:'Copy Me', g_echoSub:'play back what you hear',
     echo_name:'Holding a melody in your head and playing it back is EAR TRAINING.',
     g_updown:'Up or Down', g_updownSub:'did the melody rise or fall \u2014 melodic direction',
@@ -247,7 +246,7 @@ const LANG={
     // Workshop's tablet guidance for pre-readers). Narrated as well as shown -- narration beats
     // on-screen text by a wide margin in the multimedia literature (modality effect, g=0.82).
     pulse_do:'When the ball lands, tap the slime.',
-    pulse_name:'That steady drop is the BEAT.',
+    pulse_name:'That steady drop is the BEAT. A music app clicks it with its METRONOME.',
     pulse_good:'yes', pulse_great:'right on it',
     // NOTE: a second, older copy of these keys used to sit below this point, left over from the
     // 19-lesson tank curriculum. Being LATER in the object literal, it silently won: three live
@@ -261,9 +260,7 @@ const LANG={
     up:'up', down:'down', same:'the same',
     // the ending beat
     doneTitle:'you did it!', nextLesson:'next lesson', doneAgain:'do it again', startHere:'start here',
-    revReady:'ready',
-    // spoken-voice controls
-    voiceReplay:'say it again', voiceOn:'voice on', voiceOff:'voice off'
+    revReady:'ready'
   }
 };
 let lang='en';
@@ -277,62 +274,10 @@ function t(k,vars){
 function setLang(code){if(LANG[code]){lang=code;try{localStorage.setItem('slimehedron-lang',code);}catch(e){} if(_render)_render();}}
 try{const sv=localStorage.getItem('slimehedron-lang');if(sv&&LANG[sv])lang=sv;}catch(e){}
 
-// ---------------------------------------------------------------- SPOKEN INSTRUCTIONS
-// A five-year-old cannot read the instruction, so the instruction is said out loud. This uses the
-// browser's built-in speechSynthesis: it is offline, it ships no audio files, and it makes no network
-// request - which matters here, because this app is deliberately request-free.
-// The line is DEDUPED: a unit that repaints its screen every round must not read the same sentence at
-// the child ten times. Only a genuinely new line speaks.
-let voiceOn=true;
-try{const v=localStorage.getItem('slimehedron-voice');if(v!=null)voiceOn=(v==='1');}catch(e){}
-let _lastSaid='';
-// The default voice an OS hands back first is usually its worst one. Prefer a named natural voice,
-// then any LOCAL voice in the right language (local ones are the higher-quality installed set on
-// every platform I can check), and only fall back to the default if there is nothing better.
-let _voice=null,_voiceTried=false;
-const GOOD_VOICES=[/natural/i,/google uk english female/i,/google us english/i,/samantha/i,/karen/i,
-                   /moira/i,/serena/i,/zira/i,/aria/i,/libby/i,/sonia/i,/jenny/i];
-function pickVoice(synth){
-  if(_voice||_voiceTried&&!synth.getVoices().length)return _voice;
-  const all=synth.getVoices()||[]; if(!all.length)return null;
-  _voiceTried=true;
-  const want=((LANG[lang]&&LANG[lang]._voice)||'en-US').slice(0,2).toLowerCase();
-  const inLang=all.filter(v=>(v.lang||'').slice(0,2).toLowerCase()===want);
-  const pool=inLang.length?inLang:all;
-  for(const re of GOOD_VOICES){const hit=pool.find(v=>re.test(v.name||''));if(hit){_voice=hit;return _voice;}}
-  _voice=pool.find(v=>v.localService)||pool[0]||null;
-  return _voice;
-}
-try{if(window.speechSynthesis)speechSynthesis.addEventListener('voiceschanged',()=>{_voice=null;_voiceTried=false;});}catch(e){}
-function speech(txt,force){
-  if(!txt||!voiceOn)return;
-  if(!force&&txt===_lastSaid)return;
-  _lastSaid=txt;
-  try{
-    const synth=window.speechSynthesis; if(!synth)return;   // no voice on this device: the text is still there
-    synth.cancel();
-    const u=new SpeechSynthesisUtterance(String(txt));
-    u.lang=(LANG[lang]&&LANG[lang]._voice)||'en-US';
-    const v=pickVoice(synth); if(v)u.voice=v;
-    u.rate=0.86; u.pitch=1.0; u.volume=1;
-    synth.speak(u);
-  }catch(e){}
-}
-function speechStop(){try{if(window.speechSynthesis)window.speechSynthesis.cancel();}catch(e){}}
-function setVoice(on){voiceOn=!!on;try{localStorage.setItem('slimehedron-voice',voiceOn?'1':'0');}catch(e){}
-  if(!voiceOn)speechStop(); else {_lastSaid='';sayScreen();}}
-// read whatever the current card is asking for, from the DOM - so no unit has to remember to pass a key
-function sayScreen(force){
-  if(!ov)return;
-  // NOTE: do not filter on offsetParent here. stage() calls this in the same tick it draws the screen,
-  // and the layout box is not settled yet - which made every lesson silent. The `hidden` attribute is
-  // the real signal, and it is reliable immediately.
-  // .lgSay is the instruction line every lesson writes its one spoken sentence into; .lgDone is the
-  // "you did it" at the end, which is worth hearing as well as seeing.
-  const parts=[...ov.querySelectorAll('.lgDone,.lgSay')]
-    .filter(e=>!e.hidden).map(e=>e.textContent.trim().replace(/[.\s]+$/,'')).filter(Boolean);
-  speech(parts.join('. '),force);
-}
+// ---------------------------------------------------------------- NO VOICE
+// The lessons used to read every instruction aloud with the browser's speechSynthesis. Flah (2026-11-03): "atrocious",
+// a different voice on every device, capitals spelled out, and it talked over the very sound the kid was judging.
+// So nothing speaks: the words stay on screen, and a sound to judge plays when the kid presses "listen" (ticket 06).
 
 // ---------------------------------------------------------------- progress, mastery and spacing
 // Three things live here, each one traceable to a finding rather than a hunch.
@@ -444,17 +389,12 @@ const ov=$id('learnOverlay');
 let _render=null, _cleanup=null;
 // Every lesson renders here: its own full screen, with nothing from the tank rig on it.
 // See the lab-stage rules in index.html for what that hides and why.
-let _lastTitle='';
 function stage(html){
   if(!ov)return;
   ov.classList.remove('lab','lmOn');document.body.classList.remove('lm-map');ov.classList.add('stage');
   document.body.classList.add('lab-on','lab-stage');
   ov.innerHTML='<div class="lgStage">'+html+'</div>';
-  // Several lessons share an instruction line ("Tap the note you hear."), and the speech dedupe
-  // then swallowed it on entry to the next one. A change of TITLE means a new lesson, so it speaks.
-  const ttl=(ov.querySelector('.lgTop h3')||{}).textContent||'';
-  if(ttl!==_lastTitle){_lastTitle=ttl;_lastSaid='';}
-  sayScreen();
+  if(!_heard){const l=ov.querySelector('.lgListen');if(l)l.classList.add('go');}
 }
 function stageOff(){
   if(ov)ov.classList.remove('stage');
@@ -467,14 +407,8 @@ function sheet(html){ // the old full-screen card, for menus
   ov.classList.remove('lab');document.body.classList.remove('lab-on');
   ov.innerHTML='<div class="lCard">'+html+'</div>';
 }
-// THREE buttons on a lesson screen can all replay SOMETHING, so none of them may wear the same icon.
-//   SPK  = "say the instruction again" -> a speech bubble. It repeats WORDS.
-//   EAR  = "play the sound again"      -> a note. It repeats MUSIC.
-//   the app's own mute (top-left) keeps the speaker-with-waves, which is the one icon everybody
-//   already reads as volume. Three speakers on one screen is what this had before, and it was unreadable.
-const SPK='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.1" '+
-  'stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 7 0 0 1-8 7 9 9 0 0 1-2.6-.37L5 21l1.2-3.6A6.8 6.8 0 0 1 5 12a8 7 0 0 1 8-7 8 7 0 0 1 8 7z"/>'+
-  '<path d="M10 11.5h.01M13 11.5h.01M16 11.5h.01"/></svg>';
+// EAR = "play the sound": a note, it plays MUSIC. The app's own mute (top-left) keeps the speaker-with-waves, which is
+// the one icon everybody already reads as volume.
 
 // ---------------------------------------------------------------- audio helpers (reuse the app's synth)
 // This routed through playNote(), which takes a MIDI NOTE NUMBER -- and was handed a FREQUENCY.
@@ -483,13 +417,13 @@ const SPK='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="c
 // working fallback underneath. Result: every pitched sound in learn mode was silent -- an ear
 // training app that made no sound in its ear training. playSynth IS the voice and it takes a
 // frequency, which is what we have.
-function note(cents,vel,dur){
+function note(cents,vel,dur,at){   // at = when, on the audio clock (omit: now)
   // dur was accepted and thrown away: playSynth had no length parameter, so a whole note and a
   // quarter note sounded identical and the note-duration lesson could not be answered by ear.
   try{if(typeof playSynth==='function'&&typeof freqFromCents==='function'){
     // firm: a lesson's question must never be the 1-in-20 whisper. A child asked to name a note
     // they could not hear is being tested on the app's random number generator.
-    playSynth(freqFromCents(cents),vel||90,0.72,dur,true);   // fixed impact, real length, never a dud
+    playSynth(freqFromCents(cents),vel||90,0.72,dur,true,at);   // fixed impact, real length, never a dud
     return;}}catch(e){}
   try{trigger(cents,0.7);}catch(e){}
 }
@@ -511,18 +445,45 @@ function degCents(d){try{return centsForDegree(d);}catch(e){return d*200;}}
 let _noteAnswer=null;
 let _timers=[];
 function later(fn,ms){const id=setTimeout(fn,ms);_timers.push(id);return id;}
-function stopAll(){_timers.forEach(clearTimeout);_timers=[];try{LAB.onHit(null);}catch(e){}}
+// LISTEN FIRST (critique ticket 06, Flah 2026-11-03: "listen is a button the kid presses when ready"). A round you
+// judge by ear never plays by itself: needListen() holds it, the "listen" button pulses, and the answers wait until
+// it has been pressed once. Nothing starts over anything else.
+let _heard=true;
+function needListen(){_heard=false;const b=ov&&ov.querySelector('.lgListen');if(b)b.classList.add('go');}
+function nudgeListen(){const b=ov&&ov.querySelector('.lgListen');if(!b)return;b.classList.remove('go');void b.offsetWidth;b.classList.add('go');}
+// NO SAME ROUND TWICE RUNNING (Flah's logic pass, rule 5: "doing boom tap tap boom 10 times in a row"). With three or
+// more possible answers the next one is never the last one; with two, never three the same in a row (strict
+// alternation would be a pattern to learn instead of the sound). draw() is the unit's own random pick.
+function freshPick(draw,hist){
+  const keys=new Set(),cands=[];for(let i=0;i<24;i++){const v=draw();cands.push(v);keys.add(JSON.stringify(v));}
+  const fine=v=>{const k=JSON.stringify(v);return keys.size>=3?k!==hist[0]:!(k===hist[0]&&k===hist[1]);};
+  const v=cands.find(fine),out=v===undefined?cands[0]:v;
+  hist.unshift(JSON.stringify(out));hist.length=Math.min(hist.length,2);return out;
+}
+function stopAll(){_timers.forEach(clearTimeout);_timers=[];_heard=true;try{LAB.onHit(null);}catch(e){}}   // _heard: a new screen starts with nothing to wait for (LISTEN FIRST, below)
 
 // ---------------------------------------------------------------- THE ENDING
 // Every unit finishes here. Not "the name text appears and the drill carries on forever" - an actual
 // event: a rising fanfare on the real synth, a burst of balls in the tank, the child's slime, the
 // concept named out loud, and a door straight into the next lesson. This is the beat every leading
 // product fires at the close of a unit, and it is the one shape an endless drill can never have.
+// PART 2 (Flah 2026-11-05: merge the lessons that belong together). A lesson with a part2 does not end when its own
+// rounds are done: its part 2 runs straight after (updown after high, findhome after home, intervals after chords, the
+// song after count to four), and the lesson ends once, with both lines. A part is never on the map on its own.
+let _part2Of=null;
 function finish(id,nameLine){
+  const par=UNITS.find(u=>u.id===id);
+  if(par&&par.part2&&!_part2Of){const kid=UNITS.find(u=>u.id===par.part2);
+    if(kid){seen(id);if(nameLine){rec(id).learned=String(nameLine);save();}
+      stopAll();if(_cleanup){_cleanup();_cleanup=null;}
+      _part2Of={id,line:nameLine||''};kid.run();return;}}
+  if(_part2Of&&par&&par.tier==='part'){seen(id);const p2=_part2Of;_part2Of=null;
+    nameLine=[p2.line,nameLine].filter(Boolean).join(' ');id=p2.id;}
   seen(id);
+  if(nameLine){rec(id).learned=String(nameLine);save();}   // what it taught, for "Play It Again" (ticket 12)
   stopAll(); if(_cleanup){_cleanup();_cleanup=null;}
   try{LAB.onHit(null);}catch(e){}
-  const u=UNITS.find(x=>x.id===id)||{},i=UNITS.findIndex(x=>x.id===id),nx=UNITS[i+1];
+  const u=UNITS.find(x=>x.id===id)||{},i=UNITS.findIndex(x=>x.id===id),nx=UNITS.slice(i+1).find(x=>x.tier!=='part');
   [0,2,4,7].forEach((d,k)=>later(()=>{try{sing(d,96,.5);}catch(e){}},k*165));   // a rising fanfare
   // The ending used to render in the side card, so a lesson that had filled the screen finished in a
   // small panel beside a tank the child never touched. Same screen, all the way through.
@@ -582,38 +543,38 @@ const UNITS=[
   {id:'make',       title:'u_make',       sub:'u_makeSub',       tier:'lesson', run:makeUnit,       tint:'#ffd9f0'},
   {id:'sayplay',    title:'u_sayplay',    sub:'u_sayplaySub',    tier:'lesson', run:sayPlayUnit,    tint:'#ffd3a8'},
   {id:'howlong',    title:'u_howlong',    sub:'u_howlongSub',    tier:'lesson', run:noteValueUnit,  tint:'#ffe0a8'},
-  {id:'countbar',   title:'u_countbar',   sub:'u_countbarSub',   tier:'lesson', run:countBarUnit,   tint:'#f5c8a8'},
+  {id:'countbar',   title:'u_countbar',   sub:'u_countbarSub',   tier:'lesson', part2:'song', run:countBarUnit,   tint:'#f5c8a8'},
   {id:'rest',       title:'u_rest',       sub:'u_restSub',       tier:'lesson', run:restUnit,       tint:'#e8dcc8'},
-  {id:'song',       title:'u_song',       sub:'u_songSub',       tier:'lesson', run:songUnit,       tint:'#f5b8c8'},
+  {id:'song',       title:'u_song',       sub:'u_songSub',       tier:'part', run:songUnit,       tint:'#f5b8c8'},
   {id:'split',      title:'u_split',      sub:'u_splitSub',      tier:'lesson', run:splitBeatUnit,  tint:'#c8e8b8'},
   {id:'tempo',      title:'u_tempo',      sub:'u_tempoSub',      tier:'lesson', run:tempoUnit,      tint:'#ffd9b8'},
   {id:'dynamic',    title:'u_dynamic',    sub:'u_dynamicSub',    tier:'lesson', run:dynamicUnit,    tint:'#f5d8e8'},
   {id:'rjam',       title:'u_rjam',       sub:'u_rjamSub',       tier:'lesson', run:rhythmJamUnit,  tint:'#ffcfa8'},
-  {id:'high',       title:'u_high',       sub:'u_highSub',       tier:'lesson', block:'b', run:highUnit,       tint:'#a6c8ff', use:[DEG.do,DEG.la]},
+  {id:'high',       title:'u_high',       sub:'u_highSub',       tier:'lesson', block:'b', part2:'updown', run:highUnit,       tint:'#a6c8ff', use:[DEG.do,DEG.la]},
   {id:'notes',      title:'u_notes',      sub:'u_notesSub',      tier:'lesson', block:'b', run:findNoteUnit,   tint:'#d9e88f', use:[0,1,2,3,4]},
-  {id:'home',       title:'u_home',       sub:'u_homeSub',       tier:'lesson', block:'b', run:homeUnit,       tint:'#ffb6d6', use:[DEG.do,DEG.mi,DEG.so]},
+  {id:'home',       title:'u_home',       sub:'u_homeSub',       tier:'lesson', block:'b', part2:'findhome', run:homeUnit,       tint:'#ffb6d6', use:[DEG.do,DEG.mi,DEG.so]},
   {id:'steps',      title:'u_steps',      sub:'u_stepsSub',      tier:'lesson', block:'b', run:stepsUnit,      tint:'#c4a9f5', use:[0,1,2,3,4]},
   {id:'jam',        title:'u_jam',        sub:'u_jamSub',        tier:'lesson', block:'b', run:()=>jamUnit({id:'jam',title:'u_jam'}), tint:'#ffd9a8', use:[0,1,2,3,4]},
   // ---- block B: more notes ----
   {id:'newhome',    title:'u_newhome',    sub:'u_newhomeSub',    tier:'lesson', block:'c', run:sadFiveUnit,    tint:'#8fe0d0', use:[0,1,2,3,4]},
   {id:'majorscale', title:'u_majorscale', sub:'u_majorscaleSub', tier:'lesson', block:'c', run:majorScaleUnit, tint:'#ffe0a8', use:[0,1,2,3,4,5,6]},
   {id:'brightdark', title:'u_brightdark', sub:'u_brightdarkSub', tier:'lesson', block:'c', run:brightDarkUnit, tint:'#f5b8c8', use:[0,1,2,3,4,5,6]},
-  {id:'intervals',  title:'u_intervals',  sub:'u_intervalsSub',  tier:'lesson', block:'c', run:intervalUnit,   tint:'#bfe0f5', use:[0,1,2,3,4,5,6]},
-  {id:'chords',     title:'u_chords',     sub:'u_chordsSub',     tier:'lesson', block:'c', run:chordUnit,      tint:'#d4c4f5', use:[0,1,2,3,4,5,6]},
+  {id:'intervals',  title:'u_intervals',  sub:'u_intervalsSub',  tier:'part', block:'c', run:intervalUnit,   tint:'#bfe0f5', use:[0,1,2,3,4,5,6]},
+  {id:'chords',     title:'u_chords',     sub:'u_chordsSub',     tier:'lesson', block:'c', part2:'intervals', run:chordUnit,      tint:'#d4c4f5', use:[0,1,2,3,4,5,6]},
   {id:'jammaj',     title:'u_jammaj',     sub:'u_jammajSub',     tier:'lesson', block:'c', run:()=>jamUnit({id:'jammaj',title:'u_jammaj',scale:'major',use:[0,1,2,3,4,5,6],free:'jam_key'}), tint:'#ffe0b8', use:[0,1,2,3,4,5,6]},
-  // ---- block C: minor and modes ----
-  {id:'minorscale', title:'u_minorscale', sub:'u_minorscaleSub', tier:'lesson', block:'d', run:minorScaleUnit, tint:'#b5a9f5', use:[0,1,2,3,4,5,6]},
-  {id:'minorshapes',title:'u_minorshapes',sub:'u_minorshapesSub',tier:'lesson', block:'d', run:minorShapesUnit,tint:'#a9c4f5', use:[0,1,2,3,4,5,6]},
-  {id:'modes',      title:'u_modes',      sub:'u_modesSub',      tier:'lesson', block:'d', run:modesUnit,      tint:'#9fe0c4', use:[0,1,2,3,4,5,6]},
-  {id:'jammin',     title:'u_jammin',     sub:'u_jamminSub',     tier:'lesson', block:'d', run:()=>jamUnit({id:'jammin',title:'u_jammin',scale:'minor',use:[0,1,2,3,4,5,6],free:'jam_key'}), tint:'#c8b8f5', use:[0,1,2,3,4,5,6]},
   // ---- block E: the page ----
   {id:'staff',      title:'u_staff',      sub:'u_staffSub',      tier:'lesson', block:'e', run:staffUnit,      tint:'#ffe8c0'},
   {id:'melody',     title:'u_melody',     sub:'u_melodySub',     tier:'lesson', block:'e', run:melodyUnit,     tint:'#ffd8e0'},
   {id:'compose',    title:'u_compose',    sub:'u_composeSub',    tier:'lesson', block:'e', run:composeUnit,    tint:'#cfe8d8'},
+  // ---- the last block: minor and modes (Flah 2026-11-05: keep them, put them last) ----
+  {id:'minorscale', title:'u_minorscale', sub:'u_minorscaleSub', tier:'lesson', block:'d', run:minorScaleUnit, tint:'#b5a9f5', use:[0,1,2,3,4,5,6]},
+  {id:'minorshapes',title:'u_minorshapes',sub:'u_minorshapesSub',tier:'lesson', block:'d', run:minorShapesUnit,tint:'#a9c4f5', use:[0,1,2,3,4,5,6]},
+  {id:'modes',      title:'u_modes',      sub:'u_modesSub',      tier:'lesson', block:'d', run:modesUnit,      tint:'#9fe0c4', use:[0,1,2,3,4,5,6]},
+  {id:'jammin',     title:'u_jammin',     sub:'u_jamminSub',     tier:'lesson', block:'d', run:()=>jamUnit({id:'jammin',title:'u_jammin',scale:'minor',use:[0,1,2,3,4,5,6],free:'jam_key'}), tint:'#c8b8f5', use:[0,1,2,3,4,5,6]},
   // ---- games and practice ----
   {id:'echo',     title:'g_echo',     sub:'g_echoSub',     tier:'game', run:echoGame,     tint:'#a6c8ff'},
-  {id:'updown',   title:'g_updown',   sub:'g_updownSub',   tier:'game', run:upDownGame,   tint:'#c4a9f5'},
-  {id:'findhome', title:'g_findhome', sub:'g_findhomeSub', tier:'game', run:findHomeGame, tint:'#d9e88f'},
+  {id:'updown',   title:'g_updown',   sub:'g_updownSub',   tier:'part', run:upDownGame,   tint:'#c4a9f5'},
+  {id:'findhome', title:'g_findhome', sub:'g_findhomeSub', tier:'part', run:findHomeGame, tint:'#d9e88f'},
   {id:'review',   title:'u_review',   sub:'u_reviewSub',   tier:'practice', run:reviewUnit, tint:'#9fe6cf'}
 ];
 
@@ -653,7 +614,7 @@ const isRest=(k)=>k==='r';
 // buttons: how many counts was that? Nothing else on the screen at all.
 function noteValueUnit(){
   stageOff();
-  const need=10, POOL=['q','h','w','dh'];
+  const need=5, POOL=['q','h','w','dh'];
   let kind='q', right=0, busy=false, timer=null;
   // ONE ANSWER PER QUESTION. `busy` only went true at the END of a unit, so until then every tap
   // scored: a child could hit 1,2,3,4 and one of them had to be right. That is not an answer, it is
@@ -667,7 +628,7 @@ function noteValueUnit(){
     stage(
       '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t('u_howlong')+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+        '</div>'+
       '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
       '<div class="lgLadder" style="flex:1;justify-content:safe center;flex-direction:column">'+
         '<div class="lgNote"><div class="lgNoteArt" id="lgArt">'+NOTEG[kind]+'</div>'+
@@ -683,30 +644,38 @@ function noteValueUnit(){
   // on the pulse; how long the note RINGS against them is the question. (The note only started
   // genuinely ringing for its full length once playSynth gained a hold parameter -- before that a
   // whole note and a quarter note were the same sound, and the outlines were the only real signal.)
+  // NOTHING OVER THE NOTE (critique ticket 10, Flah 2026-11-03): a kick and three hats used to tick over the very
+  // note being judged. Now a lead-in of four clicks, 4 3 2 1 (seen and heard) sets the beat, then the note rings
+  // ALONE while the circles count its beats in silence. All on the audio clock.
   function demo(){
     if(timer)clearInterval(timer);
-    const cnt=[...document.querySelectorAll('#lgCnt i')];
+    const cnt=[...document.querySelectorAll('#lgCnt i')], fd=document.getElementById('lgFeed');
     cnt.forEach(c=>c.classList.remove('on','beat'));
-    const n=NOTEV[kind], P=600; let b=0;
-    try{dHit('K',AC.currentTime,1.15,true);}catch(e){}
-    try{note(0,92,n*P/1000*0.95);}catch(e){}         // the note SOUNDS for its full length
-    const step=()=>{ if(b<4){cnt[b].classList.add('on');
-        if(b>0){try{dHit('h',AC.currentTime,0.5,true);}catch(e){}}
-        b++;} else {clearInterval(timer);timer=null;} };
-    step(); timer=setInterval(step,P); _timers.push(timer);
+    const n=NOTEV[kind], P=0.6, t0=AC.currentTime+0.1;
+    for(let c=0;c<4;c++){try{dHit('r',t0+c*P,c===0?1.0:0.8,true);}catch(e){}}
+    try{note(0,92,n*P*0.95,t0+4*P);}catch(e){}       // the note SOUNDS for its full length, after the lead-in
+    window._labHlT0=t0;
+    let lead=true;
+    timer=setInterval(()=>{const b=(AC.currentTime-t0)/P;
+      if(fd&&b>=0&&b<4)fd.textContent=String(4-Math.floor(b));
+      else if(fd&&lead&&b>=4){lead=false;fd.textContent='';}   // once: an answer's words written after this stay
+      cnt.forEach((c,i)=>c.classList.toggle('on',b>=4&&i<=Math.floor(b-4)));
+      if(b>=8){clearInterval(timer);timer=null;}},30);
+    _timers.push(timer);
   }
   // after the child has committed, show what the answer was -- that is teaching, not leaking
   function reveal(n){ [...document.querySelectorAll('#lgCnt i')].forEach((c,i)=>c.classList.toggle('beat',i<n)); }
   window._lab_lgAgain=demo;
-  function ask(){ kind=POOL[(Math.random()*POOL.length)|0]; armed=true; paint(); later(demo,260); }
+  const hist=[];
+  function ask(){ kind=freshPick(()=>POOL[(Math.random()*POOL.length)|0],hist); armed=true; paint(); needListen(); }
   const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-cnt]');if(!b||busy||!armed)return;
+    if(!_heard){e.preventDefault();nudgeListen();return;}
     e.preventDefault();armed=false;
     const ok=(+b.dataset.cnt===NOTEV[kind]);
     score('howlong',ok); if(ok)right++;
     reveal(NOTEV[kind]);                            // now it is safe to show how long it was
     const fd=document.getElementById('lgFeed');
     if(fd)fd.textContent=ok?t(NOTEN[kind]):t('notYet');
-    if(ok)speech(t(NOTEN[kind]),true);
     const c=document.querySelector('.lgCount'); if(c)c.textContent=right+' / '+need;
     document.querySelectorAll('.lgDots i').forEach((x,i)=>x.classList.toggle('got',i<right));
     if(right>=need){busy=true;later(()=>{stageOff();finish('howlong',t('hl_name'));},900);return;}
@@ -740,12 +709,12 @@ const BARS={
 function readUnit(cfg){
   stageOff();
   const need=cfg.need||6, P=0.6;
-  let seq=[], right=0, busy=false, idx=0, t0=0, raf=0, beatOf=[], total=0, title='';
+  let seq=[], right=0, busy=false, idx=0, t0=0, raf=0, beatOf=[], total=0, title='';const hist=[];
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
   LAB.take({exact:false,shape:'4',scale:'pentaMaj',octs:1,drums:false,band:false,grav:0,bpm:100,touch:false});
   LAB.labels(null);LAB.clear();
   function build(){
-    const pick=cfg.pick(); seq=pick.notes; title=pick.title||'';
+    const pick=freshPick(()=>cfg.pick(),hist); seq=pick.notes; title=pick.title||'';
     beatOf=[];total=0;
     seq.forEach(k=>{beatOf.push(total);total+=NOTEV[k];});
   }
@@ -767,17 +736,38 @@ function readUnit(cfg){
     stage(
       '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t(cfg.title)+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+        '</div>'+
       '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
       (title?'<p class="lgSay" style="font-size:20px;color:#463d66">'+t(title)+'</p>':'')+
-      '<div style="flex:1;display:flex;align-items:center"><div class="lgBar" id="lgBar">'+
-        '<div class="lgSig" aria-label="four four time"><b>4</b><b>4</b></div>'+cells+'</div></div>'+
+      '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px"><div class="lgBar" id="lgBar">'+
+        '<div class="lgSig" aria-label="four four time"><b>4</b><b>4</b></div>'+cells+'</div>'+grid()+'</div>'+
       '<p class="lgSay">'+t(cfg.doIt)+'</p><div class="lgFeed" id="lgFeed"></div>'+
+      (started?'':'<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>')+
       '<div class="lgPad" id="lgPad" role="button" tabindex="0" aria-label="tap"><img src="minis/grn.png" alt="" draggable="false"></div>');
   }
+  // THE GRID UNDER THE BAR (critique ticket 11): the same bar as studio's step grid, four steps to a beat, the beat
+  // numbers under it, a filled step where a note starts, and a ball that bounces from beat to beat, so the beat is
+  // there to SEE with the sound low, and the picture is the one a DAW shows later.
+  function grid(){
+    const steps=Math.round(total*4),on=new Set(),rs=new Set();
+    seq.forEach((k,i)=>{(isRest(k)?rs:on).add(Math.round(beatOf[i]*4));});
+    let h='';for(let s=0;s<steps;s++)h+='<i class="rgStep'+(s%4===0?' beat':'')+(s%16===0&&s?' bar':'')+(on.has(s)?' on':'')+(rs.has(s)?' rest':'')+'"></i>';
+    let n='';for(let b=0;b<total;b++)n+='<b>'+((b%4)+1)+'</b>';
+    return '<div class="rgWrap" id="rgWrap" style="--steps:'+steps+';--beats:'+total+'"><div class="rgBall" id="rgBall"></div>'+
+      '<div class="rgSteps">'+h+'</div><div class="rgNums">'+n+'</div></div>';
+  }
+  // a lead-in bar first, every round: four clicks, 4 3 2 1 on screen, and the ball bouncing in place (ticket 11:
+  // "no time to get ready"). The first round waits for "listen"; after that each bar follows on its own.
+  let started=false;
+  const still=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}})();
   function run(){
-    idx=0; t0=AC.currentTime+0.9;
+    if(!started){started=true;paint();}
+    idx=0; t0=AC.currentTime+0.15+4*P;
+    for(let c=0;c<4;c++){try{dHit('r',t0-(4-c)*P,c===0?1.0:0.8,true);}catch(e){}}
+    window._labReadT0=t0;
     const cells=[...document.querySelectorAll('.lgCell')];
+    const ball=document.getElementById('rgBall'),stepEls=[...document.querySelectorAll('.rgStep')],fdL=document.getElementById('lgFeed');
+    let lead=true;
     cells.forEach(c=>{c.classList.remove('now','hitok');
       if(c.classList.contains('rest'))c.classList.add('hitok');});   // silence is already correct
     cancelAnimationFrame(raf);
@@ -785,6 +775,13 @@ function readUnit(cfg){
       const now=AC.currentTime, beat=(now-t0)/P;
       window._labReadIdx=idx; window._labReadAt=t0+beatOf[idx]*P;
       cells.forEach((c,i)=>c.classList.toggle('now', i===idx));
+      if(beat<0){if(fdL)fdL.textContent=String(Math.min(4,Math.ceil(-beat)));}
+      else if(lead){lead=false;if(fdL)fdL.textContent='';}
+      if(ball){const bb=Math.max(0,Math.min(total,beat)),fr=beat-Math.floor(beat),
+          up=still?0:Math.abs(Math.sin(Math.PI*fr))*18;          // a hop per beat; landing ON the beat
+        ball.style.transform='translate('+(beat<0?0:Math.floor(bb)/total*100)+'cqw,'+(-up)+'px)';
+        ball.dataset.beat=beat<0?'lead':String(Math.floor(bb));}
+      const si=Math.floor(beat*4);stepEls.forEach((e,i)=>e.classList.toggle('now',i===si));
       if(beat>=total+1){ // the bar finished
         // Every note is its own attempt. Scoring the BAR instead meant a five-bar lesson offered the
         // mastery gate five data points when it needs eight, so the lesson could never be marked learned.
@@ -796,7 +793,7 @@ function readUnit(cfg){
           const fd=document.getElementById('lgFeed');if(fd)fd.textContent=t('yes');
           if(right>=need){busy=true;later(()=>{stageOff();finish(cfg.id,t(cfg.name));},900);return;}}
         else{const fd=document.getElementById('lgFeed');if(fd)fd.textContent=t('onceMore');}
-        later(()=>{build();paint();run();},900);return;}
+        later(()=>{build();paint();run();},900);return;}   // the next bar has its own lead-in
       // the click track, so there is always a pulse to read against
       const bi=Math.floor(beat);
       if(bi>=0&&bi!==window.__lastBi){window.__lastBi=bi;
@@ -821,13 +818,14 @@ function readUnit(cfg){
   const onDown=(e)=>{const p=e.target.closest&&e.target.closest('#lgPad');if(!p)return;e.preventDefault();judge();};
   ov.addEventListener('pointerdown',onDown,true);
   window._lab_tap=judge;
-  build();_render=paint;paint();later(run,400);
+  window._lab_lgAgain=()=>{if(!started&&!busy)run();};
+  build();_render=paint;paint();needListen();
   _cleanup=()=>{_noteAnswer=null;busy=true;cancelAnimationFrame(raf);
     try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
     window._lab_tap=null;stageOff();LAB.clear();};
 }
 function countBarUnit(){
-  readUnit({id:'countbar',title:'u_countbar',doIt:'cb_do',name:'cb_name',need:10,
+  readUnit({id:'countbar',title:'u_countbar',doIt:'cb_do',name:'cb_name',need:3,
     pick:()=>({notes:BARS.count[(Math.random()*BARS.count.length)|0]})});
 }
 // ---------- 5. REST DURATION ----------
@@ -839,31 +837,36 @@ function countBarUnit(){
 // the time of one IS the hi-hat grid, and a child who has only ever counted 1-2-3-4 cannot program
 // a beat. Same screen, same click track, same tapping -- the notes are just twice as close.
 function splitBeatUnit(){
-  readUnit({id:'split',title:'u_split',doIt:'sb_do',name:'sb_name',need:10,
+  readUnit({id:'split',title:'u_split',doIt:'sb_do',name:'sb_name',need:3,
     pick:()=>({notes:BARS.split[(Math.random()*BARS.split.length)|0]})});
 }
 // ---------- FAST OR SLOW ----------
 // Dalla Bella 2001 -- the same paper this course already cites for putting major/minor at lesson 13 --
 // found five-year-olds judge music by TEMPO before they can use mode at all. It was the earliest
 // discrimination a small child has, and the course did not use it. It is also just "BPM".
+// short tunes on the five notes, for the units that ask about HOW something is played (speed, loudness), not what
+const TUNES4=[[0,2,3,2],[0,1,2,4],[4,2,1,0],[2,3,4,2],[0,2,4,2],[4,3,2,0],[1,2,1,0]];
 function tempoUnit(){
   choiceUnit({id:'tempo',roam:true,title:'u_tempo',hear:'tp_hear',doIt:'tp_do',name:'tp_name',
-    scale:'pentaMaj',need:10,
+    scale:'pentaMaj',need:5,
     opts:[{v:'fast',label:'tp_fast',tint:'#ffd3a8'},{v:'slow',label:'tp_slow',tint:'#a6c8ff'}],
     pick:()=>Math.random()<0.5?'fast':'slow',
-    play:(v)=>{const gap=(v==='fast')?165:520, n=(v==='fast')?8:4;
-      for(let i=0;i<n;i++)later(()=>sing([0,2,3,2][i%4],92,(v==='fast')?0.16:0.46),i*gap);}});
+    // the same number of notes both ways (fast played 8 and slow 4, so a kid could count notes instead of hearing the
+    // speed), a speed that varies a little every round, and one of a few tunes (the logic pass, rules 1 and 5)
+    play:(v)=>{const fast=(v==='fast'),gap=fast?150+Math.random()*60:440+Math.random()*120,n=6,
+        tune=TUNES4[(Math.random()*TUNES4.length)|0];
+      for(let i=0;i<n;i++)later(()=>sing(tune[i%tune.length],92,fast?0.15:0.42),i*gap);}});
 }
 // ---------- LOUD OR SOFT ----------
 // Every piano method teaches p and f in level one. In a DAW it is the velocity lane, which is the
 // single most-edited thing in any piano roll. Same notes both times -- only the playing changes.
 function dynamicUnit(){
   choiceUnit({id:'dynamic',roam:true,title:'u_dynamic',hear:'dy_hear',doIt:'dy_do',name:'dy_name',
-    scale:'pentaMaj',need:10,
+    scale:'pentaMaj',need:5,
     opts:[{v:'loud',label:'dy_loud',tint:'#ffb6d6'},{v:'soft',label:'dy_soft',tint:'#9fe6cf'}],
     pick:()=>Math.random()<0.5?'loud':'soft',
-    play:(v)=>{const vel=(v==='loud')?118:42;
-      [0,2,4,2].forEach((d,i)=>later(()=>sing(d,vel,0.42),i*330));}});
+    play:(v)=>{const vel=(v==='loud')?112+Math.random()*12:38+Math.random()*12,tune=TUNES4[(Math.random()*TUNES4.length)|0];   // a different tune each round
+      tune.forEach((d,i)=>later(()=>sing(d,vel,0.42),i*330));}});
 }
 // ================================================================================================
 //  LESSON 2 -- MAKE SOMETHING.
@@ -907,7 +910,7 @@ function makeUnit(){
     stage(
       '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t('u_make')+'</h3><span class="lgCount">'+(kept?t('mk_tally',{n:kept}):'')+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+        '</div>'+
 
       '<div class="mkRing" id="mkRing">'+dots+'</div>'+
       '<p class="lgSay">'+t('mk_do')+'</p>'+
@@ -930,7 +933,7 @@ function makeUnit(){
         if(i===4)dHit('s',t,0.85,true);                        // backbeat
       }catch(e){}
       const d=grid[i];
-      if(d!=null){try{note(degCents(d),98,SLOT*1.6);}catch(e){}}
+      if(d!=null){try{note(degCents(d),98,SLOT*1.6,t);}catch(e){}}   // AT its step: without t every note of the bar sounded at once, on step 1 (Flah 2026-11-03)
     }
     bars++;
   }
@@ -979,21 +982,22 @@ function makeUnit(){
   };
   ov.addEventListener('pointerdown',onDown,true);
   window._lab_mkGrid=()=>grid.slice();      // readable: dev-make proves taps land on the grid
+  window._lab_mkClock=()=>({loopAt,SLOT,LOOP});   // readable: dev-learn3 checks each pick sounds on its step
   window._lab_mkTap=(d)=>{const el=document.querySelector('.mkPad[data-d="'+d+'"]');
     if(el)el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));};
   _render=paint;paint();
   loopAt=AC.currentTime+0.25;raf=requestAnimationFrame(tick);
   _cleanup=()=>{_noteAnswer=null;busy=true;cancelAnimationFrame(raf);
     try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
-    window._lab_mkGrid=null;window._lab_mkTap=null;stageOff();LAB.clear();};
+    window._lab_mkGrid=null;window._lab_mkTap=null;window._lab_mkClock=null;stageOff();LAB.clear();};
 }
 
 function restUnit(){
-  readUnit({id:'rest',title:'u_rest',doIt:'rs_do',name:'rs_name',need:10,
+  readUnit({id:'rest',title:'u_rest',doIt:'rs_do',name:'rs_name',need:3,
     pick:()=>({notes:BARS.rest[(Math.random()*BARS.rest.length)|0]})});
 }
 function songUnit(){
-  readUnit({id:'song',title:'u_song',doIt:'sg_do',name:'sg_name',need:6,
+  readUnit({id:'song',title:'u_song',doIt:'sg_do',name:'sg_name',need:2,
     pick:()=>{const s=BARS.song[(Math.random()*BARS.song.length)|0];
       return {notes:s.bars[0].concat(s.bars[1]||[]),title:s.n};}});
 }
@@ -1043,8 +1047,8 @@ const SING_LO=57, SING_HI=69;
 const inSingRange=(m)=>{ while(m<SING_LO)m+=12; while(m>SING_HI)m-=12; return m; };
 function ladderUnit(cfg){
   stageOff();
-  const id=cfg.id, need=cfg.need||10;
-  let rungs=[], right=0, busy=false, target=null, phase=0, roamAt=0;
+  const id=cfg.id, need=cfg.need||5;
+  let rungs=[], right=0, busy=false, target=null, phase=0, roamAt=0;const hist=[];
   // ONE ANSWER PER QUESTION. `busy` only went true at the END of a unit, so until then every tap
   // scored: a child could hit 1,2,3,4 and one of them had to be right. That is not an answer, it is
   // a brute force, and it was being written into the progress file as mastery. `armed` is the real
@@ -1101,7 +1105,7 @@ function ladderUnit(cfg){
     stage(
       '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t(cfg.title)+'</h3><span class="lgCount">'+(exploring?'':right+' / '+need)+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+        '</div>'+
       (exploring?'':'<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>')+
       '<div class="lgLadder" id="lgLadder">'+ladder+'</div>'+
       '<p class="lgSay">'+t(exploring?'ex_do':cfg.doIt)+'</p>'+
@@ -1122,12 +1126,13 @@ function ladderUnit(cfg){
   }
   window._lab_ready=startAsking;   // readable: dev-explore.js presses it the way a child would
   window._lab_exploring=()=>exploring;
-  function ask(){ if(busy)return; reKey(); target=cfg.pick(setOf(),phase); armed=true; markTarget();
-    withAnchor(()=>cfg.play(target,setOf())); }
+  function ask(){ if(busy)return; reKey(); target=freshPick(()=>cfg.pick(setOf(),phase),hist); armed=true; markTarget();
+    if(cfg.showTarget===true)withAnchor(()=>cfg.play(target,setOf())); else needListen(); }
   window._lab_lgAgain=()=>{ if(!busy&&target!=null)withAnchor(()=>cfg.play(target,setOf())); };
   window._labRoam=()=>roamAt;   // readable: dev-curriculum proves the key actually moves
   function answer(ok,deg){
     if(busy||!armed)return;
+    if(!_heard){nudgeListen();return;}
     armed=false;
     // the due-clock belongs to the ANSWER. resetting it when the question was merely drawn meant a
     // child who looked at a card and wandered off had it filed as reviewed.
@@ -1146,7 +1151,7 @@ function ladderUnit(cfg){
     if(cfg.phases&&right>0&&right%cfg.phases===0&&phase<(cfg.maxPhase||0)){
       phase++;retake();paint();
       if(cfg.phaseSay&&cfg.phaseSay[phase]){const f2=document.getElementById('lgFeed');
-        if(f2)f2.textContent=t(cfg.phaseSay[phase]); speech(t(cfg.phaseSay[phase]),true);}}
+        if(f2)f2.textContent=t(cfg.phaseSay[phase]);}}
     later(ask,ok?780:1020);
   }
   // pointerdown, not click: a young child's tap can rest on the glass for seconds
@@ -1217,7 +1222,7 @@ function ladderUnit(cfg){
 //  TOUCH-DOWN, NOT TOUCH-UP.  A 4-year-old's "tap" can rest on the glass for 5.1 seconds
 //  (Vatavu et al. 2015). Timing on release would make this unplayable for half the audience.
 // ================================================================================================
-const PULSE_BPM=120, PULSE_NEED=8, PULSE_LEAD=2;   // lead is in beats
+const PULSE_BPM=120, PULSE_NEED=5, PULSE_LEAD=2;   // lead is in beats
 const PULSE_GOOD=0.30, PULSE_GREAT=0.12;           // tap windows, as a fraction of one beat
 function pulseUnit(){
   const P=60/PULSE_BPM;                 // one beat, in seconds
@@ -1231,7 +1236,7 @@ function pulseUnit(){
     stage(
       '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t('u_pulse')+'</h3><span class="lgCount">'+run+' / '+PULSE_NEED+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+        '</div>'+
       '<div class="lgDots">'+Array.from({length:PULSE_NEED},(_,i)=>'<i class="'+(i<run?'got':'')+'"></i>').join('')+'</div>'+
       '<div class="lgLane" id="lgLane"><div class="lgFloor" id="lgFloor"></div></div>'+
       '<p class="lgSay">'+t('pulse_do')+'</p>'+
@@ -1253,7 +1258,9 @@ function pulseUnit(){
     const now=AC.currentTime;
     window._labNextBeat=nextBeat; window._labBeatP=P;   // readable clock: the tests tap in time from this
     while(nextBeat<now+0.25){                     // schedule a quarter-second ahead, sample-accurate
-      try{dHit('K',Math.max(now,nextBeat),1.15,true);}catch(e){}
+      // the first four beats are the count-in: a click and 4 3 2 1 on the falling balls, nothing judged yet
+      const ci=Math.round((nextBeat-t0)/P);
+      try{if(ci<4)dHit('r',nextBeat,ci===0?1.0:0.8,true);else dHit('K',nextBeat,1.15,true);}catch(e){}
       nextBeat+=P; sched++;
     }
     draw(now);
@@ -1278,7 +1285,7 @@ function pulseUnit(){
     want.forEach(({n,prog})=>{
       let b=have[n];
       if(!b){b=document.createElement('div');b.className='lgBall';b.dataset.n=n;
-        b.innerHTML='<img src="'+SLIME+'" alt="" draggable="false">';lane.appendChild(b);}
+        b.innerHTML='<img src="'+SLIME+'" alt="" draggable="false">'+(n<4?'<b class="lgCi">'+(4-n)+'</b>':'');lane.appendChild(b);}
       delete have[n];
       const p=Math.min(1,prog);
       const y=H*p*p;                              // gravity: distance goes as the square of the time
@@ -1294,6 +1301,7 @@ function pulseUnit(){
     if(done||!AC)return;
     const now=AC.currentTime;
     const n=Math.round((now-t0)/P);
+    if(n<4)return;                                 // the count-in is for listening: nothing is judged
     if(n===lastJudged)return;                      // one judgement per beat, however fast they tap
     const err=Math.abs(now-(t0+n*P))/P;            // error as a fraction of a beat
     const pad=document.getElementById('lgPad'),fl=document.getElementById('lgFloor'),fd=document.getElementById('lgFeed');
@@ -1310,11 +1318,9 @@ function pulseUnit(){
         later(()=>{stageOff();finish('pulse',t('pulse_name'));},700);}
       later(()=>{if(pad)pad.classList.remove('good');},260);
     }else{
-      // a miss says nothing. The run resets and the beat carries on -- constrain, never scold.
-      run=0;
+      // a miss says nothing and takes nothing away: the beat carries on. (It used to reset the run to zero, which is
+      // a streak, and the product rules have none: Flah's logic pass, and play is "no streaks, no nags".)
       if(fd)fd.textContent='';
-      document.querySelectorAll('.lgDots i').forEach(i=>i.classList.remove('got'));
-      const c=document.querySelector('.lgCount'); if(c)c.textContent='0 / '+PULSE_NEED;
     }
   }
   // TOUCH-DOWN. pointerdown, not click, not pointerup.
@@ -1331,91 +1337,116 @@ function pulseUnit(){
     removeEventListener('resize',layout);stageOff();LAB.clear();window._lab_tap=null;};
 }
 
-// ---------- SAY IT, THEN PLAY IT ----------------------------------------------------------------
-// The one practice that genuinely showed up on every continent I looked at. Vocalise the rhythm BEFORE
-// you play it:
-//   India      konnakol / solkattu (ta ka di mi), and tabla bols (dha dhin na tin ta ge)
-//   Japan      kuchi shoga (don doko tsu ka) -- and rests get their own syllable there
-//   Korea      gu-eum -- students sing the drum patterns before touching the drum
-//   Turkey/Arab world   usul, dum / tek, struck on the knees while spoken
-// Taiko teaching puts it in five words: "if you can say it, you can play it." The tabla sequence is
-// explicitly three stages -- syllables only, drums only, then both together -- and that is exactly the
-// loop below.
-//
-// WHY THESE TWO SYLLABLES. Hughes (2000) showed these systems are not arbitrary: they are
-// "acoustic-iconic". Vowels track pitch by second formant, so the series i-e-a-o-u runs high to low;
-// voiced stops (d, g, b) mark low sounds and voiceless ones (t, k) mark high. DUM and TEK are the real
-// Arabic/Turkish pair and they follow that logic exactly -- voiced d + back vowel for the low drum,
-// voiceless t + front vowel for the high one. A five-year-old hears that DUM is lower than TEK without
-// being told, which is the whole point.
-// These are borrowed honestly, named as what they are, and no tradition is claimed as ours.
-const SP_PATTERNS=[
-  [1,0,1,0],        // DUM . TEK .
-  [1,0,0,1],        // DUM . . DUM
-  [1,1,0,1],
-  [1,0,1,1],
-  [1,1,0,0]
-];
-// ---------- 2. SAY IT FIRST ----------
-// Was the last lesson still running on the tank: a rhythm lesson that arrived with a polygon and a
-// solfege keybed on it. The idea is two drums and the words for them, so the screen is two drums and
-// the words for them. The pattern is SHOWN as the words before it is heard, high words riding high on
-// the line and low words low, so a child who cannot read still sees the shape of it.
+// ---------- COPY THE BEAT: a drum grid, ear first ------------------------------------------------
+// This was "Say It, Play It": BOOM and TAP words to say, then tap, after the oral traditions that speak a rhythm
+// before playing it (konnakol, kuchi shoga, dum/tek). Flah (2026-11-03) rebuilt it as the thing a kid will meet in
+// every music app later: a step grid, one row per drum, one column per beat, like studio's drum sequencer
+// (ADR 0013). It also played pitched notes and called them drums, explained itself every round, and told
+// "boom tap tap boom" ten times in a row.
+// Each round: press "listen", a count-in 4 3 2 1 (seen and heard), the beat plays once with the playhead
+// moving along the grid, the kid puts each hit where they heard it (a tap on a step sounds that drum), "check".
+// Right: "Good job!". Wrong: every row with a mistake turns lilac, "Close, listen and try again!", and the
+// kid's hits stay so they can fix them. Never the same beat twice in a row, and the beats grow: two drums
+// and two or three hits, then the hi-hat comes in, then two drums on one beat.
+// The explanation shows once, at the start; it never comes back in that run of the unit.
+const GE_BPM=90, GE_STEPS=4;
+// kick = purple, snare = red, hi-hat = yellow (Flah); kick on top, like studio's step grid (GRID_VOICES)
+const GE_LANES=[{v:'K',name:'ge_kick',col:'#7b4fd6'},{v:'s',name:'ge_snare',col:'#e0453a'},{v:'h',name:'ge_hat',col:'#f2c23a'}];
+// a beat for round r: how many hits, which drums, whether two can land together, from how far in the kid is
+function geBeat(r,rnd){
+  const lvl=r<2?0:r<4?1:2;   // five rounds: two easy, two with the hi-hat, then two drums at once
+  const lanes=lvl===0?['K','s']:['K','s','h'];
+  const hits=lvl===0?2+((rnd()*2)|0):lvl===1?3+((rnd()*2)|0):4+((rnd()*3)|0);
+  for(let tries=0;tries<200;tries++){
+    const p={K:[0,0,0,0],s:[0,0,0,0],h:[0,0,0,0]};let n=0;
+    while(n<hits){const st=(rnd()*GE_STEPS)|0,v=lanes[(rnd()*lanes.length)|0];
+      if(p[v][st])continue;
+      const busy=GE_LANES.some(l=>p[l.v][st]);
+      if(busy&&lvl<2)continue;                       // two drums on one beat only at the top level
+      p[v][st]=1;n++;}
+    if(!p.K.some(Boolean))continue;                  // a beat always has a kick to hold on to
+    if(lvl>0&&!p.h.some(Boolean))continue;           // once the hi-hat is in, it plays
+    return p;}
+  return {K:[1,0,0,0],s:[0,0,1,0],h:[0,0,0,0]};
+}
+const geKey=p=>GE_LANES.map(l=>p[l.v].join('')).join('|');
 function sayPlayUnit(){
   stageOff();
-  const need=10, LOW=0, HIGH=2;
-  let pat=SP_PATTERNS[0], idx=0, mine=true, right=0, busy=false;
+  const need=5, B=60/GE_BPM;
+  let pat=null, mine={K:[0,0,0,0],s:[0,0,0,0],h:[0,0,0,0]}, right=0, round=0, busy=false, playing=false,
+      explained=false, miss=[], feed='', raf=0, last='', shown=-1, count=0;
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
-  LAB.take({scale:'pentaMaj',octs:1,drums:false,band:false,touch:false});
+  LAB.take({exact:false,shape:'4',scale:'pentaMaj',octs:1,drums:false,band:false,grav:0,bpm:GE_BPM,touch:false});
   LAB.labels(null);LAB.clear();
   function paint(){
-    const words=pat.map((v,i)=>{
-      const cls=(v?'lo':'hi')+(mine? (i===idx?' on':'') : (i<idx?' done':(i===idx?' on':'')));
-      return '<b class="'+cls+'">'+(v?t('sp_low'):t('sp_high'))+'</b>';}).join('');
-    stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
-        '<h3>'+t('u_sayplay')+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+    const nums='<div class="geRow geNums"><span class="geLbl"></span>'+
+      Array.from({length:GE_STEPS},(_,i)=>'<b class="geNum'+(i===shown?' now':'')+'">'+(i+1)+'</b>').join('')+'</div>';
+    const rows=GE_LANES.map(l=>'<div class="geRow'+(miss.includes(l.v)?' miss':'')+'" style="--lc:'+l.col+'">'+
+      '<span class="geLbl"><i></i>'+t(l.name)+'</span>'+
+      Array.from({length:GE_STEPS},(_,i)=>'<button class="geCell'+(mine[l.v][i]?' on':'')+(i===shown?' now':'')+'" data-ge="'+l.v+i+'" '+
+        'aria-label="'+t(l.name)+' '+(i+1)+'" aria-pressed="'+(mine[l.v][i]?'true':'false')+'"></button>').join('')+'</div>').join('');
+    stage(
+      '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
+        '<h3>'+t('u_sayplay')+'</h3><span class="lgCount">'+right+' / '+need+'</span></div>'+
       '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
-      '<div class="lgLadder" style="justify-content:safe center;flex:1">'+
-        '<p class="lgSay" style="font-size:18px">'+t('sp_hear')+'</p>'+
-        '<div class="lgWords">'+words+'</div></div>'+
-      '<p class="lgSay">'+t(mine?'sp_listen':'sp_say')+'</p><div class="lgFeed" id="lgFeed"></div>'+
-      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>'+
-      '<div class="lgChoice">'+
-        '<button data-sp="1" style="--rc:#b9aee0">'+t('sp_low')+'</button>'+
-        '<button data-sp="0" style="--rc:#9fe6cf">'+t('sp_high')+'</button></div>');
+      (explained?'':'<p class="lgSay geIntro">'+t('ge_intro')+'</p>')+
+      '<div class="geWrap"><div class="geCount" id="geCount" aria-live="polite">'+(count?count:'')+'</div>'+
+        '<div class="geGrid" id="geGrid">'+nums+rows+'</div></div>'+
+      '<p class="lgSay">'+t(playing?'ge_hear':'ge_do')+'</p><div class="lgFeed" id="lgFeed">'+feed+'</div>'+
+      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button>'+
+        '<button class="btn primary geCheck" data-gek="check">'+t('ge_check')+'</button></div>');
   }
-  function play(){                    // said out loud AND played, one word at a time
-    mine=true;idx=0;paint();
-    pat.forEach((v,i)=>later(()=>{idx=i;paint();
-      speech(v?t('sp_low'):t('sp_high'),true);       // the vocalising IS the lesson
-      sing(v?LOW:HIGH,90,.4);
-      if(i===pat.length-1)later(()=>{mine=false;idx=0;paint();publish();},620);},i*620));
+  // count-in, then the beat, all on the audio clock; the playhead and the numbers follow it by frame
+  function play(){
+    if(busy||playing||!pat)return;
+    explained=true;playing=true;miss=[];feed='';
+    const t0=AC.currentTime+0.12;
+    for(let c=0;c<4;c++){try{dHit('r',t0+c*B,c===0?1.1:0.85,true);}catch(e){}}
+    for(let i=0;i<GE_STEPS;i++)GE_LANES.forEach(l=>{if(pat[l.v][i]){try{dHit(l.v,t0+(4+i)*B,l.v==='h'?0.8:1.05,true);}catch(e){}}});
+    window._labGeT0=t0;
+    cancelAnimationFrame(raf);
+    paint();
+    (function tick(){   // the count and the playhead change classes in place: a repaint under a finger can eat its tap
+      const b=(AC.currentTime-t0)/B, cn=b<0?4:b<4?4-Math.floor(b):0, st=(b>=4&&b<4+GE_STEPS)?Math.floor(b-4):-1;
+      if(cn!==count||st!==shown){count=cn;shown=st;
+        const c=document.getElementById('geCount');if(c)c.textContent=count?String(count):'';
+        document.querySelectorAll('#geGrid .geRow').forEach(r=>[...r.children].slice(1).forEach((e,i)=>e.classList.toggle('now',i===shown)));}
+      if(b>=4+GE_STEPS){playing=false;count=0;shown=-1;paint();return;}
+      raf=requestAnimationFrame(tick);})();
   }
-  window._lab_lgAgain=()=>{if(!busy&&!mine)play();};
-  window._labSayPat=()=>pat.slice();               // readable targets for the test drivers
-  const publish=()=>{window._labExpect=(!mine&&!busy)?(pat[idx]?'low':'high'):null;};
-  function ask(){pat=SP_PATTERNS[(Math.random()*SP_PATTERNS.length)|0];later(play,260);}
-  const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-sp]');if(!b||busy||mine)return;
-    e.preventDefault();
-    const low=(b.dataset.sp==='1');
-    sing(low?LOW:HIGH,92,.4);
-    b.classList.remove('right','wrong');void b.offsetWidth;b.classList.add(low===!!pat[idx]?'right':'wrong');
-    later(()=>b.classList.remove('right','wrong'),360);
-    const fd=document.getElementById('lgFeed');
-    if(low!==!!pat[idx]){score('sayplay',false);if(fd)fd.textContent=t('onceMore');
-      busy=true;publish();later(()=>{busy=false;play();},900);return;}
-    idx++;paint();publish();
-    if(idx>=pat.length){score('sayplay',true);right++;
-      const f2=document.getElementById('lgFeed');if(f2)f2.textContent=t('yes');
-      const c=document.querySelector('.lgCount');if(c)c.textContent=right+' / '+need;
-      document.querySelectorAll('.lgDots i').forEach((x,i)=>x.classList.toggle('got',i<right));
-      if(right>=need){busy=true;later(()=>{stageOff();finish('sayplay',t('sp_name'));},800);return;}
-      busy=true;publish();later(()=>{busy=false;ask();},900);}};
+  window._lab_lgAgain=play;
+  function ask(){
+    let p;const rnd=Math.random;
+    do{p=geBeat(round,rnd);}while(geKey(p)===last);  // never the same beat twice in a row
+    pat=p;last=geKey(p);mine={K:[0,0,0,0],s:[0,0,0,0],h:[0,0,0,0]};miss=[];feed='';
+    window._labGePat=JSON.parse(JSON.stringify(p));paint();needListen();
+  }
+  function check(){
+    if(busy||playing||!pat||!_heard)return;
+    miss=GE_LANES.filter(l=>l.v&&pat[l.v].some((x,i)=>!!x!==!!mine[l.v][i])).map(l=>l.v);
+    const ok=miss.length===0;score('sayplay',ok);
+    feed=t(ok?'yes':'notYet');
+    if(ok){right++;round++;busy=true;paint();
+      if(right>=need){later(()=>{stageOff();finish('sayplay',t('ge_name'));},900);return;}
+      later(()=>{busy=false;ask();},1100);return;}
+    paint();
+  }
+  const onDown=(e)=>{
+    const c=e.target.closest&&e.target.closest('[data-ge]'),k=e.target.closest&&e.target.closest('[data-gek]');
+    if(k){e.preventDefault();if(!_heard){nudgeListen();return;}check();return;}
+    if(!c||busy)return;e.preventDefault();
+    if(!_heard||playing){nudgeListen();return;}
+    const v=c.dataset.ge[0],i=+c.dataset.ge.slice(1);
+    mine[v][i]=mine[v][i]?0:1;
+    if(mine[v][i]){try{dHit(v,AC.currentTime,v==='h'?0.8:1.05,true);}catch(err){}}   // a hit you place, you hear
+    miss=miss.filter(x=>x!==v);feed='';paint();
+  };
   ov.addEventListener('pointerdown',onDown,true);
-  _render=paint;paint();ask();
-  _cleanup=()=>{_noteAnswer=null;busy=true;try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
-    window._lab_lgAgain=null;window._labSayPat=null;window._labExpect=null;stageOff();LAB.clear();};
+  window._labGeMine=()=>JSON.parse(JSON.stringify(mine));
+  window._labGeState=()=>({playing,explained,miss:miss.slice(),round,right,count,shown});
+  _render=paint;ask();
+  _cleanup=()=>{_noteAnswer=null;busy=true;cancelAnimationFrame(raf);try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
+    window._lab_lgAgain=null;window._labGePat=null;window._labGeMine=null;window._labGeState=null;window._labGeT0=null;stageOff();LAB.clear();};
 }
 
 // ---------- 3. HIGH AND LOW -- two notes, as far apart as the ladder goes ----------
@@ -1423,7 +1454,7 @@ function sayPlayUnit(){
 // and answers before anything is given a name. So the rungs just say low and high.
 function highUnit(){
   ladderUnit({id:'high',title:'u_high',doIt:'high_do',name:'high_name',
-    use:[DEG.do,DEG.la],need:10,names:{0:'low',4:'high'},showTarget:false,
+    use:[DEG.do,DEG.la],need:5,names:{0:'low',4:'high'},showTarget:false,
     pick:(u)=>u[(Math.random()*u.length)|0],
     play:(d)=>{sing(DEG.mi,80,.42);later(()=>sing(d,94,.6),520);}});  // middle note first, then the one to judge
 }
@@ -1437,7 +1468,7 @@ function findNoteUnit(){
               [DEG.do,DEG.mi,DEG.so,DEG.la],
               [DEG.do,DEG.re,DEG.mi,DEG.so,DEG.la]];
   ladderUnit({id:'notes',title:'u_notes',doIt:'nt_do',name:'nt_name',
-    use:(ph)=>SETS[Math.min(ph,3)],need:12,phases:3,maxPhase:3,showTarget:false,
+    use:(ph)=>SETS[Math.min(ph,3)],need:5,phases:1,maxPhase:3,showTarget:false,
     phaseSay:[null,'nt_p1','nt_p2','nt_p3'],
     pick:(u)=>u[(Math.random()*u.length)|0],
     play:(d)=>sing(d,94,.55)});
@@ -1461,7 +1492,7 @@ function leanHome(target){
 }
 function homeUnit(){
   ladderUnit({id:'home',title:'u_home',doIt:'home_do',name:'home_name',
-    use:[DEG.do,DEG.mi,DEG.so,5],need:10,showTarget:false,   // 5 = do an octave up: also home
+    use:[DEG.do,DEG.mi,DEG.so,5],need:5,showTarget:false,   // 5 = do an octave up: also home
     pick:()=>Math.random()<0.5?DEG.do:5,
     play:leanHome});
 }
@@ -1469,7 +1500,7 @@ function homeUnit(){
 function stepsUnit(){
   let from=2;                                  // start in the middle so both directions are available
   ladderUnit({id:'steps',title:'u_steps',doIt:'steps_do',name:'steps_name',
-    use:[0,1,2,3,4],need:10,showTarget:false,
+    use:[0,1,2,3,4],need:5,showTarget:false,
     pick:()=>{const o=[from-2,from-1,from+1,from+2].filter(d=>d>=0&&d<=4);
       return o[(Math.random()*o.length)|0];},  // a step (next rung) or a skip (over one), either way
     correct:(d,tg)=>{const ok=(d===tg);if(ok)from=tg;return ok;},
@@ -1480,7 +1511,7 @@ function stepsUnit(){
 // notes with a different one in charge. Nothing new to learn; everything sounds different.
 function sadFiveUnit(){
   ladderUnit({id:'newhome',title:'u_newhome',doIt:'sad_do',name:'sad_name',
-    scale:'pentaMin',rootShift:9,use:[0,1,2,3,4],need:10,showTarget:false,roam:true,
+    scale:'pentaMin',rootShift:9,use:[0,1,2,3,4],need:5,showTarget:false,roam:true,
     pick:(u)=>u[(Math.random()*u.length)|0],
     play:(d)=>sing(d,94,.55)});
 }
@@ -1489,7 +1520,7 @@ function sadFiveUnit(){
 // before ti in the Kodaly sequence, so it still arrives first -- as phase one of the same lesson.
 function majorScaleUnit(){
   ladderUnit({id:'majorscale',title:'u_majorscale',doIt:'ms_do',name:'ms_name',
-    scale:'major',use:(ph)=>ph?[0,1,2,3,4,5,6]:[0,1,2,3,4,5],need:12,phases:6,maxPhase:1,showTarget:false,roam:true,letters:true,
+    scale:'major',use:(ph)=>ph?[0,1,2,3,4,5,6]:[0,1,2,3,4,5],need:5,phases:3,maxPhase:1,showTarget:false,roam:true,letters:true,
     phaseSay:[null,'ms_p1'],
     pick:(u)=>u[(Math.random()*u.length)|0],
     play:(d)=>sing(d,94,.55)});
@@ -1500,7 +1531,7 @@ function majorScaleUnit(){
 function brightDarkUnit(){
   // the same two-choice screen as up/down: one sound, two big buttons, nothing else
   choiceUnit({id:'brightdark',title:'u_brightdark',hear:'bd_hear',doIt:'bd_do',name:'bd_name',
-    scale:'major',need:10,
+    scale:'major',need:5,
     opts:[{v:'bright',label:'bright',tint:'#ffe08a'},{v:'dark',label:'dark',tint:'#a9b6f0'}],
     pick:()=>Math.random()<0.5?'bright':'dark',
     art:(v)=>[0,(v==='bright')?4:3,7],
@@ -1518,7 +1549,7 @@ function brightDarkUnit(){
 // grinds, the other is hollow and open -- so it is the honest place to start naming intervals.
 function intervalUnit(){
   choiceUnit({id:'intervals',title:'u_intervals',hear:'iv_hear',doIt:'iv_do',name:'iv_name',
-    scale:'major',need:10,
+    scale:'major',need:3,
     opts:[{v:'near',label:'iv_near',tint:'#a6c8ff'},{v:'far',label:'iv_far',tint:'#ffd3a8'}],
     pick:()=>Math.random()<0.5?'near':'far',
     art:(v)=>[0,(v==='near')?2:7],
@@ -1532,12 +1563,12 @@ function scaleLadder(id,title,scales,doIt,nameK,need,phases,maxPhase,phaseSay){
     pick:(u)=>u[(Math.random()*u.length)|0],
     play:(d)=>sing(d,94,.55)});
 }
-function minorScaleUnit(){scaleLadder('minorscale','u_minorscale',['minor'],'mn_do','mn_name',10);}
+function minorScaleUnit(){scaleLadder('minorscale','u_minorscale',['minor'],'mn_do','mn_name',5);}
 // The three minor shapes differ by ONE note (the seventh) and then by two (the sixth). Hearing which
 // one you are in is the skill; hunting for a rung is not. Same run of notes, three endings.
 function minorShapesUnit(){
   choiceUnit({id:'minorshapes',roam:true,title:'u_minorshapes',hear:'sh_hear',doIt:'sh_do',name:'sh_name',
-    scale:'minor',need:10,
+    scale:'minor',need:5,
     opts:[{v:'nat',label:'sh_nat',tint:'#b5a9f5'},{v:'harm',label:'sh_harm',tint:'#ffd3a8'},{v:'mel',label:'sh_mel',tint:'#9fe6cf'}],
     pick:()=>['nat','harm','mel'][(Math.random()*3)|0],
     play:(v)=>{
@@ -1550,7 +1581,7 @@ function minorShapesUnit(){
 // child already owns, so the question is which one that note makes it sound like.
 function modesUnit(){
   choiceUnit({id:'modes',roam:true,title:'u_modes',hear:'md_hear',doIt:'md_do',name:'md_name',
-    scale:'major',need:10,
+    scale:'major',need:5,
     opts:[{v:'dor',label:'md_dor',tint:'#9fe0c4'},{v:'mix',label:'md_mix',tint:'#ffe0a8'}],
     pick:()=>Math.random()<0.5?'dor':'mix',
     play:(v)=>{
@@ -1626,41 +1657,40 @@ function staffFrame(inner,w){
 // ---------- 21. THE STAFF -- hear it, then find it on the lines ----------
 function staffUnit(){
   stageOff();
-  const need=10; let right=0,busy=false,target=null,hit=null;
+  const need=5; let right=0,busy=false,target=null,hit=null;
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
   // C major, fixed. The ear work is done; this lesson is about the picture.
   LAB.take({scale:'major',root:60,octs:1,drums:false,band:false,touch:false});
   LAB.labels(null);LAB.clear();
   const W=ST_X0+ST_DX*1.2;
+  // READ IT (Flah's logic pass, rule 1): the lesson said "tap the note you hear" and drew the note it played, so it
+  // was answered by sight and the tap on the drawn note taught nothing. Now it is what a staff is for: the note is
+  // drawn, the kid presses its letter, and "listen" lets them hear it. The same letter row as Play a Tune.
   function paint(){
-    // one note at a time, dead centre, with every position tappable
     const x=ST_X0;
-    let hits='';
-    for(let st=0;st<=7;st++){
-      const y=staffY(st);
-      hits+='<rect class="stHit" data-st="'+st+'" x="'+(x-22)+'" y="'+(y-ST_HALF)+'" width="44" height="'+(ST_HALF*2)+'"/>';
-    }
     const note=(target!=null)?staffNoteSVG(target,x,'stNote'+(hit==null?'':(hit?' ok':' no')),'#2f2a44'):'';
+    const keys=STAFF_LTR.map((L,st)=>'<button class="stKey'+(hit===false&&st===target?' right':'')+'" data-st="'+st+'" style="--rc:'+degTint(Math.min(st,6))+'">'+L+'</button>').join('');
     stage(
       '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t('u_staff')+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+        '</div>'+
       '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
-      '<div class="stWrap">'+staffFrame(note+hits,W)+'</div>'+
+      '<div class="stWrap">'+staffFrame(note,W)+'</div>'+
       '<p class="lgSay">'+t('st_do')+'</p><div class="lgFeed" id="lgFeed"></div>'+
-      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>');
+      '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>'+
+      '<div class="stKeys">'+keys+'</div>');
   }
   const play=()=>{try{note(STAFF_SEMI[target]*100,94,0.6);}catch(e){}};
-  function ask(){hit=null;target=(Math.random()*8)|0;window._labHintDeg=target;paint();later(play,280);}
+  const hist=[];
+  function ask(){hit=null;target=freshPick(()=>(Math.random()*8)|0,hist);window._labHintDeg=target;paint();}
   window._lab_lgAgain=()=>{if(!busy&&target!=null)play();};
   const onDown=(e)=>{
-    const r=e.target.closest&&e.target.closest('.stHit');if(!r||busy||target==null)return;
+    const r=e.target.closest&&e.target.closest('.stKey');if(!r||busy||target==null||hit!=null)return;
     e.preventDefault();
     const st=+r.dataset.st, ok=(st===target);
     score('staff',ok); hit=ok;
-    if(!ok){ // show where it actually was, then try again -- a wrong answer has to teach something
-      target=target; }
-    paint();
+    try{note(STAFF_SEMI[st]*100,94,0.5);}catch(err){}      // the key you press, you hear
+    paint();   // a wrong answer lights the right letter: it has to teach something
     const fd=document.getElementById('lgFeed');
     if(fd)fd.textContent=ok?t('yes'):(STAFF_LTR[target]+' — '+t('onceMore'));
     if(ok){right++;
@@ -1691,7 +1721,7 @@ const TUNES=[
 function melodyUnit(){
   stageOff();
   let tune=null, pi=0, at=0, done=0, busy=false;
-  const need=4;                                   // four phrases read clean
+  const need=3;                                   // three phrases read clean (Flah: 3 or 5 rounds, never 10)
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
   LAB.take({scale:'major',root:60,octs:1,drums:false,band:false,touch:false});
   LAB.labels(null);LAB.clear();
@@ -1713,7 +1743,7 @@ function melodyUnit(){
     stage(
       '<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t('u_melody')+'</h3><span class="lgCount">'+done+' / '+need+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+        '</div>'+
       '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<done?'got':'')+'"></i>').join('')+'</div>'+
       '<p class="lgSay" style="font-size:19px;color:#463d66">'+t(tune.n)+'</p>'+
       '<div class="stWrap">'+staffFrame(notes,W)+'</div>'+
@@ -1787,7 +1817,7 @@ function jamUnit(cfg){
         '<span class="rgDeg">'+(i===0?'LOW':(i===USE.length-1?'HIGH':''))+'</span></button>').join('');
     stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t(TITLE)+'</h3><span class="lgCount">'+(played?t('jam_tally',{n:played}):'')+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+        '</div>'+
       '<div class="lgLadder'+(mine?' lgWait':'')+'" id="lgLadder">'+ladder+'</div>'+
       '<p class="lgSay">'+t(mine?'jam_mine':'jam_yours')+'</p>'+
       '<div class="lgFeed" id="lgFeed">'+(mine?'':t(FREE))+'</div>'+
@@ -1843,7 +1873,9 @@ function jamUnit(cfg){
 // out three drums -- low, high, shaker -- which is the unpitched trio an Orff class is actually given
 // before anything with pitch on it. Same shape as the pitch jam: it plays two bars, the groove keeps
 // going, the child answers with whatever they like. Nothing is compared to the call. Nothing scored.
-const RJ_PADS=[{v:'c',k:'rj_low'},{v:'C',k:'rj_high'},{v:'h',k:'rj_shake'}];
+// the three drums of the drum grid, in its colours (Flah 2026-11-03: one drum colour code everywhere). They were two
+// toms and a shaker in note colours, over a kick-hat-snare groove; now the kit is the pads, so the pulse is a click.
+const RJ_PADS=[{v:'K',k:'ge_kick',col:'#7b4fd6'},{v:'s',k:'ge_snare',col:'#e0453a'},{v:'h',k:'ge_hat',col:'#f2c23a'}];
 function rhythmJamUnit(){
   stageOff();
   const BPM=96, BEAT=60/BPM, SLOT=BEAT/2, SLOTS=8, LOOP=SLOT*SLOTS;   // one bar of eighth notes
@@ -1853,11 +1885,11 @@ function rhythmJamUnit(){
   LAB.labels(null);LAB.clear();
   function paint(){
     const pads=RJ_PADS.map((p,i)=>
-      '<button class="mkPad rjPad" data-rj="'+p.v+'" style="--rc:'+degTint(i*2)+'">'+t(p.k)+'</button>').join('');
+      '<button class="mkPad rjPad" data-rj="'+p.v+'" style="--rc:'+p.col+'">'+t(p.k)+'</button>').join('');
     const dots=Array.from({length:SLOTS},(_,i)=>'<i class="mkSlot'+(i===cur?' now':'')+'"></i>').join('');
     stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t('u_rjam')+'</h3><span class="lgCount">'+(played?t('rj_tally',{n:played}):'')+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+        '</div>'+
       '<div class="mkRing">'+dots+'</div>'+
       '<p class="lgSay">'+t(mine?'rj_mine':'rj_yours')+'</p>'+
       '<div class="lgFeed" id="lgFeed">'+(mine?'':t('rj_free'))+'</div>'+
@@ -1869,11 +1901,7 @@ function rhythmJamUnit(){
   // scheduler fighting the browser. Same trick as Make a Loop.
   function groove(t0){
     for(let i=0;i<SLOTS;i++){const tt=t0+i*SLOT;
-      try{
-        if(i%4===0)dHit('K',tt,i===0?1.10:0.90,true);
-        if(i%2===1)dHit('h',tt,0.26+Math.random()*0.08);
-        if(i===4)dHit('s',tt,0.70,true);
-      }catch(e){}}
+      try{if(i%2===0)dHit('r',tt,i===0?0.9:0.6,true);}catch(e){}}   // a click on every beat, the metronome
   }
   function tick(){
     if(busy)return;
@@ -1959,7 +1987,7 @@ function composeUnit(){
       '<button class="stKey" data-cmp="'+st+'" style="--rc:'+degTint(Math.min(st,6))+'">'+L+'</button>').join('');
     stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t('u_compose')+'</h3><span class="lgCount">'+(kept?t('cm_tally',{n:kept}):(slots.length+' / '+CMP_SLOTS))+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+        '</div>'+
       '<div class="stWrap">'+staffFrame(g,W)+'</div>'+
       '<p class="lgSay">'+t(slots.length>=3?'cm_ready':'cm_do')+'</p>'+
       '<div class="lgFeed" id="lgFeed"></div>'+
@@ -2026,7 +2054,7 @@ function composeUnit(){
 // grown-ups, which is the rule the rest of the cards follow.
 function chordUnit(){
   choiceUnit({id:'chords',title:'u_chords',hear:'ch_hear',doIt:'ch_do',name:'ch_name',
-    scale:'major',need:10,
+    scale:'major',need:5,
     opts:[{v:'1',label:'one',tint:'#a6c8ff'},{v:'2',label:'two',tint:'#ffd9a8'},{v:'3',label:'three',tint:'#c4a9f5'}],
     pick:()=>['1','2','3'][(Math.random()*3)|0],
     // the ruler shows what it was, AFTER they answer: one blob, two stacked, three stacked
@@ -2040,13 +2068,19 @@ function chordUnit(){
     }});
 }
 
+// PLAY IT AGAIN SHOWS EVERYTHING FINISHED (critique ticket 12, Flah 2026-11-03: "shows nothing after doing
+// lessons"). It listed only lessons learned at 80%+ AND finished a day ago or more, so the same day it was always
+// empty, and a lesson finished at 62% never showed at all. Now: every unit and game finished, the one waited on
+// longest first, each with the line it taught; a tap plays it again.
+function finishedUnits(){
+  return UNITS.filter(u=>u.id!=='review'&&u.tier!=='part'&&prog[u.id]&&prog[u.id].at).sort((a,b)=>(prog[a.id].at||0)-(prog[b.id].at||0));}
 function reviewUnit(){
   stageOff();
-  const list=due();
+  const list=finishedUnits();
   if(!list.length){
     stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t('u_review')+'</h3><span class="lgCount"></span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+        '</div>'+
       '<div class="lgLadder" style="justify-content:safe center;flex:1;text-align:center">'+
         '<div><img src="minis/grn2.png" alt="" draggable="false" style="width:120px;height:auto">'+
         '<p class="lgSay" style="font-size:22px;margin-top:10px">'+t('rev_none')+'</p>'+
@@ -2061,17 +2095,18 @@ function reviewUnit(){
   // tapping one re-runs that lesson. Finishing it calls finish() as usual, which stamps its clock
   // and rotates it off the shelf.
   const card=(u,i)=>{
-    const days=Math.max(1,Math.round((Date.now()-(prog[u.id]&&prog[u.id].at||0))/DAY));
-    const ago=days===1?t('rev_ago1'):t('rev_ago',{n:days});   // not "1 days ago"
+    const days=Math.floor((Date.now()-(prog[u.id]&&prog[u.id].at||0))/DAY);
+    const ago=days<1?t('rev_today'):days===1?t('rev_ago1'):t('rev_ago',{n:days});   // not "1 days ago"
+    const what=(prog[u.id]&&prog[u.id].learned)||t(u.sub);
     return '<button class="uCard" data-a2="unit" data-u="'+u.id+'" style="--ut:'+u.tint+'" '+
       'aria-label="'+t(u.title)+' \u2014 '+ago+'">'+
-      '<span class="uTxt"><b>'+t(u.title)+'</b><i>'+ago+'</i></span>'+
+      '<span class="uTxt"><b>'+t(u.title)+'</b><i>'+what+'</i><i>'+ago+'</i></span>'+
       (i===0?'<span class="uNext">'+t('revReady')+'</span>':'')+
       '</button>';
   };
   stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
       '<h3>'+t('u_review')+'</h3><span class="lgCount">'+list.length+'</span>'+
-      '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+      '</div>'+
     '<p class="lgSay">'+t('rev_do')+'</p>'+
     '<div class="uGrid" style="flex:1;align-content:start;overflow:auto">'+
       list.map(card).join('')+'</div>');
@@ -2103,7 +2138,7 @@ function ruler(semis){
 }
 function choiceUnit(cfg){
   stageOff();
-  const need=cfg.need||10;
+  const need=cfg.need||5;
   let right=0,busy=false,cur=null;
   // ONE ANSWER PER QUESTION. `busy` only went true at the END of a unit, so until then every tap
   // scored: a child could hit 1,2,3,4 and one of them had to be right. That is not an answer, it is
@@ -2128,7 +2163,7 @@ function choiceUnit(cfg){
   function paint(){
     stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t(cfg.title)+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+        '</div>'+
       '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
       // column, not the ladder's column-reverse: here the sentence sets up the question and the
       // ruler answers it, so they have to read in that order
@@ -2153,7 +2188,8 @@ function choiceUnit(cfg){
     LAB.take({scale:cfg.scale||'pentaMaj',root:inSingRange(HOME+roamAt),octs:1,drums:false,band:false,touch:false});
     LAB.labels(null);LAB.clear(); }
   window._labRoam=()=>roamAt;   // readable: dev-earwork proves the key actually moves
-  function ask(){reKey();cur=cfg.pick();armed=true;window._labExpect=cur;showArt(null);cfg.play(cur);}
+  const hist=[];
+  function ask(){reKey();cur=freshPick(()=>cfg.pick(),hist);armed=true;window._labExpect=cur;showArt(null);needListen();}
   function startAsking(){ if(!exploring)return; exploring=false; paint(); later(ask,420); }
   window._lab_ready=startAsking;
   window._lab_exploring=()=>exploring;
@@ -2166,6 +2202,7 @@ function choiceUnit(cfg){
       try{showArt(b0.dataset.ch);}catch(err){}
       return; }
     const b=b0;if(!b||busy||!armed)return;
+    if(!_heard){e.preventDefault();nudgeListen();return;}
     e.preventDefault();armed=false;
     const ok=(b.dataset.ch===String(cur)); score(cfg.id,ok); if(ok)right++;
     showArt(cur);   // AFTER the answer, never before: show what that actually was
@@ -2185,7 +2222,7 @@ function upDownGame(){
   // pentatonic here too: a game is practice for the lessons and must not quietly reintroduce the two
   // notes the lessons deliberately hold back.
   choiceUnit({id:'updown',title:'g_updown',hear:'updown_hear',doIt:'updown_ask',name:'updown_name',
-    need:10,
+    need:3,
     opts:[{v:'up',label:'up',tint:'#9fe6cf'},{v:'down',label:'down',tint:'#a9b6f0'}],
     pick:()=>Math.random()<0.5?'up':'down',
     play:(dir)=>{const lo=1+((Math.random()*2)|0), hi=lo+2;
@@ -2196,7 +2233,7 @@ function upDownGame(){
 function findHomeGame(){
   // the same job as the home lesson, with all five notes on the ladder instead of three
   ladderUnit({id:'findhome',title:'g_findhome',doIt:'fh_do',name:'fh_name',
-    use:[0,1,2,3,4,5],need:10,showTarget:false,roam:true,anchor:false,
+    use:[0,1,2,3,4,5],need:3,showTarget:false,roam:true,anchor:false,
     pick:()=>Math.random()<0.5?0:5,           // home is at the bottom AND at the top -- hear which
     play:leanHome});
 }
@@ -2207,7 +2244,7 @@ function findHomeGame(){
 // being played before the child has to repeat it -- a five-year-old cannot hold a tune they never saw.
 function echoGame(){
   stageOff();
-  const need=5;
+  const need=3;
   const USE=[0,1,2,3,4];
   let len=2,phrase=[],step=0,right=0,busy=false,mine=true;
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
@@ -2221,10 +2258,10 @@ function echoGame(){
         '<span class="rgDeg">'+(i===0?'LOW':(i===USE.length-1?'HIGH':''))+'</span></button>').join('');
     stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t('g_echo')+'</h3><span class="lgCount">'+right+' / '+need+'</span>'+
-        '<button class="lgSpk labSpk" data-a2="say" aria-label="'+t('voiceReplay')+'">'+SPK+'</button></div>'+
+        '</div>'+
       '<div class="lgDots">'+Array.from({length:need},(_,i)=>'<i class="'+(i<right?'got':'')+'"></i>').join('')+'</div>'+
       '<div class="lgLadder" id="lgLadder">'+ladder+'</div>'+
-      '<p class="lgSay">'+t(mine?'echo_mine':'echo_your')+'</p>'+
+      '<p class="lgSay">'+t((mine||!_heard)?'echo_mine':'echo_your')+'</p>'+
       '<div class="lgFeed" id="lgFeed">'+t('echo_len',{n:len})+'</div>'+
       '<div class="lgHint"><button class="lgListen" data-a2="lg_again">'+EAR+' '+t('listen')+'</button></div>');
   }
@@ -2241,8 +2278,9 @@ function echoGame(){
   window._lab_lgAgain=()=>{if(!busy&&!mine)play();};
   window._labEchoPhrase=()=>phrase.slice();   // readable targets for the test drivers
   const publish=()=>{window._labHintDeg=(!mine&&!busy)?phrase[step]:null;};
-  function ask(){build();later(play,320);}
+  function ask(){build();mine=false;step=0;paint();needListen();}
   const onDown=(e)=>{const r=e.target.closest&&e.target.closest('.lgRung');if(!r||busy||mine)return;
+    if(!_heard){e.preventDefault();nudgeListen();return;}
     e.preventDefault();
     const d=+r.dataset.deg; sing(d,94,.5);
     r.classList.add('press');setTimeout(()=>r.classList.remove('press'),90);
@@ -2280,7 +2318,7 @@ function echoGame(){
 //  see _docs/ART-BRIEF.md). Until then the stone shows its number and the mascot is slimelogo.png.
 // ================================================================================================
 const FREE_PLAY=new Set(['make','rjam','jam','jammaj','jammin','compose']);
-const GAME_AT={echo:'notes',updown:'steps',findhome:'home',review:'pulse'};   // which lesson each game / review hangs off
+const GAME_AT={echo:'notes',review:'pulse'};   // updown and findhome are part 2 of high and home now (merged, Flah 2026-11-05)   // which lesson each game / review hangs off
 const MAP_ART=new Set([]);   // ids with a drawn picture in art/ (e.g. 'l_pulse', 'map_stone', 'map_walk')
 const artSrc=id=>MAP_ART.has(id)?'art/'+id+'.png':null;
 let _mapAt=null;              // the stone the slime stood on the last time the map was drawn
@@ -2308,7 +2346,7 @@ function mapLayout(){
   return {main,pos,bpos,kids,STEP,GAP,X,Y,H:ys[ys.length-1]+STEP*0.9};
 }
 function home(){
-  stopAll();if(_cleanup){_cleanup();_cleanup=null;}
+  stopAll();if(_cleanup){_cleanup();_cleanup=null;}_part2Of=null;window._lab_ready=null;   // a test hook a unit leaves behind
   stageOff();
   document.body.classList.remove('lab-nokeys');
   try{LAB.give();}catch(e){}
@@ -2357,8 +2395,6 @@ function home(){
     '<img class="uHeadArt" src="slimelogo.png" alt="" draggable="false">'+
     '<span><b>'+t('tierLessons')+'</b><i>'+t('progressOf',{done:done,total:total})+'</i></span></div>'+
     '<div class="lmMap" id="lmMap" style="height:'+Math.round(L.H)+'px">'+dots+signs+stones+mascot+'</div>';
-  h+='<div class="labChips" style="justify-content:center">'+
-       '<button class="labChip'+(voiceOn?' on':'')+'" data-a2="voice">'+SPK+' '+t(voiceOn?'voiceOn':'voiceOff')+'</button></div>';
   h+='<p class="uFoot">'+t('noRush')+'</p>';
   sheet(h);if(ov)ov.classList.add('lmOn');document.body.classList.add('lm-map');
   _render=home;
@@ -2382,22 +2418,23 @@ function home(){
 }
 
 // ---------------------------------------------------------------- events
+// BACK ON THE PRESS (critique ticket 13): a lesson that redraws its screen between a finger going down and coming up
+// replaces the button under it, the click lands on nothing, and the kid is stuck. "Back" acts on the press.
+if(ov)ov.addEventListener('pointerdown',(e)=>{const b=e.target.closest&&e.target.closest('[data-a2="home"]');
+  if(!b||(e.button!=null&&e.button!==0))return;e.preventDefault();e.stopPropagation();home();},true);
 if(ov)ov.addEventListener('click',(e)=>{
   const b=e.target.closest('[data-a2]');if(!b)return;
   const a=b.dataset.a2;
-  if(a==='home'){speechStop();home();return;}
-  if(a==='say'){sayScreen(true);return;}                      // "say it again"
-  if(a==='voice'){setVoice(!voiceOn);if(_render)_render();return;}
-  if(a==='nextu'||a==='again'){const u=UNITS.find(x=>x.id===b.dataset.u);if(!u)return;
+  if(a==='home'){home();return;}
+  if(a==='nextu'||a==='again'){const u=UNITS.find(x=>x.id===b.dataset.u);if(!u)return;_part2Of=null;
     stopAll();if(_cleanup){_cleanup();_cleanup=null;}
-    _lastSaid='';u.run();return;}
-  if(a==='unit'){const u=UNITS.find(x=>x.id===b.dataset.u);if(!u)return;
+    u.run();return;}
+  if(a==='unit'){const u=UNITS.find(x=>x.id===b.dataset.u);if(!u)return;_part2Of=null;
     stopAll();if(_cleanup){_cleanup();_cleanup=null;}
     try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(err){}
-    _lastSaid='';                                   // say the instruction again on a RE-entry, not just a first one
     u.run();return;}
   if(a==='tap'&&window._lab_tap)return window._lab_tap();
-  if(a==='lg_again'&&window._lab_lgAgain)return window._lab_lgAgain();
+  if(a==='lg_again'&&window._lab_lgAgain){_heard=true;b.classList.remove('go');return window._lab_lgAgain();}
 });
 
 function enter(){
@@ -2420,6 +2457,6 @@ function noteIn(cents){
   try{return !!_noteAnswer(cents);}catch(e){return false;}
 }
 return {enter,exit,home,setLang,t,LANG,UNITS,noteIn,_labels:wallLabels,
-        _MASTERY:MASTERY,_MIN_TRIES:MIN_TRIES,_due:due,_got:got,_acc:acc,
+        _MASTERY:MASTERY,_MIN_TRIES:MIN_TRIES,_due:due,_got:got,_acc:acc,_geBeat:geBeat,_geKey:geKey,
         _reloadProgress:()=>{try{prog=JSON.parse(localStorage.getItem('slimehedron-learn2')||'{}');}catch(e){prog={};}}};   // test hook: progress written from outside // read-only hooks for dev-curriculum.js
 })();

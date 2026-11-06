@@ -7,7 +7,12 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 ## Rooms
 - **Play**: the kids' door. Ultra-minimal. Tap the tank, pick a sound and a beat.
 - **Studio**: the full rig: step grid, mixer, song files, undo, more settings.
-- **Learn**: the lessons map and the lessons. A lesson owns the tank while it runs (`LAB`).
+- **Learn**: the lessons map and the lessons. A lesson owns the tank while it runs (`LAB`). No lesson speaks.
+- **Listen first**: a round judged by ear plays nothing until the kid presses "listen" (it pulses); answers wait for it.
+- **Part 2**: a lesson folded into another (ADR 0014): it runs straight after its parent's rounds and the lesson ends
+  once. Never on the map alone (updown, findhome, intervals, song). **Rounds**: 3 or 5 a lesson, never 10.
+- **Copy the Beat**: the drum-grid echo (id `sayplay`, ADR 0013). **Drum colours**: kick purple, snare red, hi-hat
+  yellow, in learn and in studio's step grid.
 - **Tools**: four standalone windows (metronome, circle of fifths, chords, drum machine) that borrow studio's live controls.
 - **Splash / doors**: the first screen with learn / play / studio / tools.
 
@@ -39,6 +44,9 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
   It is a melody with motifs (`autoMelodyNote`), and it only runs while the slime is on.
 - **Rain**: the old steady note drop (`spawnRain`, `S.rain`). Runs only while the slime is off. Not auto-notes.
 - **Band**: bass + comp + pad (+ drums). **Kit**: a drum style (pop, rock, disco, bossa, jazz, ...).
+- **The mix under the melody**: every part sits under the melody by a measured margin (`dev-mix`). **Kit trim**
+  (`KIT_DB`) is a kit's fader after the drum glue compressor; **piece trim** (`PIECE_DB`) is one drum's level per hit.
+  A **soft kit** (bossa, jazz) sits further under.
 - **Triangle mixer**: `#triMix` (melody / drums / band). **Mixer**: studio's per-part volume/mute/solo (`MIX`).
 - **Beat lock**: balls are steered so their hits land on the grid (`beatLock`, `b.tq`).
 - **Auto adjuster**: gives each shape its own pace with auto-notes on (`AUTO`, `autoRoom`): a notes-a-bar aim from its

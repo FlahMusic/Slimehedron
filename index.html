@@ -12,7 +12,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5, viewport-fit=cover"/><!-- pinch-zoom MUST stay available (WCAG 1.4.4). the tank sets touch-action:none so zoom never fights ball spawning. -->
 <title>Slimehedron — music you can see</title>
-<meta name="description" content="Bouncing slime plays notes. 29 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
+<meta name="description" content="Bouncing slime plays notes. 27 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
 <link rel="manifest" href="manifest.json">
 <!-- THE BACKDROP IS A CSS BACKGROUND, so the browser's preload scanner cannot see it while it is
      still reading the page - it only finds it after the stylesheet is parsed, by which point it is
@@ -29,7 +29,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta property="og:type" content="website"/>
 <meta property="og:title" content="Slimehedron — music you can see"/>
-<meta property="og:description" content="Bouncing slime plays notes. 29 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
+<meta property="og:description" content="Bouncing slime plays notes. 27 music lessons take kids from rhythm to modes. Runs in a browser, no sign-in, no accounts."/>
 <meta property="og:url" content="https://flahmusic.github.io/Slimehedron/"/>
 <meta property="og:image" content="https://flahmusic.github.io/Slimehedron/icon-512.png"/>
 <meta name="twitter:card" content="summary"/>
@@ -797,7 +797,7 @@ body.lab-on main{padding:64px 424px 126px 16px!important}
 .labDone .labSay{margin:2px 0 4px}
 .labDone .labChips{justify-content:center}
 @keyframes ldPop{0%{transform:scale(.4) rotate(-12deg);opacity:0}60%{transform:scale(1.08) rotate(3deg);opacity:1}100%{transform:scale(1) rotate(0)}}
-@media (prefers-reduced-motion:reduce){.labDone .ldArt{animation:none}}
+@media (prefers-reduced-motion:reduce){.labDone .ldArt{animation:none}.lgListen.go{animation:none}}
 /* SAY IT, THEN PLAY IT — the syllable strip. Low sounds sit low and dark, high ones high and light, so
    the row is a picture of the rhythm as well as a set of words. (Acoustic-iconic: the syllables already
    encode pitch in their vowels; this just makes it visible too.) */
@@ -987,6 +987,42 @@ body.lab-stage #exitMode,body.lab-stage #cofWheel,body.lab-stage #toast{display:
   box-shadow:0 5px 0 0 #b7addb, 0 9px 18px rgba(80,66,130,.26), inset 0 2px 0 rgba(255,255,255,.9)}
 .lgListen:active{transform:translateY(5px);box-shadow:0 0 0 0 #b7addb,0 3px 8px rgba(80,66,130,.24),inset 0 2px 0 rgba(255,255,255,.8)}
 .lgListen svg{width:22px;height:22px;stroke:#2f2a44;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+/* LISTEN FIRST: a round you judge by ear waits for this button, and says so (critique ticket 06) */
+.lgListen.go{outline:3px solid var(--accent);outline-offset:3px;animation:lgGo 1.3s ease-in-out infinite}
+@keyframes lgGo{50%{transform:scale(1.07)}}
+/* COPY THE BEAT: a drum grid like studio's step sequencer, one row per drum, one box per beat (critique ticket 09).
+   kick purple, snare red, hi-hat yellow; a row with a mistake goes lilac; the playhead is the dark ring */
+.geWrap{position:relative;width:min(100%,520px);margin:0 auto;flex:1;display:flex;align-items:center}
+.geGrid{display:flex;flex-direction:column;gap:6px;width:100%}
+.geRow{display:flex;gap:6px;align-items:stretch;border-radius:14px;padding:3px}
+.geRow.miss{background:#e6dcff;outline:2px dashed #9b84e0}
+.geLbl{flex:0 0 64px;display:flex;align-items:center;gap:6px;font:800 14px system-ui,sans-serif;color:#2f2a44}
+.geLbl i{width:12px;height:12px;border-radius:50%;background:var(--lc);flex:none}
+.geNums .geNum{flex:1 1 0;min-width:0;text-align:center;font:800 16px system-ui,sans-serif;color:#7a7298}
+.geNums .geNum.now{color:#2f2a44}
+.geCell{flex:1 1 0;min-width:0;min-height:52px;border-radius:12px;border:2px solid var(--lc);background:#fff;cursor:pointer;position:relative;padding:0}
+.geCell.on{background:var(--lc)}
+.geCell.on::after{content:"";position:absolute;left:50%;top:50%;width:12px;height:12px;margin:-6px 0 0 -6px;border-radius:50%;
+  background:#fff;box-shadow:0 0 0 2px rgba(47,42,68,.5)}   /* a dot as well as the fill: colour alone fails WCAG 1.4.1 */
+.geCell.now,.geNums .geNum.now{outline:3px solid #2f2a44;outline-offset:1px}
+.geCount{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:900 76px system-ui,sans-serif;
+  color:rgba(47,42,68,.85);pointer-events:none;text-shadow:0 2px 0 #fff}
+.geCount:empty{display:none}
+.geCheck{min-height:var(--tap);min-width:96px}
+.lgBall .lgCi{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font:900 22px system-ui,sans-serif;color:#fff;text-shadow:0 1px 2px rgba(47,42,68,.6)}
+/* THE GRID UNDER A READING BAR (ticket 11): studio's step grid, four steps a beat, a ball hopping beat to beat */
+.rgWrap{position:relative;width:min(100%,560px);container-type:inline-size;padding-top:26px}
+.rgBall{position:absolute;left:0;top:0;width:calc(100cqw / var(--beats));height:22px;display:flex;justify-content:center;pointer-events:none}
+.rgBall::before{content:"";width:18px;height:18px;border-radius:50%;background:var(--accent);box-shadow:0 2px 4px rgba(80,66,130,.3)}
+.rgSteps{display:grid;grid-template-columns:repeat(var(--steps),1fr);gap:2px}
+.rgStep{height:22px;border-radius:4px;background:#ece8f8}
+.rgStep.beat{background:#dcd5f2}
+.rgStep.bar{margin-left:4px}
+.rgStep.on{background:#9b84e0}
+.rgStep.rest{background:#fff;box-shadow:inset 0 0 0 2px #cfc7e4}
+.rgStep.now{outline:2px solid #2f2a44;outline-offset:1px}
+.rgNums{display:grid;grid-template-columns:repeat(var(--beats),1fr);margin-top:4px;font:800 13px system-ui,sans-serif;color:#6b6290}
+.rgNums b{padding-left:2px}
 /* SAY IT FIRST -- the pattern shown as the words the child says, then two drum pads to play it on.
    The words sit high or low on the line, so the shape of the rhythm is visible before it is heard. */
 .lgDone{font:800 clamp(26px,7vw,38px)/1.1 system-ui,sans-serif;color:#3d3560;margin:12px 0 4px}
@@ -1301,6 +1337,10 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 #stepGrid .sgCell:focus-visible{outline:2px solid var(--accent,#b388f0);outline-offset:1px}
 /* PER-STEP LOUDNESS AND CHANCE. Loudness is the size of the dot (not only its colour); a step that only
    sometimes plays has a dashed edge. In the matching tap mode each step also shows its number. */
+/* ONE DRUM COLOUR CODE, studio and learn alike (Flah 2026-11-03): kick purple, snare (and side stick) red, hi-hats yellow */
+#stepGrid .sgRow[data-v="K"] .sgCell.on{background:linear-gradient(170deg,#a684f2,#7b4fd6)}
+#stepGrid .sgRow[data-v="s"] .sgCell.on,#stepGrid .sgRow[data-v="r"] .sgCell.on{background:linear-gradient(170deg,#ff8a7e,#e0453a)}
+#stepGrid .sgRow[data-v="h"] .sgCell.on,#stepGrid .sgRow[data-v="o"] .sgCell.on{background:linear-gradient(170deg,#ffe38a,#f2c23a)}
 #stepGrid .sgCell.on::after{width:calc(4px + 6px*var(--vel,1));height:calc(4px + 6px*var(--vel,1));margin:calc(-2px - 3px*var(--vel,1)) 0 0 calc(-2px - 3px*var(--vel,1))}
 #stepGrid .sgCell.on.maybe:not(.now){outline:2px dashed #7b5bd0;outline-offset:-4px}
 #stepGrid.m-vel .sgCell.on::before,#stepGrid.m-prob .sgCell.on::before{position:absolute;left:0;right:0;top:1px;font:800 8.5px system-ui,sans-serif;color:#2a2050;text-align:center;line-height:1}
@@ -2017,6 +2057,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
   text-align:center;max-width:220px;box-shadow:0 6px 22px rgba(54,36,104,.18),0 0 0 2px rgba(179,136,240,.55)}
 #tapInvite.on{opacity:1;animation:tiBob 2.4s ease-in-out infinite}
 #tapInvite.going{opacity:0;transform:translate(-50%,-50%) scale(.6);animation:none}
+#tapInvite:not(.on):not(.going){visibility:hidden}   /* gone means gone: off-screen at opacity 0 its words were still read out, in lessons too */
 @keyframes tiBob{0%,100%{margin-top:0}50%{margin-top:-5px}}
 @media (prefers-reduced-motion:reduce){#tapInvite.on{animation:none}#tapInvite{transition:opacity .3s}}
 /* play: the notes toggle sits just under the tank, with its word */
@@ -2291,7 +2332,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
       </div>
       <div id="drumEditor">
         <div class="deLen" role="group" aria-label="pattern length"><span>length</span><button type="button" data-bars="1">1 bar</button><button type="button" data-bars="2">2 bars</button><button type="button" data-bars="4">4 bars</button></div>
-        <div class="deMode" role="group" aria-label="what tapping a step changes"><span>tap</span><button type="button" data-mode="on" class="on" aria-pressed="true" title="tap a step to turn it on or off">on / off</button><button type="button" data-mode="vel" aria-pressed="false" title="tap a step to make it louder or softer">loudness</button><button type="button" data-mode="prob" aria-pressed="false" title="tap a step to set how often it plays">chance</button></div>
+        <div class="deMode" role="group" aria-label="what tapping a step changes"><span>tap</span><button type="button" data-mode="on" class="on" aria-pressed="true" title="tap a step to turn it on or off">on / off</button><button type="button" data-mode="vel" aria-pressed="false" title="velocity: how hard a step hits, louder or softer (the DAW word)">velocity</button><button type="button" data-mode="prob" aria-pressed="false" title="tap a step to set how often it plays">chance</button></div>
         <div id="stepGrid" role="grid" aria-label="Step sequencer: one row per drum, steps left to right"></div>
         <div id="humanize"></div>
       </div>
@@ -2686,7 +2727,7 @@ function oops(what){
   try{console.warn('[slimehedron] '+what);}catch(e){}
 }
 try{window.__oops=OOPS;}catch(e){}
-function playSynth(freq,vel,imp,hold,firm){   // hold = seconds to SIT at sustain level; omit for the old behaviour
+function playSynth(freq,vel,imp,hold,firm,at){   // hold = seconds to SIT at sustain level; omit for the old behaviour. at = when (AC time), omit for now
   // firm=true means A PERSON DID THIS ON PURPOSE: a tap, a key, a lesson's question. Those notes
   // never get the rain model's random quietness. See the dud and the velocity floor below.
   if(!Number.isFinite(freq)||freq<=0)freq=440; if(!Number.isFinite(vel))vel=90; // BACKSTOP: never let a bad value reach an AudioParam (that threw + glitched the render on note-spam)
@@ -2697,7 +2738,7 @@ function playSynth(freq,vel,imp,hold,firm){   // hold = seconds to SIT at sustai
   initAudio();
   if(activeVoices>32)return; // polyphony cap: ramped tempos stay clean, never mushy
   activeVoices++;
-  const t=AC.currentTime, v=vel/127, ff=modLevel();
+  const t=(typeof at==='number'&&isFinite(at))?at:AC.currentTime, v=vel/127, ff=modLevel();   // at: a lesson's loop schedules its notes ahead, like its drums
   if(imp==null)imp=0.5+Math.random()*0.5;
   // THE FIRST TAP WAS SOMETIMES INAUDIBLE, AND THIS IS WHY.
   // ~1 in 20 drops traps no bubble and comes out at 16% level. Lovely for rain, where notes are
@@ -2824,13 +2865,14 @@ function sendMidi(cents,vel,imp){const mf=S.root+cents/100;midiCap('melody',Math
 // ---------- drums: casio-style synthesized kit, 4-bar loops ----------
 let drumOn=false,drumStep=0,drumTime=0,drumBus=null,drumKit='pop',drumFeel='1',drumSig='16',NB=null;
 const SIGS={'16':{n:16,acc:[0]},'12':{n:12,acc:[0]},'12c':{n:12,acc:[0,6]},'20':{n:20,acc:[0]},'14':{n:14,acc:[0,4,8]},'18':{n:18,acc:[0,4,8,12]}}; // accents mark the group starts so your ear learns the counting
-let drumComp=null,drumEQ=null;
+let drumComp=null,drumEQ=null,drumTrim=null,_trimKit=null;
 function initDrums(){if(drumBus)return;drumBus=AC.createGain();drumBus.gain.value=0.9;
   // BUS GLUE: light compression + a gentle EQ tilt so the kit sits together like a mixed drum bus (not raw beeps).
   drumComp=AC.createDynamicsCompressor();drumComp.threshold.value=-16;drumComp.ratio.value=3.2;drumComp.knee.value=8;drumComp.attack.value=0.004;drumComp.release.value=0.12; // punchy glue
   drumEQ=AC.createBiquadFilter();drumEQ.type='peaking';drumEQ.frequency.value=180;drumEQ.gain.value=2.2;drumEQ.Q.value=0.7; // a touch of low-mid body so kick+snare feel foundational
-  drumBus.connect(drumComp);drumComp.connect(drumEQ);drumEQ.connect(slimeEQ);
-  drumSend=AC.createGain();drumSend.gain.value=0.09;drumEQ.connect(drumSend); // drums get the LEAST -- a wet kick is mud
+  drumTrim=AC.createGain();   // each kit's level (KIT_DB), AFTER the glue: the kit keeps its sound, only quieter, and a cut is exactly that cut
+  drumBus.connect(drumComp);drumComp.connect(drumEQ);drumEQ.connect(drumTrim);drumTrim.connect(slimeEQ);
+  drumSend=AC.createGain();drumSend.gain.value=0.09;drumTrim.connect(drumSend); // drums get the LEAST -- a wet kick is mud
   if(rvbSend)drumSend.connect(rvbSend);
   applyMix();} // drum level lives in the triangle mixer now
 function rep(base,bars){const out=[];for(let b=0;b<bars;b++)for(const st of base)out.push(st+16*b);return out;}
@@ -2866,7 +2908,7 @@ const KITS={ // 64 sixteenth-steps = 4 bars
   // of 4); the hi-hat foot closes on 2 and 4, which is the backbeat in swing (theinstrumentalist.com: "adding the
   // hi hat on beats two and four produces the basic swing time beat"). The kick only drops a soft bomb now and
   // then, and the snare comps quietly instead of cracking a backbeat. The "&"s swing through KITFEEL.jazz.sw8.
-  jazz:{y:rep([0,4,6,8,12,14],4),h:rep([4,12],4),K:bars([0],[],[0],[10]),s:bars([],[14],[6],[10,14]),c:[],C:[],r:[]}
+  jazz:{y:[],h:rep([0,4,6,8,12,14],4),K:bars([0],[],[0],[10]),s:bars([],[14],[6],[10,14]),c:[],C:[],r:[]}   // the ride's swing part on the hi-hat: the ride is three sines on the tonic and "sounds like a note" (Flah 2026-11-03)
 };
 const PATTERNS={ // real signature skeletons, role-based: lo=kick, mid=snare, hi=pulse
   '12':{lo:[0],mid:[4,8],hi:[0,2,4,6,8,10]},                 // 3/4 waltz: BOOM chick chick
@@ -2878,7 +2920,7 @@ const PATTERNS={ // real signature skeletons, role-based: lo=kick, mid=snare, hi
 // each kit's low/mid/hi voice. mid=snare-ish, hi=hat-ish. we lead with the NOISE voices (s snare, h hat) so beats sound
 // like drums, not bleeps; 'C' (tom) and 'r' (rim click) are now proper drum sounds too, used where they add character.
 const KITVOICE={chip:{lo:'K',mid:'s',hi:'h'},conga:{lo:'K',mid:'C',hi:'h'},bossa:{lo:'K',mid:'r',hi:'h'},rock:{lo:'K',mid:'s',hi:'h'},beep:{lo:'K',mid:'r',hi:'h'},
-  pop:{lo:'K',mid:'s',hi:'h'},disco:{lo:'K',mid:'s',hi:'h'},march:{lo:'K',mid:'s',hi:'h'},samba:{lo:'K',mid:'C',hi:'h'},industrial:{lo:'K',mid:'s',hi:'h'},jazz:{lo:'K',mid:'s',hi:'y'}};
+  pop:{lo:'K',mid:'s',hi:'h'},disco:{lo:'K',mid:'s',hi:'h'},march:{lo:'K',mid:'s',hi:'h'},samba:{lo:'K',mid:'C',hi:'h'},industrial:{lo:'K',mid:'s',hi:'h'},jazz:{lo:'K',mid:'s',hi:'h'}};   // jazz: the hi-hat, not the ride (it sounds like a note, Flah 2026-11-03)
 // each kit = a 909-style engine tuned to a distinct CHARACTER. st=style branches the kick/snare/hat recipe so the
 // five play kits truly sound different (punchy / boomy / acoustic / brushy / sub), never one samey chiptune beep.
 // kf=kick start Hz, ke=kick end Hz, kd=kick decay, kv=kick vol, kc=click amount · sf=snare noise Hz, sd=snare decay,
@@ -2894,7 +2936,7 @@ const KITTONE={
   beep:{st:'chip',kf:185,ke:62,kd:0.18,kv:0.78,kc:0.4,sf:2300,sd:0.06,sb:215,sn:0.5,hf:9000,hd:0.024,hm:0.3,cy:1.15,tm:1.2},
   march:{st:'acoustic',kf:140,ke:55,kd:0.2,kv:0.95,kc:0.8,sf:2600,sd:0.07,sb:210,sn:0.85,hf:7000,hd:0.02,hm:0.3,cy:1,tm:1},
   samba:{st:'909',kf:160,ke:50,kd:0.22,kv:0.85,kc:0.6,sf:2200,sd:0.07,sb:200,sn:0.7,hf:9200,hd:0.03,hm:0.5,cy:1.02,tm:1.1},
-  jazz:{st:'brush',kf:135,ke:50,kd:0.28,kv:0.7,kc:0.3,sf:2500,sd:0.11,sb:195,sn:0.92,hf:7800,hd:0.045,hm:0.3,cy:0.88,tm:1.12}
+  jazz:{st:'stick',kf:135,ke:50,kd:0.28,kv:0.7,kc:0.3,sf:1500,sd:0.12,sb:170,sn:0.62,hf:7800,hd:0.045,hm:0.3,cy:0.88,tm:1.12}   // a lower snare with a stick's click (Flah 2026-11-03), not a high thin brush
 };
 // ===== GROOVE ENGINE: micro-timing + velocity "feels" baked from the MIDI groove pack =====
 // each groove = 16 slots of {off: timing shift as fraction of a 16th, vel: velocity accent}. downbeat off always 0.
@@ -3012,7 +3054,7 @@ function hatChoke(t){if(_ohChoke&&_ohChoke.end>t){const g=_ohChoke.g.gain;
 // EACH STYLE'S SIGNATURE PART. In play mode the picture on the chosen rhythm button hops on every hit
 // of the one drum that defines that style -- the backbeat in pop and rock, the four-on-the-floor kick
 // in disco, the clave in bossa nova, the ride in jazz -- so a child can SEE which sound to listen for.
-const SIG_PART={pop:'s',rock:'s',disco:'K',bossa:'cl',jazz:'y'};
+const SIG_PART={pop:'s',rock:'s',disco:'K',bossa:'cl',jazz:'h'};
 const SIG_TITLE={pop:'pop: listen for the snare on 2 and 4',rock:'rock: listen for the snare on 2 and 4',disco:'disco: listen for the kick on every beat',bossa:'bossa nova: listen for the clave',jazz:'jazz: listen for the ride cymbal'};
 function sigPulse(t){const ms=Math.max(0,(t-AC.currentTime)*1000);
   setTimeout(()=>{const b=document.querySelector('#psDrums .psBtn.on');if(!b)return;
@@ -3024,6 +3066,7 @@ function dHit(v,t,a,solid,inBar){a=Math.min(1.9,a||1);
   if(!solid && typeof humanVoice==='function'){const h=humanVoice(v,inBar);a*=h.v;t=Math.max(AC.currentTime,t+h.t);}
   else t=Math.max(AC.currentTime,t);
   sendMidiAt(DRUMN[v]||38,Math.min(127,(90*a)|0),S.chDrum,t,0.15);
+  a*=dbG((PIECE_DB[drumKit]||{})[v]);   // each piece's level under the melody (THE MIX UNDER THE MELODY), after the MIDI out
   if(S.mode==='play'&&SIG_PART[drumKit]===v)sigPulse(t);
   if(v==='K'){const o=AC.createOscillator(),g=AC.createGain(),T=KITTONE[drumKit]||KITTONE.pop;o.type='sine'; // 909-style: sine body + pitch dive
     const dive=(T.st==='808')?T.kd*0.6:Math.min(0.12,T.kd*0.35); // 808 = slow deep dive (long sub); others = fast snappy dive
@@ -3059,6 +3102,9 @@ function dHit(v,t,a,solid,inBar){a=Math.min(1.9,a||1);
     og.gain.setValueAtTime(0.26*a*(1-T.sn*0.6),t);og.gain.exponentialRampToValueAtTime(0.001,t+T.sd*0.8); // less body when it's a noisy/brushy snare
     const snPan=panTo(drumBus,-0.10+(Math.random()*0.10-0.05));
     src.connect(bp);bp.connect(g);g.connect(snPan);o.connect(og);og.connect(snPan);
+    if(T.st==='stick'){const cs=AC.createBufferSource(),cf=AC.createBiquadFilter(),cg=AC.createGain();cs.buffer=NB;   // the stick: a short woody click on top
+      cf.type='bandpass';cf.frequency.value=3200;cf.Q.value=1.4;cg.gain.setValueAtTime(0.32*a,t);cg.gain.exponentialRampToValueAtTime(0.001,t+0.007);
+      cs.connect(cf);cf.connect(cg);cg.connect(snPan);cs.start(t,nOff());cs.stop(t+0.02);}
     src.start(t,nOff());src.stop(t+T.sd+0.03);o.start(t);o.stop(t+T.sd*0.8+0.02);}
   else if(v==='r'){ // rimshot/click: a short WOODY tick — noise burst + a tiny pitched knock, NOT a ringing square bleep
     const ns=AC.createBufferSource(),bp=AC.createBiquadFilter(),g=AC.createGain();ns.buffer=noiseBuf2();
@@ -3120,7 +3166,7 @@ function dHit(v,t,a,solid,inBar){a=Math.min(1.9,a||1);
     // with a resonator that is kicked and left alone, which is exactly a sine with a very fast decay.
     const out=AC.createGain();out.gain.value=1;out.connect(panTo(drumBus,0.12));
     const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=2500;
-    g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(0.34*a,t+0.0008);g.gain.exponentialRampToValueAtTime(0.0008,t+0.06);
+    g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(0.17*a,t+0.0008);g.gain.exponentialRampToValueAtTime(0.0008,t+0.06);   // 0.34 -> 0.17: it "overwhelmed everything" (Flah 2026-11-03); a 2.5 kHz click sits where the ear is most sensitive
     o.connect(g);g.connect(out);o.start(t);o.stop(t+0.08);
     const ns=AC.createBufferSource(),nb=AC.createBiquadFilter(),ng=AC.createGain();ns.buffer=noiseBuf2();
     nb.type='bandpass';nb.frequency.value=3200;nb.Q.value=2;ng.gain.setValueAtTime(0.1*a,t);ng.gain.exponentialRampToValueAtTime(0.001,t+0.008);
@@ -4435,6 +4481,7 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
           bassNote(tok, drumTime+(anchor?0:0.012)+genreShift(inBar), anchor?1:hum, len);}
       }
     }
+    if(_trimKit!==drumKit&&drumTrim)applyMix();   // the kit changed (any of the ways it can): its own level follows
     if(!drumOn){drumTime+=_sDur();drumStep++;continue;} // band without drums: same grid, silent kit
     if(trip){ // the REAL shuffle: "ting — ting-a" — the hat SKIPS the middle triplet (that gap is the whole feel)
       const vm=KITVOICE[drumKit],sub=inBar%3;
@@ -4478,7 +4525,7 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
         if(f)dHit(f.v,gt,f.a*hum*padVel(),false,inBar);}
       // THE CRASH IS RARE ON PURPOSE. It marks one thing: the key just moved (every 16+ bars, ~90s), and it
       // lands on the new key's home chord. Only the styles that crash at all -- jazz and bossa never do.
-      if(inBar===0&&JACK.fill===2){JACK.fill=0;dHit(CRASH_ON_KEY[drumKit]?'x':'y',gt,0.9*padVel(),true,0);}   // ...and lands it
+      if(inBar===0&&JACK.fill===2){JACK.fill=0;dHit(CRASH_ON_KEY[drumKit]?'x':'o',gt,0.9*padVel(),true,0);}   // ...and lands it (an open hat where there is no crash: the ride sounds like a note)
       if(inBar===0&&_keyCrash){_keyCrash=false;
         if(CRASH_ON_KEY[drumKit]&&!(kit.x||[]).includes(pst))dHit('x',gt,0.95*padVel(),true,0);}
       // COMPLEX end of the pad: an extra off-beat hat, so the puck adds as well as removes
@@ -6646,7 +6693,7 @@ $("drumBtn").addEventListener('click',()=>{initAudio();if(AC&&AC.state==="suspen
   drumOn=!drumOn;$("drumBtn").classList.toggle('on',drumOn);
   const c=$("drumCtl");c.style.opacity=drumOn?1:0.35;c.style.pointerEvents=drumOn?"auto":"none";
   if(drumOn){drumStep=0;drumTime=AC.currentTime+0.05;lastTick=performance.now();if(!S.playing)setPlaying(true);}});
-$("drumKit").addEventListener('change',e=>{if(KITS[e.target.value])drumKit=e.target.value;else e.target.value=drumKit;});   // a select that lost its option (a style filter, a stale save) reads '' : keep the kit we have
+$("drumKit").addEventListener('change',e=>{if(KITS[e.target.value])drumKit=e.target.value;else e.target.value=drumKit;try{applyMix();}catch(err){}});   // a select that lost its option (a style filter, a stale save) reads '' : keep the kit we have
 // ---- KIT = STYLE x GENRE (GarageBand's split: Acoustic / Electronic / Percussion, then the genre) ----
 // #drumKit is still the one real control every other handler reads; #kitStyle just filters what it offers.
 const KIT_STYLES={
@@ -6659,7 +6706,7 @@ function fillGenres(st,pick){const sel=$("drumKit");if(!sel)return;
   if(!KIT_STYLES[st])st='acoustic'; // never trust a read-back select value
   sel.innerHTML=KIT_STYLES[st].map(([v,n])=>`<option value="${v}">${n}</option>`).join('');
   const want=(pick&&KIT_STYLES[st].some(x=>x[0]===pick))?pick:KIT_STYLES[st][0][0];
-  sel.value=want;drumKit=want;}
+  sel.value=want;drumKit=want;try{applyMix();}catch(e){}}
 (function(){const ks=$("kitStyle");if(!ks)return;
   const st=styleOfKit(drumKit);          // drive from state, not from a DOM read-back
   ks.value=st; fillGenres(st,drumKit);
@@ -6879,7 +6926,7 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
     const wasOn=b.classList.contains('on');
     dl.querySelectorAll('.psBtn').forEach(x=>x.classList.remove('on'));
     if(wasOn){if(drumOn)$("drumBtn").click();return;} // tap the lit one again = stop the beat
-    b.classList.add('on');drumKit=b.dataset.kit;const dk=$("drumKit");if(dk)dk.value=drumKit;
+    b.classList.add('on');drumKit=b.dataset.kit;const dk=$("drumKit");if(dk)dk.value=drumKit;try{applyMix();}catch(err){}   /* each kit has its own level (KIT_DB) */
     if(!drumOn)$("drumBtn").click();});
   // the lit rhythm always tells the truth: when the band starts by itself (play mode's first touch),
   // the rhythm that is actually playing lights up too, instead of none of them
@@ -6897,14 +6944,30 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
 const MIX={mel:{v:1,m:false,s:false},drums:{v:1,m:false,s:false},bass:{v:1,m:false,s:false},chords:{v:1,m:false,s:false}};
 function trackGain(k){const t=MIX[k];if(!t||S.mode!=='studio')return 1;const anySolo=Object.values(MIX).some(x=>x.s);
   if(anySolo&&!t.s)return 0;if(t.m&&!t.s)return 0;return t.v;}
+// THE MIX UNDER THE MELODY (critique tickets 04-05; research _docs/research/2026-11-04-mix-levels.md). Measured each part
+// alone at the real output, K-weighted: the drums sat 2-10 LU ABOVE the melody (industrial +10, rock +9) and the band +1.
+// The melody leads now: every kit's drums at least 6 LU under it (9 for the soft kits), every piece 10 (13) under, the band
+// bass 3-10 under (it sat 1 LU under). BASS_DB / CHORD_DB move a band part; KIT_DB is each kit's fader, after the drum
+// bus glue (the compressor), so the kit keeps its sound and a cut is exactly that cut. PIECE_DB is per hit, before the
+// glue: it is nearly always the kick, the loudest piece in 10 kits of 11 and the one whose hits poke over the melody.
+// All from dev-mix's numbers (2026-11-04); each piece alone = every hit of that voice, ghost notes and fills too.
+// (a cut before the glue comes out smaller than asked while the kick still drives the compressor, and the high tom is
+// the fills' loudest single hit)
+// (the loudest single hit moves +/-1.5 LU from run to run with the fills and the human feel, so every piece aims 2 LU
+// inside the line, at -5, not -4)
+const PIECE_DB={chip:{K:-18.5},beep:{K:-15,C:-6.5},pop:{K:-13.5,ht:-6.5},rock:{K:-13,ht:-4},disco:{K:-14.5,ht:-7.5},bossa:{K:-10.5},
+  samba:{K:-13,c:-13,C:-8},conga:{K:-14,c:-14,C:-6.5},march:{K:-15.5,ht:-12,lt:-11},industrial:{K:-13},jazz:{K:-13.5,s:-1,o:-6}};
+const DRUM_DB=0,BASS_DB=-7.5,CHORD_DB=0,KIT_DB={chip:-9.1,beep:-12.4,pop:-15,rock:-20,disco:-16.6,bossa:-16.2,samba:-13.1,conga:-12.9,march:-10.4,industrial:-21.3,jazz:-6.6};
+const dbG=d=>Math.pow(10,(d||0)/20);
 function applyMix(){if(!AC||!master)return;const t=AC.currentTime; // triangle mix: center = everyone full
   const c=x=>Math.min(1,x*3);S.wMg=c(S.wM);const T=0.09; // gentle ramp = no zipper/clicks when dragging fast or slow
   if(outVol)outVol.gain.setTargetAtTime(S.vol/VOL_REF,t,T);
   if(melBus)melBus.gain.setTargetAtTime(c(S.wM)*trackGain('mel'),t,T);
   if(melEcho)melEcho.gain.setTargetAtTime(trackGain('mel'),t,T);   // the melody's echo goes quiet with the melody
-  if(bandMix)bandMix.gain.setTargetAtTime(c(S.wK)*trackGain('bass'),t,T);
-  if(padBus)padBus.gain.setTargetAtTime(trackGain('chords'),t,T);
-  if(drumBus)drumBus.gain.setTargetAtTime(0.88*c(S.wD)*trackGain('drums'),t,T);} // triangle mixer is the one true drum fader
+  if(bandMix)bandMix.gain.setTargetAtTime(c(S.wK)*trackGain('bass')*dbG(BASS_DB),t,T);
+  if(padBus)padBus.gain.setTargetAtTime(trackGain('chords')*dbG(CHORD_DB),t,T);
+  if(drumBus)drumBus.gain.setTargetAtTime(0.88*c(S.wD)*trackGain('drums'),t,T);
+  if(drumTrim){drumTrim.gain.setTargetAtTime(dbG(DRUM_DB+(KIT_DB[drumKit]||0)),t,T);_trimKit=drumKit;}} // triangle mixer is the one true drum fader
 let _mixRAF=0;
 function scheduleMix(){if(_mixRAF)return;_mixRAF=requestAnimationFrame(()=>{_mixRAF=0;applyMix();});} // coalesce rapid drags to 1 audio update/frame
 (function(){const el=$("triMix");if(!el)return;const svg=el.querySelector('svg'),kn=el.querySelector('#triKnob');
@@ -7688,7 +7751,7 @@ function phPaint(){_phRaf=0;if(!AC)return;
     b.style.setProperty('--vel',vl);b.dataset.vt=Math.round(vl*100);b.dataset.pt=Math.round(pr*100)+'%';
     b.classList.toggle('maybe',pr<1);
     b.setAttribute('aria-label',(VOICE_NAME[v]||v)+(L>1?', bar '+((i>>4)+1):'')+', beat '+(((i%16)>>2)+1)+', step '+(i%4+1)+
-      (on&&vl<1?', loudness '+Math.round(vl*100):'')+(on&&pr<1?', plays '+Math.round(pr*100)+' times in 100':''));}
+      (on&&vl<1?', velocity '+Math.round(vl*100):'')+(on&&pr<1?', plays '+Math.round(pr*100)+' times in 100':''));}
   let MODE='on';
   document.addEventListener('click',e=>{const b=e.target.closest('.deMode button');if(!b)return;MODE=b.dataset.mode;
     document.querySelectorAll('.deMode button').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',x===b?'true':'false');});

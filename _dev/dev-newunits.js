@@ -32,7 +32,7 @@ const NEW=['newhome','majorscale','brightdark','minorscale','minorshapes','modes
   else{
     // these run on the LADDER now: no tank, no keybed. What must exist is a rung per note.
     ok(r.rungs>=2, `${id}: scale=${r.scale} root=${r.root} rungs=${r.rungs}`);
-    ok(!!r.said, `${id}: says its instruction out loud ("${r.said.slice(0,44)}")`);
+    ok(!r.said, `${id}: never speaks (the voice is gone, critique ticket 06)${r.said?" (said "+r.said.slice(0,44)+")":""}`);
     ok(r.text.length>10, `${id}: card has copy`);
   }
   const real=errs.filter(e=>!/ServiceWorker/.test(e)); // file/plain-http cannot register one

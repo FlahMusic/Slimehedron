@@ -71,7 +71,7 @@ const askQuestions=async(page)=>{
  ok(await doneUp(),'answering one tap at a time still reaches the "you did it" card (no deadlock)');
 
  // ---- 3. THE TWO-BUTTON SCREEN: same rule -------------------------------------------------
- await home();await open('updown');
+ await home();await open('tempo');   /* updown is part 2 of high now (ADR 0014): tempo is the two-button lesson on the map */
  const cBefore=await count();
  await p.evaluate(()=>{const want=String(window._labExpect);
    const all=[...document.querySelectorAll('[data-ch]')];
@@ -82,7 +82,7 @@ const askQuestions=async(page)=>{
  ok(cAfter===cBefore,'pressing both buttons on one question earns nothing ('+cBefore+' -> '+cAfter+')');
 
  await p.waitForTimeout(1400);
- await home();await open('updown');
+ await home();await open('tempo');   /* updown is part 2 of high now (ADR 0014): tempo is the two-button lesson on the map */
  for(let i=0;i<70&&!(await doneUp());i++){
    await p.evaluate(()=>{const w=String(window._labExpect);
      const btn=document.querySelector('[data-ch="'+w+'"]');

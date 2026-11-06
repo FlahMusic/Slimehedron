@@ -45,7 +45,7 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
  await p.evaluate(()=>window.__hits=[]);
  await p.waitForTimeout(5600);
  const groove=await p.evaluate(()=>window.__hits.length);
- ok(groove>=14,'a groove is running under it, so there is a beat to play against ('+groove+' hits in two bars)');
+ ok(groove>=8,'a click on every beat runs under it, so there is a beat to play against ('+groove+' clicks in two bars)');
 
  // ---- the app plays first, then hands over ----
  for(let i=0;i<60;i++){const t=await p.evaluate(()=>window._labRJam?window._labRJam().mine:true);
@@ -56,7 +56,7 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
  ok(/your turn/i.test(say2),'and it says so in words: "'+say2.trim()+'"');
 
  // ---- each pad actually fires ITS OWN drum ----
- for(const v of ['c','C','h']){
+ for(const v of ['K','s','h']){   // kick, snare, hi-hat: the drum grid's three (it was two toms and a shaker)
    await p.evaluate(()=>window.__hits=[]);
    await p.evaluate(vv=>window._lab_rjTap(vv),v);
    await p.waitForTimeout(140);
@@ -66,7 +66,7 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
 
  // ---- a deliberate mess. none of it may be marked wrong, and none of it may be scored ----
  for(let i=0;i<14;i++){
-   await p.evaluate(()=>window._lab_rjTap(['c','C','h'][(Math.random()*3)|0]));
+   await p.evaluate(()=>window._lab_rjTap(['K','s','h'][(Math.random()*3)|0]));
    await p.waitForTimeout(55);     // deliberately off the beat
  }
  await p.waitForTimeout(400);

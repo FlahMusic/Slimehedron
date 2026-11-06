@@ -1,7 +1,7 @@
 // ============================================================================================
-//  LESSON TEST — every lesson must (a) SPEAK its instruction and (b) actually END.
-//  The two things the audit said were disqualifying:
-//    * instructions were text only, so a five-year-old could not start a lesson unaided
+//  LESSON TEST — every lesson must (a) show its instruction and NEVER speak it, and (b) actually END.
+//    * the lessons used to read every line aloud (speechSynthesis). Flah 2026-11-03: "atrocious", a different voice on
+//      every device, and it talked over the sound to judge. So: no voice at all, the words on screen (ticket 06)
 //    * no unit had a finish: the drill ran forever and never said "you did it"
 //  Run: node dev-lessons.js
 // ============================================================================================
@@ -37,7 +37,7 @@ const src=fs.readFileSync('learn2.js','utf8');
 // de-duped: the per-block improvise screens appear twice in the source - once as a registry row
 // and once inside the run:()=>jamUnit({id:...}) that row calls - and running each unit twice is
 // 20 wasted browser minutes, not a second opinion.
-const ids=[...new Set([...src.matchAll(/\{id:'([a-z0-9]+)'/g)].map(m=>m[1]))];
+const ids=[...new Set([...src.matchAll(/\{id:'([a-z0-9]+)',[^}]*?tier:'(lesson|game|practice)'/g)].map(m=>m[1]))];   // parts run inside their lesson
 ok(ids.length>=7,'found the unit list ('+ids.length+' units)');
 
 // --- THE ADVERTISED NUMBER MUST BE THE REAL NUMBER ------------------------------------------
@@ -136,7 +136,7 @@ for(const id of ids){
 (async()=>{const b=await launch();
  const ctx=await b.newContext({viewport:{width:1280,height:860}});const p=await ctx.newPage();
  const errs=[];p.on('pageerror',e=>{if(!/ServiceWorker/.test(e.message))errs.push(e.message)});
- // stub the voice BEFORE the page's scripts run, and record every line it is asked to say
+ // stub the voice BEFORE the page's scripts run, and record every line it is asked to say: there must be none
  await p.addInitScript(()=>{
    window.__said=[];
    class U{constructor(t){this.text=t;}}
@@ -158,9 +158,11 @@ for(const id of ids){
    await p.evaluate(()=>window.__said=[]);
    await open(id);
    const said=await p.evaluate(()=>window.__said.slice());
-   ok(said.length>0&&said.join(' ').trim().length>8,"'"+id+"' says its instruction out loud"+(said[0]?' ("'+said[0].slice(0,54)+'")':' (SILENT)'));
-   const hasSpk=await p.evaluate(()=>!!document.querySelector('.labSpk'));
-   ok(hasSpk,"'"+id+"' offers a say-it-again button");
+   const line=await p.evaluate(()=>[...document.querySelectorAll('#learnOverlay .lgSay,#learnOverlay .lgDo,#learnOverlay h3')].map(e=>e.textContent.trim()).join(' ').trim());
+   ok(said.length===0,"'"+id+"' never speaks"+(said[0]?' (said "'+said[0].slice(0,54)+'")':''));
+   ok(line.length>8,"'"+id+"' shows its instruction on screen ("+line.slice(0,54)+")");
+   const hasSpk=await p.evaluate(()=>!!document.querySelector('.labSpk,[data-a2="say"],[data-a2="voice"]'));
+   ok(!hasSpk,"'"+id+"' has no voice buttons left");
  }
 
  // --- drive each unit to its ending -------------------------------------------------------
@@ -183,26 +185,21 @@ for(const id of ids){
  // guesses 50/50 will (correctly) loop forever — it has to actually answer right. window._labExpect
  // carries the expected answer for exactly this purpose.
  // up/down runs on the same two-choice screen as bright/dark now, so it answers the same way
- for(const id of ['updown','tempo','dynamic','minorshapes','modes']){
+ // ANSWER WHATEVER IS ASKED: a lesson with a part 2 (ADR 0014) changes screens mid-run (high -> up or down, home ->
+ // find home, chords -> intervals), so one driver answers a ready button, a choice or a rung, whichever is there.
+ const answer=()=>p.evaluate(()=>{const pd=el=>el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true}));
+   const rd=document.querySelector('#learnOverlay [data-lg="ready"]');if(rd){pd(rd);return 'ready';}
+   const e=window._labExpect,c=e!=null&&document.querySelector('#learnOverlay [data-ch="'+e+'"]');if(c){pd(c);return 'ch';}
+   const d=window._labHintDeg,r=d!=null&&document.querySelector('#learnOverlay .lgRung[data-deg="'+d+'"]');if(r){pd(r);return 'rung';}return null;});
+ for(const id of ['tempo','dynamic','chords','minorshapes','modes']){   // chords runs intervals as its part 2
    await home();await open(id);
-   for(let i=0;i<120&&!(await doneUp());i++){
-     const w=await p.evaluate(()=>window._labExpect);
-     await p.evaluate(ww=>{const b=document.querySelector('[data-ch="'+(ww||'up')+'"]');
-       if(b)b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));},w);
-     await p.waitForTimeout(320);}
+   for(let i=0;i<160&&!(await doneUp());i++){const a=await answer();await p.waitForTimeout(a?700:250);}
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
  // HOME + FIND HOME: land on the tonic (degree 0 in the pentatonic the lessons now use)
- for(const id of ['home','findhome']){
+ for(const id of ['home']){   // find home runs as its part 2
    await home();await open(id);
-   // These two ROAM: each question sounds the tonic first and only asks 820ms later, and the gap
-   // after an answer is another 780ms. Hammering every 260ms mostly hits a disarmed question, so
-   // the budget has to cover ten real answers at ~1.6s each, not ninety taps at 260ms.
-   for(let i=0;i<60&&!(await doneUp());i++){
-     const onLadder=await p.evaluate(()=>{const r=document.querySelector('.lgRung[data-deg="0"]');
-       if(!r)return false; r.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));return true;});
-     if(!onLadder)await strikeDeg(0);
-     await p.waitForTimeout(700);}
+   for(let i=0;i<120&&!(await doneUp());i++){const a=await answer();await p.waitForTimeout(a?900:250);}
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
  // the new hint-driven pitch lessons: so-mi, +la, all five
@@ -212,22 +209,10 @@ for(const id of ids){
  // the LADDER lessons answer by tapping a rung, and the lesson publishes which one it wants.
  for(const id of ['high','notes','newhome','majorscale','minorscale']){
    await home();await open(id);
-   for(let i=0;i<200&&!(await doneUp());i++){
-     const d=await p.evaluate(()=>window._labHintDeg);
-     if(d==null){await p.waitForTimeout(200);continue;}
-     const hit=await p.evaluate(dd=>{const r=document.querySelector('.lgRung[data-deg="'+dd+'"]');
-       if(!r)return false; r.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));return true;},d);
-     await p.waitForTimeout(hit?260:200);}
+   for(let i=0;i<200&&!(await doneUp());i++){const a=await answer();await p.waitForTimeout(a?700:200);}   // high runs up or down as its part 2
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
- // INTERVALS is the other two-choice lesson: same screen, same hook
- {await home();await open('intervals');
-  for(let i=0;i<120&&!(await doneUp());i++){
-    const w=await p.evaluate(()=>window._labExpect);
-    await p.evaluate(ww=>{const bb=document.querySelector('[data-ch="'+(ww||'near')+'"]');
-      if(bb)bb.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));},w);
-    await p.waitForTimeout(320);}
-  ok(await doneUp(),'INTERVALS ends with a "you did it" card');}
+ // INTERVALS runs as part 2 of chords now (above)
 
  // REST DURATION: play the notes, stay silent on the rests. dev-rest.js proves the silence MATTERS;
  // this just proves the lesson terminates like every other one.
@@ -244,11 +229,11 @@ for(const id of ids){
     await p.waitForTimeout(90);}
   ok(await doneUp(),RID.toUpperCase()+' ends with a "you did it" card');}
 
- // THE STAFF: hear a note, tap where it lives on the five lines.
+ // THE STAFF: read the note, press its letter.
  {await home();await open('staff');
   for(let i=0;i<140&&!(await doneUp());i++){
     await p.evaluate(()=>{const st=window._labHintDeg;
-      const h=(st!=null)&&document.querySelector('.stHit[data-st="'+st+'"]');
+      const h=(st!=null)&&document.querySelector('.stKey[data-st="'+st+'"]');
       if(h)h.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));});
     await p.waitForTimeout(300);}
   ok(await doneUp(),'STAFF ends with a "you did it" card');}
@@ -276,15 +261,18 @@ for(const id of ids){
     await p.waitForTimeout(300);}
   ok(await doneUp(),'BRIGHTDARK ends with a "you did it" card');}
 
- // SAY IT FIRST has its own screen now: two drum pads, and it publishes which one it wants next.
+ // COPY THE BEAT: listen (the driver presses it), wait for the beat to finish, put the hits on the grid, check
  for(const id of ['sayplay']){
    await home();await open(id);
-   for(let i=0;i<420&&!(await doneUp());i++){
-     const w=await p.evaluate(()=>window._labExpect);
-     if(w==null){await p.waitForTimeout(240);continue;}
-     await p.evaluate(ww=>{const b=document.querySelector('[data-sp="'+(ww==='low'?'1':'0')+'"]');
-       if(b)b.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));},w);
-     await p.waitForTimeout(220);}
+   for(let i=0;i<200&&!(await doneUp());i++){
+     const st=await p.evaluate(()=>window._labGeState?window._labGeState():null);
+     if(!st||st.playing){await p.waitForTimeout(250);continue;}
+     const done=await p.evaluate(()=>{const pat=window._labGePat,mine=window._labGeMine&&window._labGeMine();if(!pat||!mine)return false;
+       const tap=el=>el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true}));
+       if(document.querySelector('.lgListen.go'))return false;
+       for(const v of ['K','s','h'])for(let k=0;k<4;k++)if(!!pat[v][k]!==!!mine[v][k]){const c=document.querySelector('[data-ge="'+v+k+'"]');if(c)tap(c);}
+       const ck=document.querySelector('[data-gek="check"]');if(ck)tap(ck);return true;});
+     await p.waitForTimeout(done?1300:250);}
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
  // STEPS walks the scale and wraps; follow the hint rather than assuming how far it counts.
@@ -317,6 +305,7 @@ for(const id of ids){
  ok(doors.includes('again'),'the ending offers "do it again"');
 
  ok(errs.length===0,'no page errors'+(errs.length?': '+errs[0]:''));
+ ok((await p.evaluate(()=>window.__said.length))===0,'nothing was spoken while every unit was driven to its end');
  await ctx.close();await b.close();
- console.log('\n'+(FAIL.length?FAIL.length+' FAILURE(S)':'every lesson speaks, and every lesson ends'));
+ console.log('\n'+(FAIL.length?FAIL.length+' FAILURE(S)':'no lesson speaks, and every lesson ends'));
  process.exit(FAIL.length?1:0);})();
