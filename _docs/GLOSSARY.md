@@ -20,6 +20,8 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 - **Tank**: the glass shape notes bounce in. Drawn by the canvas (`#cv`) or the GPU (`tank3d.js`, `#cvGL`).
 - **Wall**: one side of the shape. Every wall is a note (`edges[i].cents`). Ringing a wall = `LAB.strike(i)`.
 - **Shape**: a 2D polygon (prism in 3D) or a **solid** (cube, octahedron...). Grow ops: **cut / puff / flip**.
+- **Orb**: a solid with one face per note (`orbN`, N = the tank's notes, 12..124), faces spread by the golden angle and
+  climbing low to high. Picked as "orb" in studio's shape menu; a new scale or range regrows it.
 - **Space**: `normal`, `portal` (two moving **wormholes**), `curved` (hyperbolic). `TSPACE`, not `SPACE` (that name is taken). On **auto**, play
   mixes them in on 1 reform in 3; studio does too, but only while the slime is on. A shape or space picked by hand stays.
 - **View**: 3D (default) or 2D. **Look**: glass (default) or crayon. Both are looks, not speed settings.
@@ -35,7 +37,8 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 
 ## The music
 - **Key / root**: `S.root` (MIDI note; the key menu shows the pitch class, the octave row sets the register).
-- **Scale**: `S.scale`, one of 25, stored in **cents** (five are microtonal).
+- **Scale**: `S.scale`, one of 28, stored in **cents** (eight are microtonal). A **whole tuning** (19-, 24-, 31-EDO, all
+  notes) has every note of an evenly split octave, not a 7-note pick from it.
 - **Chord brain**: picks the band's chord each bar (`curRootDeg`). **Chord follower**: `noteFeed()` lets played notes steer it.
 - **Key journey**: the slime moves the key every ~90 s (not when pinned, `_keyPinned`).
 - **Slime / slime mode**: the auto-jammer switch (`#slimeBig`, `S.slimeMode`): moves key, spin, shapes, sound knobs (**MODS**).

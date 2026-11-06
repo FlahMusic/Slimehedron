@@ -553,7 +553,9 @@ export function start(){
     gooMs=performance.now()-g0;gooAvg+=(gooMs-gooAvg)*0.05;}
   // the glass the goo is clipped to, in world space: a solid's faces, or the prism's walls and two panes.
   // Curved space has curved glass, which a flat clip cannot follow: there the physics' inset holds it.
-  const clip=[];let clipN=0;
+  // Past GOO_CLIPMAX faces (an orb) the physics' inset holds it too: every clip plane is a shader uniform and every
+  // count its own program, and WebGL2 only promises 224 fragment vectors for the whole material.
+  const clip=[];let clipN=0;const GOO_CLIPMAX=24;
   // (a plane is {normal, constant}, all three.js reads from one; the box matrix is a pure turn plus a move, so
   // a normal turns with it and the constant follows from one point on the plane)
   const P0=new T.Vector3();
@@ -561,11 +563,12 @@ export function start(){
     P0.set(-nx*k,-ny*k,-nz*k).applyMatrix4(box.matrix);pl.normal.set(nx,ny,nz).transformDirection(box.matrix);pl.constant=-pl.normal.dot(P0);}
   function gooClip(fill,solid){clipN=0;
     if(fill&&edges._space!=='curved'){
-      if(solid){const c=Math.cos(rot),s=Math.sin(rot);
+      if(solid&&SOLID.planes.length>GOO_CLIPMAX){}
+      else if(solid){const c=Math.cos(rot),s=Math.sin(rot);
         for(const pl of SOLID.planes){const n=pl.n;clipPlane(-(n[0]*c-n[1]*s),-(n[0]*s+n[1]*c),-n[2],pl.d);}}   // keep n.p <= d
       else{for(const e of edges){if(e.broken)continue;clipPlane(e.nx,e.ny,0,-((e.ax-CX)*e.nx+(e.ay-CY)*e.ny));}   // keep the inside of each wall
         clipPlane(0,0,1,HALF);clipPlane(0,0,-1,HALF);}}
-    const want=clip.slice(0,clipN);mc.material.clippingPlanes=want;}
+    const want=clip.slice(0,clipN);mc.material.clippingPlanes=want;window.__gooClipN=clipN;}   // read by dev-orb
 
   // ---------- the shards and debris while the shape is broken open ----------
   const MAXS=40,shardMesh=new T.InstancedMesh(new T.BoxGeometry(1,1,1),shardMat,MAXS);shardMesh.count=0;shardMesh.frustumCulled=false;box.add(shardMesh);
@@ -575,7 +578,7 @@ export function start(){
   let lastW=0,lastH=0,dpr=1;
   function place(){const s=stage.getBoundingClientRect(),c=cv.getBoundingClientRect();
     glc.style.left=(c.left-s.left)+'px';glc.style.top=(c.top-s.top)+'px';glc.style.width=c.width+'px';glc.style.height=c.height+'px';
-    const want=Math.min(window.devicePixelRatio||1,lite?1:2);
+    const want=Math.min(window.devicePixelRatio||1,lite?1:2,window.__dprCap||2);   // __dprCap: the render governor (index.html, GOV)
     if(Math.round(c.width)!==lastW||Math.round(c.height)!==lastH||want!==dpr){lastW=Math.round(c.width);lastH=Math.round(c.height);dpr=want;
       renderer.setPixelRatio(dpr);renderer.setSize(Math.max(1,lastW),Math.max(1,lastH),false);}
     // gl_PointSize: a point of world size s at depth d covers s*f/d device px, f = (height px / 2) / tan(fov/2)
