@@ -18,6 +18,7 @@ use melody::Melody;
 
 pub mod goo;
 pub mod melody;
+pub mod solid;
 
 #[cfg(test)]
 mod tests;

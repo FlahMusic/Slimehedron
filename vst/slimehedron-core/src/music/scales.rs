@@ -39,6 +39,9 @@ pub static SCALES: &[Scale] = &[
     Scale { id: "pelog", name: "Pelog (Java approx)", cents: &[0.0, 120.0, 270.0, 540.0, 670.0, 785.0, 1050.0] },
     Scale { id: "neutral7", name: "Neutral 7 (¼-tones)", cents: &[0.0, 150.0, 300.0, 450.0, 600.0, 750.0, 900.0] },
     Scale { id: "edo19", name: "19-EDO Major", cents: &[0.0, 189.0, 379.0, 505.0, 695.0, 884.0, 1074.0] },
+    Scale { id: "edo19all", name: "19-EDO, all 19", cents: &[0.0, 63.16, 126.32, 189.47, 252.63, 315.79, 378.95, 442.11, 505.26, 568.42, 631.58, 694.74, 757.89, 821.05, 884.21, 947.37, 1010.53, 1073.68, 1136.84] },
+    Scale { id: "edo24", name: "24-EDO ¼-tones, all 24", cents: &[0.0, 50.0, 100.0, 150.0, 200.0, 250.0, 300.0, 350.0, 400.0, 450.0, 500.0, 550.0, 600.0, 650.0, 700.0, 750.0, 800.0, 850.0, 900.0, 950.0, 1000.0, 1050.0, 1100.0, 1150.0] },
+    Scale { id: "edo31", name: "31-EDO, all 31", cents: &[0.0, 38.71, 77.42, 116.13, 154.84, 193.55, 232.26, 270.97, 309.68, 348.39, 387.1, 425.81, 464.52, 503.23, 541.94, 580.65, 619.35, 658.06, 696.77, 735.48, 774.19, 812.9, 851.61, 890.32, 929.03, 967.74, 1006.45, 1045.16, 1083.87, 1122.58, 1161.29] },
 ];
 
 pub fn by_id(id: &str) -> Option<&'static Scale> {
@@ -77,7 +80,7 @@ mod tests {
     fn the_microtonal_ones_really_are_microtonal() {
         // If these ever round to whole semitones the port has quietly thrown away the thing
         // that makes them those scales.
-        for id in ["maqamRast", "maqamBayati", "neutral7", "slendro", "edo19"] {
+        for id in ["maqamRast", "maqamBayati", "neutral7", "slendro", "edo19", "edo19all", "edo24", "edo31"] {
             let s = by_id(id).expect(id);
             let off_grid = s.cents.iter().any(|c| (c % 100.0).abs() > 1.0);
             assert!(off_grid, "{} has no quarter-tones left in it", id);
