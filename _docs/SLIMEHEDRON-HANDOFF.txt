@@ -158,6 +158,20 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
       in play only, with the vstparity tripwire rerun; or leave it.
     Also: the play triangle mixer's guitar slime touches the tank's left wall at 1280 (a control, in the spot Flah
       circled; not moved).
+    REVIEW of 6b39647..83c823f (2026-11-08, two axes; sw v153). Fixed: the drum lead clamped a late hit up to now (now a
+    hit due inside 6 ms keeps its time); the ping-pong's way back skipped the feedback, so its tail rang longer than the
+    old echo (dlyFbR: every hop is fb, echo n = fb^(n-1); that was also why the second echo read short of its side: now
+    the echo pans 0.8 each way and measures 16 dB, and the whole mix sits at r 0.91-0.93, -18.8 LUFS); the rainbow girl's tap pop did nothing (pops 12 px now);
+    crayon leftovers (glossary, two comments, dead cw); a duplicate .mixRow selector; dev-shapes used offsetParent;
+    four suites had no sabotage list in their header; dev-studiopolish now compares TAP's weight and tests the 220
+    clamp; dev-goopro's volume check could not fail (removed, by eye only; see its note) and its matte sabotage had
+    been overridden (re-done: caught). FOR FLAH (taken without asking, each easy to undo): the top and side peekers were
+    removed, not made whole (look Q2); the chord colours now go round the wheel (they were red in 7 keys of 12: a visible
+    recolour of the slime and the chord bar); the ping-pong echo was not asked for; in 3D a yellow slime is held at 1.2:1
+    against the page, not 1.4 (deeper turned it mustard). Not built from the slime research: the translucency term,
+    the drops as instanced 3D meshes, the lumps' velocity stretch, the per-lump hue nudge (_docs/research/
+    2026-11-07-slime-rendering.md section 5, steps 5-8). Kept as is (judgement): _hitPan as a set-before-trigger global
+    (7 sites), playSynth's 7 positional arguments, addLump in both tank3d.js and goo-worker.js.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

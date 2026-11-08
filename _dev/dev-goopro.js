@@ -4,12 +4,15 @@
 //    1. the skin is built on another core (goo-worker.js): the main thread spends at most 1.5 ms a frame on the goo
 //       (p95 over 60 frames; it was 3-4 ms at the old 40-cell grid), and the grid is at least 56 cells
 //    2. it is wet: a sharp glint (brightest pixel >= 0.94) and real shading (p99-p50 lightness >= 0.09), in three chord colours
-//    3. it has volume: the thin edge is never darker than the deep middle
+//    3. (volume: checked by eye only, see the note at section 3; no stable machine measure found)
 //    4. the hue is still the chord's (within 0.05 of the liquid colour) and saturated, in each of the three
 //    5. it breathes, and stops under prefers-reduced-motion
 //    6. with no Worker (an old browser) the goo is still built, on the main thread
 //    7. one look, glass (ADR 0012): no switch, a crayon link or an old saved setting draws glass
 //  Thresholds were measured on the old goo and the new one first (numbers in the checks). Run: node _dev/dev-goopro.js
+//  Sabotaged 2026-11-08, each caught: no worker (1), matte wax (roughness 0.6, clearcoat 0: brightest 0.86-0.87, range
+//  0.04-0.06, both under 2), the colour not the chord's (2, 4), breathing under reduced motion (5), an old crayon
+//  setting kept (7). A sabotage that only set clearcoat:0 early in the material was overridden by its later clearcoat:1.
 // ============================================================================================
 process.env.SLIME_GL='1';
 const {launch}=require('./browser');
@@ -28,11 +31,12 @@ const SCORE=()=>{GLV.api.render();const c=GLV.api.canvas,w=c.width,h=c.height,cv
  const toHSL=(r,g,b)=>{r/=255;g/=255;b/=255;const mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2;let H=0,Sx=0;if(mx!==mn){const dd=mx-mn;Sx=l>0.5?dd/(2-mx-mn):dd/(mx+mn);H=mx===r?((g-b)/dd+(g<b?6:0)):mx===g?(b-r)/dd+2:(r-g)/dd+4;H/=6;}return [H,Sx,l];};
  const lq=toHSL(liqRGB[0],liqRGB[1],liqRGB[2])[0],hd=(a,b)=>{const q=Math.abs(a-b)%1;return Math.min(q,1-q);};
  // the goo region: liquid-hue saturated pixels, closed over small holes (a glint is a hole in that mask)
- const m=new Uint8Array(w*h);for(let i=0,k=0;i<w*h;i++,k+=4){if(d[k+3]<200)continue;const [H,Sx]=toHSL(d[k],d[k+1],d[k+2]);if(Sx>0.3&&hd(H,lq)<0.08)m[i]=1;}
+ const m=new Uint8Array(w*h);for(let i=0,k=0;i<w*h;i++,k+=4){if(d[k+3]<30)continue;const [H,Sx]=toHSL(d[k],d[k+1],d[k+2]);if(Sx>0.3&&hd(H,lq)<0.08)m[i]=1;}
  const reg=new Uint8Array(w*h);for(let y=6;y<h-6;y++)for(let xx=6;xx<w-6;xx++){const i=y*w+xx;if(m[i]){reg[i]=1;continue;}let c4=0;for(const o of [-6,6,-6*w,6*w])if(m[i+o])c4++;if(c4>=4)reg[i]=1;}
- const L=[];let ring=0,rn=0,core=0,cn=0,hx=0,hy=0,ss=0;for(let i=0;i<w*h;i++){if(!reg[i])continue;const k=i*4;{const q2=toHSL(d[k],d[k+1],d[k+2]);if(q2[1]>0.3){hx+=Math.cos(q2[0]*6.2832);hy+=Math.sin(q2[0]*6.2832);}ss+=q2[1];}const l=toHSL(d[k],d[k+1],d[k+2])[2];L.push(l);let e=false;for(const o of [-5,5,-5*w,5*w])if(!reg[i+o])e=true;if(e){ring+=l;rn++;}else{core+=l;cn++;}}
+ const L=[];let ring=0,rn=0,core=0,cn=0,hx=0,hy=0,ss=0,ra=0,ca=0;for(let i=0;i<w*h;i++){if(!reg[i])continue;const k=i*4;{const q2=toHSL(d[k],d[k+1],d[k+2]);if(q2[1]>0.3){hx+=Math.cos(q2[0]*6.2832);hy+=Math.sin(q2[0]*6.2832);}ss+=q2[1];}const l=toHSL(d[k],d[k+1],d[k+2])[2];let e=false;for(const o of [-5,5,-5*w,5*w])if(!reg[i+o])e=true;if(e)ra+=d[k+3]/255;else ca+=d[k+3]/255;
+   if(d[k+3]<200){if(e)rn++;else cn++;continue;}L.push(l);if(e){ring+=l;rn++;}else{core+=l;cn++;}}
  L.sort((a,b)=>a-b);const q=f=>L[Math.floor(L.length*f)];const med=q(0.5);
- return {hueOff:+hd(((Math.atan2(hy,hx)/6.2832)+1)%1,lq).toFixed(3),sat:+(ss/Math.max(1,L.length)).toFixed(2),n:L.length,p50:+med.toFixed(3),p95:+q(0.95).toFixed(3),p99:+q(0.99).toFixed(3),max:+L[L.length-1].toFixed(3),bright:+(L.filter(l=>l>=Math.min(0.97,med+0.15)).length/L.length*100).toFixed(2),ring:+(ring/rn).toFixed(3),core:+(core/cn).toFixed(3)};};
+ return {hueOff:+hd(((Math.atan2(hy,hx)/6.2832)+1)%1,lq).toFixed(3),sat:+(ss/Math.max(1,L.length)).toFixed(2),n:L.length,p50:+med.toFixed(3),p95:+q(0.95).toFixed(3),p99:+q(0.99).toFixed(3),max:+L[L.length-1].toFixed(3),bright:+(L.filter(l=>l>=Math.min(0.97,med+0.15)).length/L.length*100).toFixed(2),ring:+(ring/rn).toFixed(3),core:+(core/cn).toFixed(3),ringA:+(ra/rn).toFixed(3),coreA:+(ca/cn).toFixed(3)};};
 
 (async()=>{const b=await launch({args:['--use-angle=d3d11','--enable-gpu','--ignore-gpu-blocklist']});
  {const ctx=await b.newContext({viewport:{width:1280,height:900},deviceScaleFactor:1});await ctx.addInitScript(init);
@@ -48,14 +52,18 @@ const SCORE=()=>{GLV.api.render();const c=GLV.api.canvas,w=c.width,h=c.height,cv
   ok(t.res>=56,'1. on a fine grid ('+t.res+' cells; it was 40)');
   const sc=[];for(const col of [[250,160,170],[160,230,190],[190,160,240]]){await p.evaluate(c=>{liqRGB[0]=c[0];liqRGB[1]=c[1];liqRGB[2]=c[2];},col);
    await p.waitForTimeout(600);await p.evaluate(()=>{S.playing=false;});await p.waitForTimeout(400);sc.push(await p.evaluate(SCORE));await p.evaluate(()=>{S.playing=true;});}
-  console.log('        '+sc.map(s=>'max '+s.max+' range '+(s.p99-s.p50).toFixed(3)+' ring '+s.ring+' core '+s.core+' ('+s.n+' px)').join(' | '));
+  console.log('        '+sc.map(s=>'max '+s.max+' range '+(s.p99-s.p50).toFixed(3)+' ring '+s.ring+' core '+s.core+' alpha ring '+s.ringA+' core '+s.coreA+' ('+s.n+' px)').join(' | '));
   // measured 2026-11-07 on the same seeded pool: old goo max 0.90-0.91, range 0.045-0.063, ring 0.024-0.035 DARKER than the
   // core in two colours of three; new goo max 0.967-0.976, range 0.116-0.133, ring 0.009-0.019 lighter
   ok(sc.every(s=>s.n>8000),'the goo is on screen in all three chord colours ('+sc.map(s=>s.n).join(', ')+' px)');
   ok(sc.every(s=>s.max>=0.94),'2. it is wet: a sharp glint in every colour (brightest '+sc.map(s=>s.max).join(', ')+'; the old wax topped out at 0.91)');
-  ok(sc.every(s=>s.p99-s.p50>=0.09),'2. and it has real shading, not a flat fill (p99-p50 lightness '+sc.map(s=>(s.p99-s.p50).toFixed(3)).join(', ')+'; old 0.045-0.063)');
+  // re-measured 2026-11-08 after the slime went a shade darker (look question 6): wet 0.090-0.274 over five runs, truly
+  // matte (roughness 0.6, no clearcoat) 0.043-0.060: the line sits between them
+  ok(sc.every(s=>s.p99-s.p50>=0.075),'2. and it has real shading, not a flat fill (p99-p50 lightness '+sc.map(s=>(s.p99-s.p50).toFixed(3)).join(', ')+'; old 0.045-0.063)');
   ok(sc.every(s=>s.hueOff<0.05&&s.sat>0.35),'4. still the chord colour in each (hue off by '+sc.map(s=>s.hueOff).join(', ')+'), saturated ('+sc.map(s=>s.sat).join(', ')+')');
-  ok(sc.every(s=>s.ring>=s.core),'3. it has volume: the thin edge is never darker than the deep middle ('+sc.map(s=>s.ring+' vs '+s.core).join(', ')+')');
+  // 3. VOLUME IS NOT CHECKED HERE (2026-11-08, the code review found the old check could not fail). No stable measure was
+ // found: the edge's lightness against the middle's passed with the thickness cue removed (it reads the fresnel light),
+ // and the edge's opacity against the middle's swung by 0.1 between runs as the pool moves. Checked by eye only.
   const wob=await p.evaluate(()=>GLV.api.gooWobble());
   ok(wob>0,'5. it breathes (wobble '+wob.toFixed(4)+')');
   await p.emulateMedia({reducedMotion:'reduce'});await p.waitForTimeout(300);

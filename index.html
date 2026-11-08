@@ -1379,8 +1379,7 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 .mixRow[data-k="mel"]{--pc:#f08ab8}.mixRow[data-k="drums"]{--pc:#f5a46c}.mixRow[data-k="bass"]{--pc:#4fc79e}.mixRow[data-k="chords"]{--pc:#6f9ff0}
 .mixRow b{display:flex;align-items:center;gap:6px;min-width:0}
 .mixRow b::before{content:"";flex:none;width:10px;height:10px;border-radius:50%;background-color:var(--pc);box-shadow:0 0 0 2px rgba(255,255,255,.85),0 1px 3px rgba(54,36,104,.25)}
-.mixRow input[type=range]{accent-color:var(--pc)}
-.mixRow input[type=range]{width:100%;min-width:0}
+.mixRow input[type=range]{width:100%;min-width:0;accent-color:var(--pc)}
 .mixRow b{font:800 12.5px system-ui,sans-serif;color:var(--ink)}
 .mixRow button{min-height:44px;min-width:44px;border-radius:12px;font:800 12px system-ui,sans-serif;color:var(--ink);cursor:pointer;background:var(--cream);border:1px solid rgba(255,255,255,.8);box-shadow:var(--depth);padding:0}
 .mixRow button[aria-pressed="true"].mixM{background:linear-gradient(180deg,#e6e9ff,#a9b6ff);box-shadow:var(--depthIn)}
@@ -2670,7 +2669,7 @@ function silentAudio(){const t0=performance.now();
     createBuffer(ch,len,sr){len=Math.max(1,len|0);return {length:len,duration:len/(sr||44100),sampleRate:sr||44100,numberOfChannels:ch||1,
       getChannelData:()=>new Float32Array(len),copyToChannel(){},copyFromChannel(){}};}};
   return new Proxy(base,{get(o,k){if(k in o)return o[k];return ()=>mk();}});}
-let dlyR=null;   // the echo's right-hand line (PING-PONG)
+let dlyR=null,dlyFbR=null;   // the echo's right-hand line and its way back (PING-PONG)
 function initAudio(){
   if(AC)return;
   // NO WEB AUDIO (a locked-down school browser, an old webview): the tank still runs, silently, rather than the
@@ -2715,13 +2714,13 @@ function initAudio(){
   dlyFb=AC.createGain();dlyFb.gain.value=0.2;
   dlyWet=AC.createGain();dlyWet.gain.value=S.dly;
   // PING-PONG: the echo answers left, then right (the stereo delay every DAW ships: Studio One's and Ableton's ping
-  // pong). It was one mono line in the middle, the widest-sounding effect in the app drawn narrowest. The round trip
-  // keeps the old decay: left at 1 beat-and-a-half, right at the feedback level, then each side at the feedback's.
-  dlyR=AC.createDelay(2.0);dlyR.delayTime.value=60/S.bpm*0.75;
-  delayNode.connect(dlyFb);dlyFb.connect(dlyR);dlyR.connect(delayNode);
+  // pong). It was one mono line in the middle, the widest-sounding effect in the app drawn narrowest. Every hop, left
+  // to right and right to left, goes through the feedback, so echo n is fb^(n-1) as before: left 1, right fb, left fb^2.
+  dlyR=AC.createDelay(2.0);dlyR.delayTime.value=60/S.bpm*0.75;dlyFbR=AC.createGain();dlyFbR.gain.value=dlyFb.gain.value;
+  delayNode.connect(dlyFb);dlyFb.connect(dlyR);dlyR.connect(dlyFbR);dlyFbR.connect(delayNode);
   // +3 dB into each equal-power panner: the two sides together carry the power the centred echo did
   {const gl=AC.createGain(),gr=AC.createGain();gl.gain.value=gr.gain.value=Math.SQRT2;
-   delayNode.connect(gl);gl.connect(panTo(dlyWet,-0.6));dlyR.connect(gr);gr.connect(panTo(dlyWet,0.6));}
+   delayNode.connect(gl);gl.connect(panTo(dlyWet,-0.8));dlyR.connect(gr);gr.connect(panTo(dlyWet,0.8));   /* near hard left and right, as ping-pong delays are */}
   melEcho=AC.createGain();melEcho.gain.value=1;melEcho.connect(delayNode);   // the melody reaches the echo through here, so the mixer can mute both
   masterFilt=AC.createBiquadFilter();masterFilt.type="lowpass";masterFilt.frequency.value=14000;masterFilt.Q.value=0.5;
   masterHP=AC.createBiquadFilter();masterHP.type="highpass";masterHP.frequency.value=20;masterHP.Q.value=0.6;
@@ -3190,7 +3189,8 @@ function dHit(v,t,a,solid,inBar){a=Math.min(1.9,a||1);
   if(S.mode==='play'&&SIG_PART[drumKit]===v)sigPulse(t);
   // ...and the sound goes 6 ms early: the drum glue compressor's fixed look-ahead (Web Audio spec 1.19, Chromium
   // kPreDelay 0.006) made every hit land 6 ms after the melody's. The MIDI out and the beat pulse keep the true time.
-  t=Math.max(AC.currentTime,t-DRUM_LEAD_S);
+  // A hit already due inside the next 6 ms keeps its own time (CODING_STANDARDS: never clamp a scheduled time up to now).
+  if(t-DRUM_LEAD_S>=AC.currentTime)t-=DRUM_LEAD_S;
   if(v==='K'){const o=AC.createOscillator(),g=AC.createGain(),T=KITTONE[drumKit]||KITTONE.pop;o.type='sine'; // 909-style: sine body + pitch dive
     const dive=(T.st==='808')?T.kd*0.6:Math.min(0.12,T.kd*0.35); // 808 = slow deep dive (long sub); others = fast snappy dive
     o.frequency.setValueAtTime(T.kf,t);o.frequency.exponentialRampToValueAtTime(T.ke,t+dive);
@@ -5428,7 +5428,7 @@ function fillPhysics(now){
     dlyWet.gain.setTargetAtTime(wet,t,0.5);
     const dt=document.getElementById('dlyTop'); // in auto mode the fader tracks what you actually hear — the slime IS the delay knob
     if(dt&&S.slimeMode&&(!dlyGrab||performance.now()-dlyGrab>=10000))dt.value=Math.round(Math.sqrt(Math.max(0,wet)/0.5)*100);
-    dlyFb.gain.setTargetAtTime(Math.min(0.35,0.14+wash*0.21),t,0.5);} // feedback hard-capped at 0.35
+    dlyFb.gain.setTargetAtTime(Math.min(0.35,0.14+wash*0.21),t,0.5);if(dlyFbR)dlyFbR.gain.setTargetAtTime(Math.min(0.35,0.14+wash*0.21),t,0.5);} // feedback hard-capped at 0.35
 }
 
 // ===== THE GOO IN 3D: A LAVA LAMP =====
@@ -6597,7 +6597,6 @@ function drawBalls3D(){
 // from this site, so the first load is no heavier and nothing comes from anywhere else. No WebGL, a
 // failed load, a lost GPU context, a lesson, or ?gl=0: the canvas draws the 3D tank exactly as before.
 const GLV={api:null,loading:false,want:true};
-// HOW THE GPU TANK LOOKS: glass (the default) or crayon (drawn like the rest of the app). ?look=crayon, or the corner menu.
 // ONE LOOK: glass (ADR 0012, Flah 2026-11-03). The crayon tank look, its switch, ?look= and the saved setting are gone; an old
 // saved one is cleared, and a link that carries one is read as glass.
 try{localStorage.removeItem('slimehedron-look');}catch(e){}
@@ -9125,7 +9124,7 @@ const MONARCH=s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="dis
 (function(){
   const layer=document.getElementById('slimes');
   const el=document.createElement('div');el.className='slime rgirl';
-  el.style.cssText='position:fixed;left:22%;bottom:0;width:52px;height:49px;z-index:51;transform:translateY(0px);transition:transform .5s cubic-bezier(.34,1.56,.64,1)'; // raised so most of her shows (was buried — only her scalp poked out)
+  el.style.cssText='position:fixed;left:22%;bottom:0;width:52px;height:49px;z-index:51;transform:translateY(0px);transition:transform .5s cubic-bezier(.34,1.56,.64,1)'; // stands whole on the floor (look question 2), a tap pops her up 12 px; (was buried — only her scalp poked out)
   // SHE WAS PINNED AT left:22% AND NEVER LOOKED. On a narrow screen that put her on the splash's
   // share line, on a lesson card, on the tools menu, and once 93% on top of the worm. Same policy
   // as the worm and the edge peekers: slide along the floor to find clear room, sit it out if the
@@ -9187,7 +9186,7 @@ const MONARCH=s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="dis
   const faceG=()=>el.querySelector('#gFace'),bub=el.querySelector('#gumbub');
   let tmr=null;
   el.addEventListener('click',()=>{
-    el.classList.add('show');el.style.transform='translateY(0)';bub.classList.add('show'); // pop up, show the bubble; her face is in the art
+    el.classList.add('show');el.style.transform='translateY(-12px)';bub.classList.add('show'); // pop up, show the bubble; her face is in the art
     clearTimeout(tmr);tmr=setTimeout(()=>{el.classList.remove('show');el.style.transform='translateY(0px)';bub.classList.remove('show');},4500);
   });
 })();

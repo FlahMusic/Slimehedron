@@ -24,7 +24,8 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
   climbing low to high. Picked as "orb" in studio's shape menu; a new scale or range regrows it.
 - **Space**: `normal`, `portal` (two moving **wormholes**), `curved` (hyperbolic). `TSPACE`, not `SPACE` (that name is taken). On **auto**, play
   mixes them in on 1 reform in 3; studio does too, but only while the slime is on. A shape or space picked by hand stays.
-- **View**: 3D (default) or 2D. **Look**: glass (default) or crayon. Both are looks, not speed settings.
+- **View**: 3D (default) or 2D, a look, not a speed setting. The tank has one render look, glass (ADR 0012); the page's crayon art is
+  not a tank look.
 - **Ball / note**: a bouncing note. It plays when it hits a wall. **Shot** balls (`mute:1`) don't re-play their first hit.
 - **Goo / slime liquid**: the particles that fill the tank. When the tank is full it **bursts** and **reforms** into a new shape (~64 bars).
 - **Pane**: the front and back glass in 3D. Pane hits play soft chord tones and never feed the chord brain.

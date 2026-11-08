@@ -9,6 +9,8 @@
 //       come out at least 1.4:1 darker than the page behind the tank (median goo pixel vs median background pixel),
 //       and so does the brightest green (Flah's case: green slime on green grass); in 3D a colour that stands out by
 //       hue (a yellow on the mint page) needs 1.2:1 (see the note at the check)
+//  Sabotaged 4 ways (2026-11-08), each caught: the slime not deepened (2, 2D), 3D lifting it back to pastel (2, 3D), greens
+//  no deeper than the rest (2, the 3D green), the chord hue handed over in degrees again (1, the wheel).
 //  Needs a local server: python -m http.server 8765. Run from the project root: node _dev/dev-slimecontrast.js
 // ============================================================================================
 const {launch}=require('./browser');

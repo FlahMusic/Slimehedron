@@ -9,7 +9,7 @@
 //       (the decay curve is <= -55 dB at the buffer's end)
 //    3. a stage: a note from a wall at x = +0.8 is >= 2.5 dB louder on the right, mirrored at -0.8; the whole mix is
 //       wide but not split (r(L,R) 0.3..0.95, over 14 s of auto-notes, drums and band) and its low end is mono (r below 150 Hz >= 0.95)
-//    4. a hard hit is brighter than a soft one (velocity 110 vs 35, filter on: >= 6 dB more energy over 4 kHz)
+//    4. a hard hit is brighter than a soft one (velocity 110 vs 35, filter on: >= 6 dB more energy over 2 kHz)
 //    5. no click on a sine's attack: energy above 2 kHz in its first 10 ms <= -46 dB of the note's energy there
 //    6. the drums land with the melody: the drum path's extra delay (an impulse each way) is what a kick is sent early by (+-1 ms)
 //  Sabotaged 9 ways (2026-11-07), each caught: knee back to 30 (1), every band alike (2), no pre-delay (2), the same
@@ -106,9 +106,10 @@ const init=()=>{try{for(const k of ['slimehedron-coach','slimehedron-coach-studi
    let g=0,p0=0;for(let i=0;i<c.L.length;i++)if(m(i)>g){g=m(i);p0=i;}let g1=0,p1=p0+T;for(let i=p0+T-w;i<Math.min(c.L.length,p0+T+w);i++)if(m(i)>g1){g1=m(i);p1=i;}
    const pk=[p0,p1];const side=i=>{let l=0,r=0;for(let k=i-32;k<i+256;k++){l+=c.L[k]*c.L[k];r+=c.R[k]*c.R[k];}return 10*Math.log10((r+1e-20)/(l+1e-20));};
    return {first:side(pk[0]),second:side(pk[1]),gap:(pk[1]-pk[0])/c.sr*1000,T:T/c.sr*1000};});
- // ideal 9.7 dB each way (pan 0.6, equal power); measured 2026-11-08: the first -9.3..-9.8, the second +4.1..+8.8 (the
- // second echo is 14 dB down, and something not yet found adds to its left side); a centred echo reads 0
- ok(pp.first<=-6&&pp.second>=3&&Math.abs(pp.gap-pp.T)<=3,'3. the echo answers left ('+pp.first.toFixed(1)+' dB R-L), then right ('+pp.second.toFixed(1)+' dB), one echo-time apart ('+pp.gap.toFixed(0)+' ms vs '+pp.T.toFixed(0)+')');
+ // ideal 15 dB each way (pan 0.8, equal power). The second echo read only +4.1..+8.8 until the code review found the
+ // way back skipped the feedback (the third echo, left, came in as loud as the second); fixed, it reads +9.8. A centred
+ // echo reads 0
+ ok(pp.first<=-10&&pp.second>=10&&Math.abs(pp.gap-pp.T)<=3,'3. the echo answers left ('+pp.first.toFixed(1)+' dB R-L), then right ('+pp.second.toFixed(1)+' dB), one echo-time apart ('+pp.gap.toFixed(0)+' ms vs '+pp.T.toFixed(0)+')');
 
  const br=await p.evaluate(async()=>{if(drumOn)$("drumBtn").click();if(bandOn)$("bandBtn").click();S.autoNotes=false;balls.length=0;S.fxOn=false;
    const W={on:S.filtOn,w:S.wave,cut:S.cut,warm:S.warm};S.filtOn=true;S.wave='sawtooth';S.cut=0.6;setWarmth(0);await __wait(2500);

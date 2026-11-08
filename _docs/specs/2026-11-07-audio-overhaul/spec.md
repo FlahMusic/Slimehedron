@@ -15,8 +15,8 @@ Decisions taken on the research's recommended answers while Flah slept (on the m
 ## What changes
 
 1. **A limiter that limits.** `lim.knee` was never set, so it sat at the 30 dB default: a 0 dBFS sine came out at
-   -0.2 dBFS and the hard clip did all the ceiling work. `knee=0`, `outVol` trimmed by the node's own makeup gain
-   (+4.78 dB) so the loudness under the threshold is unchanged. The clip stays at 0.891: with a real limiter in front
+   -0.2 dBFS and the hard clip did all the ceiling work. `knee=0`, `outVol` takes back most of the node's own
+   makeup gain (+4.78 dB; 4.6 is taken back, LIM_MAKEUP_DB, so the whole mix sits at -18.7 LUFS, was -18.9). The clip stays at 0.891: with a real limiter in front
    of it the true peak of a stress run is -2.6 dBTP, and the clip is a safety net that no longer fires.
 2. **A real room.** The reverb IR was noise times `(1-x)^2.4`: every band decays alike (4k/500 Hz ratio 1.02, real
    rooms 0.5-0.75), the early decay sounds like a 3 s room, and it is cut off at 1.7 s. New: per-octave noise with

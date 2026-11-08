@@ -50,8 +50,11 @@ Then rerun only what failed. A failure that passes on rerun goes on the flaky li
 - Failing on 1d535a6 too (controls 2026-11-08): `dev-goolook` (its saved reference is older than the slime overhaul:
   112 % of cells moved, a channel off by 255) and `dev-fluid` "[play] a paused tank is completely still" (37-39
   moving frames). Not chased yet.
-- `dev-goopro` 3. "the thin edge is never darker than the deep middle": 1 run of 4 had one colour of three 0.013 under
-  (2026-11-07; the pool plays for 2.5 s before the shot, so the body it measures is not fixed). Not chased yet.
+- `dev-daw` "mute really silences the drums": 1 run of 3 read the drums at 0.0029 before mute (0.025 otherwise;
+  2026-11-08): the 1.4 s window caught them before they started. Not chased yet.
+- `dev-goopro` 1. "the main thread spends at most 1.5 ms a frame on the goo": read 3.0 and 3.9 ms p95 in two runs of
+  ~10 on 2026-11-08 while other work ran on the box (0.2-0.7 ms otherwise). Not chased yet. (Its old check 3, edge vs
+  middle lightness, was removed: it could not fail.)
 - `dev-3d` 1. "they travel front to back through the box" (1 in 3 runs on the tumble commit: 2 of 6 balls past 0.8 of depth in 9 s).
 - `dev-portal` "each one clearly stands out" (both looks): the saturation behind a hole swings 0.09-0.27 from run to run
   because the holes sit over different parts of the background art (grass vs cloud); about 1 run in 3 fails on any commit

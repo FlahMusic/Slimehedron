@@ -9,6 +9,8 @@
 //    5. the mixer: mute pressed is blue / periwinkle (Logic, GarageBand), solo yellow; each part has its own colour
 //    6. the first screen: Groove sits in the Pattern card, Timing is under "more settings"; no sideways page scroll
 //       at 360, 390, 1280 and 1440 px
+//  Sabotaged 6 ways (2026-11-07), each caught: the tap-mode handler matching every row (2), the drum grid not hidden (1),
+//  no segmented tracks (3), tempo drag twice as fast (4), mute back to pink (5), Timing back on the first screen (6).
 //  Needs a local server: python -m http.server 8765. Run from the project root: node _dev/dev-studiopolish.js
 // ============================================================================================
 const {launch}=require('./browser');
@@ -32,7 +34,7 @@ const hd=(a,b)=>{const d=Math.abs(a-b)%360;return Math.min(d,360-d);};
  // ---- 2. pressing sequencer buttons steals nothing ----
  for(const sel of ['[data-tg="drums"]','[data-rw="AB"]','[data-dr="rev"]','[data-rt="1"]','[data-ln="vel"]','[data-tg="notes"]'])await p.click('#seqPanel '+sel);
  await p.waitForTimeout(200);
- const st=await p.evaluate(()=>{const one=g=>[...document.querySelectorAll('#seqPanel [data-'+g+']')].filter(b=>b.classList.contains('on')).map(b=>b.dataset[g==='tg'?'tg':g==='rw'?'rw':g==='dr'?'dr':g==='rt'?'rt':'ln']);
+ const st=await p.evaluate(()=>{const one=g=>[...document.querySelectorAll('#seqPanel [data-'+g+']')].filter(b=>b.classList.contains('on')).map(b=>b.dataset[g]);
    return {tg:one('tg'),rw:one('rw'),dr:one('dr'),rt:one('rt'),ln:one('ln'),
      mode:[...document.querySelectorAll('#drumEditor [data-mode]')].filter(b=>b.classList.contains('on')).map(b=>b.dataset.mode)};});
  ok(st.rw.join()==='AB'&&st.dr.join()==='rev'&&st.rt.join()==='1'&&st.ln.join()==='vel'&&st.tg.join()==='notes',
@@ -69,6 +71,10 @@ const hd=(a,b)=>{const d=Math.abs(a-b)%360;return Math.min(d,360-d);};
  await p.mouse.move(cx,cy);await p.mouse.down();for(let i=1;i<=40;i++)await p.mouse.move(cx,cy+20*i);await p.mouse.up();
  const dn=await p.evaluate(()=>S.bpm);
  ok(dn===40,'4. dragging down lowers it, and stops at 40 ('+dn+')');
+ await p.mouse.move(cx,cy);await p.mouse.down();for(let i=1;i<=40;i++)await p.mouse.move(cx,cy-20*i);await p.mouse.up();
+ const tp=await p.evaluate(()=>S.bpm);
+ ok(tp===220,'4. dragging up stops at 220 ('+tp+')');
+ await p.evaluate(()=>setBpm(40));
  await p.mouse.move(cx,cy);await p.mouse.wheel(0,-100);await p.waitForTimeout(100);
  const wh=await p.evaluate(()=>S.bpm);
  ok(wh===41,'4. a wheel notch up steps it by 1 ('+wh+')');
@@ -76,10 +82,10 @@ const hd=(a,b)=>{const d=Math.abs(a-b)%360;return Math.min(d,360-d);};
  await p.keyboard.press('Control+A');await p.keyboard.type('133');await p.keyboard.press('Enter');await p.waitForTimeout(100);
  const ty=await p.evaluate(()=>S.bpm);
  ok(ty===133,'4. a tap without a drag lets you type a tempo (133 -> '+ty+')');
- const tf=await p.evaluate(()=>{const n=document.getElementById('bpmNum'),t=document.getElementById('sbTap'),u=document.querySelector('#studioBar button:not(#sbTap)');
+ const tf=await p.evaluate(()=>{const n=document.getElementById('bpmNum'),t=document.getElementById('sbTap'),u=document.querySelector('.segT>button');   /* the app's text buttons (the strip's undo/redo are icons, weight 400) */
    return {app:getComputedStyle(n).appearance,tw:getComputedStyle(t).fontWeight,uw:u?getComputedStyle(u).fontWeight:'?',tfam:getComputedStyle(t).fontFamily,nfam:getComputedStyle(n).fontFamily};});
  ok(tf.app==='textfield','4. no spinner arrows on the tempo box (appearance '+tf.app+')');
- ok(+tf.tw>=700,'4. TAP is bold like a button (weight '+tf.tw+')');
+ ok(+tf.tw>=700&&tf.tw===tf.uw,'4. TAP is as bold as the strip\'s other buttons (weight '+tf.tw+', undo '+tf.uw+')');
 
  // ---- 5. the mixer ----
  await p.click('#mixRows .mixRow[data-k="bass"] .mixM');await p.click('#mixRows .mixRow[data-k="chords"] .mixS');await p.waitForTimeout(250);

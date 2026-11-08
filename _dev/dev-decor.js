@@ -7,6 +7,8 @@
 //    2. none of them covers more than 5 % of itself with the tank (the shape's own box)
 //  The crayon stars painted INTO the background pictures (bg-desktop / bg-mobile) are art, not elements: moving them is
 //  an art change (on the morning list), so they are not checked here.
+//  Sabotaged 4 ways (2026-11-08), each caught: bottom peekers cut again (1), the side peekers back (1), the rainbow girl
+//  buried 10 px (1), the tank left out of the furniture the decorations avoid (1 and 2).
 //  Needs a local server: python -m http.server 8765. Run from the project root: node _dev/dev-decor.js
 // ============================================================================================
 const {launch}=require('./browser');

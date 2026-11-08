@@ -23,7 +23,7 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
  await p.click('#spaceBtn');await p.waitForTimeout(300);
  // ---- 1. pictures on every choice ----
  const pics=await p.evaluate(()=>[...document.querySelectorAll('#spaceMenu [data-view],#spaceMenu [data-space]')]
-   .filter(b=>!b.hidden&&b.offsetParent!==null)
+   .filter(b=>!b.hidden&&b.checkVisibility())
    .map(b=>({k:b.dataset.view||b.dataset.space,pic:!!b.querySelector('svg.smPic path,svg.smPic rect'),word:(b.querySelector('.smWord')||{}).textContent})));
  ok(pics.length>=6&&pics.every(x=>x.pic),'every choice in the corner menu shows a picture ('+pics.map(x=>x.k+(x.pic?'':'(none)')).join(', ')+')');
  ok(pics.every(x=>x.word&&x.word.length<9),'with the word small underneath, for whoever can read it');

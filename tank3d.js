@@ -178,9 +178,9 @@ export function start(){
     const owner=[];
     per.forEach((pts,i)=>{const portal=false;let run=0;
       for(let k=0;k<pts.length-1;k++){const a=pts[k],b=pts[k+1];
-        const n0=P.length,cw=1;run+=beam([a[0],a[1],zl(0)],[b[0],b[1],zl(0)],5.5*cw,portal?run:-1);
-        beam([a[0],a[1],zl(1)],[b[0],b[1],zl(1)],3*cw,-1);
-        if(k===0)beam([a[0],a[1],zl(0)],[a[0],a[1],zl(1)],2.2*cw,-1);
+        const n0=P.length;run+=beam([a[0],a[1],zl(0)],[b[0],b[1],zl(0)],5.5,portal?run:-1);
+        beam([a[0],a[1],zl(1)],[b[0],b[1],zl(1)],3,-1);
+        if(k===0)beam([a[0],a[1],zl(0)],[a[0],a[1],zl(1)],2.2,-1);
         for(let j=n0;j<P.length;j+=3)owner.push(i);}});   // one owner per VERTEX
     const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(P,3));
     rimCol=new Float32Array(P.length);g.setAttribute('color',new T.BufferAttribute(rimCol,3));
@@ -283,7 +283,6 @@ export function start(){
   // a bright event-horizon rim, a soft glow round it, and -- right at the bottom -- the OTHER hole's colour:
   // you can see through to where it comes out. When a ball goes in, the hole spins up and glows; when the far
   // hole spits one out it swells and throws a ring of light. A few motes keep spiralling into each hole.
-  // The crayon look draws the same thing in flat crayon bands with hatching, boiling with the rest.
   const WK=1.75;   // the disc mesh is this many times the hole's radius: the rim, its glow and the spit ring live outside it
   const wormMat=(rimHex,deepHex)=>new T.ShaderMaterial({transparent:true,depthWrite:false,side:T.DoubleSide,
     uniforms:{uT:{value:0},uOpen:{value:0},uSuck:{value:0},uSpit:{value:0},uPre:{value:0},
@@ -495,7 +494,7 @@ export function start(){
     // and give it back a clean pastel's saturation and lightness, so the goo reads as candy, not mud.
     LQ.getHSL(LQH,T.SRGBColorSpace);LQH.s=Math.max(LQH.s,0.6);LQH.l=Math.min(0.74,Math.max(0.6,LQH.l));   // judged as the eye sees it (sRGB): a candy pastel, light but with body
     // ...but a shade darker than the page behind it (index.html, look question 6): the pastel floor lifted a deep yellow
-    // back to near white. The wet skin's light (reflections, clearcoat, sheen) draws it ~1.5x brighter than its base
+    // back to near white. The wet skin's light (reflections, clearcoat, sheen) draws it ~2x brighter than its base
     // colour (measured 2026-11-08), so the base is held at 0.36, not the flat 2D's 0.48 (dev-slimecontrast)
     if(typeof slimeShade==='function'){const q=slimeShade([LQH.h,LQH.s,LQH.l],0.36);LQH.l=q[2];}
     gooMat.sheenColor.setHSL(LQH.h,LQH.s*0.55,Math.min(0.93,LQH.l+0.2),T.SRGBColorSpace);   // the wet edge: a lighter shade of the chord
