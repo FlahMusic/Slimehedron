@@ -1915,7 +1915,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 .bfly i{display:inline-block;font-style:normal;animation:flap .4s ease-in-out infinite alternate}
 @keyframes orbitb{0%{transform:rotate(0deg) translateX(52px) rotate(0deg)}100%{transform:rotate(360deg) translateX(52px) rotate(-360deg)}}
 @keyframes flap{from{transform:scaleX(1) rotate(-10deg)}to{transform:scaleX(.5) rotate(10deg)}}
-.spark{position:absolute;animation:twinkle ease-in-out infinite;pointer-events:none;text-shadow:0 0 6px currentColor}
+.spark{position:absolute;animation:twinkle ease-in-out infinite;pointer-events:none;text-shadow:0 0 6px currentColor;line-height:1}
 @keyframes twinkle{0%,100%{opacity:.15;transform:scale(.5) rotate(0deg)}50%{opacity:1;transform:scale(1.2) rotate(25deg)}}
 .gbubble{position:absolute;bottom:104%;left:52%;transform:translateX(-50%) scale(1.15);transform-origin:50% 100%;background:#fff;border-radius:9px;padding:4px 8px;font-size:10px;font-weight:700;color:#5a4f78;box-shadow:0 3px 9px rgba(150,120,190,.3);white-space:nowrap;opacity:0;transition:.3s;pointer-events:none} /* a whisper, not a billboard */
 .gbubble.show{opacity:1}
@@ -8497,7 +8497,9 @@ setKnobFace('happy');
 // (they used to reveal only their scalp); sides peek less so they don't jut across the stage.
 const SH=84,SW=90,PEEK_B=68,PEEK_S=46,OUT=14;
 const GEO={
-  bottom:{anchor:{bottom:'0'},rest:`translateY(${SH-PEEK_B}px)`,hide:`translateY(${SH+OUT}px)`},
+  // WHOLE, NOT CUT (Flah 2026-11-03, look question 2: the mascots were cut off at the screen edge; keep them whole). A
+  // bottom slime stands on the floor in full at rest; it still ducks out of view when it hides.
+  bottom:{anchor:{bottom:'0'},rest:'translateY(0px)',hide:`translateY(${SH+OUT}px)`},
   top:{anchor:{top:'0'},rest:`translateY(${-(SH-PEEK_B)}px) rotate(180deg)`,hide:`translateY(${-(SH+OUT)}px) rotate(180deg)`},
   left:{anchor:{left:'0'},rest:`translateX(${-(SW-PEEK_S)}px) rotate(90deg)`,hide:`translateX(${-(SW+OUT)}px) rotate(90deg)`},
   right:{anchor:{right:'0'},rest:`translateX(${SW-PEEK_S}px) rotate(-90deg)`,hide:`translateX(${SW+OUT}px) rotate(-90deg)`}
@@ -8509,11 +8511,9 @@ const SPOTS=[
   // BOTTOM: thinned from five to three. a row of slimes along the floor reads as a queue, not decoration.
   // bottom-left ~0-20% is where the STUDIO mixer triangle lives, so the row starts at 30%.
   {edge:'bottom',cross:{left:'30%'},fill:'--mint'},{edge:'bottom',cross:{left:'56%'},fill:'--pink'},{edge:'bottom',cross:{left:'86%'},fill:'--sky'},
-  // TOP: peeking down from behind the header strip, in the gaps either side of the transport row.
-  {edge:'top',cross:{left:'19%'},fill:'--yellow'},{edge:'top',cross:{left:'71%'},fill:'--lav'},
-  // SIDES: staggered at uneven heights (left and right deliberately do not line up) so the room reads scattered.
-  {edge:'left',cross:{top:'21%'},fill:'--sky'},{edge:'left',cross:{top:'47%'},fill:'--yellow'},{edge:'left',cross:{top:'71%'},fill:'--pink'},
-  {edge:'right',cross:{top:'31%'},fill:'--lav'},{edge:'right',cross:{top:'58%'},fill:'--mint'},{edge:'right',cross:{top:'84%'},fill:'--sky'}
+  // (TOP and SIDE peekers were here: half a slime by design, hanging upside down from the header or lying against a
+  // wall, cut by the screen edge. Look question 2 said keep them whole, so they went; the margin crowd below places
+  // whole slimes in the free space at the sides.)
 ];
 // ---- colour spread: hand out families in a SHUFFLED cycle so every colour appears and no two neighbours clump ----
 function _shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]];}return a;}
@@ -8540,8 +8540,7 @@ const chillers=[]; // full-view slimes with cursor physics
   // across the full width so the crowd is visible and even (not clumped/stacked). skip 12% to leave room for the rgirl.
   // phone bottom peekers — kept CLEAR of the bottom-center mixer (~50%) and the bottom-right menu button (~93%),
   // so a slime never sits on a control. fewer of them = tidy, not cluttered.
-  const MOBSPOTS=[{edge:'bottom',cross:{left:'9%'},fill:'--mint'},{edge:'bottom',cross:{left:'88%'},fill:'--yellow'},
-    {edge:'left',cross:{top:'63%'},fill:'--sky'},{edge:'right',cross:{top:'74%'},fill:'--pink'}]; // two on the floor, two poking in from the side gutters: spread, not a bottom row
+  const MOBSPOTS=[{edge:'bottom',cross:{left:'9%'},fill:'--mint'},{edge:'bottom',cross:{left:'88%'},fill:'--yellow'}]; // two on the floor, whole (the two side-gutter peekers were cut by the edge: look question 2)
   (MOB?MOBSPOTS:SPOTS).forEach((s,i)=>{const g=GEO[s.edge];const el=document.createElement('div');el.className="slime peeker peek-"+s.edge;el.style.position="fixed";
     Object.assign(el.style,g.anchor,s.cross);let _r=g.rest,_h=g.hide;{const a=' rotate('+(Math.random()*26-13).toFixed(0)+'deg)';_r+=a;_h+=a;} // EVERY edge leans at its own lil angle, nobody stands to attention
     const fam=nextFam(),face=randFace(); // even colour spread + a randomized resting expression (nuance)
@@ -9126,7 +9125,7 @@ const MONARCH=s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="dis
 (function(){
   const layer=document.getElementById('slimes');
   const el=document.createElement('div');el.className='slime rgirl';
-  el.style.cssText='position:fixed;left:22%;bottom:0;width:52px;height:49px;z-index:51;transform:translateY(10px);transition:transform .5s cubic-bezier(.34,1.56,.64,1)'; // raised so most of her shows (was buried — only her scalp poked out)
+  el.style.cssText='position:fixed;left:22%;bottom:0;width:52px;height:49px;z-index:51;transform:translateY(0px);transition:transform .5s cubic-bezier(.34,1.56,.64,1)'; // raised so most of her shows (was buried — only her scalp poked out)
   // SHE WAS PINNED AT left:22% AND NEVER LOOKED. On a narrow screen that put her on the splash's
   // share line, on a lesson card, on the tools menu, and once 93% on top of the worm. Same policy
   // as the worm and the edge peekers: slide along the floor to find clear room, sit it out if the
@@ -9189,7 +9188,7 @@ const MONARCH=s=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" style="dis
   let tmr=null;
   el.addEventListener('click',()=>{
     el.classList.add('show');el.style.transform='translateY(0)';bub.classList.add('show'); // pop up, show the bubble; her face is in the art
-    clearTimeout(tmr);tmr=setTimeout(()=>{el.classList.remove('show');el.style.transform='translateY(37px)';bub.classList.remove('show');},4500);
+    clearTimeout(tmr);tmr=setTimeout(()=>{el.classList.remove('show');el.style.transform='translateY(0px)';bub.classList.remove('show');},4500);
   });
 })();
 

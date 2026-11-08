@@ -143,6 +143,21 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     hslRGB, which works in turns, so since 3e4772b (2026-11-04) 7 keys of 12 had a red slime and chord bar; now the
     12 keys go round the wheel. dev-slimecontrast (new, sabotaged 4 ways); dev-look3d's lightness floor 0.55 -> 0.4.
     NOT CHECKED BY A MACHINE: whether the deeper greens and yellows look right to Flah.
+    MASCOTS WHOLE (2026-11-08, sw v152; look question 2). Bottom peekers stand whole at rest (they still duck away);
+    the top and side peekers (half a slime by design: upside down from the header, lying on a wall) are gone, on
+    desktops and phones; the rainbow girl rests at 0 (was 10 px under the floor); a sparkle's box is line-height 1.
+    dev-decor (new, sabotaged 4 ways). FOR FLAH (could not be done without a decision):
+    Q1 (stickers off the phone tank): the crayon stars inside the phone tank are painted INTO bg-mobile.webp (and one
+      sits on the desktop tank's right wall in bg-desktop.webp). Moving them is an art edit: repaint those two
+      pictures with the sticker clusters outside the tank's area (phone: x 50-340, y 330-625 of 390x844; desktop:
+      x 366-914, y 209-806 of 1280x900), or a soft white wash behind the tank. Recommended: repaint (art direction).
+    Q4 (phone play tank about twice as tall): the canvas is a 362 px square (screen width) centred in a 715 px tall
+      stage; a regular polygon is capped by the width, so it cannot get taller without getting wider. Twice as tall
+      means a stretched (taller-than-wide) tank on portrait phones: it changes the physics walls, the goo volume, the
+      3D solids and the plugin's copy of the tank (tripwire). Recommended: a 1.5x vertical stretch on portrait phones
+      in play only, with the vstparity tripwire rerun; or leave it.
+    Also: the play triangle mixer's guitar slime touches the tank's left wall at 1280 (a control, in the spot Flah
+      circled; not moved).
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

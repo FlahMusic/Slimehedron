@@ -12,7 +12,7 @@ Every page a suite opens presses a lesson's pulsing "listen" button the moment i
 ## 2. Targeted runs: the suites for what you touched (run these right after the change, not at the end)
 | You touched | Run |
 |---|---|
-| the header / transport / any control's size | dev-topbar, dev-a11y, dev-devices, dev-phone, dev-surface, dev-crowding |
+| the header / transport / any control's size | dev-decor (mascots whole, off the tank), dev-topbar, dev-a11y, dev-devices, dev-phone, dev-surface, dev-crowding |
 | play mode, the tank gestures, auto-notes | dev-hands, dev-ux, dev-firsttouch, dev-firstfive, dev-controls, dev-guide |
 | tank physics, spin, shapes, spaces | dev-hands, dev-space, dev-solid, dev-orb, dev-portal, dev-beatlock, dev-revive, dev-fluid |
 | the solid maths (any solid, orbs) | dev-solid, dev-orb, then `node _dev/solid-ref.js` and `cargo test` in `vst/` (the plugin checks against it) |

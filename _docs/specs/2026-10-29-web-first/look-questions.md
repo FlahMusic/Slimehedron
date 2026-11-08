@@ -15,5 +15,7 @@ Recommended answer after each.
 Flah, 2026-11-03: "all yes, also i dont even see a crayon/glass toggle? if this isnt used just forget the crayon shit and
 focus on optimizing this to look clean". So 1, 2, 4, 5, 6 yes; 3 is replaced: the tank's crayon look is removed and glass
 is the only look (ADR 0012). The crayon art of the page itself (background, stickers, mascots) stays.
-Built: 5 (BEAT_SQUASH 0.35, dev-goo3d 3b) and 6 (2026-11-08: slimeShade, dev-slimecontrast).
+Built: 5 (BEAT_SQUASH 0.35, dev-goo3d 3b), 6 (2026-11-08: slimeShade, dev-slimecontrast), 2 (2026-11-08: whole
+mascots, dev-decor). 1 and 4 need a decision first (handoff, MASCOTS WHOLE): 1 is an art edit (the stickers are painted
+into the background pictures), 4 needs a taller-than-wide tank on phones.
 (The switch was a "look" row in the tank's corner view menu, shown only in 3D with the graphics-card renderer.)
