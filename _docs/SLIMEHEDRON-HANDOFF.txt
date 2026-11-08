@@ -100,6 +100,10 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     suites. dev-goopro (new, measured old vs new first; 6 sabotages caught). NOT CHECKED BY A MACHINE: how it looks in
     motion on Flah's screen. Next: the crayon removal (ADR 0012, written), the UI pass (research
     _docs/research/2026-11-07-daw-layout.md, 4 decisions for Flah), the audio overhaul.
+    ONE LOOK, GLASS (2026-11-07, sw v147, ADR 0012): the crayon tank look is gone (the #lookRow switch, setLook, the
+    crayon materials/line boil/wormhole passes in tank3d.js, ?look= links). An old saved 'crayon' setting is cleared on
+    load; share links still write lk:'glass' so older builds read them. dev-crayon retired; dev-goopro 7 checks it.
+    The crayon ART (stickers, buttons, lessons) is untouched: this is only the tank's render look.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

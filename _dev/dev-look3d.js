@@ -1,7 +1,7 @@
 // ============================================================================================
 //  HOW THE 3D TANK LOOKS, MEASURED ON THE GPU (this suite turns WebGL on itself).
 //    1. the goo is ONE CANDY, not mud: even fed every colour at once and a grey pool colour, the colours it
-//       is drawn in stay close in hue, clearly coloured (saturated) and pastel-light — in glass and crayon
+//       is drawn in stay close in hue, clearly coloured (saturated) and pastel-light — in glass (the one look, ADR 0012)
 //    2. a note has a clean edge: on the pale page a ball's rim is clearly darker than its middle, in its
 //       own colour, so it never melts into the background
 //  Needs a local server: python3 -m http.server 8765, and python3 with Pillow.
@@ -34,8 +34,8 @@ print(json.dumps({'mid':ring(0,r*0.35),'rim':ring(r*0.72,r*0.92),'bg':ring(r*1.6
  await p.goto('http://127.0.0.1:8765/index.html?m=play&view=3d&space=normal');await p.waitForTimeout(3500);
  ok(await p.evaluate(()=>!!(window.__gl&&window.__gl.api)),'the GPU tank is running');
  // ---- 1. one candy, not mud ----
- for(const look of ['glass','crayon']){
-  const g=await p.evaluate(async look=>{window.setLook3D(look);const sb=startBreak;startBreak=()=>{};fillState='fill';particles.length=0;
+ for(const look of ['glass']){
+  const g=await p.evaluate(async look=>{const sb=startBreak;startBreak=()=>{};fillState='fill';particles.length=0;
     liqRGB[0]=150;liqRGB[1]=140;liqRGB[2]=128;                       // a muddy pool colour: what averaging many notes gives
     for(let i=0;i<500;i++)particles.push({x:CX+(Math.random()-0.5)*R*1.2,y:CY+(Math.random()-0.5)*R*1.2,z:Math.random(),vx:0,vy:0,vz:0,r:8,hue:Math.random(),pooled:true,age:80});
     for(let i=0;i<4;i++)window.__gl.api.render();await new Promise(r=>setTimeout(r,500));window.__gl.api.render();   /* the skin comes back from goo-worker.js a moment later */
@@ -44,7 +44,7 @@ print(json.dumps({'mid':ring(0,r*0.35),'rim':ring(r*0.72,r*0.92),'bg':ring(r*1.6
   ok(g&&g.sat>0.45,'['+look+'] and it is clearly coloured, not grey (saturation '+(g?g.sat.toFixed(2):'?')+')');
   ok(g&&g.light>0.55&&g.light<0.88,'['+look+'] and pastel-light, not dark or muddy (lightness '+(g?g.light.toFixed(2):'?')+')');}
  // ---- 1b. a note squashes when it hits a wall, in a normal tank and in portal space ----
- const sq=async(space)=>p.evaluate(async space=>{window.setLook3D('glass');window.setSpace(space);const s=document.getElementById('shape');s.value='6';s.dispatchEvent(new Event('change'));
+ const sq=async(space)=>p.evaluate(async space=>{window.setSpace(space);const s=document.getElementById('shape');s.value='6';s.dispatchEvent(new Event('change'));
    window.setSpace(space);fillState='fill';particles.length=0;balls.length=0;S.chaos=0;
    // each one starts just inside the glass and heads straight at it (software GL draws a few frames a second here)
    for(let i=0;i<4;i++){const ang=i*Math.PI/2+0.3;spawn(CX+Math.cos(ang)*R*0.62,CY+Math.sin(ang)*R*0.62);const B=balls[balls.length-1];B.z=B.pz=0.5;B.vz=0;B.vx=ballSpeed()*Math.cos(ang);B.vy=ballSpeed()*Math.sin(ang);}
@@ -59,7 +59,7 @@ print(json.dumps({'mid':ring(0,r*0.35),'rim':ring(r*0.72,r*0.92),'bg':ring(r*1.6
  ok(sP.space==='portal'&&sP.k>0.15,'in portal space too: only the two wormholes take a note in, the rest of the glass still bounces (and squashes) it ('+(sP.k*100).toFixed(0)+'%)');
  await p.evaluate(()=>{window.setSpace('normal');balls.length=0;});
  // ---- 2. a note has a clean edge ----
- await p.evaluate(()=>window.setLook3D('glass'));
+
  const shot=await p.evaluate(()=>{try{setPlaying(false);}catch(e){}particles.length=0;balls.length=0;window.requestAnimationFrame=()=>0;
    spawn(CX,CY);const B=balls[0];B.vx=B.vy=0;B.x=B.px=CX;B.y=B.py=CY;B.z=B.pz=0.15;B.hue=0.58;B.trail.length=0;
    window.__gl.api.render();window.__gl.api.render();

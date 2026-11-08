@@ -80,7 +80,7 @@ const onScreen=(p,id)=>p.evaluate(id=>{const e=document.getElementById(id);if(!e
   ok(!(await seen(p,'resetBtn')),'[fresh] there is no wipe-everything button in the header');
   // make something worth losing: a mixer change, chords, a groove, a look
   await p.evaluate(()=>{localStorage.setItem('slimehedron-chords','[1,2,3]');localStorage.setItem('slimehedron-chordbars','2');localStorage.setItem('slimehedron-groove','Swing');
-    localStorage.setItem('slimehedron-look','crayon');localStorage.setItem('slimehedron-song','{"x":1}');localStorage.setItem('slimehedron2','{"r":{}}');});
+    localStorage.setItem('slimehedron-view3d','0');localStorage.setItem('slimehedron-song','{"x":1}');localStorage.setItem('slimehedron2','{"r":{}}');});
   await p.click('#prefsBtn');await p.waitForTimeout(300);
   ok(await seen(p,'freshBtn'),'[fresh] it lives in Preferences');
   await p.evaluate(()=>{window.__same=1;});
@@ -89,9 +89,9 @@ const onScreen=(p,id)=>p.evaluate(id=>{const e=document.getElementById(id);if(!e
   if(!after1.same){ok(false,'[fresh] one tap only asks again -- but the page was wiped and reloaded on the FIRST tap');await ctx.close();}else{
   ok(after1.song!==null&&/again/.test(after1.txt),'[fresh] one tap only asks again ("'+after1.txt+'"), nothing is wiped');
   await Promise.all([p.waitForNavigation(),p.click('#freshBtn')]);await p.waitForTimeout(400);
-  const left=await p.evaluate(()=>{const g=k=>localStorage.getItem(k);return {chords:g('slimehedron-chords'),bars:g('slimehedron-chordbars'),groove:g('slimehedron-groove'),look:g('slimehedron-look')};});
+  const left=await p.evaluate(()=>{const g=k=>localStorage.getItem(k);return {chords:g('slimehedron-chords'),bars:g('slimehedron-chordbars'),groove:g('slimehedron-groove'),view:g('slimehedron-view3d')};});
   ok(left.chords===null&&left.bars===null&&left.groove===null,'[fresh] the second tap clears the chords and the groove too ('+JSON.stringify(left)+')');
-  ok(left.look==='crayon','[fresh] how you like to see it (the look) stays');
+  ok(left.view==='0','[fresh] how you like to see it (3D or 2D) stays');   // (the tank has one look now, ADR 0012)
   await ctx.close();}}
 
  // ---- 5 + 6. play has no chord editor; MIDI out shown once and still works ----

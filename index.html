@@ -2303,7 +2303,6 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
       <button id="spaceBtn" aria-expanded="false" aria-controls="spaceMenu" aria-label="3D, space and shape" title="3D, space and shape"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 2.8 20.2 7.4v9.2L12 21.2 3.8 16.6V7.4z"/><path d="M3.8 7.4 12 12l8.2-4.6M12 12v9.2"/></svg><span id="spaceTxt" class="sr">3D</span></button>
       <div id="spaceMenu" role="group" aria-label="3D, space and shape" hidden>
         <div class="smRow"><span class="smLab">view</span><button data-view="3d" aria-pressed="false">3D</button><button data-view="2d" aria-pressed="false">2D</button></div>
-        <div class="smRow" id="lookRow" hidden><span class="smLab">look</span><button data-look="glass" aria-pressed="false" title="the tank as glass">glass</button><button data-look="crayon" aria-pressed="false" title="the tank drawn in crayon">crayon</button></div>
         <div class="smRow"><span class="smLab">space</span><button data-space="auto" aria-pressed="false">auto</button><button data-space="normal" aria-pressed="false">normal</button><button data-space="portal" aria-pressed="false">portal</button><button data-space="curved" aria-pressed="false">curved</button></div>
         <div class="smRow" id="growBar" hidden><span class="smLab">shape</span><span class="smNow" id="smNow" aria-hidden="true"></span><span class="smArrow" aria-hidden="true">&rarr;</span><button data-grow="cut" aria-label="cut the corners off">cut</button><button data-grow="puff" aria-label="puff out the faces">puff</button><button data-grow="flip" aria-label="swap the faces and the corners">flip</button><button data-grow="back" aria-label="back to the shape before">back</button></div>
         <p id="smNote"></p>
@@ -6512,16 +6511,14 @@ function drawBalls3D(){
 // failed load, a lost GPU context, a lesson, or ?gl=0: the canvas draws the 3D tank exactly as before.
 const GLV={api:null,loading:false,want:true};
 // HOW THE GPU TANK LOOKS: glass (the default) or crayon (drawn like the rest of the app). ?look=crayon, or the corner menu.
-const LOOK3D={v:'glass'};
-try{const q=new URLSearchParams(location.search).get('look');const sv=localStorage.getItem('slimehedron-look');
-  const w=q||sv;if(w==='crayon'||w==='glass')LOOK3D.v=w;}catch(e){}
-window.setLook3D=v=>{if(v!=='crayon'&&v!=='glass')return;LOOK3D.v=v;try{localStorage.setItem('slimehedron-look',v);}catch(e){}
-  if(GLV.api&&GLV.api.setLook)GLV.api.setLook(v);};
+// ONE LOOK: glass (ADR 0012, Flah 2026-11-03). The crayon tank look, its switch, ?look= and the saved setting are gone; an old
+// saved one is cleared, and a link that carries one is read as glass.
+try{localStorage.removeItem('slimehedron-look');}catch(e){}
 try{if(new URLSearchParams(location.search).get('gl')==='0'||window.__noGL)GLV.want=false;}catch(e){}
 function glCan(){try{const c=document.createElement('canvas');return !!(c.getContext('webgl2')||c.getContext('webgl'));}catch(e){return false;}}
 function glEnsure(){if(GLV.api||GLV.loading||!GLV.want||!VIEW.d3)return;if(!glCan()){GLV.want=false;return;}
   GLV.loading=true;
-  import('./tank3d.js').then(m=>{GLV.api=m.start();GLV.loading=false;try{GLV.api.setLook(LOOK3D.v);}catch(e){}})
+  import('./tank3d.js').then(m=>{GLV.api=m.start();GLV.loading=false;})
     .catch(e=>{console.warn('3D renderer unavailable, the canvas draws the tank:',e&&e.message);GLV.want=false;GLV.loading=false;});}
 window.__glLost=()=>{GLV.want=false;if(GLV.api)GLV.api.show(false);GLV.api=null;};
 window.__gl=GLV;
@@ -7819,7 +7816,6 @@ window.growBack=growBack;
     const sp=edges?edges._space:'normal';
     txt.textContent=(VIEW.d3?'3D':'2D')+' \u00b7 '+(TSPACE.pick==='auto'&&sp==='normal'&&(S.mode==='play'||S.slimeMode)?'auto':sp);
     menu.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.view==='3d')===VIEW.d3)));
-    const lr=$("lookRow");if(lr){lr.hidden=!(VIEW.d3&&GLV.want);lr.querySelectorAll('[data-look]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.look===LOOK3D.v)));}   // the crayon look is drawn on the graphics card only
     const autoBtn=menu.querySelector('[data-space="auto"]');if(autoBtn)autoBtn.hidden=S.mode!=='play';
     menu.querySelectorAll('[data-space]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.space===TSPACE.pick)));
     const want=TSPACE.pick==='auto'?null:TSPACE.pick;
@@ -7838,8 +7834,6 @@ window.growBack=growBack;
   const PIC={
     '3d':svg('<path d="M18 5 30 11.5V24.5L18 31 6 24.5V11.5Z"/><path d="M6 11.5 18 18 30 11.5M18 18V31"/>'),
     '2d':svg('<path d="'+hex(13)+'" fill="currentColor" fill-opacity=".14"/>'),
-    'glass':svg('<path d="'+hex(13)+'" fill="currentColor" fill-opacity=".1"/><path d="M11 15 15 11M11 20 19 12" stroke-width="1.8" opacity=".7"/>'),
-    'crayon':svg('<path d="'+hex(13,[0.8,-0.9,0.6,-0.7,1,-0.5])+'" stroke-width="2.8" stroke-dasharray="7 1.4 3 1.2"/><path d="'+hex(11.6,[-0.5,0.7,-0.6,0.9,-0.4,0.5])+'" stroke-width="1" opacity=".55"/>'),
     'auto':svg('<rect x="7" y="7" width="22" height="22" rx="5"/><circle cx="13" cy="13" r="1.6" fill="currentColor"/><circle cx="23" cy="23" r="1.6" fill="currentColor"/><circle cx="18" cy="18" r="1.6" fill="currentColor"/>'),
     'normal':svg('<path d="'+hex(13)+'"/>'),
     'back':svg('<path d="M13 9L7 15L13 21"/><path d="M7 15H20A7 7 0 0 1 20 29H16"/>'),   // nothing to go back to: just the arrow, greyed
@@ -7870,7 +7864,7 @@ window.growBack=growBack;
   window._solidPic=solidPic;   // test hook
   function withPic(b,pic){const word=b.dataset.word||(b.dataset.word=b.textContent.trim());
     b.classList.add('smHasPic');b.innerHTML=pic+'<span class="smWord">'+word+'</span>';}
-  menu.querySelectorAll('[data-view],[data-look],[data-space]').forEach(b=>withPic(b,PIC[b.dataset.view||b.dataset.look||b.dataset.space]||''));
+  menu.querySelectorAll('[data-view],[data-space]').forEach(b=>withPic(b,PIC[b.dataset.view||b.dataset.space]||''));
   // OUT OF THE WAY: a small round button in a corner of the SCREEN, never in the middle of things.
   // Bottom-right first, then along the bottom edge, then the bottom-left; never on top of a control.
   function place(){
@@ -7894,7 +7888,6 @@ window.growBack=growBack;
   menu.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;e.stopPropagation();
     if(b.dataset.grow){if(b.dataset.grow==='back')growBack();else growSolid(b.dataset.grow);paint();setTimeout(paint,1000);return;}
     if(b.dataset.view)window.setView3D(b.dataset.view==='3d');
-    if(b.dataset.look)window.setLook3D(b.dataset.look);
     if(b.dataset.space)window.setSpace(b.dataset.space);
     paint();});
   addEventListener('pointerdown',e=>{if(!menu.hidden&&!chip.contains(e.target))open(false);},true);
@@ -10234,7 +10227,7 @@ function startCoach(room){room=room||'play';const C=COACH[room];if(!C||document.
     const out=new Uint8Array(n);let o=0;for(const p of parts){out.set(p,o);o+=p.length;}return out;}
   async function packLink(){const o=snapshot();o.mode=S.mode==='studio'?'studio':'play';
     o.on={d:!!drumOn,b:!!bandOn};   // which parts were switched on: a jazz link should open with the jazz drums ready
-    o.look={v3:!!VIEW.d3,sp:TSPACE.cur||TSPACE.pick,lk:(typeof LOOK3D!=='undefined'&&LOOK3D.v)||'glass'};
+    o.look={v3:!!VIEW.d3,sp:TSPACE.cur||TSPACE.pick,lk:'glass'};
     const raw=new TextEncoder().encode(JSON.stringify(o));let tag='j',body=raw;
     if(window.CompressionStream){try{const z=await squeeze(raw,1);if(z){body=z;tag='z';}}catch(e){}}
     const base=/^https?:$/.test(location.protocol)?location.origin+location.pathname:APPURL;
@@ -10266,7 +10259,6 @@ function startCoach(room){room=room||'play';const C=COACH[room];if(!C||document.
         const L=isObj(o.look)?o.look:{};
         if(typeof L.v3==='boolean'&&L.v3!==!!VIEW.d3&&window.setView3D)window.setView3D(L.v3);
         if(typeof L.sp==='string'&&SPACES.includes(L.sp)&&window.setSpace)window.setSpace(L.sp);
-        if((L.lk==='crayon'||L.lk==='glass')&&window.setLook3D)window.setLook3D(L.lk);
         if(isObj(o.on)){if(typeof o.on.d==='boolean'&&o.on.d!==!!drumOn)$("drumBtn").click();
           if(typeof o.on.b==='boolean'&&o.on.b!==!!bandOn)$("bandBtn").click();}
         if(S.slimeMode)_keyPinned=true;   // the slime would otherwise walk straight off into another key

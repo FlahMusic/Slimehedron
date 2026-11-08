@@ -8,6 +8,7 @@
 //    4. the hue is still the chord's (within 0.05 of the liquid colour) and saturated, in each of the three
 //    5. it breathes, and stops under prefers-reduced-motion
 //    6. with no Worker (an old browser) the goo is still built, on the main thread
+//    7. one look, glass (ADR 0012): no switch, a crayon link or an old saved setting draws glass
 //  Thresholds were measured on the old goo and the new one first (numbers in the checks). Run: node _dev/dev-goopro.js
 // ============================================================================================
 process.env.SLIME_GL='1';
@@ -61,6 +62,16 @@ const SCORE=()=>{GLV.api.render();const c=GLV.api.canvas,w=c.width,h=c.height,cv
   const wob2=await p.evaluate(()=>{GLV.api.render();return GLV.api.gooWobble();});
   ok(wob2===0,'5. and holds still under prefers-reduced-motion ('+wob2+')');
   ok(errs.length===0,'no page errors ('+errs.slice(0,2).join(' | ')+')');
+  await ctx.close();}
+ // 7. one look, glass (ADR 0012): no look switch, the renderer knows only glass, a crayon link or an old saved setting draws glass
+ {const ctx=await b.newContext({viewport:{width:1280,height:900}});await ctx.addInitScript(init);await ctx.addInitScript(()=>{try{localStorage.setItem('slimehedron-look','crayon');}catch(e){}});
+  const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
+  await p.goto(URL+'&look=crayon');await p.waitForTimeout(4000);
+  const lk=await p.evaluate(()=>({api:GLV.api&&GLV.api.look,row:!!document.getElementById('lookRow'),btn:document.querySelectorAll('[data-look]').length,
+    saved:localStorage.getItem('slimehedron-look'),setLook:typeof window.setLook3D}));
+  ok(lk.api==='glass'&&!lk.row&&lk.btn===0&&lk.setLook==='undefined','7. one look: glass, with no switch for another (a ?look=crayon link: '+lk.api+')');
+  ok(lk.saved===null,'7. an old saved crayon setting is cleared ('+lk.saved+')');
+  ok(errs.length===0,'7. no page errors ('+errs.slice(0,2).join(' | ')+')');
   await ctx.close();}
  // 6. no Worker: the old path builds it here
  {const ctx=await b.newContext({viewport:{width:1280,height:900}});await ctx.addInitScript(init);await ctx.addInitScript(()=>{try{delete window.Worker;window.Worker=undefined;}catch(e){}});

@@ -1,6 +1,6 @@
 // ============================================================================================
 //  THE CORNER MENU SPEAKS IN PICTURES — and grow / back make sense to someone who cannot read.
-//    1. every choice (3D/2D, glass/crayon, auto/normal/portal/curved) shows a picture, not just a word
+//    1. every choice (3D/2D, auto/normal/portal/curved) shows a picture, not just a word (one look, glass: ADR 0012)
 //    2. each grow button shows THE SHAPE YOU WILL GET: its picture has exactly that solid's edges
 //       (tetra 6, cube 12, octa 12, dodeca 30, icosa 30, and the grown ones counted from the geometry)
 //    3. pressing one grows the tank into that shape, and the "now" picture becomes the picture that
@@ -22,9 +22,9 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
  await p.waitForTimeout(600);
  await p.click('#spaceBtn');await p.waitForTimeout(300);
  // ---- 1. pictures on every choice ----
- const pics=await p.evaluate(()=>[...document.querySelectorAll('#spaceMenu [data-view],#spaceMenu [data-look],#spaceMenu [data-space]')]
-   .filter(b=>!b.hidden&&b.offsetParent!==null||b.closest('#lookRow')&&!b.closest('#lookRow').hidden)
-   .map(b=>({k:b.dataset.view||b.dataset.look||b.dataset.space,pic:!!b.querySelector('svg.smPic path,svg.smPic rect'),word:(b.querySelector('.smWord')||{}).textContent})));
+ const pics=await p.evaluate(()=>[...document.querySelectorAll('#spaceMenu [data-view],#spaceMenu [data-space]')]
+   .filter(b=>!b.hidden&&b.offsetParent!==null)
+   .map(b=>({k:b.dataset.view||b.dataset.space,pic:!!b.querySelector('svg.smPic path,svg.smPic rect'),word:(b.querySelector('.smWord')||{}).textContent})));
  ok(pics.length>=6&&pics.every(x=>x.pic),'every choice in the corner menu shows a picture ('+pics.map(x=>x.k+(x.pic?'':'(none)')).join(', ')+')');
  ok(pics.every(x=>x.word&&x.word.length<9),'with the word small underneath, for whoever can read it');
  const distinct=await p.evaluate(()=>new Set([...document.querySelectorAll('#spaceMenu [data-space] svg')].map(s=>s.innerHTML)).size);
