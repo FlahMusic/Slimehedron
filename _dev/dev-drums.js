@@ -24,6 +24,9 @@ const URL='http://127.0.0.1:8765/index.html';
  // ---- 1+2. render every voice offline and measure it ----
  const V=await p.evaluate(async()=>{
    const SR=44100,out={};drumKit='pop';
+   // a drum sounds DRUM_LEAD_S before the time it is asked for (it makes up the glue compressor's fixed delay): measure
+   // from when it sounds, or a short hat loses its loudest milliseconds
+   const LEAD=typeof DRUM_LEAD_S==='number'?DRUM_LEAD_S:0;
    const render=async(fn,len)=>{const rA=AC,rB=drumBus,rN=NB;
      AC=new OfflineAudioContext(1,SR*len,SR);NB=null;drumBus=AC.createGain();drumBus.connect(AC.destination);_ohChoke=null;
      try{fn();}finally{}const buf=await AC.startRendering();AC=rA;drumBus=rB;NB=rN;return buf.getChannelData(0);};
@@ -31,7 +34,7 @@ const URL='http://127.0.0.1:8765/index.html';
      const d=await render(()=>dHit(v,0.05,1,true),2.5);
      let pk=0;for(const x of d)pk=Math.max(pk,Math.abs(x));
      let last=0;for(let i=d.length-1;i>=0;i--)if(Math.abs(d[i])>pk/100){last=i;break;}
-     const st=Math.round(0.05*SR),N=4096;let best=0,bf=0;
+     const st=Math.round((0.05-LEAD)*SR),N=4096;let best=0,bf=0;
      for(let f=40;f<16000;f*=1.03){let re=0,im=0;const w=2*Math.PI*f/SR;
        for(let n=0;n<N;n++){const x=d[st+n]*(0.5-0.5*Math.cos(2*Math.PI*n/N));re+=x*Math.cos(w*n);im-=x*Math.sin(w*n);}
        const m=Math.hypot(re,im);if(m>best){best=m;bf=f;}}
@@ -44,7 +47,7 @@ const URL='http://127.0.0.1:8765/index.html';
        const m=(re*re+im*im)*f;tot+=m;cen+=m*f;if(f>5000)hi+=m;if(m>bm){bm=m;bf=f;}}
      return {hi:hi/tot,cen:cen/tot,hz:bf};};
    const rms=(d,st)=>{let e=0;for(let i=st;i<st+Math.round(0.3*SR);i++)e+=d[i]*d[i];return Math.sqrt(e/(0.3*SR));};
-   drumKit='jazz';const st=Math.round(0.05*SR);out.ride={};
+   drumKit='jazz';const st=Math.round((0.05-LEAD)*SR);out.ride={};
    for(const root of [60,66]){S.root=root;const d=await render(()=>dHit('y',0.05,1,true),2);
      let pk=0;for(const x of d)pk=Math.max(pk,Math.abs(x));let last=0;for(let i=d.length-1;i>=0;i--)if(Math.abs(d[i])>pk/100){last=i;break;}
      out.ride[root]={...spec(d,st),decay:(last-st)/SR,rms:rms(d,st),peak:pk};}

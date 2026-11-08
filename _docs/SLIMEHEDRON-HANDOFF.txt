@@ -115,6 +115,21 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     moved into the Pattern card, Timing (quantize) moved under "more settings". The research's suspected double tempo
     control is not real (only #bpmNum shows). dev-studiopolish (new). Decisions taken on the research's recommended
     answers while Flah slept: mute colour, part colours, Groove move, no metronome. All one-line reversals.
+    AUDIO OVERHAUL PART 1 (2026-11-07, sw v149; spec _docs/specs/2026-11-07-audio-overhaul, research
+    _docs/research/2026-11-07-audio-overhaul.md, measured in headless Chromium). (1) The master limiter never set its
+    knee, so it sat at the 30 dB default and let 0 dBFS through at -0.2: makeLimiter() (knee 0), and outVol gives back
+    the node's own +4.78 dB makeup (LIM_MAKEUP_DB) so everything under the threshold is as loud as before. A stress run
+    now peaks at -2.6 dBTP and never touches the clip. (2) The room (makeRoomIR): per-octave noise, each with its own
+    decay (1.6 s at 125 Hz down to 0.35 s at 16 kHz), 16 ms pre-delay, 8 early reflections, every band at white-noise
+    energy on both sides (independent noise put one note louder on one side by chance). (3) The stage: playSynth's 7th
+    argument pan; trigger() takes it from _hitPan (set at every ball-hit site and LAB.strike), measured against the
+    shape's own half-width (stageHalfW). Up to +-0.4, low notes centred (110-260 Hz fade), +3 dB into the equal-power
+    panner so a placed note is as loud as a centred one. (4) Velocity to cutoff, SoundFont slope, anchored on the
+    everyday note. (5) Ring attack: 4 ms floor, a raised-cosine curve (attackCurve). (6) DRUM_LEAD_S: drums sound 6 ms
+    before the asked time (drumComp's fixed look-ahead); MIDI out and the beat pulse keep the true time. dev-audiopro
+    (new, sabotaged 9 ways). dev-drums and dev-sound now measure from when a drum sounds / after the pre-delay.
+    Decisions taken on the research's recommendations while Flah slept: pan the melody, a room not a plate, the drum
+    lead. NOT CHECKED BY A MACHINE: how the room and the stage sound (headphones and a phone speaker).
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

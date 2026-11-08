@@ -50,6 +50,8 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 - **The mix under the melody**: every part sits under the melody by a measured margin (`dev-mix`). **Kit trim**
   (`KIT_DB`) is a kit's fader after the drum glue compressor; **piece trim** (`PIECE_DB`) is one drum's level per hit.
   A **soft kit** (bossa, jazz) sits further under.
+- **Room**: the reverb (`makeRoomIR`): a 1.3 s room whose top dies first, 16 ms pre-delay. **Stage**: where a note sounds
+  left to right, the side of its wall (up to +-0.4, low notes centred, the low end mono).
 - **Triangle mixer**: `#triMix` (melody / drums / band). **Mixer**: studio's per-part volume/mute/solo (`MIX`).
 - **Beat lock**: balls are steered so their hits land on the grid (`beatLock`, `b.tq`).
 - **Auto adjuster**: gives each shape its own pace with auto-notes on (`AUTO`, `autoRoom`): a notes-a-bar aim from its

@@ -2642,7 +2642,15 @@ let outVol=null; // THE master volume. see initAudio
 // -> -23.7 LUFS, play as it opens -19.2 -> -30.1). The lift raises every part together, after the mix, so the balance
 // stays exactly what dev-mix measured and the loudness comes back. Sized by measurement (_dev note in the handoff).
 let MASTER_LIFT_DB=5;   // measured 2026-11-07: +4 left studio 1.6 dB under where it was, +6 hit the -1 dBFS ceiling again
-const outGain=v=>v/VOL_REF*Math.pow(10,MASTER_LIFT_DB/20);
+// THE LIMITER. Its knee was never set, so it sat at the node's 30 dB default: a soft curve that let a 0 dBFS sine out
+// at -0.2 dBFS and left the hard clip to do all the ceiling work (research _docs/research/2026-11-07-audio-overhaul.md,
+// section 4, measured). knee 0 makes it a limiter. The node adds its own makeup gain, (1/curve(1))^0.6 = +4.78 dB at
+// these settings (Web Audio spec 1.19, Chromium's DynamicsCompressor), and there is no switch for it, so outVol takes
+// it back: below the threshold the app is exactly as loud as before.
+const LIM_MAKEUP_DB=4.78;
+function makeLimiter(c){const l=c.createDynamicsCompressor();l.threshold.value=-8.5;l.knee.value=0;l.ratio.value=16;
+  l.attack.value=0.003;l.release.value=0.25;return l;}
+const outGain=v=>v/VOL_REF*Math.pow(10,(MASTER_LIFT_DB-LIM_MAKEUP_DB)/20);
 const VOL_REF=0.4675; // S.vol at the default slider position (55)
 let noiseBuf=null,tapeDry=null,tapeWet=null,tapeDrive=null,tapeShaper=null,tapeTone=null,tapeDly=null,wowDepth=null,flutDepth=null,hissG=null; // tape color stage
 // A SILENT AUDIO ENGINE, for a browser that has none (or refuses to make one). Every node, parameter and
@@ -2693,12 +2701,11 @@ function initAudio(){
   padBus=AC.createGain();padBus.gain.value=1;padBus.connect(master);
   melBus=AC.createGain();melBus.gain.value=1;melBus.connect(master);
   melSend=AC.createGain();melSend.gain.value=0.17;melBus.connect(melSend);
-  lim=AC.createDynamicsCompressor(); // module-level so the PCM recorder (startPCM) can tap it on iOS
+  lim=makeLimiter(AC); // module-level so the PCM recorder (startPCM) can tap it on iOS
   // KID-SAFE OUTPUT CEILING, in two parts. the compressor does the musical work: it leans on anything
   // sustained past -8.5dBFS so a long session on earbuds stays gentle. but a compressor has a soft knee
   // and a 3ms attack, so a sharp transient CAN still poke above it — this used to claim otherwise.
   // outClip is the part that actually cannot be exceeded: a hard clamp at -1dBFS on the way to the speakers.
-  lim.threshold.value=-8.5;lim.ratio.value=16;lim.attack.value=.003;lim.release.value=.25;
   outClip=AC.createWaveShaper();outClip.oversample='4x';
   {const n=2048,c=new Float32Array(n),CEIL=0.891;for(let i=0;i<n;i++){const x=i/(n-1)*2-1;c[i]=Math.max(-CEIL,Math.min(CEIL,x));}outClip.curve=c;}
   delayNode=AC.createDelay(2.0);delayNode.delayTime.value=60/S.bpm*0.75;
@@ -2737,15 +2744,8 @@ function initAudio(){
   const hissFilt=AC.createBiquadFilter();hissFilt.type='lowpass';hissFilt.frequency.value=3200;hissFilt.Q.value=0.5; // soft distant wash, nothing grating
   hissG=AC.createGain();hissG.gain.value=0;
   hissSrc.connect(hissFilt);hissFilt.connect(hissG);hissG.connect(tapeDly);hissSrc.start();
-  // ---- reverb: a room, built from noise, costing zero bytes ----
-  rvb=AC.createConvolver();
-  {const dur=1.7,len=(AC.sampleRate*dur)|0,ir=AC.createBuffer(2,len,AC.sampleRate);
-   for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);
-     for(let i=0;i<len;i++){const x=i/len;
-       // exponential tail + a small early-reflection bump. The two channels are independently
-       // random, which is what makes the tail wide instead of a mono blob in the middle.
-       d[i]=(Math.random()*2-1)*Math.pow(1-x,2.4)*(1+0.6*Math.exp(-x*45));}}
-   rvb.buffer=ir;}
+  // ---- reverb: a room, built from noise, costing zero bytes (makeRoomIR) ----
+  rvb=AC.createConvolver();rvb.buffer=makeRoomIR(AC);
   rvbPre=AC.createBiquadFilter();rvbPre.type='highpass';rvbPre.frequency.value=380; // keep kick + bass out of the tail, or it turns to mud
   rvbWet=AC.createGain();rvbWet.gain.value=0.85;
   rvbSend=AC.createGain();rvbSend.gain.value=1;
@@ -2761,6 +2761,30 @@ function initAudio(){
   recTap=AC.createMediaStreamDestination();outClip.connect(recTap); // recorder hears exactly what you hear — same side of the ceiling
   setWarmth(S.warm);
 }
+// THE ROOM. The old IR was noise times (1-x)^2.4: every band decayed alike (4k/500 Hz T20 ratio 1.02; real rooms
+// 0.5-0.75, because air and soft things drink the top first), its slow-then-plunging envelope sounded like a 3 s room
+// cut off at 1.7 s, and the first reflection landed on the dry note. Now (research section 1, after Costello, Dattorro,
+// Jot): each octave of noise decays at its own rate (a 1.3 s room, the top dying first), 16 ms of pre-delay keeps a
+// pluck's attack dry, a few sparse early reflections give it walls, and L and R are independent noise, so it is wide.
+// The convolver normalises the IR's power, so the wet level stays where it was.
+const ROOM_RT={125:1.6,250:1.5,500:1.4,1000:1.3,2000:1.0,4000:0.75,8000:0.5,16000:0.35};
+function makeRoomIR(c){const sr=c.sampleRate,pre=0.016,len=Math.round(sr*(pre+1.05*1.6)),ir=c.createBuffer(2,len,sr);
+  const p0=Math.round(sr*pre),fade=sr*0.004;
+  for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);
+    for(const fc in ROOM_RT){if(fc>=sr*0.45)continue;const rt=ROOM_RT[fc];
+      // RBJ band-pass, Q 1.41 (an octave), run twice over the band's own noise
+      const w=2*Math.PI*fc/sr,al=Math.sin(w)/(2*1.41),a0=1+al,b0=al/a0,b2=-al/a0,a1=-2*Math.cos(w)/a0,a2=(1-al)/a0;
+      let x1=0,x2=0,y1=0,y2=0,u1=0,u2=0,v1=0,v2=0;const bd=new Float32Array(len);
+      for(let i=p0;i<len;i++){const t=(i-p0)/sr,x=Math.random()*2-1;
+        const y=b0*x+b2*x2-a1*y1-a2*y2;x2=x1;x1=x;y2=y1;y1=y;
+        const v=b0*y+b2*u2-a1*v1-a2*v2;u2=u1;u1=y;v2=v1;v1=v;
+        bd[i]=v*Math.exp(-6.908*t/rt)*Math.min(1,(i-p0)/fade);}
+      // random noise gives each band and side its own level by chance (a note's room leaned one way): every band gets
+      // the energy white noise would give it on average (its width, fc, times its decay, rt), the same on both sides
+      let e=0;for(const q of bd)e+=q*q;const sc=Math.sqrt(rt*fc/1000/(e/sr+1e-20))*0.01;for(let i=p0;i<len;i++)d[i]+=bd[i]*sc;}
+    // early reflections: 8 single taps 5-60 ms after the pre-delay, their own times on each side
+    for(let k=0;k<8;k++){const t=0.005+Math.random()*0.055,i=p0+Math.round(t*sr);if(i<len)d[i]+=(Math.random()<0.5?-1:1)*0.5*Math.exp(-t/0.05)*0.35;}}
+  return ir;}
 function setWarmth(w){S.warm=w;if(!AC)return;const t=AC.currentTime;
   // real tape feel: gentle global low pass + soft tanh saturation. NO seasick pitch vibrato.
   tapeWet.gain.setTargetAtTime(0.12+w*0.9,t,0.12);tapeDry.gain.setTargetAtTime(1-w*0.55,t,0.12);
@@ -2793,7 +2817,9 @@ function oops(what){
   try{console.warn('[slimehedron] '+what);}catch(e){}
 }
 try{window.__oops=OOPS;}catch(e){}
-function playSynth(freq,vel,imp,hold,firm,at){   // hold = seconds to SIT at sustain level; omit for the old behaviour. at = when (AC time), omit for now
+const _atkC=new Float32Array(24).map((_,i)=>0.5-0.5*Math.cos(Math.PI*i/23));
+function attackCurve(peak){return _atkC.map(x=>x*peak);}
+function playSynth(freq,vel,imp,hold,firm,at,pan){   // hold = seconds to SIT at sustain level; omit for the old behaviour. at = when (AC time), omit for now. pan = where its wall is, -1..1
   // firm=true means A PERSON DID THIS ON PURPOSE: a tap, a key, a lesson's question. Those notes
   // never get the rain model's random quietness. See the dud and the velocity floor below.
   if(!Number.isFinite(freq)||freq<=0)freq=440; if(!Number.isFinite(vel))vel=90; // BACKSTOP: never let a bad value reach an AudioParam (that threw + glitched the render on note-spam)
@@ -2819,7 +2845,8 @@ function playSynth(freq,vel,imp,hold,firm,at){   // hold = seconds to SIT at sus
   const tr=t+gap;
   // fill drives envelope: empty = plucky/short, full = rounder attack/decay + longer release
   const shorten=1.15-imp*0.4;              // harder hits decay quicker
-  const A=Math.max(0.001,(S.atk+ff*0.1)*ej), D=Math.max(0.001,(S.dec+ff*0.2)*ej*shorten),
+  // 4 ms at least: a 1 ms ramp throws a click about 1 kHz wide over a soft note (the tick is the deliberate transient)
+  const A=Math.max(0.004,(S.atk+ff*0.1)*ej), D=Math.max(0.001,(S.dec+ff*0.2)*ej*shorten),
         Su=Math.max(0.0001,Math.min(1,S.sus+ff*0.2)), Rl=Math.max(0.02,(S.rel+ff*0.8)*ej*shorten);
   // --- tick layer (skipped when busy so old phones stay smooth) ---
   if(activeVoices<=24&&noiseBuf){
@@ -2841,16 +2868,28 @@ function playSynth(freq,vel,imp,hold,firm,at){   // hold = seconds to SIT at sus
   let sub=null;
   if(S.sub>0){ sub=AC.createOscillator();sub.type="triangle";sub.frequency.value=freq/2;const sg=AC.createGain();sg.gain.value=S.sub*1.3;sub.connect(sg);sg.connect(mix); }
   const f=AC.createBiquadFilter();f.type=S.filt;f.Q.value=Math.min(12,S.res*12); // resonance capped kid-safe: can never scream or squeal
-  const base=cutHz(S.cut), top=cutHz(Math.min(1,S.cut+S.fenv));
+  // HIT STRENGTH IS BRIGHTNESS (SoundFont 2.01 sec. 8.4.2 maps velocity to filter cutoff, -2400 cents over the range):
+  // a hand's hard press and a ball's soft graze no longer have the same colour. Anchored on the everyday note (the
+  // middle of the velocity range in use), which keeps the colour the mix was levelled on: harder is up to an octave
+  // brighter, softer up to two octaves darker, 2.4 octaves across the whole range.
+  const vRef=(S.velRand?(S.velMin+S.velMax)/2:S.velFix)/127;
+  const vb=Math.max(0.25,Math.min(2,Math.pow(2,2.4*(Math.max(0,Math.min(1,v))-vRef))));
+  const base=cutHz(S.cut)*vb, top=cutHz(Math.min(1,S.cut+S.fenv))*vb;
   f.frequency.setValueAtTime(S.fenv>0?top:base,tr);
   if(S.fenv>0)f.frequency.linearRampToValueAtTime(base,tr+A+D);
   const g=AC.createGain();const peak=v*0.42*(dud?0.16:1)*(1-imp*0.18);
-  g.gain.setValueAtTime(0,tr);g.gain.linearRampToValueAtTime(peak,tr+A);g.gain.linearRampToValueAtTime(peak*Su,tr+A+D);
+  g.gain.setValueCurveAtTime(attackCurve(peak),tr,A);g.gain.linearRampToValueAtTime(peak*Su,tr+A+D);   // an S-curve: no corner to click
   // The sustain segment was a flat 0.05s, so a "whole note" and a "quarter note" were the same
   // length -- which made the note-duration lesson teach nothing by ear. hold extends it.
   const susHold=Math.max(0.05,(typeof hold==='number'&&isFinite(hold))?hold:0.05);
   const relStart=tr+A+D+susHold;g.gain.setValueAtTime(peak*Su,relStart);g.gain.exponentialRampToValueAtTime(0.0001,relStart+Rl);
-  if(S.filtOn){mix.connect(f);f.connect(g);}else{mix.connect(g);}g.connect(melBus);if(S.fxOn)g.connect(melEcho||delayNode);
+  // THE STAGE: a note sounds from its wall's side, at most 0.4 of the way (a lead stays near the middle), and a low
+  // note stays centred (under ~110 Hz fully, from ~260 Hz free): the low end of a mix is mono.
+  let out=melBus;
+  // an equal-power panner gives a mono note 0.707 a side at the middle, so it is fed +3 dB: a placed note is as loud as a centred one
+  if(Number.isFinite(pan)&&pan!==0){const lf=Math.max(0,Math.min(1,(freq-110)/150));const pg=AC.createGain();pg.gain.value=Math.SQRT2;
+    pg.connect(panTo(melBus,Math.max(-1,Math.min(1,pan))*0.4*lf));out=pg;}
+  if(S.filtOn){mix.connect(f);f.connect(g);}else{mix.connect(g);}g.connect(out);if(S.fxOn)g.connect(melEcho||delayNode);
   o.onended=()=>{activeVoices=Math.max(0,activeVoices-1);};
   o.start(tr);if(sub)sub.start(tr);const end=relStart+Rl+0.03;o.stop(end);if(sub)sub.stop(end);
 }
@@ -3129,6 +3168,7 @@ const SIG_TITLE={pop:'pop: listen for the snare on 2 and 4',rock:'rock: listen f
 function sigPulse(t){const ms=Math.max(0,(t-AC.currentTime)*1000);
   setTimeout(()=>{const b=document.querySelector('#psDrums .psBtn.on');if(!b)return;
     b.classList.remove('hop');void b.offsetWidth;b.classList.add('hop');},ms);}
+const DRUM_LEAD_S=0.006;
 function dHit(v,t,a,solid,inBar){a=Math.min(1.9,a||1);
   if(!drumBus){try{initDrums();}catch(e){oops('dHit: initDrums() threw — '+(e&&e.message||e));}}  // self-arming: see the note above, this was a two-month silence
   if(!drumBus){oops('dHit: no drum bus — the whole kit is mute');return;} // clamp so accent grooves can't clip the mix. solid=true => LOCKED (no human wobble): used for the anchor hits (kick on 1 & 3) so the groove stays tight.
@@ -3138,6 +3178,9 @@ function dHit(v,t,a,solid,inBar){a=Math.min(1.9,a||1);
   sendMidiAt(DRUMN[v]||38,Math.min(127,(90*a)|0),S.chDrum,t,0.15);
   a*=dbG((PIECE_DB[drumKit]||{})[v]);   // each piece's level under the melody (THE MIX UNDER THE MELODY), after the MIDI out
   if(S.mode==='play'&&SIG_PART[drumKit]===v)sigPulse(t);
+  // ...and the sound goes 6 ms early: the drum glue compressor's fixed look-ahead (Web Audio spec 1.19, Chromium
+  // kPreDelay 0.006) made every hit land 6 ms after the melody's. The MIDI out and the beat pulse keep the true time.
+  t=Math.max(AC.currentTime,t-DRUM_LEAD_S);
   if(v==='K'){const o=AC.createOscillator(),g=AC.createGain(),T=KITTONE[drumKit]||KITTONE.pop;o.type='sine'; // 909-style: sine body + pitch dive
     const dive=(T.st==='808')?T.kd*0.6:Math.min(0.12,T.kd*0.35); // 808 = slow deep dive (long sub); others = fast snappy dive
     o.frequency.setValueAtTime(T.kf,t);o.frequency.exponentialRampToValueAtTime(T.ke,t+dive);
@@ -5108,7 +5151,9 @@ function velForHit(){return S.velRand?Math.round(S.velMin+Math.random()*(S.velMa
 let pendingNotes=[];
 var _noFeed=false;   // a seed's loop rings walls without telling the chord follower someone is playing
 var _mute=false;     // a ball on its way out (THE AUTO ADJUSTER) bounces without a note
-function trigger(cents,imp,goo,now,pane){if(_mute&&!now)return;if(!now)AUTO.hits++;if(!pane&&!_noFeed)noteFeed(cents);goo=goo||0;let vel=Math.round(velForHit()*(1-goo*0.3)); // gooed notes land softer too
+var _hitPan=0;       // where the next note's hit was, -1 (left) .. 1 (right): set just before trigger(), used once
+function stageHalfW(){let m=0;if(typeof edges!=='undefined'&&edges)for(const e of edges)m=Math.max(m,Math.abs(e.ax-CX),Math.abs(e.bx-CX));return m>20?m:R;}
+function trigger(cents,imp,goo,now,pane){const pan=_hitPan;_hitPan=0;if(_mute&&!now)return;if(!now)AUTO.hits++;if(!pane&&!_noFeed)noteFeed(cents);goo=goo||0;let vel=Math.round(velForHit()*(1-goo*0.3)); // gooed notes land softer too
   if(pane)vel=Math.max(1,Math.round(vel*0.62)); // a glass pane is a soft chime under the walls, never a lead
   // A HAND GETS A FIRM NOTE. velForHit() can hand back 12 of 127 because the random range exists to
   // make rain sound like rain. A child who deliberately touches a wall and gets a note at 9% level
@@ -5117,8 +5162,8 @@ function trigger(cents,imp,goo,now,pane){if(_mute&&!now)return;if(!now)AUTO.hits
   // now=true skips the quantize queue. A HAND gets its note instantly; a ball still lands on the grid.
   // No music software quantizes live input as you play it, and a child cannot feel they caused a sound
   // that arrives on the next grid line.
-  if(S.quantize&&!now&&!goo&&qWait())pendingNotes.push({cents,vel,imp,goo});else{   // gooed: as it hits (see BOUNCES LAND ON THE BEAT)
-    playSynth(freqFromCents(cents),vel,imp,undefined,!!now);sendMidi(cents,vel,imp);}} // every note also teaches the chord brain
+  if(S.quantize&&!now&&!goo&&qWait())pendingNotes.push({cents,vel,imp,goo,pan});else{   // gooed: as it hits (see BOUNCES LAND ON THE BEAT)
+    playSynth(freqFromCents(cents),vel,imp,undefined,!!now,undefined,pan);sendMidi(cents,vel,imp);}} // every note also teaches the chord brain
 function jitter(b){if(S.chaos<=0)return;const sp=Math.hypot(b.vx,b.vy);const a=Math.atan2(b.vy,b.vx)+(Math.random()-0.5)*S.chaos*2.2; // perturb angle only — speed stays steady
   b.vx=Math.cos(a)*sp;b.vy=Math.sin(a)*sp;}
 
@@ -5605,7 +5650,7 @@ function hypSolidSub(b,isub,ts){
       const gd=gooAt(b.x,b.y,b.z),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
       if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
       const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0;
-      trigger(centsForDegree(SOLID.deg[k]||0),Math.min(1,Math.abs(hvn)*sp/(ts||1))*(1-goo*0.45),goo);splash(b.x,b.y,-nx,-ny,hue);}
+      _hitPan=(b.x-CX)/stageHalfW();trigger(centsForDegree(SOLID.deg[k]||0),Math.min(1,Math.abs(hvn)*sp/(ts||1))*(1-goo*0.45),goo);splash(b.x,b.y,-nx,-ny,hue);}
     _splashZ=0.5;}
   return false;}
 // ONE STEP INSIDE A SOLID. The ball moves in all three directions; any face it is pushing out through
@@ -5638,7 +5683,7 @@ function solidSub(b,isub,ts){
       const gd=gooAt(b.x,b.y,b.z),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
       if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
       const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0;
-      trigger(centsForDegree(SOLID.deg[k]||0),Math.min(1,Math.abs(hvn)/(ts||1))*(1-goo*0.45),goo);
+      _hitPan=(b.x-CX)/stageHalfW();trigger(centsForDegree(SOLID.deg[k]||0),Math.min(1,Math.abs(hvn)/(ts||1))*(1-goo*0.45),goo);
       if(hit>=0)jitter(b);splash(b.x,b.y,-nx,-ny,hue);}
     _splashZ=0.5;}
   return false;}
@@ -5823,7 +5868,7 @@ function hypSub(b,isub,ts){
       const gd=gooAt(b.x,b.y,b.z),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
       if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
       const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0;
-      trigger(e.cents,Math.min(1,Math.abs(hvn)*sp/(ts||1))*(1-goo*0.45),goo);
+      _hitPan=(b.x-CX)/stageHalfW();trigger(e.cents,Math.min(1,Math.abs(hvn)*sp/(ts||1))*(1-goo*0.45),goo);
       splash(b.x,b.y,inx,iny,e.hue);}}
   return false;}
 function step(){
@@ -5874,7 +5919,7 @@ function step(){
                 const gd=gooAt(b.x,b.y,b.z),under=gd>0.3,depth=under?Math.min(1,(gd-0.3)/0.6):0;
                 if(under&&!b.visc)b.visc=0.80+Math.random()*0.12;
                 const goo=under?Math.min(1,(0.35+0.65*depth)*((1-b.visc)/0.2)):0; // how gooed-up THIS ball is right now
-                trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1))*(1-goo*0.45),goo); // goo-slathered hits ring softer & rounder
+                _hitPan=(b.x-CX)/stageHalfW();trigger(e.cents,Math.min(1,Math.abs(vn)/(ts||1))*(1-goo*0.45),goo); // goo-slathered hits ring softer & rounder
                 if(LAB._hit){try{LAB._hit(e.deg,e.cents);}catch(err){}} // the lesson hears every wall the child rings
                 (_splashZ=VIEW.d3?(b.z||0):0.5,splash(b.x,b.y,e.nx,e.ny,e.hue));}}}} // splash carries the note's color into the pool
         if(b.warp){killed=true;break;}
@@ -5882,7 +5927,7 @@ function step(){
         if(!hitWall&&!inPoly(b.x,b.y,edges._verts)&&(b.x<-80||b.x>W+80||b.y<-80||b.y>H+80)){balls.splice(bi,1);killed=true;break;}
       }else{ // broken open — bounce off the fragments, trickle out through the gaps
         const hit=segHit(b,curSegs||computeSegs());
-        if(hit){jitter(b);if(hit.f)hit.f.flash=1;trigger(hit.cents,0.4+Math.random()*0.6);}
+        if(hit){jitter(b);if(hit.f)hit.f.flash=1;_hitPan=(b.x-CX)/stageHalfW();trigger(hit.cents,0.4+Math.random()*0.6);}
         if(Math.hypot(b.x-CX,b.y-CY)>R+260){balls.splice(bi,1);killed=true;break;} // escaped into open space
       }
     }
@@ -6000,7 +6045,7 @@ function transport(now){
       for(const p of pendingNotes){const k=Math.round(p.cents);if(seen.has(k))continue;seen.add(k);
         // (a gooed note never waits here any more: it plays as the ball hits, so the goo's smear off the beat
         // is one you can see as well as hear - see BOUNCES LAND ON THE BEAT)
-        playSynth(freqFromCents(p.cents),p.vel,p.imp);sendMidi(p.cents,p.vel,p.imp);}
+        playSynth(freqFromCents(p.cents),p.vel,p.imp,undefined,false,undefined,p.pan);sendMidi(p.cents,p.vel,p.imp);}
       pendingNotes.length=0;}
   }
   // SLIME (auto) MODE = SPARSE & floaty, like the original rain that flowed nicely. one gentle note every ~2 beats,
@@ -7408,7 +7453,7 @@ LAB.nearestWall=function(x,y){
 LAB.strike=function(i,vel){
   const e=edges[i];if(!e)return null;
   e.flash=1;
-  try{trigger(e.cents,vel==null?0.85:vel,0,true);}catch(err){}   // a struck wall sounds NOW, never quantized
+  try{_hitPan=((e.ax+e.bx)/2-CX)/stageHalfW();trigger(e.cents,vel==null?0.85:vel,0,true);}catch(err){}   // a struck wall sounds NOW, never quantized
   try{splash((e.ax+e.bx)/2,(e.ay+e.by)/2,e.nx,e.ny,e.hue);}catch(err){}
   if(LAB._hit){try{LAB._hit(e.deg,e.cents);}catch(err){}}
   return e;
@@ -8190,7 +8235,7 @@ function spinContain(w){
       const cx=b.x-dist*e.nx-CX,cy=b.y-dist*e.ny-CY,ux=-w*cy,uy=w*cx,vn=(b.vx-ux)*e.nx+(b.vy-uy)*e.ny;
       b.x+=(BR-dist)*e.nx;b.y+=(BR-dist)*e.ny;
       if(vn<0){const sp0=_bsp(b);b.vx-=2*vn*e.nx;b.vy-=2*vn*e.ny;spinKick(b,ts,sp0);e.flash=1;
-        const nw=performance.now();if(!b.mute&&(!b.lastHit||nw-b.lastHit>60)){b.lastHit=nw;trigger(e.cents,Math.min(1,Math.abs(vn)/ts));
+        const nw=performance.now();if(!b.mute&&(!b.lastHit||nw-b.lastHit>60)){b.lastHit=nw;_hitPan=(b.x-CX)/stageHalfW();trigger(e.cents,Math.min(1,Math.abs(vn)/ts));
           (_splashZ=VIEW.d3?(b.z||0):0.5,splash(b.x,b.y,e.nx,e.ny,e.hue));_splashZ=0.5;}}}
     if(!open&&!inPoly(b.x,b.y,edges._verts)){   // a corner swept past it: bring it back in towards the middle
       for(let i=0;i<8&&!inPoly(b.x,b.y,edges._verts);i++){b.x=CX+(b.x-CX)*0.9;b.y=CY+(b.y-CY)*0.9;}

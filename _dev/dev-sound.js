@@ -62,7 +62,9 @@ const r=await p.evaluate(()=>{
   // are the two IR channels actually different? (a mono IR gives no width)
   let decorr=0;
   if(irCh===2){const L=s.conv[0].buffer.getChannelData(0),R=s.conv[0].buffer.getChannelData(1);
-    for(let i=0;i<2000;i++)if(L[i]!==R[i])decorr++;}
+    // from the first sound on: the room starts with a pre-delay, silent (and so equal) on both sides
+    let i0=0;while(i0<L.length&&L[i0]===0&&R[i0]===0)i0++;
+    for(let i=i0;i<i0+2000;i++)if(L[i]!==R[i])decorr++;}
   return {pans:s.pan.length,panVals:s.pan.slice(0,40).map(n=>+n.pan.value.toFixed(2)),
     conv:s.conv.length,irCh,irSec:+irSec.toFixed(2),decorr,
     periodic:s.periodic, hits:s.hits.length, byV:Object.keys(byV).map(v=>({v,n:byV[v].length,
