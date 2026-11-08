@@ -104,6 +104,17 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     crayon materials/line boil/wormhole passes in tank3d.js, ?look= links). An old saved 'crayon' setting is cleared on
     load; share links still write lk:'glass' so older builds read them. dev-crayon retired; dev-goopro 7 checks it.
     The crayon ART (stickers, buttons, lessons) is untouched: this is only the tank's render look.
+    STUDIO POLISH (2026-11-07, sw v148; spec _docs/specs/2026-11-07-studio-polish, research
+    _docs/research/2026-11-07-daw-layout.md). Two real bugs found by screenshot: (1) the drum grid stayed on screen
+    under the sequencer tab (#drumEditor{display:flex} beat [hidden]); (2) the drum grid's tap-mode click handler
+    matched EVERY .deMode button, so pressing any sequencer button cleared the other sequencer rows' highlight and set
+    the drum grid's mode to undefined. Polish: option rows are segmented tracks (built at load by segRows, buttons
+    moved not cloned), tempo drags like a DAW's (4 px a BPM, wheel 1, tap types, no spinner), TAP's font shorthand
+    was invalid ('inherit' family) so it drew thin, mixer has a colour per part (melody pink, drums peach, bass mint,
+    chords sky) and mute turns periwinkle (Apple's convention), sequencer note knobs wear the melody pink, Groove
+    moved into the Pattern card, Timing (quantize) moved under "more settings". The research's suspected double tempo
+    control is not real (only #bpmNum shows). dev-studiopolish (new). Decisions taken on the research's recommended
+    answers while Flah slept: mute colour, part colours, Groove move, no metronome. All one-line reversals.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

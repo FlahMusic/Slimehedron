@@ -287,7 +287,7 @@ header h1{flex-shrink:0}
 #studioBar select,#studioBar input[type=number]{flex:none;width:auto;font-size:12.5px;padding:5px 7px;min-height:34px}
 #studioBar input[type=number]{width:62px}
 #studioBar #sbTap{border:1.5px solid rgba(160,150,200,.45);background:#fff;border-radius:9px;padding:6px 10px;
-  font:800 var(--fs-xs)/1 inherit;color:#5a4f78;cursor:pointer;min-height:var(--tap);min-width:var(--tap);flex:none}
+  font:800 var(--fs-xs)/1 system-ui,sans-serif;color:#5a4f78;cursor:pointer;min-height:var(--tap);min-width:var(--tap);flex:none}
 #studioBar #sbTap:active{background:var(--mint)}
 #studioBar #drumCtl{opacity:1!important;pointer-events:auto!important} /* the strip is always live; the kit selects are useful even before drums are on */
 /* THE ARROW ONLY EXISTS WHERE THE ROOM RUNS OUT. On a desktop every control is on the strip and
@@ -1353,7 +1353,7 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 /* THE STUDIO SEQUENCER (2026-11-07): two rows of 8 knobs, Korg SQ-1 style; four movement sliders under them */
 .patTabs{margin:8px 0 0}
 #seqPanel{display:flex;flex-direction:column;gap:6px;margin:8px 0 2px;min-width:0;container-type:inline-size}
-#seqPanel[hidden]{display:none}
+#seqPanel[hidden],#drumEditor[hidden]{display:none}
 .sqBar{margin:0}
 .sqBar span{font:800 11px system-ui,sans-serif;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;min-width:34px}
 .sqGrid{display:grid;grid-template-columns:repeat(4,minmax(44px,1fr));gap:4px 3px;margin:4px 0;user-select:none;touch-action:none}
@@ -1374,11 +1374,16 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 .sqMac i{grid-column:1/-1;font:600 11px system-ui,sans-serif;color:var(--ink-soft);font-style:normal}
 /* THE MIXER: one strip per part, like a DAW's track header -- name, mute, solo, volume */
 #mixRows{display:flex;flex-direction:column;gap:6px}
-.mixRow{display:grid;grid-template-columns:56px 44px 44px minmax(0,1fr) 24px;align-items:center;gap:5px}
+.mixRow{display:grid;grid-template-columns:68px 44px 44px minmax(0,1fr) 24px;align-items:center;gap:5px;--pc:#c4a9f5}
+/* one colour per part (GarageBand, Logic: a track type has its colour): melody pink, drums peach, bass mint, chords sky */
+.mixRow[data-k="mel"]{--pc:#f08ab8}.mixRow[data-k="drums"]{--pc:#f5a46c}.mixRow[data-k="bass"]{--pc:#4fc79e}.mixRow[data-k="chords"]{--pc:#6f9ff0}
+.mixRow b{display:flex;align-items:center;gap:6px;min-width:0}
+.mixRow b::before{content:"";flex:none;width:10px;height:10px;border-radius:50%;background-color:var(--pc);box-shadow:0 0 0 2px rgba(255,255,255,.85),0 1px 3px rgba(54,36,104,.25)}
+.mixRow input[type=range]{accent-color:var(--pc)}
 .mixRow input[type=range]{width:100%;min-width:0}
 .mixRow b{font:800 12.5px system-ui,sans-serif;color:var(--ink)}
 .mixRow button{min-height:44px;min-width:44px;border-radius:12px;font:800 12px system-ui,sans-serif;color:var(--ink);cursor:pointer;background:var(--cream);border:1px solid rgba(255,255,255,.8);box-shadow:var(--depth);padding:0}
-.mixRow button[aria-pressed="true"].mixM{background:linear-gradient(180deg,#ffd9e4,#ff9fbd);box-shadow:var(--depthIn)}
+.mixRow button[aria-pressed="true"].mixM{background:linear-gradient(180deg,#e6e9ff,#a9b6ff);box-shadow:var(--depthIn)}
 .mixRow button[aria-pressed="true"].mixS{background:linear-gradient(180deg,#fff1b8,#ffd25e);box-shadow:var(--depthIn)}
 .mixRow.quiet b,.mixRow.quiet .val{opacity:.45}
 .mixRow .val{font:700 11px system-ui,sans-serif;text-align:right;color:var(--ink-soft)}
@@ -1999,6 +2004,20 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
   transition:transform .11s cubic-bezier(.2,.9,.3,1),box-shadow .11s}
 .twX:hover,.twBtn:hover,.deLen button:hover,.seg button:hover{transform:translateY(-1px);box-shadow:var(--depthUp)}
 .twX:active,.twBtn:active,.deLen button:active,.seg button:active{transform:translateY(3px);box-shadow:var(--depthIn)}
+/* SEGMENTED CONTROLS: a row of choices is one rounded track with the picked one raised in it (Logic's and Studio
+   Pro's mode switches, iOS segmented controls), not a row of loose pills. The tracks are built at load (segRows). */
+.segT{display:flex;flex:1 1 auto;gap:2px;padding:3px;border-radius:15px;min-width:0;
+  background:linear-gradient(180deg,rgba(214,200,240,.55),rgba(255,255,255,.55));box-shadow:inset 0 1px 3px rgba(98,72,156,.22),0 1px 0 rgba(255,255,255,.9)}
+.segT>button{flex:1 1 0;min-width:0;min-height:44px;margin:0;padding:0 8px;border-radius:12px;border:1px solid transparent;
+  background:transparent;box-shadow:none;color:var(--ink-soft);transform:none;transition:background .12s,box-shadow .12s,color .12s}
+.segT>button:hover{background:rgba(255,255,255,.6);box-shadow:none;transform:none;color:var(--ink)}
+.segT>button:active{transform:translateY(1px)}
+.segT>button.on{background:linear-gradient(180deg,#efe5ff,#cdb2ff 60%,#b596f2);color:#2a2050;border-color:rgba(255,255,255,.75);
+  box-shadow:0 2px 0 var(--edge),0 3px 8px rgba(54,36,104,.20),inset 0 1px 1px var(--lip)}
+.sqBar>span,.deLen>span,.deMode>span{min-width:52px;flex:none}
+#bpmNum{appearance:textfield;-moz-appearance:textfield;cursor:ns-resize;touch-action:none;text-align:center}
+#bpmNum:focus{cursor:text}
+#bpmNum::-webkit-inner-spin-button,#bpmNum::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .twBtn.on,.deLen button.on,.seg button.active{background:linear-gradient(180deg,#e2d2ff,#c4a6ff 60%,#ab8cf0);color:#2a2050;box-shadow:var(--depthIn)}
 .twPick{box-shadow:var(--depth);border:1px solid rgba(255,255,255,.85);
   background:linear-gradient(180deg,rgba(255,255,255,.7),rgba(255,255,255,0) 45%),linear-gradient(135deg,color-mix(in srgb,var(--tt) 62%,#fff),color-mix(in srgb,var(--tt) 30%,#f1e9fd))}
@@ -2353,7 +2372,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
       </div>
       <div class="patTabs deMode" role="tablist" aria-label="drum grid or sequencer"><button type="button" role="tab" data-pt="grid" class="on" aria-selected="true" title="the drum grid: a row for each drum">drum grid</button><button type="button" role="tab" data-pt="seq" aria-selected="false" title="the sequencer: two rows of 8 knobs, like a Korg SQ-1">sequencer</button></div>
       <div id="seqPanel" hidden>
-        <div class="sqBar deMode" role="group" aria-label="sequencer"><button type="button" class="sqOn" id="seqOnBtn" aria-pressed="false" title="play the sequencer with the transport">on</button><span>play</span><button type="button" data-tg="notes" class="on" aria-pressed="true" title="the knobs play notes, always in the key">notes</button><button type="button" data-tg="drums" aria-pressed="false" title="each knob picks a drum">drums</button><button type="button" id="seqArpBtn" aria-pressed="false" title="arp: the notes come from the chord the band is playing">arp</button></div>
+        <div class="sqBar deMode" role="group" aria-label="sequencer"><span>play</span><button type="button" class="sqOn" id="seqOnBtn" aria-pressed="false" title="play the sequencer with the transport">on</button><button type="button" data-tg="notes" class="on" aria-pressed="true" title="the knobs play notes, always in the key">notes</button><button type="button" data-tg="drums" aria-pressed="false" title="each knob picks a drum">drums</button><button type="button" id="seqArpBtn" aria-pressed="false" title="arp: the notes come from the chord the band is playing">arp</button></div>
         <div class="sqBar deMode" role="group" aria-label="rows"><span>rows</span><button type="button" data-rw="A" class="on" aria-pressed="true" title="row A on its own, 8 steps">A</button><button type="button" data-rw="AB" aria-pressed="false" title="A then B, one line of 16 steps">A→B</button><button type="button" data-rw="alt" aria-pressed="false" title="A one time round, B the next: a variation">A|B</button></div>
         <div class="sqBar deMode" role="group" aria-label="direction"><span>way</span><button type="button" data-dr="fwd" class="on" aria-pressed="true" title="forward" aria-label="forward">→</button><button type="button" data-dr="rev" aria-pressed="false" title="reverse" aria-label="reverse">←</button><button type="button" data-dr="bounce" aria-pressed="false" title="bounce: there and back" aria-label="bounce">↔</button><button type="button" data-dr="random" aria-pressed="false" title="random: any step, never the same twice" aria-label="random">?</button></div>
         <div class="sqBar deMode" role="group" aria-label="step size"><span>step</span><button type="button" data-rt="4" aria-pressed="false" title="a step is a quarter note">1/4</button><button type="button" data-rt="2" class="on" aria-pressed="true" title="a step is an eighth note">1/8</button><button type="button" data-rt="1" aria-pressed="false" title="a step is a sixteenth note">1/16</button></div>
@@ -2372,6 +2391,8 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
         <div id="stepGrid" role="grid" aria-label="Step sequencer: one row per drum, steps left to right"></div>
         <div id="humanize"></div>
       </div>
+      <label class="grooveToggle" title="ON = a loose, head-bobbin' human feel (like it was finger-drummed on an MPC). OFF = a tight, robotic sequencer."><input type="checkbox" id="grooveT" checked> <b>Groove</b> — human feel</label>
+      <div id="grooveFolders"></div>
       <div class="row" style="justify-content:flex-end"><button class="btn" id="stepRevert" title="put the original 4-bar pattern back">revert</button></div>
     </div>
     <div class="card" id="mixer">
@@ -2386,7 +2407,12 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
         <input type="file" id="songFile" accept=".slime,.json,application/json" hidden aria-label="song file to open"></div>
       <p class="songNote" id="songNote" role="status" aria-live="polite"></p>
     </div>
-    <div class="card">
+
+    <!-- the first screen is the beat (with its feel), the mix and the song. Sound shaping, the tank's shape and the scale
+         range are one tap away, not stacked on top of a first-timer. Open or shut is remembered. -->
+    <details class="advReveal" id="advReveal" data-keep>
+      <summary>more settings</summary>
+    <div class="card" id="timingCard">
       <h2>Timing</h2>
       <div class="row"><label title="how the bar is divided — the step size the sequencer moves on">grid</label>
         <div class="seg" id="divSeg">
@@ -2398,14 +2424,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
       </div>
       <div class="row"><label>dotted notes</label><div class="toggle" id="dotT"></div></div>
       <div class="row"><label title="snap notes onto the beat">quantize</label><div class="toggle on" id="quantT"></div></div>
-      <label class="grooveToggle" title="ON = a loose, head-bobbin' human feel (like it was finger-drummed on an MPC). OFF = a tight, robotic sequencer."><input type="checkbox" id="grooveT" checked> <b>Groove</b> — human feel</label>
-      <div id="grooveFolders"></div>
     </div>
-
-    <!-- the first screen is the beat, the mix, the song and the feel. Sound shaping, the tank's shape and the scale
-         range are one tap away, not stacked on top of a first-timer. Open or shut is remembered. -->
-    <details class="advReveal" id="advReveal" data-keep>
-      <summary>more settings</summary>
     <div class="card">
       <h2>Key &amp; Scale</h2>
       <div class="row dupStrip"><label>key</label><select id="root"></select></div>
@@ -6722,7 +6741,16 @@ function setBpm(v,fromEl,quiet){v=Math.max(40,Math.min(220,+v||80));S.bpm=Math.r
 (function(){const nb=$("bpmNum");if(!nb)return; // typed box: commit on change/enter, clamp politely
   const commit=()=>setBpm(nb.value,nb);
   nb.addEventListener('change',commit);
-  nb.addEventListener('keydown',e=>{if(e.key==='Enter')nb.blur();});})();
+  nb.addEventListener('keydown',e=>{if(e.key==='Enter')nb.blur();});
+  // drag up = faster, 4 px a BPM; a press that does not move is a tap, and a tap types (the box keeps its caret while focused)
+  let d=null;
+  nb.addEventListener('mousedown',e=>{if(document.activeElement!==nb)e.preventDefault();});   // no caret until we know it is a tap
+  nb.addEventListener('pointerdown',e=>{if(document.activeElement===nb)return;d={y:e.clientY,v:S.bpm,moved:false};
+    try{nb.setPointerCapture(e.pointerId);}catch(_){}});
+  nb.addEventListener('pointermove',e=>{if(!d)return;const dy=d.y-e.clientY;if(!d.moved&&Math.abs(dy)<4)return;d.moved=true;setBpm(Math.round(d.v+dy/4));});
+  nb.addEventListener('pointerup',()=>{const t=d;d=null;if(t&&!t.moved){nb.focus();nb.select();}});
+  nb.addEventListener('pointercancel',()=>{d=null;});
+  nb.addEventListener('wheel',e=>{e.preventDefault();setBpm(Math.round(S.bpm)+(e.deltaY<0?1:-1));},{passive:false});})();
 // tempo knob: uses the SAME rknob interaction as every other knob in the app (drag up/down, dot rotates -135°..+135°).
 // no per-frame ring redraw, no atan2 tracking = smooth, no jitter. drives the hidden #playBpm which feeds the one tempo brain.
 (function(){const k=$("tempoKnob");if(!k)return;const dot=k.querySelector('.kdot'),inp=$("playBpm");
@@ -7933,8 +7961,8 @@ function phPaint(){_phRaf=0;if(!AC)return;
     b.setAttribute('aria-label',(VOICE_NAME[v]||v)+(L>1?', bar '+((i>>4)+1):'')+', beat '+(((i%16)>>2)+1)+', step '+(i%4+1)+
       (on&&vl<1?', velocity '+Math.round(vl*100):'')+(on&&pr<1?', plays '+Math.round(pr*100)+' times in 100':''));}
   let MODE='on';
-  document.addEventListener('click',e=>{const b=e.target.closest('.deMode button');if(!b)return;MODE=b.dataset.mode;
-    document.querySelectorAll('.deMode button').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',x===b?'true':'false');});
+  document.addEventListener('click',e=>{const b=e.target.closest('.deMode button[data-mode]');if(!b)return;MODE=b.dataset.mode;
+    document.querySelectorAll('.deMode button[data-mode]').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',x===b?'true':'false');});
     g.classList.toggle('m-vel',MODE==='vel');g.classList.toggle('m-prob',MODE==='prob');});
   function build(){const kit=activeKit(),L=kitBars(),N=16*L;g.innerHTML='';
     const sc=document.createElement('div');sc.className='sgScroll';
@@ -9976,7 +10004,7 @@ function startCoach(room){room=room||'play';const C=COACH[room];if(!C||document.
   const noteOf=deg=>{const m=Math.round(S.root+seqDegCents(deg)/100);return NOTE_NAMES[((m%12)+12)%12]+(Math.floor(m/12)-1);};
   const labelOf=st=>lane==='vel'?String(Math.round(st.vel*100)):SEQ.target==='drums'?DSHORT[SEQ_DRUMS[st.dr]]:noteOf(st.deg);
   const v01=st=>lane==='vel'?st.vel:SEQ.target==='drums'?st.dr/7:st.deg/SEQ_DEG_MAX;
-  const colOf=st=>SEQ.target==='drums'?(KCOL[SEQ_DRUMS[st.dr]]||'#8f6be8'):'#8f6be8';
+  const colOf=st=>SEQ.target==='drums'?(KCOL[SEQ_DRUMS[st.dr]]||'#8f6be8'):'#e5649f';   // notes: the melody's pink
   function knobHTML(r,k){const st=SEQ[r][k];
     return '<button type="button" class="sqKnob'+(st.on?'':' off')+'" data-r="'+r+'" data-k="'+k+'" style="--v:'+v01(st).toFixed(3)+';--kc:'+colOf(st)+'" '+
       'aria-label="'+r+' step '+(k+1)+': '+labelOf(st)+(st.on?'':', rest')+'"><b>'+labelOf(st)+'</b></button>';}
@@ -10033,6 +10061,7 @@ function startCoach(room){room=room||'play';const C=COACH[room];if(!C||document.
   // ---- drum grid | sequencer ----
   const ed=$("drumEditor");
   function showTab(t){const seq=t==='seq';panel.hidden=!seq;if(ed&&ed.parentNode===panel.parentNode)ed.hidden=seq;
+    const rv=$("stepRevert");if(rv)rv.parentElement.hidden=seq;   /* revert is the drum grid's */
     document.querySelectorAll('.patTabs [data-pt]').forEach(b=>{const on=b.dataset.pt===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false');});
     try{localStorage.setItem('slimehedron-pattab',t);}catch(e){}}
   document.querySelectorAll('.patTabs [data-pt]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.pt)));
@@ -10041,6 +10070,11 @@ function startCoach(room){room=room||'play';const C=COACH[room];if(!C||document.
   window._seqLane=l=>{lane=l==='vel'?'vel':'pitch';paintBars();paint();};   // test hook
   syncSliders();paintBars();paint();
 }catch(e){console.warn('sequencer panel:',e&&e.message);}})();
+// segmented controls: each option row's run of buttons goes into one track (.segT). The sequencer's power button
+// stays outside, it is a switch, not a choice.
+(function segRows(){for(const row of document.querySelectorAll('.patTabs,.sqBar,.deLen,.deMode')){
+  const bs=[...row.children].filter(b=>b.tagName==='BUTTON'&&!b.classList.contains('sqOn'));if(bs.length<2)continue;
+  const t=document.createElement('div');t.className='segT';bs[0].before(t);for(const b of bs)t.appendChild(b);}})();
 // ============================================================================
 (function(){try{
   const SONG_VER=1,MAX_FILE=200*1024;
