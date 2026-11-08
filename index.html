@@ -2646,8 +2646,10 @@ let MASTER_LIFT_DB=5;   // measured 2026-11-07: +4 left studio 1.6 dB under wher
 // at -0.2 dBFS and left the hard clip to do all the ceiling work (research _docs/research/2026-11-07-audio-overhaul.md,
 // section 4, measured). knee 0 makes it a limiter. The node adds its own makeup gain, (1/curve(1))^0.6 = +4.78 dB at
 // these settings (Web Audio spec 1.19, Chromium's DynamicsCompressor), and there is no switch for it, so outVol takes
-// it back: below the threshold the app is exactly as loud as before.
-const LIM_MAKEUP_DB=4.78;
+// most of it back. Not all: the old soft knee also added ~+0.35 dB at normal levels and now the peaks are really
+// held, so taking back the full 4.78 left the whole mix 1.2 LU quieter (-20.1 LUFS, was -18.9; dev-mix 7). With the
+// ping-pong echo carrying its full power, 4.6 puts it back (-17.6 at 4.0).
+const LIM_MAKEUP_DB=4.6;
 function makeLimiter(c){const l=c.createDynamicsCompressor();l.threshold.value=-8.5;l.knee.value=0;l.ratio.value=16;
   l.attack.value=0.003;l.release.value=0.25;return l;}
 const outGain=v=>v/VOL_REF*Math.pow(10,(MASTER_LIFT_DB-LIM_MAKEUP_DB)/20);
@@ -2668,6 +2670,7 @@ function silentAudio(){const t0=performance.now();
     createBuffer(ch,len,sr){len=Math.max(1,len|0);return {length:len,duration:len/(sr||44100),sampleRate:sr||44100,numberOfChannels:ch||1,
       getChannelData:()=>new Float32Array(len),copyToChannel(){},copyFromChannel(){}};}};
   return new Proxy(base,{get(o,k){if(k in o)return o[k];return ()=>mk();}});}
+let dlyR=null;   // the echo's right-hand line (PING-PONG)
 function initAudio(){
   if(AC)return;
   // NO WEB AUDIO (a locked-down school browser, an old webview): the tank still runs, silently, rather than the
@@ -2711,7 +2714,14 @@ function initAudio(){
   delayNode=AC.createDelay(2.0);delayNode.delayTime.value=60/S.bpm*0.75;
   dlyFb=AC.createGain();dlyFb.gain.value=0.2;
   dlyWet=AC.createGain();dlyWet.gain.value=S.dly;
-  delayNode.connect(dlyFb);dlyFb.connect(delayNode);delayNode.connect(dlyWet);
+  // PING-PONG: the echo answers left, then right (the stereo delay every DAW ships: Studio One's and Ableton's ping
+  // pong). It was one mono line in the middle, the widest-sounding effect in the app drawn narrowest. The round trip
+  // keeps the old decay: left at 1 beat-and-a-half, right at the feedback level, then each side at the feedback's.
+  dlyR=AC.createDelay(2.0);dlyR.delayTime.value=60/S.bpm*0.75;
+  delayNode.connect(dlyFb);dlyFb.connect(dlyR);dlyR.connect(delayNode);
+  // +3 dB into each equal-power panner: the two sides together carry the power the centred echo did
+  {const gl=AC.createGain(),gr=AC.createGain();gl.gain.value=gr.gain.value=Math.SQRT2;
+   delayNode.connect(gl);gl.connect(panTo(dlyWet,-0.6));dlyR.connect(gr);gr.connect(panTo(dlyWet,0.6));}
   melEcho=AC.createGain();melEcho.gain.value=1;melEcho.connect(delayNode);   // the melody reaches the echo through here, so the mixer can mute both
   masterFilt=AC.createBiquadFilter();masterFilt.type="lowpass";masterFilt.frequency.value=14000;masterFilt.Q.value=0.5;
   masterHP=AC.createBiquadFilter();masterHP.type="highpass";masterHP.frequency.value=20;masterHP.Q.value=0.6;
@@ -6775,7 +6785,7 @@ function bpmText(){return String(Math.round(S.bpm*100)/100);} // 80 -> "80", 87.
 function setBpm(v,fromEl,quiet){v=Math.max(40,Math.min(220,+v||80));S.bpm=Math.round(v*100)/100; // keep 2 decimals of fine-tune
   // mid-take speed changes go on the record, or the exported MIDI drifts away from the audio
   try{if(recTempoMap&&recStartAC!=null&&AC)recTempoMap.push({t:(AC.currentTime-recStartAC)*1000,bpm:S.bpm});}catch(e){}
-  if(delayNode&&AC)delayNode.delayTime.setTargetAtTime(60/S.bpm*0.75,AC.currentTime,0.15); // dotted-8th echo tracks tempo, glides over 150ms
+  if(delayNode&&AC){delayNode.delayTime.setTargetAtTime(60/S.bpm*0.75,AC.currentTime,0.15);if(dlyR)dlyR.delayTime.setTargetAtTime(60/S.bpm*0.75,AC.currentTime,0.15);} // dotted-8th echo tracks tempo, glides over 150ms
   if(quiet)return;
   const rv=Math.round(S.bpm);
   ['bpm','bpmTop','playBpm'].forEach(id=>{const e=$(id);if(e&&e!==fromEl&&+e.value!==rv)e.value=rv;}); // sliders are whole-number (coarse)

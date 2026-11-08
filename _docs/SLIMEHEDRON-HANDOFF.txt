@@ -130,6 +130,11 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     (new, sabotaged 9 ways). dev-drums and dev-sound now measure from when a drum sounds / after the pre-delay.
     Decisions taken on the research's recommendations while Flah slept: pan the melody, a room not a plate, the drum
     lead. NOT CHECKED BY A MACHINE: how the room and the stage sound (headphones and a phone speaker).
+    Follow-up (sw v150): the echo is a ping-pong (left at 1.5 beats, right at the feedback level; each side +3 dB into
+    its equal-power panner, so it carries the power the centred echo did); LIM_MAKEUP_DB 4.6 keeps the whole mix at
+    -18.7 LUFS (was -18.9; 4.78 alone left it at -20.1). dev-audiopro 3b checks the echo sides; its drum-timing check
+    uses a -34 dBFS impulse pair 50 ms apart (a loud one moved the compressors; the ScriptProcessor capture slips a
+    128-sample block about 1 pair in 4 at 0.5 s apart). Open: the second echo reads +4..+9 dB right, not the ideal 9.7.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

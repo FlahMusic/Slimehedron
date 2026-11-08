@@ -96,6 +96,20 @@ const init=()=>{try{for(const k of ['slimehedron-coach','slimehedron-coach-studi
  // single notes from here on: the transport stops (no drums, no rain, no auto-notes) and the tape hiss, a floor under
  // these quiet measurements, is pinned off
  await p.evaluate(()=>{if(S.playing)setPlaying(false);S.autoNotes=false;balls.length=0;hissG.gain.cancelScheduledValues(0);hissG.gain.value=0;});
+ // ---- 3b. the echo answers left, then right ----
+ const pp=await p.evaluate(async()=>{await __wait(2500);const fx=S.fxOn;S.fxOn=true;const d0=dlyWet.gain.value;dlyWet.gain.value=0.6;
+   const c=await __cap(1.6,async()=>{const bf=AC.createBuffer(1,64,AC.sampleRate);bf.getChannelData(0)[0]=0.05;const s=AC.createBufferSource();s.buffer=bf;s.connect(melEcho);s.start(AC.currentTime+0.1);});
+   dlyWet.gain.value=d0;S.fxOn=fx;
+   // the first echo is the loudest; the second is looked for one echo-time later (the third, left again, is as loud as
+   // the second, so "the next loudest" could be either)
+   const m=i=>Math.max(Math.abs(c.L[i]),Math.abs(c.R[i])),T=Math.round(delayNode.delayTime.value*c.sr),w=Math.round(c.sr*0.005);
+   let g=0,p0=0;for(let i=0;i<c.L.length;i++)if(m(i)>g){g=m(i);p0=i;}let g1=0,p1=p0+T;for(let i=p0+T-w;i<Math.min(c.L.length,p0+T+w);i++)if(m(i)>g1){g1=m(i);p1=i;}
+   const pk=[p0,p1];const side=i=>{let l=0,r=0;for(let k=i-32;k<i+256;k++){l+=c.L[k]*c.L[k];r+=c.R[k]*c.R[k];}return 10*Math.log10((r+1e-20)/(l+1e-20));};
+   return {first:side(pk[0]),second:side(pk[1]),gap:(pk[1]-pk[0])/c.sr*1000,T:T/c.sr*1000};});
+ // ideal 9.7 dB each way (pan 0.6, equal power); measured 2026-11-08: the first -9.3..-9.8, the second +4.1..+8.8 (the
+ // second echo is 14 dB down, and something not yet found adds to its left side); a centred echo reads 0
+ ok(pp.first<=-6&&pp.second>=3&&Math.abs(pp.gap-pp.T)<=3,'3. the echo answers left ('+pp.first.toFixed(1)+' dB R-L), then right ('+pp.second.toFixed(1)+' dB), one echo-time apart ('+pp.gap.toFixed(0)+' ms vs '+pp.T.toFixed(0)+')');
+
  const br=await p.evaluate(async()=>{if(drumOn)$("drumBtn").click();if(bandOn)$("bandBtn").click();S.autoNotes=false;balls.length=0;S.fxOn=false;
    const W={on:S.filtOn,w:S.wave,cut:S.cut,warm:S.warm};S.filtOn=true;S.wave='sawtooth';S.cut=0.6;setWarmth(0);await __wait(2500);
    const top=async v=>{await __wait(1500);const c=await __cap(0.9,async()=>{activeVoices=24;playSynth(220,v,0.5,0.6,true);});activeVoices=0;const x=c.L;
@@ -122,19 +136,25 @@ const init=()=>{try{for(const k of ['slimehedron-coach','slimehedron-coach-studi
  ok(ck<=-46,'5. a sine note\'s attack does not click (energy over 2 kHz in its first 10 ms, worst of 3: '+ck.toFixed(1)+' dB; a straight 1 ms ramp is -38)');
 
  // ---- 6. drums and melody together ----
- // the paths, with clean impulses: the drums' path is longer by its glue compressor's fixed look-ahead
+ // the paths, with clean impulses: the drums' path is longer by its glue compressor's fixed look-ahead. A small impulse
+ // (-34 dBFS) moves no compressor's gain (a loud one did, and its peak wandered by up to 5 ms). The capture tool (a
+ // ScriptProcessor) now and then slips one 128-sample block between two events, even on a melody-vs-master pair with
+ // no drum path in it (measured 2026-11-08, about 1 pair in 4 at 0.5 s apart): so the two impulses go 50 ms apart
+ // (a slip seldom lands inside that), melody first, and the median of 3 pairs.
  const sk=await p.evaluate(async()=>{if(!drumBus)initDrums();await __wait(500);
-   const imp=(bus,t)=>{const bf=AC.createBuffer(1,64,AC.sampleRate);bf.getChannelData(0)[0]=0.5;const s=AC.createBufferSource();s.buffer=bf;s.connect(bus);s.start(t);};
-   const c=await __cap(1.5,async()=>{const t=AC.currentTime+0.3;imp(drumBus,t);imp(melBus,t+0.5);});
-   // the two impulses: the loudest sample, then the loudest at least 0.25 s from it; each onset at 30 % of its own peak
-   const x=c.L,pk=[];for(let ev=0;ev<2;ev++){let g=0,gi=0;for(let i=0;i<x.length;i++){if(pk.some(q=>Math.abs(i-q)<c.sr*0.25))continue;if(Math.abs(x[i])>g){g=Math.abs(x[i]);gi=i;}}pk.push(gi);}
+   const imp=(bus,t)=>{const bf=AC.createBuffer(1,64,AC.sampleRate);bf.getChannelData(0)[0]=0.02;const s=AC.createBufferSource();s.buffer=bf;s.connect(bus);s.start(t);};
+   const gaps=[];for(let k=0;k<3;k++){
+   const c=await __cap(1.0,async()=>{const t=AC.currentTime+0.3;imp(melBus,t);imp(drumBus,t+0.05);});
+   // the two impulses: the loudest sample, then the loudest at least 25 ms from it; each onset at 30 % of its own peak
+   const x=c.L,pk=[];for(let ev=0;ev<2;ev++){let g=0,gi=0;for(let i=0;i<x.length;i++){if(pk.some(q=>Math.abs(i-q)<c.sr*0.025))continue;if(Math.abs(x[i])>g){g=Math.abs(x[i]);gi=i;}}pk.push(gi);}
    const on=pk.sort((a,b)=>a-b).map(gi=>{const g=Math.abs(x[gi]);let o=gi;for(let i=Math.max(0,gi-Math.round(c.sr*0.005));i<=gi;i++)if(Math.abs(x[i])>g*0.3){o=i;break;}return o;});
-   const path=(on[1]-on[0])/c.sr*1000;
+   gaps.push((on[1]-on[0])/c.sr*1000-50);}
+   const path=gaps.sort((a,b)=>a-b)[1];
    // and a kick asked for at T starts at T minus that difference
    const st=[];const co=AC.createOscillator.bind(AC);AC.createOscillator=function(){const o=co();const s0=o.start.bind(o);o.start=(t)=>{st.push(t);return s0(t);};return o;};
    const T=AC.currentTime+0.5;try{dHit('K',T,1,true,0);}finally{AC.createOscillator=co;}
    return {path,lead:(T-st[0])*1000};});
- ok(Math.abs((500-sk.path)-sk.lead)<=1,'6. the drums land with the melody: their path is '+(500-sk.path).toFixed(2)+' ms longer, and a kick is sent '+sk.lead.toFixed(2)+' ms early (+-1 ms)');
+ ok(Math.abs(sk.path-sk.lead)<=1,'6. the drums land with the melody: their path is '+sk.path.toFixed(2)+' ms longer, and a kick is sent '+sk.lead.toFixed(2)+' ms early (+-1 ms)');
  ok(errs.length===0,'no page errors ('+errs.slice(0,2).join(' | ')+')');
  await b.close();
  console.log(FAIL.length?'\n'+FAIL.length+' FAILURE(S)':'\nthe master limits, the room decays like a room, the notes have a place, and the drums land on time');process.exit(FAIL.length?1:0);})();
