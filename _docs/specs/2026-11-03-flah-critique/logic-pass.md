@@ -22,14 +22,16 @@ twice running, 6 grid + playhead + count-in, 7 one drum colour code, 8 every but
 | sayplay | rebuilt as Copy the Beat, the drum grid (08, 09, ADR 0013) | |
 | howlong | listen first, a lead-in, the note alone (10) | |
 | countbar, rest, split | lead-in, 4/4 step grid with a bouncing ball (11) | judge extra taps (a tap on a "small" count is still free) |
-| song | same engine as countbar | merge into countbar/rest as their last round (audit) |
+| song | merged: part 2 of count to four (ADR 0014) | |
 | tempo | same number of notes both ways, speed varies per round, a different tune | |
 | dynamic | the tune varies per round | |
 | rjam | kick / snare / hi-hat pads in the drum colours, a click as the pulse | draw the call on a grid |
-| high, notes, home, steps, newhome, majorscale, brightdark, intervals, chords, minorscale, minorshapes, modes | listen first, no repeats | merges: updown into high, findhome into home, intervals into chords; steps as a step/skip choice; minorshapes and modes are cut candidates if a playtest shows kids cannot hear them (Flah's call) |
-| staff | listen first, no repeats | the target note is drawn, so "tap the note you hear" is answered by sight; flip it to "see the note, press its key" |
+| high, notes, home, steps, newhome, majorscale, brightdark, intervals, chords, minorscale, minorshapes, modes | listen first, no repeats; merged: updown is part 2 of high, findhome of home, intervals of chords; minor and modes kept and moved last (ADR 0014) | steps as a step/skip choice |
+| staff | reading now: see the note, press its letter (it was answered by sight); no repeats | |
 | melody, compose | no change needed for 06-13 | compose: save kept tunes for review |
-| echo, updown, findhome | listen first | |
+| echo | listen first, 3 rounds | |
 | review | lists every finished unit (today too, under 80% too), with what it taught (12) | kept loops and tunes to replay |
 
-Proof: `dev-learn3` 06-13 and 15, each sabotaged where it says so in its ticket.
+Proof: `dev-learn3` 06-15, each sabotaged where it says so in its ticket. The three-way playthrough (spec section 3):
+right answers = `dev-lessons` (every unit driven to its end), wrong answers = `dev-learn3` 14 (every judged unit:
+"Close, listen and try again!", nothing counted), skip and back = `dev-learn3` 13 (every unit, mid-sound).

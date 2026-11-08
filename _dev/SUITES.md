@@ -35,6 +35,9 @@ In the cloud workspace: `/root/run.sh <log> -- <suites...>` writes `/tmp/<log>.l
 Then rerun only what failed. A failure that passes on rerun goes on the flaky list below, with a note.
 
 ## Known flaky (fix the cause; until then, rerun and run a control on the previous commit)
+- `dev-chordbed` "the chords stay audible at every bass/pad crossfader position": 2 of 4 runs read ~0.004 at position 1
+  (2026-11-07). A direct tap shows the chord bus loud there on this commit and the one before (0.36-0.90): the crossfader
+  does not touch the chords; the 6 s window sometimes lands on a near-silent stretch of the band. Not chased further.
 - `dev-potato`: the curved/portal frame-cost ratios swing between runs on the cloud box (timing noise).
 - `dev-bassmix` 4. [play jazz]: live mix level, bass sometimes lands just over the 5 dB window.
 - `dev-perfmode`, `dev-harmony`, dev-a11y "chord changed", dev-lessons HOME card: timing.

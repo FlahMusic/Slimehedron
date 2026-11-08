@@ -1,6 +1,6 @@
 # 14 The logic pass: every unit against the 10 rules
 
-Status: done (2026-11-05)
+Status: in-progress (2026-11-07: the wrong-answer half of the three-way playthrough is being added; logic-pass.md lists what is still open)
 Blocked by: `../units-audit.md` (being written), 06-13
 Spec: `../spec.md`, brief 4
 

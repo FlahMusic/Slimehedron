@@ -8,6 +8,8 @@
 //    3. every drum piece at least 10 LU under the melody (soft kits 13), pattern, ghost notes and a fill together
 //    4. every drum piece's loudest 100 ms at least 3 LU under the melody's median 100 ms
 //    5. the melody at least 1 LU over the whole band (bass + chords + drums)
+//    6b. in the presence band (2.8-5.6 kHz) every kit's drums sit at least 6 dB under the melody (research item 6, a smoke alarm)
+//    7. all together (melody, band, pop drums) the app is -21..-15 LUFS, peaks under the -0.9 dBFS ceiling (MASTER_LIFT_DB)
 //    6. jazz plays no ride
 //  The melody is a fixed eighth-note line at the notes' normal velocity, so every run measures the same thing.
 //  Slow (~25 min for all 11 kits). Kits: node _dev/dev-mix.js pop,bossa
@@ -33,10 +35,14 @@ const SOFT={bossa:1,jazz:1},SAB=process.env.SAB||'';
   outClip.connect(k1);k1.connect(k2);k2.connect(sp);sp.connect(AC.destination);
   let win=[],cur=0,cn=0,on=false;const WN=Math.round(AC.sampleRate*0.1);
   sp.onaudioprocess=e=>{if(!on)return;const d=e.inputBuffer.getChannelData(0);for(const x of d){cur+=x*x;cn++;if(cn>=WN){win.push(cur/cn);cur=0;cn=0;}}};
+  // the presence band (research item 6): 2.8-5.6 kHz, where the ear is most sensitive; two bandpasses for an octave's width
+  const b1=AC.createBiquadFilter(),b2=AC.createBiquadFilter();b1.type=b2.type='bandpass';b1.frequency.value=b2.frequency.value=3960;b1.Q.value=b2.Q.value=1.41;
+  const sp2=AC.createScriptProcessor(1024,1,1);outClip.connect(b1);b1.connect(b2);b2.connect(sp2);sp2.connect(AC.destination);let ps=0,pn=0;
+  sp2.onaudioprocess=e=>{if(!on)return;for(const x of e.inputBuffer.getChannelData(0)){ps+=x*x;pn++;}};
   const L=ms=>-0.691+10*Math.log10(ms+1e-20),wait=ms=>new Promise(r=>setTimeout(r,ms));
-  const meas=async(secs)=>{win=[];cur=0;cn=0;on=true;await wait(secs*1000);on=false;
+  const meas=async(secs)=>{win=[];cur=0;cn=0;ps=0;pn=0;on=true;await wait(secs*1000);on=false;
     const srt=win.filter(m=>L(m)>-70).map(L).sort((a,b)=>a-b);
-    return {int:L(win.reduce((a,m)=>a+m,0)/Math.max(1,win.length)),max:srt.length?srt[srt.length-1]:-99,med:srt.length?srt[srt.length>>1]:-99};};
+    return {int:L(win.reduce((a,m)=>a+m,0)/Math.max(1,win.length)),max:srt.length?srt[srt.length-1]:-99,med:srt.length?srt[srt.length>>1]:-99,pres:10*Math.log10(ps/Math.max(1,pn)+1e-20)};};
   const solo=(m,d,k)=>{S.wM=m;S.wD=d;S.wK=k;applyMix();};
   setBpm(120);const bar=()=>drumBar()*drumStepDur()*1000;
   // whole patterns: from the top of the 4-bar cycle, with a fill in it every time (a fill is a chord-jackpot answer here,
@@ -64,7 +70,14 @@ const SOFT={bossa:1,jazz:1},SAB=process.env.SAB||'';
     for(const pc of hit){dHit=function(v){return v===pc?D0.apply(this,arguments):undefined;};
       await wait(bar());pieces[pc]=await meas4();dHit=D0;}   // a bar first: the hits the scheduler already queued play out
     if(drumOn)$("drumBtn").click();res.kits[kit]={all,pieces};}
-  solo(W0.m,W0.d,W0.k);return res;},[KITS,SAB]);
+  // 7. everything together (the fixed melody line, the band, the pop kit), as loud as the app was before the level pass
+  solo(W0.m,W0.d,W0.k);const sel=document.getElementById('drumKit');drumKit='pop';if(sel){sel.value='pop';sel.dispatchEvent(new Event('change'));}
+  if(!drumOn)$("drumBtn").click();if(!bandOn)$("bandBtn").click();k=0;
+  const iv2=setInterval(()=>{playSynth(freqFromCents(centsForDegree(line[k++%line.length])),vel,0.7);},60000/S.bpm/2);
+  await wait(1500);res.all=await meas(8);clearInterval(iv2);
+  {const an=AC.createAnalyser();an.fftSize=2048;outClip.connect(an);const buf=new Float32Array(2048);let pk=0;
+   const t0=performance.now();while(performance.now()-t0<3000){an.getFloatTimeDomainData(buf);for(const x of buf)pk=Math.max(pk,Math.abs(x));await wait(20);}res.peak=20*Math.log10(pk+1e-9);}
+  return res;},[KITS,SAB]);
  const f=x=>(x>=0?'+':'')+x.toFixed(1),M=out.mel,psum=(...l)=>10*Math.log10(l.reduce((a,x)=>a+Math.pow(10,x/10),0));
  console.log('melody '+M.int.toFixed(1)+' LUFS (median 100 ms '+M.med.toFixed(1)+')');
  const bass=out.bass.int-M.int,chords=out.chords.int-M.int;
@@ -76,8 +89,11 @@ const SOFT={bossa:1,jazz:1},SAB=process.env.SAB||'';
   const worst=loud.reduce((a,x)=>x.int>a.int?x:a,{pc:'-',int:-99}),worstT=loud.reduce((a,x)=>x.tr>a.tr?x:a,{pc:'-',tr:-99});
   ok(worst.int<=(soft?-13:-10),'3. '+kit+': every piece at least '+(soft?13:10)+' LU under the melody (loudest: '+worst.pc+' '+f(worst.int)+'; '+loud.map(x=>x.pc+' '+f(x.int)).join(', ')+')');
   ok(worstT.tr<=-3,'4. '+kit+': every hit\'s loudest 100 ms at least 3 LU under the melody\'s median (loudest: '+worstT.pc+' '+f(worstT.tr)+')');
+  const pres=v.all.pres-M.pres;
+  ok(pres<=-6,'6b. '+kit+': in the presence band (2.8-5.6 kHz) the drums sit at least 6 dB under the melody ('+f(pres)+' dB)');
   const whole=psum(out.band.int,v.all.int)-M.int;
   ok(whole<=-1,'5. '+kit+': the melody at least 1 LU over the whole band ('+f(-whole)+' LU)');}
+ ok(out.all.int>=-21&&out.all.int<=-15&&out.peak<=-0.9,'7. all together the app is as loud as it was before the level pass (-18.3 LUFS then): '+out.all.int.toFixed(1)+' LUFS, peak '+out.peak.toFixed(1)+' dBFS (window -21..-15, ceiling -0.9)');
  ok(out.jazzRide===0,'6. jazz plays no ride, in its pattern or its fills ('+out.jazzRide+')');
  ok(errs.length===0,'no page errors ('+errs.slice(0,2).join(' | ')+')');
  await b.close();

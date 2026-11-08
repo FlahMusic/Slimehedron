@@ -78,6 +78,23 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     Still open (logic-pass.md): extra taps in the read units, rjam's call on a grid, kept loops/tunes in review,
     compose saving. Pending from Flah: the FM1 grill (5 questions in the fm1 brief, section 8), the look answers
     (6 slime contrast, 1/2/4 stickers, mascots, phone tank), removing the crayon look (ADR 0012).
+  - STUDIO SEQUENCER + REVIEW FIXES (2026-11-07, sw v145). Flah's ask: an SQ-1 style sequencer with Studio One movement.
+    Spec _docs/specs/2026-11-07-studio-sequencer/ (5 tickets, all done; 11 overnight decisions in spec section 2 for Flah to
+    confirm), research _docs/research/2026-11-07-step-sequencer.md. Pattern card: drum grid | sequencer. 2 rows of 8 knobs
+    (rows A / A->B / A|B; forward/reverse/bounce/random; 1/16 1/8 1/4; notes or drums; arp from the band's chord; scale lock
+    as degrees), four sliders: chance, humanize, wander, repeat. dev-seq (new, 30 checks, 7 sabotages caught).
+    Found on the way: resume after a pause fired ~30 missed drum hits at once (the conductor re-anchors now; control on
+    the commit before: same burst); howlong accepted answers during its lead-in.
+    Mix: a +5 dB master lift (MASTER_LIFT_DB, measured: studio -18.9 LUFS, it was -18.3 before the level pass, -23.7 after);
+    a presence dip on the drum bus (-8.5 dB at 3.8 kHz: research item 6, dev-mix 6b, all kits pass); the bass trim fades
+    as the triangle goes to the bass corner (dev-bassmix 4); lessons play the pop kit at LEARN_DRUM_DB (+15, measured
+    4.5 LU under lesson notes, dev-learn3 16). Review of 7ec61dc (standards + spec) fixed: jazz tooltip/accents, lesson
+    kit pinned, count-in helper, hooks cleared, teachers page, song part 3 rounds, wrong-answer checks (dev-learn3 14b).
+    NOT CHECKED BY A MACHINE: how the sequencer feels and grooves; how the presence dip and lift sound.
+    IN PROGRESS (uncommitted): the slime overhaul in tank3d.js + goo-worker.js (research _docs/research/2026-11-07-slime-
+    rendering.md): wet material, thickness cue, 60-cell skin built in a worker (main thread 0.2-0.7 ms, was 3-4),
+    surface-tension blur, wobble. Next: its suite and the existing GL suites, then the crayon removal (ADR 0012, written),
+    the UI pass (research _docs/research/2026-11-07-daw-layout.md, 4 decisions for Flah), the audio overhaul.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

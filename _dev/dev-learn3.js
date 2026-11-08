@@ -13,6 +13,8 @@
 //  11 COUNT TO FOUR: waits for "listen", a lead-in bar (four clicks, 4 3 2 1 on screen), then a ball hops along a
 //     4/4 step grid (four steps a beat, like studio's), on the right beat at each beat.
 //  12 PLAY IT AGAIN: every unit finished (today too, under 80% too) is listed with what it taught, and replays.
+//  14b WRONG ANSWERS: in every judged unit a wrong answer says "Close, listen and try again!" and counts nothing.
+//  16 LESSON DRUMS: a lesson plays the pop kit whatever studio picked, its drums 1-6 LU under its notes.
 //  13 BACK: from every unit, mid-sound, a real press on back shows the whole learn map, nothing playing behind it.
 //  Runs WITHOUT the listen-pressing driver the other suites get (SLIME_LISTEN=wait): the waiting is what it tests.
 //  Needs a local server: python -m http.server 8765. Run from the project root: node _dev/dev-learn3.js
@@ -240,6 +242,40 @@ const JUDGED=['howlong','sayplay','echo','notes'];   // (staff is read by sight 
   ok(end.done&&end.again==='high'&&/PITCH/.test(end.line)&&/UP/.test(end.line),'14 and ends once, as High and Low, with both lines ("'+end.line.slice(0,90)+'")');
   const onMap=await p.evaluate(async()=>{window.LEARN2.home();await new Promise(r=>setTimeout(r,500));return ['updown','findhome','intervals','song'].filter(id=>document.querySelector('.lmMap .uCard[data-u="'+id+'"]'));});
   ok(onMap.length===0,'14 a part is never on the map on its own ('+onMap.join(' ')+')');}
+
+ // ---- 14b: the wrong-answer third of the three-way playthrough (spec section 3; right answers = dev-lessons, back = 13):
+ // in every judged unit, after "listen", a wrong answer says "Close, listen and try again!" and counts nothing
+ {const bad=[];const judged=waits.filter(id=>!['countbar','rest','split','sayplay'].includes(id));   // read units and Copy the Beat: their own checks (11, 09)
+  for(const id of judged){await open(id);
+   await p.evaluate(()=>{const l=document.querySelector('#learnOverlay .lgListen');if(l)l.click();});await p.waitForTimeout(id==='howlong'?3200:1500);   /* howlong: answers wait for the note, after the lead-in */
+   const r=await p.evaluate(()=>{const c0=(document.querySelector('#learnOverlay .lgCount')||{}).textContent||'';
+     const pd=el=>el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true}));
+     const e=window._labExpect,d=window._labHintDeg;let el=null;
+     if(e!=null)el=[...document.querySelectorAll('#learnOverlay [data-ch]')].find(b=>b.dataset.ch!==String(e));
+     if(!el&&d!=null)el=[...document.querySelectorAll('#learnOverlay .lgRung')].find(b=>+b.dataset.deg!==d);
+     if(!el){const w=[...document.querySelectorAll('#learnOverlay [data-cnt]')];if(w.length)el=w.find(b=>b.dataset.cnt!==String(window._labHowlong||''))||w[0];}
+     if(!el)return {skip:true};pd(el);return {c0};});
+   if(r.skip){bad.push(id+' (nothing to answer wrong)');continue;}
+   await p.waitForTimeout(250);
+   const after=await p.evaluate(()=>({feed:((document.getElementById('lgFeed')||{}).textContent||'').trim(),c:(document.querySelector('#learnOverlay .lgCount')||{}).textContent||''}));
+   if(!(/Close, listen and try again!/.test(after.feed)&&after.c===r.c0))bad.push(id+' ("'+after.feed+'", '+r.c0+' -> '+after.c+')');}
+  ok(bad.length===0,'14 a wrong answer in every judged unit says "Close, listen and try again!" and counts nothing ('+judged.length+' units'+(bad.length?'; '+bad.join(' | '):'')+')');}
+
+ // ---- 16: a lesson's drums: the lesson kit whatever studio last picked, about as loud as a lesson's notes allow
+ {const lv=await p.evaluate(async()=>{const k1=AC.createBiquadFilter(),k2=AC.createBiquadFilter();k1.type='highshelf';k1.frequency.value=1681.97;k1.gain.value=4;
+    k2.type='highpass';k2.frequency.value=38.13;k2.Q.value=0.5;const sp=AC.createScriptProcessor(1024,1,1);outClip.connect(k1);k1.connect(k2);k2.connect(sp);sp.connect(AC.destination);
+    let s=0,n=0,on=false;sp.onaudioprocess=e=>{if(!on)return;for(const x of e.inputBuffer.getChannelData(0)){s+=x*x;n++;}};
+    const meas=async(fn,secs)=>{s=0;n=0;on=true;fn();await new Promise(r=>setTimeout(r,secs*1000));on=false;return -0.691+10*Math.log10(s/Math.max(1,n)+1e-20);};
+    LAB.give();drumKit='industrial';applyMix();LAB.take({scale:'pentaMaj',octs:1,drums:false,band:false,touch:false});
+    const kit=drumKit,trim=drumTrim.gain.value;await new Promise(r=>setTimeout(r,400));
+    const P=0.5,t0=AC.currentTime+0.1;
+    const drums=await meas(()=>{for(let i=0;i<8;i++){dHit(i%2?'s':'K',t0+i*P,1.0,true);if(i%2)dHit('h',t0+i*P+P/2,0.8,true);}},8*P+0.4);
+    const t1=AC.currentTime+0.1;
+    const notes=await meas(()=>{for(let i=0;i<8;i++)playSynth(freqFromCents(centsForDegree([0,2,4,2,3,1,2,0][i])),92,0.72,0.3,true,t1+i*P);},8*P+0.4);
+    LAB.give();return {kit,back:drumKit,drums,notes};});
+  ok(lv.kit==='pop'&&lv.back==='industrial','16 a lesson plays the lesson kit (pop) whatever was picked before, and hands the kit back after ('+lv.kit+', back to '+lv.back+')');
+  const gap=lv.drums-lv.notes;
+  ok(gap<=-1&&gap>=-6,'16 and its drums sit just under its notes, audible, not buried (drums '+gap.toFixed(1)+' LU against the notes; window -6..-1)');}
 
  // ---- 12: Play It Again lists what was finished (the same day too), each with what it taught, and replays it
  {const fin=['howlong','sayplay','staff'];

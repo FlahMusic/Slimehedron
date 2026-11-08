@@ -445,6 +445,12 @@ function degCents(d){try{return centsForDegree(d);}catch(e){return d*200;}}
 let _noteAnswer=null;
 let _timers=[];
 function later(fn,ms){const id=setTimeout(fn,ms);_timers.push(id);return id;}
+// a lesson's drum hit: a failure is reported (window.__oops via oops()), never swallowed, so a dead drum bus cannot
+// silence a count-in without a trace (CODING_STANDARDS: audio entry points report silent exits)
+function hit(v,t,a){try{dHit(v,t,a,true);}catch(e){try{oops('learn: dHit('+v+') threw '+(e&&e.message||e));}catch(_){}}}
+// THE COUNT-IN, one for every rhythm lesson (critique tickets 09-11): four clicks a beat apart, the first a little
+// harder, starting at t0. The lessons show 4 3 2 1 their own way (a ball, a number, the feedback line).
+function countIn(t0,P){for(let c=0;c<4;c++)hit('r',t0+c*P,c===0?1.0:0.8);}
 // LISTEN FIRST (critique ticket 06, Flah 2026-11-03: "listen is a button the kid presses when ready"). A round you
 // judge by ear never plays by itself: needListen() holds it, the "listen" button pulses, and the answers wait until
 // it has been pressed once. Nothing starts over anything else.
@@ -615,7 +621,7 @@ const isRest=(k)=>k==='r';
 function noteValueUnit(){
   stageOff();
   const need=5, POOL=['q','h','w','dh'];
-  let kind='q', right=0, busy=false, timer=null;
+  let kind='q', right=0, busy=false, timer=null, noteAt=0;
   // ONE ANSWER PER QUESTION. `busy` only went true at the END of a unit, so until then every tap
   // scored: a child could hit 1,2,3,4 and one of them had to be right. That is not an answer, it is
   // a brute force, and it was being written into the progress file as mastery. `armed` is the real
@@ -652,12 +658,12 @@ function noteValueUnit(){
     const cnt=[...document.querySelectorAll('#lgCnt i')], fd=document.getElementById('lgFeed');
     cnt.forEach(c=>c.classList.remove('on','beat'));
     const n=NOTEV[kind], P=0.6, t0=AC.currentTime+0.1;
-    for(let c=0;c<4;c++){try{dHit('r',t0+c*P,c===0?1.0:0.8,true);}catch(e){}}
-    try{note(0,92,n*P*0.95,t0+4*P);}catch(e){}       // the note SOUNDS for its full length, after the lead-in
-    window._labHlT0=t0;
+    countIn(t0,P);
+    try{note(0,92,n*P*0.95,t0+4*P);}catch(e){oops('howlong: note threw '+(e&&e.message));}       // the note SOUNDS for its full length, after the lead-in
+    window._labHlT0=t0;noteAt=t0+4*P;
     let lead=true;
     timer=setInterval(()=>{const b=(AC.currentTime-t0)/P;
-      if(fd&&b>=0&&b<4)fd.textContent=String(4-Math.floor(b));
+      if(fd&&armed&&b>=0&&b<4)fd.textContent=String(4-Math.floor(b));   // (never over an answer's feedback)
       else if(fd&&lead&&b>=4){lead=false;fd.textContent='';}   // once: an answer's words written after this stay
       cnt.forEach((c,i)=>c.classList.toggle('on',b>=4&&i<=Math.floor(b-4)));
       if(b>=8){clearInterval(timer);timer=null;}},30);
@@ -667,9 +673,10 @@ function noteValueUnit(){
   function reveal(n){ [...document.querySelectorAll('#lgCnt i')].forEach((c,i)=>c.classList.toggle('beat',i<n)); }
   window._lab_lgAgain=demo;
   const hist=[];
-  function ask(){ kind=freshPick(()=>POOL[(Math.random()*POOL.length)|0],hist); armed=true; paint(); needListen(); }
+  function ask(){ kind=freshPick(()=>POOL[(Math.random()*POOL.length)|0],hist); window._labHowlong=NOTEV[kind]; armed=true; paint(); needListen(); }   // _labHowlong: readable, dev-learn3 answers it wrong on purpose
   const onDown=(e)=>{const b=e.target.closest&&e.target.closest('[data-cnt]');if(!b||busy||!armed)return;
     if(!_heard){e.preventDefault();nudgeListen();return;}
+    if(AC&&AC.currentTime<noteAt){e.preventDefault();return;}   // the note has not sounded yet: an answer now is a guess
     e.preventDefault();armed=false;
     const ok=(+b.dataset.cnt===NOTEV[kind]);
     score('howlong',ok); if(ok)right++;
@@ -684,7 +691,7 @@ function noteValueUnit(){
   _render=paint;ask();
   _cleanup=()=>{_noteAnswer=null;busy=true;if(timer)clearInterval(timer);
     try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
-    window._lab_lgAgain=null;stageOff();LAB.clear();};
+    window._lab_lgAgain=null;window._labHlT0=null;window._labHowlong=null;stageOff();LAB.clear();};
 }
 
 // ---------- 4-5. COUNT THE BAR, AND PLAY A SONG ----------
@@ -763,7 +770,7 @@ function readUnit(cfg){
   function run(){
     if(!started){started=true;paint();}
     idx=0; t0=AC.currentTime+0.15+4*P;
-    for(let c=0;c<4;c++){try{dHit('r',t0-(4-c)*P,c===0?1.0:0.8,true);}catch(e){}}
+    countIn(t0-4*P,P);
     window._labReadT0=t0;
     const cells=[...document.querySelectorAll('.lgCell')];
     const ball=document.getElementById('rgBall'),stepEls=[...document.querySelectorAll('.rgStep')],fdL=document.getElementById('lgFeed');
@@ -822,7 +829,7 @@ function readUnit(cfg){
   build();_render=paint;paint();needListen();
   _cleanup=()=>{_noteAnswer=null;busy=true;cancelAnimationFrame(raf);
     try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
-    window._lab_tap=null;stageOff();LAB.clear();};
+    window._lab_tap=null;window._lab_lgAgain=null;window._labReadT0=null;stageOff();LAB.clear();};
 }
 function countBarUnit(){
   readUnit({id:'countbar',title:'u_countbar',doIt:'cb_do',name:'cb_name',need:3,
@@ -997,7 +1004,7 @@ function restUnit(){
     pick:()=>({notes:BARS.rest[(Math.random()*BARS.rest.length)|0]})});
 }
 function songUnit(){
-  readUnit({id:'song',title:'u_song',doIt:'sg_do',name:'sg_name',need:2,
+  readUnit({id:'song',title:'u_song',doIt:'sg_do',name:'sg_name',need:3,
     pick:()=>{const s=BARS.song[(Math.random()*BARS.song.length)|0];
       return {notes:s.bars[0].concat(s.bars[1]||[]),title:s.n};}});
 }
@@ -1260,7 +1267,7 @@ function pulseUnit(){
     while(nextBeat<now+0.25){                     // schedule a quarter-second ahead, sample-accurate
       // the first four beats are the count-in: a click and 4 3 2 1 on the falling balls, nothing judged yet
       const ci=Math.round((nextBeat-t0)/P);
-      try{if(ci<4)dHit('r',nextBeat,ci===0?1.0:0.8,true);else dHit('K',nextBeat,1.15,true);}catch(e){}
+      if(ci<4)hit('r',nextBeat,ci===0?1.0:0.8);else hit('K',nextBeat,1.15);
       nextBeat+=P; sched++;
     }
     draw(now);
@@ -1401,7 +1408,7 @@ function sayPlayUnit(){
     if(busy||playing||!pat)return;
     explained=true;playing=true;miss=[];feed='';
     const t0=AC.currentTime+0.12;
-    for(let c=0;c<4;c++){try{dHit('r',t0+c*B,c===0?1.1:0.85,true);}catch(e){}}
+    countIn(t0,B);
     for(let i=0;i<GE_STEPS;i++)GE_LANES.forEach(l=>{if(pat[l.v][i]){try{dHit(l.v,t0+(4+i)*B,l.v==='h'?0.8:1.05,true);}catch(e){}}});
     window._labGeT0=t0;
     cancelAnimationFrame(raf);
@@ -1423,7 +1430,7 @@ function sayPlayUnit(){
   }
   function check(){
     if(busy||playing||!pat||!_heard)return;
-    miss=GE_LANES.filter(l=>l.v&&pat[l.v].some((x,i)=>!!x!==!!mine[l.v][i])).map(l=>l.v);
+    miss=GE_LANES.filter(l=>pat[l.v].some((x,i)=>!!x!==!!mine[l.v][i])).map(l=>l.v);
     const ok=miss.length===0;score('sayplay',ok);
     feed=t(ok?'yes':'notYet');
     if(ok){right++;round++;busy=true;paint();

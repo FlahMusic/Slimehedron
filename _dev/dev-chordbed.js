@@ -64,7 +64,11 @@ await p.waitForTimeout(1000);
 const bed=await p.evaluate(async()=>await window.__pk(7000));
 ok(bed>AUDIBLE,'with the triangle dragged hard to DRUMS and the kit off, the chords still play '+
   '(peak RMS '+bed.toFixed(5)+', '+Math.round(100*bed/full)+'% of the full mix)');
-ok(bed<full*0.45,'and it stays a BED, not the loudest thing in the room ('+Math.round(100*bed/full)+'% of full)');
+// The 45 % bar was set when the drums sat 2-10 LU OVER the melody and filled the full mix. The level pass (critique 05,
+// 2026-11-05) put them 10-15 LU under, so the chords' share of a mix with no melody in it went up (46-51 %), on purpose.
+// The measured margin now lives in dev-mix 1 (chords at least 3 LU under the melody; they measure 11-14 under).
+// Here: the bed is still clearly under the full band, at most 60 % of it (-4.4 dB).
+ok(bed<full*0.6,'and it stays a BED, under the full band ('+Math.round(100*bed/full)+'% of full; the margin against the melody is dev-mix 1)');
 
 // THE CONTROL. The speakers carry a live generative mix, so "is it silent" is the wrong question —
 // the tank keeps ticking along quietly whatever the mixer says. What must be proven is that the

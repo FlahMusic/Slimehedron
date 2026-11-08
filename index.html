@@ -1350,6 +1350,28 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 .deMode span{font:800 11px system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-right:2px}
 .deMode button{min-height:44px;padding:0 12px;border-radius:12px;font:800 13px system-ui,sans-serif;color:var(--ink);cursor:pointer;background:var(--cream);border:1px solid rgba(255,255,255,.8);box-shadow:var(--depth)}
 .deMode button.on{background:linear-gradient(180deg,#e2d2ff,#c4a6ff 60%,#ab8cf0);color:#2a2050;box-shadow:var(--depthIn)}
+/* THE STUDIO SEQUENCER (2026-11-07): two rows of 8 knobs, Korg SQ-1 style; four movement sliders under them */
+.patTabs{margin:8px 0 0}
+#seqPanel{display:flex;flex-direction:column;gap:6px;margin:8px 0 2px;min-width:0;container-type:inline-size}
+#seqPanel[hidden]{display:none}
+.sqBar{margin:0}
+.sqBar span{font:800 11px system-ui,sans-serif;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;min-width:34px}
+.sqGrid{display:grid;grid-template-columns:repeat(4,minmax(44px,1fr));gap:4px 3px;margin:4px 0;user-select:none;touch-action:none}
+@container (min-width:400px){.sqGrid{grid-template-columns:repeat(8,minmax(44px,1fr))}}   /* 8 across only where 8 fit at 44 px: studio's side column is ~300 px, so 4 a line there */
+.sqRowLbl{grid-column:1/-1;font:800 11px system-ui,sans-serif;color:var(--ink-soft);letter-spacing:.8px;margin-top:2px}
+.sqKnob{position:relative;min-width:44px;min-height:52px;border:none;background:none;padding:0;cursor:ns-resize;display:flex;align-items:center;justify-content:center}
+.sqKnob::before{content:"";position:absolute;width:42px;height:42px;left:50%;top:50%;margin:-21px 0 0 -21px;border-radius:50%;
+  background:conic-gradient(var(--kc,#8f6be8) calc(var(--v,0)*270deg),rgba(120,100,170,.18) 0) ;
+  -webkit-mask:radial-gradient(circle,transparent 13px,#000 14px);mask:radial-gradient(circle,transparent 13px,#000 14px);transform:rotate(-135deg)}
+.sqKnob::after{content:"";position:absolute;width:26px;height:26px;left:50%;top:50%;margin:-13px 0 0 -13px;border-radius:50%;background:linear-gradient(170deg,#fff,#ebe5f8);box-shadow:0 1px 2px rgba(80,66,130,.3)}
+.sqKnob b{position:relative;z-index:1;font:800 10.5px system-ui,sans-serif;color:#2f2a44;pointer-events:none;white-space:nowrap}
+.sqKnob.off::before{opacity:.25}.sqKnob.off b{opacity:.35}
+.sqKnob.lit::after{box-shadow:0 0 0 3px #2f2a44}
+.sqMacros{display:grid;grid-template-columns:1fr;gap:4px;margin-top:4px}
+.sqMac{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:8px;font:800 12px system-ui,sans-serif;color:var(--ink)}
+.sqMac b{grid-column:1/-1}
+.sqMac input{width:100%;min-width:0;height:6px;padding:19px 0;box-sizing:content-box}   /* 44 px to grab, a 6 px track to see */
+.sqMac i{grid-column:1/-1;font:600 11px system-ui,sans-serif;color:var(--ink-soft);font-style:normal}
 /* THE MIXER: one strip per part, like a DAW's track header -- name, mute, solo, volume */
 #mixRows{display:flex;flex-direction:column;gap:6px}
 .mixRow{display:grid;grid-template-columns:56px 44px 44px minmax(0,1fr) 24px;align-items:center;gap:5px}
@@ -2330,6 +2352,21 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
         <span class="padAx ax-l">SIMPLE</span><span class="padAx ax-r">COMPLEX</span>
         <div id="padPuck"></div>
       </div>
+      <div class="patTabs deMode" role="tablist" aria-label="drum grid or sequencer"><button type="button" role="tab" data-pt="grid" class="on" aria-selected="true" title="the drum grid: a row for each drum">drum grid</button><button type="button" role="tab" data-pt="seq" aria-selected="false" title="the sequencer: two rows of 8 knobs, like a Korg SQ-1">sequencer</button></div>
+      <div id="seqPanel" hidden>
+        <div class="sqBar deMode" role="group" aria-label="sequencer"><button type="button" class="sqOn" id="seqOnBtn" aria-pressed="false" title="play the sequencer with the transport">on</button><span>play</span><button type="button" data-tg="notes" class="on" aria-pressed="true" title="the knobs play notes, always in the key">notes</button><button type="button" data-tg="drums" aria-pressed="false" title="each knob picks a drum">drums</button><button type="button" id="seqArpBtn" aria-pressed="false" title="arp: the notes come from the chord the band is playing">arp</button></div>
+        <div class="sqBar deMode" role="group" aria-label="rows"><span>rows</span><button type="button" data-rw="A" class="on" aria-pressed="true" title="row A on its own, 8 steps">A</button><button type="button" data-rw="AB" aria-pressed="false" title="A then B, one line of 16 steps">A→B</button><button type="button" data-rw="alt" aria-pressed="false" title="A one time round, B the next: a variation">A|B</button></div>
+        <div class="sqBar deMode" role="group" aria-label="direction"><span>way</span><button type="button" data-dr="fwd" class="on" aria-pressed="true" title="forward" aria-label="forward">→</button><button type="button" data-dr="rev" aria-pressed="false" title="reverse" aria-label="reverse">←</button><button type="button" data-dr="bounce" aria-pressed="false" title="bounce: there and back" aria-label="bounce">↔</button><button type="button" data-dr="random" aria-pressed="false" title="random: any step, never the same twice" aria-label="random">?</button></div>
+        <div class="sqBar deMode" role="group" aria-label="step size"><span>step</span><button type="button" data-rt="4" aria-pressed="false" title="a step is a quarter note">1/4</button><button type="button" data-rt="2" class="on" aria-pressed="true" title="a step is an eighth note">1/8</button><button type="button" data-rt="1" aria-pressed="false" title="a step is a sixteenth note">1/16</button></div>
+        <div class="sqBar deMode" role="group" aria-label="what the knobs set"><span>knobs</span><button type="button" data-ln="pitch" class="on" aria-pressed="true" title="the knobs set each step's note (or drum)">pitch</button><button type="button" data-ln="vel" aria-pressed="false" title="velocity: how hard each step plays">velocity</button></div>
+        <div class="sqGrid" id="seqGrid" aria-label="two rows of 8 step knobs: drag up or down to set, drag across to draw, tap for a rest, hold to hear"></div>
+        <div class="sqMacros">
+          <label class="sqMac"><b>chance</b><input type="range" id="seqChance" min="0" max="100" value="0" aria-label="chance"><i>some steps skip, each time round</i></label>
+          <label class="sqMac"><b>humanize</b><input type="range" id="seqHuman" min="0" max="100" value="0" aria-label="humanize"><i>timing and loudness wobble, like a person</i></label>
+          <label class="sqMac"><b>wander</b><input type="range" id="seqWander" min="0" max="100" value="0" aria-label="wander"><i>notes drift to nearby notes, then come back</i></label>
+          <label class="sqMac"><b>repeat</b><input type="range" id="seqRepeat" min="0" max="100" value="0" aria-label="repeat"><i>steps stutter: two to four hits</i></label>
+        </div>
+      </div>
       <div id="drumEditor">
         <div class="deLen" role="group" aria-label="pattern length"><span>length</span><button type="button" data-bars="1">1 bar</button><button type="button" data-bars="2">2 bars</button><button type="button" data-bars="4">4 bars</button></div>
         <div class="deMode" role="group" aria-label="what tapping a step changes"><span>tap</span><button type="button" data-mode="on" class="on" aria-pressed="true" title="tap a step to turn it on or off">on / off</button><button type="button" data-mode="vel" aria-pressed="false" title="velocity: how hard a step hits, louder or softer (the DAW word)">velocity</button><button type="button" data-mode="prob" aria-pressed="false" title="tap a step to set how often it plays">chance</button></div>
@@ -2544,9 +2581,9 @@ const SCALES={
   edo19:{n:"19-EDO Major",c:[0,189,379,505,695,884,1074]},
   // WHOLE TUNINGS: every note of the octave split evenly, so an orb gets a wall for each. Drone harmony: stacking
   // every other degree is no chord at all in these, the band holds the tonic and the nearest fifth instead
-  edo19all:{n:"19-EDO, all 19",c:Array.from({length:19},(_,i)=>Math.round(i*1200/19*100)/100),harm:'drone'},
-  edo24:{n:"24-EDO ¼-tones, all 24",c:Array.from({length:24},(_,i)=>i*50),harm:'drone'},
-  edo31:{n:"31-EDO, all 31",c:Array.from({length:31},(_,i)=>Math.round(i*1200/31*100)/100),harm:'drone'}
+  edo19all:{n:"19-EDO, every step",c:Array.from({length:19},(_,i)=>Math.round(i*1200/19*100)/100),harm:'drone'},
+  edo24:{n:"24-EDO ¼-tones, every step",c:Array.from({length:24},(_,i)=>i*50),harm:'drone'},
+  edo31:{n:"31-EDO, every step",c:Array.from({length:31},(_,i)=>Math.round(i*1200/31*100)/100),harm:'drone'}
   // no harm tag ⇒ 'triad' (all 12-TET scales, whole-tone, 19-EDO): normal stacked-third chords, as before
 };
 // ---- the scale menu is grouped by how a scale SOUNDS, not how it is built: a kid picking one has no
@@ -2582,6 +2619,12 @@ let BURST_MS=6000; // how long the corners stay broken open before reforming
 // ---------- audio ----------
 let AC=null,master=null,delayNode=null,dlyFb=null,dlyWet=null,masterFilt=null,slimeEQ=null,slimeComp=null,activeVoices=0,recTap=null,masterHP=null,bandBus=null,melBus=null,bandMix=null,padBus=null,melEcho=null,lim=null,outClip=null;
 let outVol=null; // THE master volume. see initAudio
+// MASTER LIFT (2026-11-07): the level pass (critique 04/05) put the drums 10-15 LU under the melody. Before it they drove
+// the whole mix into the limiter (peaks pinned at -0.9 dBFS); after it the app measured 5-11 dB quieter (studio -18.3
+// -> -23.7 LUFS, play as it opens -19.2 -> -30.1). The lift raises every part together, after the mix, so the balance
+// stays exactly what dev-mix measured and the loudness comes back. Sized by measurement (_dev note in the handoff).
+let MASTER_LIFT_DB=5;   // measured 2026-11-07: +4 left studio 1.6 dB under where it was, +6 hit the -1 dBFS ceiling again
+const outGain=v=>v/VOL_REF*Math.pow(10,MASTER_LIFT_DB/20);
 const VOL_REF=0.4675; // S.vol at the default slider position (55)
 let noiseBuf=null,tapeDry=null,tapeWet=null,tapeDrive=null,tapeShaper=null,tapeTone=null,tapeDly=null,wowDepth=null,flutDepth=null,hissG=null; // tape color stage
 // A SILENT AUDIO ENGINE, for a browser that has none (or refuses to make one). Every node, parameter and
@@ -2616,7 +2659,7 @@ function initAudio(){
   // gain and the fader drives outVol, which sits after everything and before the limiter.
   // VOL_REF keeps the default mix identical: at slider 55, outVol is exactly 1.
   master=AC.createGain();master.gain.value=VOL_REF;
-  outVol=AC.createGain();outVol.gain.value=S.vol/VOL_REF;
+  outVol=AC.createGain();outVol.gain.value=outGain(S.vol);
   bandBus=AC.createGain();bandBus.gain.value=1;bandMix=AC.createGain();bandMix.gain.value=1;
   // phone-friendly mid-bass lift: a gentle peak at ~120Hz (the lowest band small speakers actually reproduce) so
   // the bass has presence on laptops/phones without booming on headphones. sits before the mix/master stages.
@@ -2870,13 +2913,17 @@ function sendMidi(cents,vel,imp){const mf=S.root+cents/100;midiCap('melody',Math
 // ---------- drums: casio-style synthesized kit, 4-bar loops ----------
 let drumOn=false,drumStep=0,drumTime=0,drumBus=null,drumKit='pop',drumFeel='1',drumSig='16',NB=null;
 const SIGS={'16':{n:16,acc:[0]},'12':{n:12,acc:[0]},'12c':{n:12,acc:[0,6]},'20':{n:20,acc:[0]},'14':{n:14,acc:[0,4,8]},'18':{n:18,acc:[0,4,8,12]}}; // accents mark the group starts so your ear learns the counting
-let drumComp=null,drumEQ=null,drumTrim=null,_trimKit=null;
+let drumComp=null,drumEQ=null,drumPres=null,drumTrim=null,_trimKit=null;
 function initDrums(){if(drumBus)return;drumBus=AC.createGain();drumBus.gain.value=0.9;
   // BUS GLUE: light compression + a gentle EQ tilt so the kit sits together like a mixed drum bus (not raw beeps).
   drumComp=AC.createDynamicsCompressor();drumComp.threshold.value=-16;drumComp.ratio.value=3.2;drumComp.knee.value=8;drumComp.attack.value=0.004;drumComp.release.value=0.12; // punchy glue
   drumEQ=AC.createBiquadFilter();drumEQ.type='peaking';drumEQ.frequency.value=180;drumEQ.gain.value=2.2;drumEQ.Q.value=0.7; // a touch of low-mid body so kick+snare feel foundational
   drumTrim=AC.createGain();   // each kit's level (KIT_DB), AFTER the glue: the kit keeps its sound, only quieter, and a cut is exactly that cut
-  drumBus.connect(drumComp);drumComp.connect(drumEQ);drumEQ.connect(drumTrim);drumTrim.connect(slimeEQ);
+  // THE PRESENCE DIP (2026-11-07): hats and snares put the drums level with the melody in 2.8-5.6 kHz, the octave the ear is
+  // most sensitive to (research _docs/research/2026-11-04-mix-levels.md, item 6: at least 6 dB under, dev-mix 6b). A wide
+  // dip there takes the edge off the drums for small ears and leaves the kick, the body and the air above it alone.
+  drumPres=AC.createBiquadFilter();drumPres.type='peaking';drumPres.frequency.value=3800;drumPres.Q.value=0.8;drumPres.gain.value=-8.5;
+  drumBus.connect(drumComp);drumComp.connect(drumEQ);drumEQ.connect(drumPres);drumPres.connect(drumTrim);drumTrim.connect(slimeEQ);
   drumSend=AC.createGain();drumSend.gain.value=0.09;drumTrim.connect(drumSend); // drums get the LEAST -- a wet kick is mud
   if(rvbSend)drumSend.connect(rvbSend);
   applyMix();} // drum level lives in the triangle mixer now
@@ -3060,7 +3107,7 @@ function hatChoke(t){if(_ohChoke&&_ohChoke.end>t){const g=_ohChoke.g.gain;
 // of the one drum that defines that style -- the backbeat in pop and rock, the four-on-the-floor kick
 // in disco, the clave in bossa nova, the ride in jazz -- so a child can SEE which sound to listen for.
 const SIG_PART={pop:'s',rock:'s',disco:'K',bossa:'cl',jazz:'h'};
-const SIG_TITLE={pop:'pop: listen for the snare on 2 and 4',rock:'rock: listen for the snare on 2 and 4',disco:'disco: listen for the kick on every beat',bossa:'bossa nova: listen for the clave',jazz:'jazz: listen for the ride cymbal'};
+const SIG_TITLE={pop:'pop: listen for the snare on 2 and 4',rock:'rock: listen for the snare on 2 and 4',disco:'disco: listen for the kick on every beat',bossa:'bossa nova: listen for the clave',jazz:'jazz: listen for the hi-hat\'s swing'};
 function sigPulse(t){const ms=Math.max(0,(t-AC.currentTime)*1000);
   setTimeout(()=>{const b=document.querySelector('#psDrums .psBtn.on');if(!b)return;
     b.classList.remove('hop');void b.offsetWidth;b.classList.add('hop');},ms);}
@@ -4427,7 +4474,7 @@ const KITFEEL={
   rock: {dyn:.45,time:.35,ghost:.35,sw8:0,  sw16:0,  acc:{K:1.08,s:{4:1.22,12:1.22}}},
   disco:{dyn:.3, time:.18,ghost:.2, sw8:0,  sw16:0,  acc:{K:1.14,s:{4:1.08,12:1.08},o:1.15}},
   bossa:{dyn:.5, time:.45,ghost:.15,sw8:0,  sw16:.18,acc:{K:.82,h:.6,cl:1.08},ghostHat:true},
-  jazz: {dyn:.6, time:.5, ghost:.5, sw8:.85,sw16:0,  acc:{K:.5,h:.75,s:.55,y:{0:.95,4:1.12,8:.95,12:1.12}},ghostAt:'and',ghostHat:false}
+  jazz: {dyn:.6, time:.5, ghost:.5, sw8:.85,sw16:0,  acc:{K:.5,h:{0:.7,4:.84,8:.7,12:.84},s:.55},ghostAt:'and',ghostHat:false}
 };
 const KITFEEL_DEFAULT={dyn:.4,time:.3,ghost:.3,sw8:0,sw16:0,acc:{}};
 function kitFeel(){return KITFEEL[drumKit]||KITFEEL_DEFAULT;}
@@ -4450,12 +4497,92 @@ function accFor(v,inBar){const a=kitFeel().acc[v];
 let _sSig='16',_sTrip=false,_sFeel='1';
 function _sBar(){return (_sSig==='16'&&_sTrip)?12:SIGS[_sSig].n;}                                   // steps per bar for the played meter
 function _sDur(){let d=60/S.bpm/((_sSig==='16'&&_sTrip)?3:4); if(_sFeel==='2')d*=0.5; else if(_sFeel==='h')d*=2; return d;} // seconds per step
+// ================================================================================================
+//  THE STUDIO SEQUENCER (2026-11-07; spec _docs/specs/2026-11-07-studio-sequencer, research
+//  _docs/research/2026-11-07-step-sequencer.md). Korg SQ-1 ease: two rows of 8 steps, a knob per step, rows played as
+//  A, A then B (16), or A and B on alternate passes; forward / reverse / bounce / random. Studio One movement in four
+//  sliders: chance, humanize, wander, repeat. A pitch is a SCALE DEGREE (0..14, 7 = the key note), so the key journey
+//  and a scale change carry the pattern with them (BCR32's non-destructive scale lock). It rides the conductor's
+//  clock (drumSchedule), so it is in time with the kit, and it schedules ahead on the audio clock like the drums.
+// ================================================================================================
+const SEQ_DRUMS=['K','s','r','h','o','lt','ht','cl'];      // what a knob picks when the target is drums
+const SEQ_DRUM_NAME={K:'kick',s:'snare',r:'rim',h:'hat',o:'open hat',lt:'low tom',ht:'high tom',cl:'clave'};
+const SEQ_DEG_MAX=14, SEQ_ROOT=7;
+const seqRow=(degs,ons)=>degs.map((d,i)=>({on:ons[i]?1:0,deg:d,vel:0.8,dr:[0,3,1,3,0,3,1,4][i]}));
+// a pattern ready to play (A: a little tune up and back; B: its answer), so "on" makes music at once
+const SEQ={on:false,rows:'A',dir:'fwd',rate:2,target:'notes',arp:false,
+  mac:{chance:0,human:0,wander:0,repeat:0},
+  A:seqRow([7,9,11,9,12,11,9,7],[1,1,1,1,1,1,1,1]),B:seqRow([11,12,14,12,11,9,8,7],[1,0,1,1,1,0,1,1]),
+  _i:null,_pass:0,_sign:1,_last:-1,_n:0,_arp:0};
+window._seqLog=null;    // test hook: set to [] and every scheduled hit is written here
+function seqLen(){return SEQ.rows==='AB'?16:8;}
+// which step plays next, and on which row (A|B swaps rows each pass)
+function seqAdvance(){const N=seqLen();let i=SEQ._i;
+  if(i!=null&&i>=N)i=null;                                   // the rows control changed under it
+  if(SEQ.dir==='fwd'){i=(i==null)?0:i+1;if(i>=N){i=0;SEQ._pass++;}}
+  else if(SEQ.dir==='rev'){i=(i==null)?N-1:i-1;if(i<0){i=N-1;SEQ._pass++;}}
+  else if(SEQ.dir==='bounce'){if(i==null){i=0;SEQ._sign=1;}
+    else{if(i+SEQ._sign>=N||i+SEQ._sign<0)SEQ._sign=-SEQ._sign;i+=SEQ._sign;if(i===0)SEQ._pass++;}}   // ends not repeated
+  else{let j;do{j=(Math.random()*N)|0;}while(N>1&&j===SEQ._last);i=j;if(++SEQ._n%N===0)SEQ._pass++;}  // random: never twice running
+  SEQ._i=i;SEQ._last=i;
+  const row=SEQ.rows==='AB'?(i<8?'A':'B'):SEQ.rows==='alt'?((SEQ._pass%2)?'B':'A'):'A';
+  return {i,row,k:i%8};}
+// degree -> cents, for any degree including below the key (centsForDegree assumes d >= 0)
+function seqCents(d){const c=scaleObj().c,len=c.length,o=Math.floor(d/len);return o*1200+c[((d%len)+len)%len];}
+function seqDegCents(deg){return seqCents(deg-SEQ_ROOT);}
+// the chord the band is playing, as degrees round the key note: root, third, fifth, octave
+function seqChordTones(){const r=curRootDeg||0;return [r,r+2,r+4,r+7].map(x=>x+SEQ_ROOT);}
+function seqArpDeg(){const tones=seqChordTones(),n=tones.length;let k=SEQ._arp++;
+  if(SEQ.dir==='rev')return tones[n-1-(k%n)];
+  if(SEQ.dir==='bounce'){const p=k%(2*n-2);return tones[p<n?p:2*n-2-p];}
+  if(SEQ.dir==='random')return tones[(Math.random()*n)|0];
+  return tones[k%n];}
+// one step of the conductor (a 16th of the bar): play the sequencer's step if this is one of its steps
+function seqTick(t,sd){
+  if(!SEQ.on||(drumStep%SEQ.rate)!==0)return;
+  const pos=seqAdvance(),step=SEQ[pos.row][pos.k];
+  seqPlay(step,pos,t,sd*SEQ.rate);}
+function seqPlay(step,pos,t,dur){
+  if(!step||!step.on)return;                                 // a rest
+  const M=SEQ.mac,R=Math.random;
+  // chance: off-beat steps can drop to 40 %, beats to 70 %, the first step always plays
+  const beat=((pos.i*SEQ.rate)%4)===0;
+  if(pos.i!==0&&M.chance>0&&R()>=1-(beat?0.3:0.6)*M.chance)return;
+  let deg=SEQ.arp&&SEQ.target==='notes'?seqArpDeg():step.deg,vel=step.vel;
+  // wander: a quarter of the notes at most move 1 (or 2) scale steps, this pass only: the stored step never changes
+  if(M.wander>0&&SEQ.target==='notes'&&R()<0.25*M.wander){const by=(M.wander>0.5&&R()<0.5)?2:1;
+    deg=Math.max(0,Math.min(SEQ_DEG_MAX,deg+(R()<0.5?-by:by)));}
+  // humanize: at most a quarter of a step, never past 30 ms, and velocity +-24 of 127
+  let off=0;if(M.human>0){off=(R()*2-1)*M.human*Math.min(0.25*dur,0.03);vel+=(R()*2-1)*M.human*24/127;}
+  if(t+off<AC.currentTime)off=0;                             // too early to schedule: drop the nudge, never clamp it to now
+  vel=Math.max(1/127,Math.min(1,vel));
+  // repeat: up to 35 % of steps stutter 2-4 times inside the step, hits at least 30 ms apart, each 15 % softer
+  let hits=1;if(M.repeat>0&&R()<0.35*M.repeat){hits=M.repeat<0.5?2:M.repeat<0.8?2+((R()*2)|0):2+((R()*3)|0);
+    while(hits>1&&dur/hits<0.03)hits--;}
+  for(let h=0;h<hits;h++){const th=t+off+h*dur/hits,vh=vel*Math.pow(0.85,h),len=dur/hits;
+    if(SEQ.target==='drums'){const v=SEQ_DRUMS[step.dr]||'K';
+      try{dHit(v,th,vh*1.25,true);}catch(e){}
+      if(window._seqLog)window._seqLog.push({t:th,row:pos.row,k:pos.k,i:pos.i,v,vel:vh,hit:h});}
+    else{const cents=seqDegCents(deg),v127=Math.max(1,Math.round(vh*127));
+      try{playSynth(freqFromCents(cents),v127,0.7,Math.max(0.03,len*0.5),true,th);}catch(e){}
+      try{sendMidiAt(S.root+cents/100,v127,S.chMel,th,len*0.6);}catch(e){}
+      if(window._seqLog)window._seqLog.push({t:th,row:pos.row,k:pos.k,i:pos.i,deg,cents,vel:vh,hit:h});}}
+  SEQ._lit={row:pos.row,k:pos.k,t:t+off};}                    // the panel lights the step when its time comes
+// turning it on with nothing else running starts the conductor's clock from the top of a bar
+function seqSetOn(on){SEQ.on=!!on;SEQ._i=null;SEQ._pass=0;SEQ._n=0;SEQ._arp=0;
+  if(SEQ.on&&AC&&!drumOn&&!bandOn){drumStep=0;drumTime=AC.currentTime+0.05;}
+  if(SEQ.on&&!S.playing)try{setPlaying(true);}catch(e){}}
 function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums, bass, pads & midi
-  if((!drumOn&&!bandOn)||!AC)return;
+  if((!drumOn&&!bandOn&&!SEQ.on)||!AC)return;
   // schedule-ahead window: 120ms normally, but WIDER when the tab is hidden — browsers throttle background timers
   // (the worker heartbeat can drop to ~1s), so we pre-schedule enough audio to bridge those irregular wake-ups.
   // the Web Audio clock (AC.currentTime) stays sample-accurate regardless, so wider lookahead = no gaps, no drift.
   const _look=document.hidden?1.2:0.12;
+  // RESUME WITHOUT A CLATTER (2026-11-07): after a pause (or a frozen tab) drumTime still points at the moment it
+  // stopped, and this loop used to schedule every missed step at once, in the past: a burst of up to ~30 hits, all
+  // sounding together. The clock picks up from now instead, at the same place in the bar. (A transport restart, not
+  // a note clamped to now: no single hit is moved.)
+  if(drumTime<AC.currentTime-0.25)drumTime=AC.currentTime+0.03;
   while(drumTime<AC.currentTime+_look){
     // adopt a new time-sig / triplet ONLY at a bar boundary → the current measure always finishes clean (MIDI-sync safe)
     if((drumStep%_sBar())===0 && (_sSig!==drumSig||_sTrip!==S.triplet||_sFeel!==drumFeel)){_sSig=drumSig;_sTrip=S.triplet;_sFeel=drumFeel;drumStep=0;}
@@ -4487,6 +4614,7 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
       }
     }
     if(_trimKit!==drumKit&&drumTrim)applyMix();   // the kit changed (any of the ways it can): its own level follows
+    seqTick(drumTime,_sDur());                    // the studio sequencer rides the same clock
     if(!drumOn){drumTime+=_sDur();drumStep++;continue;} // band without drums: same grid, silent kit
     if(trip){ // the REAL shuffle: "ting — ting-a" — the hat SKIPS the middle triplet (that gap is the whole feel)
       const vm=KITVOICE[drumKit],sub=inBar%3;
@@ -6629,7 +6757,7 @@ bindRange("vol","vol",v=>{const x=(v/100)*0.85;
   S.vol=x;applyMix();const vp=$("volPlay");if(vp&&vp.value!=v)vp.value=v;return x;}); // slider 0-100 maps to 0-0.85 gain: even "max" leaves headroom under the -8.5dB limiter (kid-safe ceiling). mirrors the top-bar fader.
 // top-bar master volume fader — drives the SAME kid-safe volume as the settings slider, kept in sync both ways.
 (function(){const vp=$("volPlay"),vs=$("vol");if(!vp)return;
-  const apply=(v)=>{const x=muted?0:(v/100)*0.85;S.vol=x;if(AC&&outVol)outVol.gain.setTargetAtTime(x/VOL_REF,AC.currentTime,0.05);};
+  const apply=(v)=>{const x=muted?0:(v/100)*0.85;S.vol=x;if(AC&&outVol)outVol.gain.setTargetAtTime(outGain(x),AC.currentTime,0.05);};
   vp.addEventListener('input',()=>{const v=+vp.value;
     if(muted)setMute(false);                       // grabbing the fader obviously means "I want to hear it"
     apply(v);if(vs&&vs.value!=v){vs.value=v;const vv=$("volV");if(vv)vv.textContent=v;}});
@@ -6743,7 +6871,7 @@ $("drumBtn").addEventListener('click',()=>{initAudio();if(AC&&AC.state==="suspen
   drumOn=!drumOn;$("drumBtn").classList.toggle('on',drumOn);
   const c=$("drumCtl");c.style.opacity=drumOn?1:0.35;c.style.pointerEvents=drumOn?"auto":"none";
   if(drumOn){drumStep=0;drumTime=AC.currentTime+0.05;lastTick=performance.now();if(!S.playing)setPlaying(true);}});
-$("drumKit").addEventListener('change',e=>{if(KITS[e.target.value])drumKit=e.target.value;else e.target.value=drumKit;try{applyMix();}catch(err){}});   // a select that lost its option (a style filter, a stale save) reads '' : keep the kit we have
+$("drumKit").addEventListener('change',e=>{if(KITS[e.target.value])drumKit=e.target.value;else e.target.value=drumKit;});   // a select that lost its option (a style filter, a stale save) reads '' : keep the kit we have
 // ---- KIT = STYLE x GENRE (GarageBand's split: Acoustic / Electronic / Percussion, then the genre) ----
 // #drumKit is still the one real control every other handler reads; #kitStyle just filters what it offers.
 const KIT_STYLES={
@@ -6976,7 +7104,7 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
     const wasOn=b.classList.contains('on');
     dl.querySelectorAll('.psBtn').forEach(x=>x.classList.remove('on'));
     if(wasOn){if(drumOn)$("drumBtn").click();return;} // tap the lit one again = stop the beat
-    b.classList.add('on');drumKit=b.dataset.kit;const dk=$("drumKit");if(dk)dk.value=drumKit;try{applyMix();}catch(err){}   /* each kit has its own level (KIT_DB) */
+    b.classList.add('on');drumKit=b.dataset.kit;const dk=$("drumKit");if(dk)dk.value=drumKit;
     if(!drumOn)$("drumBtn").click();});
   // the lit rhythm always tells the truth: when the band starts by itself (play mode's first touch),
   // the rhythm that is actually playing lights up too, instead of none of them
@@ -6997,7 +7125,7 @@ function trackGain(k){const t=MIX[k];if(!t||S.mode!=='studio')return 1;const any
 // THE MIX UNDER THE MELODY (critique tickets 04-05; research _docs/research/2026-11-04-mix-levels.md). Measured each part
 // alone at the real output, K-weighted: the drums sat 2-10 LU ABOVE the melody (industrial +10, rock +9) and the band +1.
 // The melody leads now: every kit's drums at least 6 LU under it (9 for the soft kits), every piece 10 (13) under, the band
-// bass 3-10 under (it sat 1 LU under). BASS_DB / CHORD_DB move a band part; KIT_DB is each kit's fader, after the drum
+// bass 3-10 under (it sat 1 LU under). BASS_DB moves the bass; KIT_DB is each kit's fader, after the drum
 // bus glue (the compressor), so the kit keeps its sound and a cut is exactly that cut. PIECE_DB is per hit, before the
 // glue: it is nearly always the kick, the loudest piece in 10 kits of 11 and the one whose hits poke over the melody.
 // All from dev-mix's numbers (2026-11-04); each piece alone = every hit of that voice, ghost notes and fills too.
@@ -7005,19 +7133,26 @@ function trackGain(k){const t=MIX[k];if(!t||S.mode!=='studio')return 1;const any
 // the fills' loudest single hit)
 // (the loudest single hit moves +/-1.5 LU from run to run with the fills and the human feel, so every piece aims 2 LU
 // inside the line, at -5, not -4)
-const PIECE_DB={chip:{K:-18.5},beep:{K:-15,C:-6.5},pop:{K:-13.5,ht:-6.5},rock:{K:-13,ht:-4},disco:{K:-14.5,ht:-7.5},bossa:{K:-10.5},
-  samba:{K:-13,c:-13,C:-8},conga:{K:-14,c:-14,C:-6.5},march:{K:-15.5,ht:-12,lt:-11},industrial:{K:-13},jazz:{K:-13.5,s:-1,o:-6}};
-const DRUM_DB=0,BASS_DB=-7.5,CHORD_DB=0,KIT_DB={chip:-9.1,beep:-12.4,pop:-15,rock:-20,disco:-16.6,bossa:-16.2,samba:-13.1,conga:-12.9,march:-10.4,industrial:-21.3,jazz:-6.6};
+const PIECE_DB={chip:{K:-18.5},beep:{K:-15,C:-6.5},pop:{K:-13.5,ht:-6.5},rock:{K:-13,ht:-4},disco:{K:-14.5,ht:-7.5},bossa:{K:-10.5,cl:-5},
+  samba:{K:-13,c:-13,C:-11},conga:{K:-14,c:-14,C:-9.5},march:{K:-15.5,ht:-12,lt:-11,s:-5},industrial:{K:-13},jazz:{K:-15.5,s:-1,o:-6}};   // jazz K: its fills land on the kick at full strength
+// LESSONS have their own drum level: a lesson always plays the pop kit (LAB.take pins it) and its drums sit LEARN_DRUM_DB
+// over the pop kit's band level, so a count-in or Copy the Beat is not 21 dB quieter because rock was picked in studio.
+// Sized by measurement: dev-learn3 16 (lesson drums against lesson notes, K-weighted).
+const LEARN_DRUM_DB=15;   // measured 2026-11-07 (dev-learn3 16): +8 left them 10.4 LU under a lesson's notes; +15 aims at -3.5
+const BASS_DB=-7.5,KIT_DB={chip:-9.1,beep:-12.4,pop:-15,rock:-20,disco:-16.6,bossa:-16.2,samba:-13.1,conga:-12.9,march:-10.4,industrial:-21.3,jazz:-6.6};
 const dbG=d=>Math.pow(10,(d||0)/20);
 function applyMix(){if(!AC||!master)return;const t=AC.currentTime; // triangle mix: center = everyone full
   const c=x=>Math.min(1,x*3);S.wMg=c(S.wM);const T=0.09; // gentle ramp = no zipper/clicks when dragging fast or slow
-  if(outVol)outVol.gain.setTargetAtTime(S.vol/VOL_REF,t,T);
+  if(outVol)outVol.gain.setTargetAtTime(outGain(S.vol),t,T);
   if(melBus)melBus.gain.setTargetAtTime(c(S.wM)*trackGain('mel'),t,T);
   if(melEcho)melEcho.gain.setTargetAtTime(trackGain('mel'),t,T);   // the melody's echo goes quiet with the melody
-  if(bandMix)bandMix.gain.setTargetAtTime(c(S.wK)*trackGain('bass')*dbG(BASS_DB),t,T);
-  if(padBus)padBus.gain.setTargetAtTime(trackGain('chords')*dbG(CHORD_DB),t,T);
+  // the bass trim is the BALANCED mix (dev-mix: 3-10 LU under the melody). Pushing the triangle toward the bass corner
+  // hands the level back, so at the corner the bass is as loud as the melody alone (dev-bassmix 4), as before the trim
+  const bassFocus=Math.max(0,Math.min(1,(S.wK-1/3)/(2/3)));
+  if(bandMix)bandMix.gain.setTargetAtTime(c(S.wK)*trackGain('bass')*dbG(BASS_DB*(1-bassFocus)),t,T);
+  if(padBus)padBus.gain.setTargetAtTime(trackGain('chords'),t,T);
   if(drumBus)drumBus.gain.setTargetAtTime(0.88*c(S.wD)*trackGain('drums'),t,T);
-  if(drumTrim){drumTrim.gain.setTargetAtTime(dbG(DRUM_DB+(KIT_DB[drumKit]||0)),t,T);_trimKit=drumKit;}} // triangle mixer is the one true drum fader
+  if(drumTrim){drumTrim.gain.setTargetAtTime(dbG((KIT_DB[drumKit]||0)+(LAB._on?LEARN_DRUM_DB:0)),t,T);_trimKit=drumKit;}} // triangle mixer is the one true drum fader
 let _mixRAF=0;
 function scheduleMix(){if(_mixRAF)return;_mixRAF=requestAnimationFrame(()=>{_mixRAF=0;applyMix();});} // coalesce rapid drags to 1 audio update/frame
 (function(){const el=$("triMix");if(!el)return;const svg=el.querySelector('svg'),kn=el.querySelector('#triKnob');
@@ -7155,9 +7290,10 @@ LAB.take=function(cfg){
     LAB._saved={synth:S.synth,atk:S.atk,dec:S.dec,sus:S.sus,rel:S.rel,
       shape:S.shape,scale:S.scale,root:S.root,octs:S.octs,slime:S.slimeMode,
       drum:(typeof drumOn!=='undefined'&&drumOn),band:(typeof bandOn!=='undefined'&&bandOn),
-      randomShape:S.randomShape,bpm:S.bpm,grav:S.grav};
+      randomShape:S.randomShape,bpm:S.bpm,grav:S.grav,kit:drumKit};
     LAB._on=true;
   }
+  drumKit='pop';try{applyMix();}catch(e){oops('LAB.take: applyMix threw '+(e&&e.message));}   // the lesson kit, at the lesson level
   if(S.slimeMode)S.slimeMode=false;               // the lesson drives, not the auto-jammer
   S.randomShape=false;                            // no surprise shape changes mid-explanation
   // A lesson MUST be able to speak. The internal-synth switch lives in studio; a child who flips it
@@ -7199,6 +7335,7 @@ LAB.give=function(){
   S.synth=v.synth;S.atk=v.atk;S.dec=v.dec;S.sus=v.sus;S.rel=v.rel;   // hand the player's own rig back exactly
   S.shape=v.shape;S.octs=v.octs;S.randomShape=v.randomShape;S.bpm=v.bpm;S.grav=v.grav;
   S.scale=v.scale;S.root=v.root;
+  if(v.kit&&KITS[v.kit]){drumKit=v.kit;const dk=$("drumKit");if(dk)dk.value=v.kit;}try{applyMix();}catch(e){oops('LAB.give: applyMix threw '+(e&&e.message));}
   const sc=$("scale"),rt=$("root");if(sc)sc.value=v.scale;if(rt)rt.value=String(v.root);
   if(typeof drumOn!=='undefined'&&drumOn!==v.drum&&$("drumBtn"))$("drumBtn").click();
   if(typeof bandOn!=='undefined'&&bandOn!==v.band&&$("bandBtn"))$("bandBtn").click();
@@ -9830,6 +9967,87 @@ function startCoach(room){room=room||'play';const C=COACH[room];if(!C||document.
 //  serves three jobs, so they can never drift apart: undo steps, the autosave and song files.
 //  A song FILE is untrusted input. Every field is checked against what the app itself could have made:
 //  known names only, numbers finite and in range, sizes capped. Anything else is dropped, never guessed.
+// ---------- THE STUDIO SEQUENCER'S PANEL (the engine: THE STUDIO SEQUENCER, above drumSchedule) ----------
+// A knob per step, like the SQ-1; one switch turns all 16 knobs into the velocity lane (BCR32's mode buttons, Studio
+// One's lane buttons). Drag a knob up or down to set it; keep dragging across the row and every knob you pass takes the
+// same value (Studio One draws a lane in one gesture); a tap without a drag is a rest; holding still plays the step.
+(function(){try{
+  const panel=$("seqPanel"),grid=$("seqGrid");if(!panel||!grid)return;
+  let lane='pitch';
+  const KCOL={K:'#7b4fd6',s:'#e0453a',r:'#e0453a',h:'#f2c23a',o:'#f2c23a',lt:'#4fa3a0',ht:'#4fa3a0',cl:'#d98a3d'};
+  const DSHORT={K:'kick',s:'snare',r:'rim',h:'hat',o:'open',lt:'lo tom',ht:'hi tom',cl:'clave'};
+  const seg=(sel,attr,val)=>panel.querySelectorAll(sel).forEach(b=>{const on=b.dataset[attr]===String(val);b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');});
+  function paintBars(){seg('[data-tg]','tg',SEQ.target);seg('[data-rw]','rw',SEQ.rows);seg('[data-dr]','dr',SEQ.dir);seg('[data-rt]','rt',SEQ.rate);seg('[data-ln]','ln',lane);
+    const on=$("seqOnBtn");on.classList.toggle('on',SEQ.on);on.setAttribute('aria-pressed',SEQ.on?'true':'false');
+    const ar=$("seqArpBtn");ar.classList.toggle('on',SEQ.arp);ar.setAttribute('aria-pressed',SEQ.arp?'true':'false');ar.disabled=SEQ.target!=='notes';}
+  const noteOf=deg=>{const m=Math.round(S.root+seqDegCents(deg)/100);return NOTE_NAMES[((m%12)+12)%12]+(Math.floor(m/12)-1);};
+  const labelOf=st=>lane==='vel'?String(Math.round(st.vel*100)):SEQ.target==='drums'?DSHORT[SEQ_DRUMS[st.dr]]:noteOf(st.deg);
+  const v01=st=>lane==='vel'?st.vel:SEQ.target==='drums'?st.dr/7:st.deg/SEQ_DEG_MAX;
+  const colOf=st=>SEQ.target==='drums'?(KCOL[SEQ_DRUMS[st.dr]]||'#8f6be8'):'#8f6be8';
+  function knobHTML(r,k){const st=SEQ[r][k];
+    return '<button type="button" class="sqKnob'+(st.on?'':' off')+'" data-r="'+r+'" data-k="'+k+'" style="--v:'+v01(st).toFixed(3)+';--kc:'+colOf(st)+'" '+
+      'aria-label="'+r+' step '+(k+1)+': '+labelOf(st)+(st.on?'':', rest')+'"><b>'+labelOf(st)+'</b></button>';}
+  function paint(){let h='';for(const r of ['A','B']){h+='<div class="sqRowLbl">'+r+(r==='B'&&SEQ.rows==='A'?' (not playing: rows A)':'')+'</div>';for(let k=0;k<8;k++)h+=knobHTML(r,k);}
+    grid.innerHTML=h;}
+  function repaintKnob(r,k){const el=grid.querySelector('.sqKnob[data-r="'+r+'"][data-k="'+k+'"]');if(el)el.outerHTML=knobHTML(r,k);}
+  function syncSliders(){[['seqChance','chance'],['seqHuman','human'],['seqWander','wander'],['seqRepeat','repeat']].forEach(([id,k])=>{const e=$(id);if(e)SEQ.mac[k]=Math.max(0,Math.min(1,(+e.value||0)/100));});}
+  const changed=()=>{try{grid.dispatchEvent(new Event('change',{bubbles:true}));}catch(e){}};   // undo and autosave listen for it
+  // ---- the bars of buttons ----
+  panel.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(!b||!panel.contains(b)||b.classList.contains('sqKnob'))return;
+    if(b.id==='seqOnBtn'){initAudio();if(AC&&AC.state==='suspended')AC.resume();seqSetOn(!SEQ.on);}
+    else if(b.id==='seqArpBtn'){SEQ.arp=!SEQ.arp;SEQ._arp=0;}
+    else if(b.dataset.tg){SEQ.target=b.dataset.tg;if(SEQ.target!=='notes')SEQ.arp=false;}
+    else if(b.dataset.rw){SEQ.rows=b.dataset.rw;SEQ._i=null;SEQ._pass=0;}
+    else if(b.dataset.dr){SEQ.dir=b.dataset.dr;SEQ._arp=0;}
+    else if(b.dataset.rt){SEQ.rate=+b.dataset.rt;}
+    else if(b.dataset.ln){lane=b.dataset.ln;}
+    else return;
+    paintBars();paint();changed();});
+  ['seqChance','seqHuman','seqWander','seqRepeat'].forEach(id=>{const e=$(id);if(e)e.addEventListener('input',syncSliders);});
+  // ---- the knobs: drag to set, drag across to draw, tap for a rest, hold to hear ----
+  const UNIT=()=>lane==='vel'?{px:1.6,step:0.01,min:0,max:1}:SEQ.target==='drums'?{px:16,step:1,min:0,max:7}:{px:11,step:1,min:0,max:SEQ_DEG_MAX};
+  const getV=st=>lane==='vel'?st.vel:SEQ.target==='drums'?st.dr:st.deg;
+  function setV(st,v){const u=UNIT();v=Math.max(u.min,Math.min(u.max,v));if(u.step===1)v=Math.round(v);else v=Math.round(v*100)/100;
+    if(lane==='vel')st.vel=Math.max(0.05,v);else if(SEQ.target==='drums')st.dr=v;else st.deg=v;}
+  function audition(st){initAudio();if(AC&&AC.state==='suspended')AC.resume();
+    if(SEQ.target==='drums'){try{dHit(SEQ_DRUMS[st.dr],AC.currentTime,st.vel*1.25,true);}catch(e){}}
+    else{try{playSynth(freqFromCents(seqDegCents(st.deg)),Math.max(1,Math.round(st.vel*127)),0.7,0.25,true);}catch(e){}}}
+  let drag=null;
+  const lineKnobAt=(top,x)=>[...grid.querySelectorAll('.sqKnob')].find(k=>{const r=k.getBoundingClientRect();return Math.abs(Math.round(r.top)-top)<4&&x>=r.left&&x<r.right;});
+  grid.addEventListener('pointerdown',e=>{const kn=e.target.closest&&e.target.closest('.sqKnob');if(!kn)return;e.preventDefault();
+    const r=kn.dataset.r,k=+kn.dataset.k,st=SEQ[r][k];
+    drag={id:e.pointerId,r,k,y0:e.clientY,v0:getV(st),moved:false,held:false,last:r+k,top:Math.round(kn.getBoundingClientRect().top),
+      hold:setTimeout(()=>{if(drag&&!drag.moved){drag.held=true;audition(st);}},380)};
+    try{grid.setPointerCapture(e.pointerId);}catch(err){}});
+  grid.addEventListener('pointermove',e=>{if(!drag||e.pointerId!==drag.id)return;
+    const u=UNIT(),dy=drag.y0-e.clientY;
+    if(!drag.moved&&Math.abs(dy)<5){const kn=lineKnobAt(drag.top,e.clientX);if(!kn||kn.dataset.r+kn.dataset.k===drag.last)return;}
+    drag.moved=true;clearTimeout(drag.hold);
+    const v=drag.v0+dy/u.px*u.step,src=SEQ[drag.r][drag.k];setV(src,v);repaintKnob(drag.r,drag.k);
+    // across the row: the knob in the same line as the one grabbed, under the finger's x (however high the finger has
+    // gone: a drag up then sideways must not paint the line above), takes the dragged value. One gesture, one lane.
+    const kn=lineKnobAt(drag.top,e.clientX);
+    if(kn&&kn.dataset.r+kn.dataset.k!==drag.r+drag.k){const st=SEQ[kn.dataset.r][+kn.dataset.k];setV(st,getV(src));st.on=1;repaintKnob(kn.dataset.r,+kn.dataset.k);}});
+  const end=e=>{if(!drag||e.pointerId!==drag.id)return;clearTimeout(drag.hold);
+    if(!drag.moved&&!drag.held){const st=SEQ[drag.r][drag.k];st.on=st.on?0:1;repaintKnob(drag.r,drag.k);}
+    drag=null;changed();};
+  grid.addEventListener('pointerup',end);grid.addEventListener('pointercancel',end);
+  // ---- the playhead: the knob lights when its step sounds ----
+  let litKey='';(function glow(){requestAnimationFrame(glow);if(panel.hidden||!AC)return;
+    const L=SEQ._lit,key=(SEQ.on&&L&&AC.currentTime>=L.t-0.01)?L.row+L.k:'';if(key===litKey)return;litKey=key;
+    grid.querySelectorAll('.sqKnob.lit').forEach(x=>x.classList.remove('lit'));
+    if(key){const el=grid.querySelector('.sqKnob[data-r="'+key[0]+'"][data-k="'+key.slice(1)+'"]');if(el)el.classList.add('lit');}})();
+  // ---- drum grid | sequencer ----
+  const ed=$("drumEditor");
+  function showTab(t){const seq=t==='seq';panel.hidden=!seq;if(ed&&ed.parentNode===panel.parentNode)ed.hidden=seq;
+    document.querySelectorAll('.patTabs [data-pt]').forEach(b=>{const on=b.dataset.pt===t;b.classList.toggle('on',on);b.setAttribute('aria-selected',on?'true':'false');});
+    try{localStorage.setItem('slimehedron-pattab',t);}catch(e){}}
+  document.querySelectorAll('.patTabs [data-pt]').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.pt)));
+  try{if(localStorage.getItem('slimehedron-pattab')==='seq')showTab('seq');}catch(e){}
+  window._seqPaint=()=>{syncSliders();paintBars();paint();};
+  window._seqLane=l=>{lane=l==='vel'?'vel':'pitch';paintBars();paint();};   // test hook
+  syncSliders();paintBars();paint();
+}catch(e){console.warn('sequencer panel:',e&&e.message);}})();
 // ============================================================================
 (function(){try{
   const SONG_VER=1,MAX_FILE=200*1024;
@@ -9848,7 +10066,8 @@ function startCoach(room){room=room||'play';const C=COACH[room];if(!C||document.
     SEGS.forEach(id=>{const e=$(id),a=e&&e.querySelector('.active');if(a)o.seg[id]=[...e.children].indexOf(a);});
     return o;}
   function extras(withChords){const x={kitEdits:KIT_EDITS,kitBars:KIT_BARS,stepVel:STEP_VEL,stepProb:STEP_PROB,
-      mix:MIX,pad:{x:PAD.x,y:PAD.y},human:{dyn:HUMAN.dyn,time:HUMAN.time,ghost:HUMAN.ghost},groove:curGroove};
+      mix:MIX,pad:{x:PAD.x,y:PAD.y},human:{dyn:HUMAN.dyn,time:HUMAN.time,ghost:HUMAN.ghost},groove:curGroove,
+      seq:{on:SEQ.on,rows:SEQ.rows,dir:SEQ.dir,rate:SEQ.rate,target:SEQ.target,arp:SEQ.arp,A:SEQ.A,B:SEQ.B}};
     if(withChords)x.chords={on:!!CHORD_MODE.on,prog:CHORD_MODE.prog,bars:S.chordBars||2};
     return JSON.parse(JSON.stringify(x));}
   function snapshot(){return {app:'slimehedron',kind:'song',version:SONG_VER,controls:controls(),...extras(true)};}
@@ -9875,6 +10094,12 @@ function startCoach(room){room=room||'play';const C=COACH[room];if(!C||document.
         kit[v]=r;}
       out[k]=kit;}
     return out;}
+  // the sequencer: known words only, two rows of exactly 8 steps, every number an integer or 0..1 in range
+  function cleanSeq(q){const one=(v,ok,d)=>ok.includes(v)?v:d,row=a=>Array.from({length:8},(_,i)=>{const s=Array.isArray(a)&&isObj(a[i])?a[i]:{};
+      return {on:s.on===1||s.on===true?1:0,deg:Number.isInteger(s.deg)&&s.deg>=0&&s.deg<=SEQ_DEG_MAX?s.deg:SEQ_ROOT,
+        vel:typeof s.vel==='number'&&isFinite(s.vel)&&s.vel>=0.05&&s.vel<=1?Math.round(s.vel*100)/100:0.8,dr:Number.isInteger(s.dr)&&s.dr>=0&&s.dr<SEQ_DRUMS.length?s.dr:0};});
+    return {on:q.on===true,rows:one(q.rows,['A','AB','alt'],'A'),dir:one(q.dir,['fwd','rev','bounce','random'],'fwd'),rate:one(q.rate,[1,2,4],2),
+      target:one(q.target,['notes','drums'],'notes'),arp:q.arp===true,A:row(q.A),B:row(q.B)};}
   function cleanExtras(o){const x={};
     if(own(o,'kitEdits'))x.kitEdits=cleanSteps(o.kitEdits);
     if(isObj(o.kitBars)){x.kitBars={};for(const k in o.kitBars)if(own(o.kitBars,k)&&own(KITS,k)&&[1,2,4].includes(o.kitBars[k]))x.kitBars[k]=o.kitBars[k];}
@@ -9885,6 +10110,7 @@ function startCoach(room){room=room||'play';const C=COACH[room];if(!C||document.
     if(isObj(o.pad)&&num01(o.pad.x)&&num01(o.pad.y))x.pad={x:o.pad.x,y:o.pad.y};
     if(isObj(o.human)&&['dyn','time','ghost'].every(k=>num01(o.human[k])))x.human={dyn:o.human.dyn,time:o.human.time,ghost:o.human.ghost};
     if(typeof o.groove==='string'&&(own(GROOVE_ALL,o.groove)||o.groove==='Straight'))x.groove=o.groove;
+    if(isObj(o.seq))x.seq=cleanSeq(o.seq);
     if(isObj(o.chords)&&Array.isArray(o.chords.prog)&&o.chords.prog.length<=64){
       const prog=o.chords.prog.filter(c=>isObj(c)&&Number.isInteger(c.pc)&&c.pc>=0&&c.pc<12&&typeof c.qual==='string'&&own(CQUAL,c.qual)&&Number.isInteger(c.bars||1)&&(c.bars||1)>=1&&(c.bars||1)<=8)
         .map(c=>({pc:c.pc,qual:c.qual,bars:c.bars||1}));
@@ -9901,13 +10127,15 @@ function startCoach(room){room=room||'play';const C=COACH[room];if(!C||document.
     if(x.mix)for(const k of TRACKS)Object.assign(MIX[k],x.mix[k]);
     if(x.pad){PAD.x=x.pad.x;PAD.y=x.pad.y;}
     if(x.human){Object.assign(HUMAN,x.human);HUMAN_KIT=drumKit;}
+    if(x.seq){const q=x.seq;SEQ.rows=q.rows;SEQ.dir=q.dir;SEQ.rate=q.rate;SEQ.target=q.target;SEQ.arp=q.arp&&q.target==='notes';SEQ.A=q.A;SEQ.B=q.B;SEQ._i=null;
+      if(q.on!==SEQ.on){if(q.on&&S.playing)seqSetOn(true);else SEQ.on=q.on;}}
     if(x.groove){const b=document.querySelector('.gBtn[data-g="'+x.groove+'"]');if(b&&!b.classList.contains('on'))b.click();else if(!b)curGroove=x.groove;}
     if(x.chords){CHORD_MODE.prog=x.chords.prog;CHORD_MODE.on=x.chords.on;CHORD_MODE.idx=0;CHORD_MODE.barsLeft=0;cmSave();
       if(x.chords.bars){S.chordBars=x.chords.bars;const ab=$("cpAutoBars");if(ab)ab.value=String(x.chords.bars);try{localStorage.setItem('slimehedron-chordbars',String(x.chords.bars));}catch(e){}}}
     refresh();}
   function refresh(){const t=fn=>{try{fn();}catch(e){console.warn('song refresh:',e.message);}};
     t(()=>window._rebuildStepGrid&&window._rebuildStepGrid());t(()=>window._paintHumanize&&window._paintHumanize());
-    t(()=>window._paintPad&&window._paintPad());t(()=>window._cpRefresh&&window._cpRefresh());t(paintMixer);t(applyMix);}
+    t(()=>window._paintPad&&window._paintPad());t(()=>window._cpRefresh&&window._cpRefresh());t(paintMixer);t(applyMix);t(()=>window._seqPaint&&window._seqPaint());}
   // only the controls that differ are touched, so undoing one tweak does not re-fire every listener in the app
   // While the slime plays, it moves a few sound sliders by itself (MODS). Those are automation, not edits:
   // undo neither records them nor fights them. A slider the person has grabbed is theirs again.
