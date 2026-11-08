@@ -135,6 +135,14 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     -18.7 LUFS (was -18.9; 4.78 alone left it at -20.1). dev-audiopro 3b checks the echo sides; its drum-timing check
     uses a -34 dBFS impulse pair 50 ms apart (a loud one moved the compressors; the ScriptProcessor capture slips a
     128-sample block about 1 pair in 4 at 0.5 s apart). Open: the second echo reads +4..+9 dB right, not the ideal 9.7.
+    SLIME CONTRAST + THE CHORD WHEEL (2026-11-08, sw v151; look question 6, Flah: "all yes"). slimeShade() holds the slime's
+    colour at relative luminance 0.48 (1.5:1 against the darkest of the page behind the tank, measured 0.77-0.88 on a
+    desktop), a fifth deeper for hues within 75 deg of the page's mint (green on the green grass, Flah's case); only
+    lightness moves. tank3d's pastel floor (L 0.6-0.74) lifted it back, so 3D applies it after the floor at 0.36 (the wet
+    skin draws ~2x its base; 0.30 turned yellow mustard). Found on the way: chordHSLPQ handed auroraHue's DEGREES to
+    hslRGB, which works in turns, so since 3e4772b (2026-11-04) 7 keys of 12 had a red slime and chord bar; now the
+    12 keys go round the wheel. dev-slimecontrast (new, sabotaged 4 ways); dev-look3d's lightness floor 0.55 -> 0.4.
+    NOT CHECKED BY A MACHINE: whether the deeper greens and yellows look right to Flah.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

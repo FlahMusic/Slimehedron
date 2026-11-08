@@ -42,7 +42,9 @@ print(json.dumps({'mid':ring(0,r*0.35),'rim':ring(r*0.72,r*0.92),'bg':ring(r*1.6
     const c=window.__gl.api.gooColors();startBreak=sb;particles.length=0;return c;},look);
   ok(g&&g.spread<0.2,'['+look+'] fed every colour at once, the goo is still one candy (hue spread '+(g?g.spread.toFixed(3):'?')+')');
   ok(g&&g.sat>0.45,'['+look+'] and it is clearly coloured, not grey (saturation '+(g?g.sat.toFixed(2):'?')+')');
-  ok(g&&g.light>0.55&&g.light<0.88,'['+look+'] and pastel-light, not dark or muddy (lightness '+(g?g.light.toFixed(2):'?')+')');}
+  // light, but a shade darker than the page behind it (look question 6, 2026-11-08: the old floor here was 0.55, and a
+  // bright chord colour is now deepened to stand out; the saturation check above still keeps it from going muddy)
+  ok(g&&g.light>0.4&&g.light<0.88,'['+look+'] and light, not dark (lightness '+(g?g.light.toFixed(2):'?')+')');}
  // ---- 1b. a note squashes when it hits a wall, in a normal tank and in portal space ----
  const sq=async(space)=>p.evaluate(async space=>{window.setSpace(space);const s=document.getElementById('shape');s.value='6';s.dispatchEvent(new Event('change'));
    window.setSpace(space);fillState='fill';particles.length=0;balls.length=0;S.chaos=0;

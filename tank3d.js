@@ -494,6 +494,10 @@ export function start(){
     // THE POOL'S COLOUR IS AN AVERAGE OF NOTES, and an average of colours goes grey-brown. Keep its hue (the chord's)
     // and give it back a clean pastel's saturation and lightness, so the goo reads as candy, not mud.
     LQ.getHSL(LQH,T.SRGBColorSpace);LQH.s=Math.max(LQH.s,0.6);LQH.l=Math.min(0.74,Math.max(0.6,LQH.l));   // judged as the eye sees it (sRGB): a candy pastel, light but with body
+    // ...but a shade darker than the page behind it (index.html, look question 6): the pastel floor lifted a deep yellow
+    // back to near white. The wet skin's light (reflections, clearcoat, sheen) draws it ~1.5x brighter than its base
+    // colour (measured 2026-11-08), so the base is held at 0.36, not the flat 2D's 0.48 (dev-slimecontrast)
+    if(typeof slimeShade==='function'){const q=slimeShade([LQH.h,LQH.s,LQH.l],0.36);LQH.l=q[2];}
     gooMat.sheenColor.setHSL(LQH.h,LQH.s*0.55,Math.min(0.93,LQH.l+0.2),T.SRGBColorSpace);   // the wet edge: a lighter shade of the chord
     GC.setHSL(LQH.h,Math.max(0.55,LQH.s*0.95),Math.min(0.8,LQH.l),T.SRGBColorSpace);const gTop=Math.max(GC.r,GC.g,GC.b);   // the brightness every lump is given
     const F=2*fitH;BB[0]=BB[2]=BB[4]=1e9;BB[1]=BB[3]=BB[5]=-1;

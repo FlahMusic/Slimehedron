@@ -3743,7 +3743,9 @@ const CHORD_SHADE={major:[0.78,0.62],minor:[0.64,0.47],'7':[0.72,0.54],maj7:[0.6
   diminished:[0.5,0.40],augmented:[0.86,0.57],suspended:[0.58,0.60],other:[0.62,0.58]},CHORD_SAT_MIN=0.45;
 function hslRGB(h,s,l){const a=s*Math.min(l,1-l),f=n=>{const k=(n+h*12)%12;return (l-a*Math.max(-1,Math.min(k-3,9-k,1)))*255;};return [f(0),f(8),f(4)];}
 function chordHSLPQ(pc,qual){const sh=CHORD_SHADE[qual]||CHORD_SHADE.other,pos=((pc*7)%12+12)%12;   // fifths order: C G D A E ...
-  return [auroraHue(pos/12),Math.max(CHORD_SAT_MIN,sh[0]),sh[1]];}
+  // auroraHue is in degrees; hslRGB and hslMix work in turns (0..1). Handed degrees, hslRGB kept only the fraction of a
+  // degree, so 7 keys of 12 came out red and the rest cyan, magenta, yellow or green (found 2026-11-08, dev-slimecontrast)
+  return [auroraHue(pos/12)/360,Math.max(CHORD_SAT_MIN,sh[0]),sh[1]];}
 function chordColourPQ(pc,qual){const c=chordHSLPQ(pc,qual);return hslRGB(c[0],c[1],c[2]);}
 // from one chord's colour to the next ROUND THE WHEEL: in red-green-blue the halfway point of two far hues is grey (measured
 // 2026-11-04: the live slime dipped to 0.22 chroma between chords; the table never goes under 0.40)
@@ -3755,12 +3757,23 @@ function chordHSL(rd){if(cmActive()&&_cmCur)return chordHSLPQ(_cmCur.pc,_cmCur.q
   return chordHSLPQ(chordPc(rd),chordQual(rd));}
 function chordRGB(rd){const c=chordHSL(rd);return hslRGB(c[0],c[1],c[2]);}
 function chordCss(rd){const c=chordRGB(rd);return 'rgb('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+')';}
+// A SHADE DARKER THAN WHAT IS BEHIND IT (Flah 2026-11-03, look question 6: a pale green slime vanished on the green
+// grass). The page behind the tank measures relative luminance 0.77-0.88 on a desktop, white on a phone; 1.5:1 against
+// the darkest of it puts the slime at 0.48 at most. Only the brightest chord colours (yellows, greens at a light
+// shade) are deepened, and only in lightness: the hue and the saturation stay the chord's. dev-slimecontrast.
+const SLIME_Y_MAX=0.48;
+function relLum(c){const f=v=>{v/=255;return v<=0.04045?v/12.92:Math.pow((v+0.055)/1.055,2.4);};return 0.2126*f(c[0])+0.7152*f(c[1])+0.0722*f(c[2]);}
+// a slime the same hue as the page (mint, ~150 deg: Flah's case, green on the green grass; yellow-greens and teals read
+// green on it too, so 75 deg either side) has only lightness to stand out by, so it goes a fifth deeper
+const PAGE_HUE=150/360;
+function slimeShade(h,yMax){const dh=Math.abs(((h[0]-PAGE_HUE)%1+1.5)%1-0.5)*360,Ym=(yMax||SLIME_Y_MAX)*(dh<75?0.8:1);let l=h[2];for(let i=0;i<70&&l>0.05&&relLum(hslRGB(h[0],h[1],l))>Ym;i++)l-=0.01;return [h[0],h[1],l];}
 let liqRGB=[178,205,240],liqHSL=null; // eased every frame so the color glides between chords, never snaps (round the wheel: liqHSL)
 function liquidColor(){
   let tgt;
   if(bandOn&&drumBar()){const f=(drumStep%drumBar())/drumBar();
     tgt=hslMix(chordHSL(curRootDeg),chordHSL(nextRootDeg==null?curRootDeg:nextRootDeg),f);} // mid-bar the pool is literally between the two chords
   else tgt=chordHSL(curRootDeg);   // no band: the chord the brain is on (blending the melody's notes went grey)
+  tgt=slimeShade(tgt);
   liqHSL=liqHSL?hslMix(liqHSL,tgt,0.06):tgt.slice();const c=hslRGB(liqHSL[0],liqHSL[1],liqHSL[2]);liqRGB[0]=c[0];liqRGB[1]=c[1];liqRGB[2]=c[2];
   const P=(m,al)=>`rgba(${(liqRGB[0]+(255-liqRGB[0])*m)|0},${(liqRGB[1]+(255-liqRGB[1])*m)|0},${(liqRGB[2]+(255-liqRGB[2])*m)|0},${al})`; // toward white = pastel
   const D=(m,al)=>`rgba(${(liqRGB[0]*(1-m))|0},${(liqRGB[1]*(1-m))|0},${(liqRGB[2]*(1-m))|0},${al})`;                                     // toward dark = depth

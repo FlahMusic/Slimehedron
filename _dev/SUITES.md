@@ -18,7 +18,7 @@ Every page a suite opens presses a lesson's pulsing "listen" button the moment i
 | the solid maths (any solid, orbs) | dev-solid, dev-orb, then `node _dev/solid-ref.js` and `cargo test` in `vst/` (the plugin checks against it) |
 | auto-notes pace per shape (the auto adjuster) | dev-autoadjust (~4 min, seeded) |
 | play mode's first minute (slime on, the tap bubble, the notes toggle under the tank) | dev-play, dev-firsttouch, dev-ux 1 |
-| the goo | dev-goopro (SLIME_GL=1: wet, volume, colour, the worker), dev-goo3d, dev-goosmooth, dev-goolook, dev-gl |
+| the goo | dev-slimecontrast (SLIME_GL=1: a shade darker than the page, the chord colour wheel), dev-goopro (SLIME_GL=1: wet, volume, colour, the worker), dev-goo3d, dev-goosmooth, dev-goolook, dev-gl |
 | the 3D look / GPU tank | dev-gl, dev-look3d, dev-goopro (one look: glass, ADR 0012), dev-3d, dev-shapes, dev-potato |
 | the frame loop, render cost, pixel ratio (the render governor) | dev-governor, dev-perfmode, dev-potato, dev-phone, dev-gl |
 | harmony, keys, scales, the chord chip | dev-chordtest, dev-harmony, dev-harmony2, dev-world, dev-tuning, dev-band, dev-melody |
@@ -47,6 +47,9 @@ Then rerun only what failed. A failure that passes on rerun goes on the flaky li
 - `dev-perfmode`, `dev-harmony`, dev-a11y "chord changed", dev-lessons HOME card: timing.
 - `dev-portal` [3d icosa] "comes out of the OTHER hole" (3 of 8 runs on 139ca19, same 11.6 / 40.9 px each time:
   a second, deterministic outcome) and "[glass]/[crayon] each one clearly stands out" (4 of 6 control runs). Not chased yet.
+- Failing on 1d535a6 too (controls 2026-11-08): `dev-goolook` (its saved reference is older than the slime overhaul:
+  112 % of cells moved, a channel off by 255) and `dev-fluid` "[play] a paused tank is completely still" (37-39
+  moving frames). Not chased yet.
 - `dev-goopro` 3. "the thin edge is never darker than the deep middle": 1 run of 4 had one colour of three 0.013 under
   (2026-11-07; the pool plays for 2.5 s before the shot, so the body it measures is not fixed). Not chased yet.
 - `dev-3d` 1. "they travel front to back through the box" (1 in 3 runs on the tumble commit: 2 of 6 balls past 0.8 of depth in 9 s).
