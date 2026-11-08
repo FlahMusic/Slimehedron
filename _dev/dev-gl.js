@@ -88,7 +88,7 @@ const ARGS=['--autoplay-policy=no-user-gesture-required','--enable-unsafe-swifts
     const a=avg(await decode(w0)),c=avg(await decode(w1));
     ok(a>=20,'a wall at rest is its own pastel colour, not white glass (colour '+a.toFixed(0)+')');
     ok(c>a+8,'a struck wall floods with its note\'s colour where it is drawn (colour '+a.toFixed(0)+' -> '+c.toFixed(0)+')');}
-  const goo=await p.evaluate(async()=>{particles.length=0;for(let i=0;i<5;i++)draw();const none=window.__gl.api.stats().goo;
+  const goo=await p.evaluate(async()=>{window.__gl.api.gooSync(true);particles.length=0;   /* drawn in one go: the skin is built here (dev-goopro tests the worker) */for(let i=0;i<5;i++)draw();const none=window.__gl.api.stats().goo;
     for(let i=0;i<120;i++)particles.push({x:CX+(Math.random()-0.5)*200,y:CY+80+Math.random()*60,z:0.5,vx:0,vy:0,r:7,hue:Math.random(),pooled:true,age:80,born:0});
     for(let i=0;i<5;i++)draw();return {none,some:window.__gl.api.stats().goo};});
   ok(goo.none===0&&goo.some>200,'the goo is a real 3D surface when there is goo ('+goo.some+' triangles) and nothing when there is none ('+goo.none+')');

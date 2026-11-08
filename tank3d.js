@@ -100,10 +100,27 @@ export function start(){
     'float bR=1.0-abs(dot(normalize(normal),normalize(vViewPosition)));vec3 bK=outgoingLight*0.6;bK=clamp(mix(vec3(dot(bK,vec3(0.299,0.587,0.114))),bK,1.5),0.0,1.0);'+
     'outgoingLight=mix(outgoingLight,bK,smoothstep(0.3,0.6,bR)*0.85);\n#include <opaque_fragment>');};
    const k0=ballMat.customProgramCacheKey;ballMat.customProgramCacheKey=()=>k0()+'-ballrim';}
-  // THE GOO IS WAX, NOT WET GLASS: no white sheen, a soft coat, and a glow in its own colour from inside, like a
-  // lava lamp. Both sides are drawn so where the glass cuts it the goo looks pressed against the glass, not hollow.
-  const gooMat=fresnel(new T.MeshPhysicalMaterial({vertexColors:true,roughness:0.5,metalness:0,clearcoat:0.3,clearcoatRoughness:0.3,
-    envMapIntensity:0.22,transparent:true,opacity:0.92,depthWrite:true,side:T.DoubleSide}),0,0.34,true);
+  // THE GOO IS WET (2026-11-07, Flah: "looks like N64 slop" next to the glass; research _docs/research/2026-11-07-
+  // slime-rendering.md). It was matte wax (roughness 0.5, reflections at 0.22, a flat glow of its own colour that ironed
+  // out the shading). Now a wet skin: a tight clearcoat for one sharp glint, real reflections of the room, a soft sheen in
+  // a lighter shade of the chord at the grazing edge, and only a little glow from inside. The hue is still the chord's.
+  // Both sides are drawn so where the glass cuts it the goo looks pressed against the glass, not hollow.
+  const gooMat=fresnel(new T.MeshPhysicalMaterial({vertexColors:true,roughness:0.15,metalness:0,ior:1.4,specularIntensity:1,
+    clearcoat:1,clearcoatRoughness:0.06,sheen:0.25,sheenRoughness:0.5,sheenColor:new T.Color(0xffffff),
+    envMapIntensity:0.6,transparent:true,opacity:0.92,depthWrite:true,side:T.DoubleSide}),0,0.22,true);   // glow 0.22: a pastel needs a floor of its own colour or its shadow side goes olive-grey (yellow did). 0.6: at 1.0 the dark half of the room reflected brown-grey on a pastel candy
+  // VOLUME: a lump of jelly is thin at its silhouette and deep in the middle. Seen square-on you look through the most
+  // goo (richer, a touch darker, nearly opaque); at the grazing edge through the least (lighter, clearer, lit through
+  // like jelly held up to a lamp). The viewing angle stands in for thickness on a blobby shape without an extra pass.
+  // Same hue throughout: only lightness and clarity change.
+  // ALIVE: the skin breathes, a slow ripple under a pixel along its own normal (two sines at odd angles, so it never
+  // repeats in an obvious way). On the graphics card: no CPU. Still under prefers-reduced-motion (GOOU.a = 0).
+  const GOOU={t:{value:0},a:{value:0}};
+  {const prev=gooMat.onBeforeCompile;gooMat.onBeforeCompile=sh=>{prev(sh);sh.uniforms.uGT=GOOU.t;sh.uniforms.uGA=GOOU.a;
+    sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nuniform float uGT,uGA;').replace('#include <begin_vertex>','#include <begin_vertex>\ntransformed+=objectNormal*uGA*(sin(dot(position,vec3(5.1,4.3,6.7))+uGT*1.7)*0.6+sin(dot(position,vec3(-3.7,6.1,2.9))*1.6-uGT*1.3)*0.4);');
+    sh.fragmentShader=sh.fragmentShader.replace('#include <opaque_fragment>',
+    'if(gl_FrontFacing){float gF=1.0-abs(dot(normalize(normal),normalize(vViewPosition)));float gT=pow(gF,1.6);\n'+
+    'vec3 gCore=mix(outgoingLight,outgoingLight*vColor.rgb*1.25,0.35)*0.92;vec3 gEdge=outgoingLight*1.08+vColor.rgb*0.32;outgoingLight=mix(gCore,gEdge,gT);diffuseColor.a=mix(0.95,0.55,gT*gT);}else{outgoingLight=vColor.rgb*0.97;}\n#include <opaque_fragment>');};
+   const k0=gooMat.customProgramCacheKey;gooMat.customProgramCacheKey=()=>k0()+'-vol';}
   const shardMat=new T.MeshPhysicalMaterial({roughness:0.08,clearcoat:1,iridescence:0.6,envMapIntensity:1.4,
     transparent:true,opacity:0.55,side:T.DoubleSide,depthWrite:false,emissive:0xffffff,emissiveIntensity:0.15});
 
@@ -447,6 +464,19 @@ export function start(){
     mc=new T.MarchingCubes(GRES,CRAY?crayGoo:gooMat,false,true,90000);mc.isolation=60;mc.renderOrder=2;mc.frustumCulled=false;
     mc.position.set(0,0,0);mc.scale.set(SX,SX,SX);box.add(mc);}
   makeGoo();
+  // THE SKIN IS BUILT ON ANOTHER CORE (goo-worker.js): the finer grid's field and marching cubes cost 6-13 ms a frame
+  // here. This thread sends the lumps and copies the triangles back in. No worker (an old browser, a file:// page): the
+  // build runs here as before.
+  let gooW=null,gooBusy=false,gooWms=0,gooSyncOn=false;   // gooSyncOn: a test switch (pinned-clock suites draw many frames in one go; a worker cannot answer inside that)
+  const useW=()=>gooW&&!gooSyncOn;
+  try{gooW=new Worker(new URL('./goo-worker.js',import.meta.url),{type:'module'});
+    gooW.onmessage=e=>{gooBusy=false;const m=e.data;gooWms=m.ms;if(mc&&m.res===GRES&&!gooSyncOn)applySkin(m);};
+    gooW.onerror=()=>{gooW=null;gooBusy=false;GRES=lite?32:40;makeGoo();};}catch(e){gooW=null;}
+  if(gooW){GRES=lite?40:60;makeGoo();}   // the worker builds the fine skin; without one, the old 40-cell grid on this thread
+  function applySkin(m){mc.positionArray.set(m.pos);mc.normalArray.set(m.nor);mc.colorArray.set(m.col);mc.count=m.n;
+    mc.position.set(m.fit[0],m.fit[1],m.fit[2]);mc.scale.set(m.fit[3],m.fit[3],m.fit[3]);
+    const g=mc.geometry;g.setDrawRange(0,m.n);
+    for(const k of ['position','normal','color']){const at=g.getAttribute(k);if(at){at.clearUpdateRanges();at.addUpdateRange(0,Math.max(3,m.n*3));at.needsUpdate=true;}}}
   const GC=new T.Color(),LQ=new T.Color(),LQH={h:0,s:0,l:0},cells=new Map();
   function glassList(){const glass=[];   // [nx,ny,nz,d]: inside is n.p <= d, box-local px
     if(edges._space!=='curved'){
@@ -473,7 +503,7 @@ export function start(){
   // every cell it touches and makes a new Color per call -- 6 ms a frame for 31 lumps here, the whole budget.
   // A stiffer falloff (sub 24, not 12) reaches 1.87x, and the colour weight is the field value itself (the
   // colours are rescaled to one brightness after the build anyway). Same surface where a lump stands alone.
-  const LSUB=24,BB=[0,0,0,0,0,0];   // BB: the box of cells the lumps reach, so only those get polygonized (mc.bounds)
+  const LSUB=24,BB=[0,0,0,0,0,0];   // the main-thread build (no worker): the old, cheap one. The worker builds finer and softer (goo-worker.js); 24 here kept as it was, so neighbouring lumps melt into one skin instead of beads (keep goo-worker.js in step)   // BB: the box of cells the lumps reach, so only those get polygonized (mc.bounds)
   function addLump(x,y,z,rr,col){const S=mc.size,S2=mc.size2,F=mc.field,P=mc.palette,b=rr*rr*(mc.isolation+LSUB),reach=S*Math.sqrt(b/LSUB);
     const cx=z*S,cy=y*S,cz=x*S;   // (z, y, x) = slowest to fastest axis, as addBall lays them out
     const z0=Math.max(1,Math.floor(cx-reach)),z1=Math.min(S-1,Math.floor(cx+reach)),y0=Math.max(1,Math.floor(cy-reach)),y1=Math.min(S-1,Math.floor(cy+reach)),
@@ -488,7 +518,7 @@ export function start(){
     const g0=performance.now(),now=g0,dt=Math.min(100,lastGoo?now-lastGoo:16.7);lastGoo=now;
     const ease=(tau)=>1-Math.exp(-dt/tau);
     let pooled=0;for(const p of particles)if(p.pooled)pooled++;
-    const K=pooled?Math.max(4,Math.min(lite?24:40,Math.round(Math.sqrt(pooled)*1.25))):0;
+    const K=pooled?Math.max(4,Math.min(lite?24:40,Math.round(Math.sqrt(pooled)*(useW()?0.9:1.25)))):0;   // with the worker's smoothing, fewer bigger lumps: fewer lobes
     // grow the set to K, at drops that are furthest from any lump (so new lumps cover what is not covered yet)
     const aliveN=()=>{let c=0;for(const L of LUMPS)if(!L.dying)c++;return c;};
     if(pooled){let tries=0;while(aliveN()<K&&tries++<K*2){
@@ -515,9 +545,9 @@ export function start(){
       const tr=Math.min(L.tr,Math.max(PR3*0.5,room/1.3));   // near the glass a lump is drawn smaller, so the skin meets the glass
       L.x+=(L.tx-L.x)*kp;L.y+=(L.ty-L.y)*kp;L.z+=(L.tz-L.z)*kp;L.r+=(tr-L.r)*kr;
       if((L.dying||L.n===0)&&L.r<0.6)LUMPS.splice(i,1);}
-    const tA=performance.now();mc.reset();const tB=performance.now();
+    const tA=performance.now();if(!useW())mc.reset();const tB=performance.now();
     const live=_live;live.length=0;for(const L of LUMPS)if(L.r>0.6)live.push(L);
-    if(!live.length){mc.update();gooMs=performance.now()-g0;return;}
+    if(!live.length){if(useW()){mc.count=0;mc.geometry.setDrawRange(0,0);}else mc.update();gooMs=performance.now()-g0;return;}
     // the field box: fitted round the lumps, but it only MOVES when the goo is about to leave it, and only grows at
     // once / shrinks when it is well worth it -- so the sampling grid stands still while the goo flows through it
     let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;
@@ -526,17 +556,22 @@ export function start(){
     const out=x0<fitC[0]-fitH||x1>fitC[0]+fitH||y0<fitC[1]-fitH||y1>fitC[1]+fitH||z0<fitC[2]-fitH||z1>fitC[2]+fitH;
     if(out||want>fitH||want<fitH*0.6){fitH=Math.max(want,out?fitH:0);if(want<fitH*0.6)fitH=want;fitH=Math.min(SX,fitH);
       const cell=2*fitH/GRES;fitC=[Math.round((x0+x1)/2/cell)*cell,Math.round((y0+y1)/2/cell)*cell,Math.round((z0+z1)/2/cell)*cell];}
-    mc.position.set(fitC[0],fitC[1],fitC[2]);mc.scale.set(fitH,fitH,fitH);
+    if(!useW()){mc.position.set(fitC[0],fitC[1],fitC[2]);mc.scale.set(fitH,fitH,fitH);}   // with the worker: when its skin arrives
     LQ.setRGB(liqRGB[0]/255,liqRGB[1]/255,liqRGB[2]/255,T.SRGBColorSpace);   // the pool colour is a CSS (sRGB) colour
     // THE POOL'S COLOUR IS AN AVERAGE OF NOTES, and an average of colours goes grey-brown. Keep its hue (the chord's)
     // and give it back a clean pastel's saturation and lightness, so the goo reads as candy, not mud.
     LQ.getHSL(LQH,T.SRGBColorSpace);LQH.s=Math.max(LQH.s,0.6);LQH.l=Math.min(0.74,Math.max(0.6,LQH.l));   // judged as the eye sees it (sRGB): a candy pastel, light but with body
+    gooMat.sheenColor.setHSL(LQH.h,LQH.s*0.55,Math.min(0.93,LQH.l+0.2),T.SRGBColorSpace);   // the wet edge: a lighter shade of the chord
     GC.setHSL(LQH.h,Math.max(0.55,LQH.s*0.95),Math.min(0.8,LQH.l+(CRAY?0.04:0)),T.SRGBColorSpace);const gTop=Math.max(GC.r,GC.g,GC.b);   // the brightness every lump is given
     const F=2*fitH;BB[0]=BB[2]=BB[4]=1e9;BB[1]=BB[3]=BB[5]=-1;
+    const _job=[];
     for(const L of live){const h=((Math.atan2(L.hy,L.hx)/6.2832)+1)%1;
       const lh=LQH.h+0.07*Math.sin(h*6.2832),ll=Math.min(0.8,LQH.l+(CRAY?0.04:0)+0.05*Math.cos(h*6.2832));
       GC.setHSL(((lh%1)+1)%1,Math.max(0.55,LQH.s*0.95),ll,T.SRGBColorSpace);   // one candy in the chord's colour, each lump nudged a little warmer or cooler by its own notes (blending the notes' own hues went grey)
-      addLump(0.5+(L.x-fitC[0])/F,0.5+(L.y-fitC[1])/F,0.5+(L.z-fitC[2])/F,L.r/F,GC);}
+      const lx=0.5+(L.x-fitC[0])/F,ly=0.5+(L.y-fitC[1])/F,lz=0.5+(L.z-fitC[2])/F,lr=L.r/F;
+      if(useW())_job.push(lx,ly,lz,lr,GC.r,GC.g,GC.b);else addLump(lx,ly,lz,lr,GC);}
+    if(useW()){if(!gooBusy){gooBusy=true;GC.setHSL(LQH.h,Math.max(0.55,LQH.s*0.95),LQH.l,T.SRGBColorSpace);gooW.postMessage({res:GRES,col:[GC.r,GC.g,GC.b],fit:[fitC[0],fitC[1],fitC[2],fitH],lumps:new Float32Array(_job)});}
+      gooMs=performance.now()-g0;gooAvg+=(gooMs-gooAvg)*0.05;window.__gooT=[gooMs,0,0,0,live.length,fitH,GRES,gooWms];return;}
     const lim=mc.size-2;mc.bounds=[Math.max(1,BB[0]-1),Math.min(lim,BB[1]+1),Math.max(1,BB[2]-1),Math.min(lim,BB[3]+1),Math.max(1,BB[4]-1),Math.min(lim,BB[5]+1)];
     const tC=performance.now();mc.update();const tD=performance.now();window.__gooT=[tA-g0,tB-tA,tC-tB,tD-tC,live.length,fitH,GRES];
     // THE GOO'S TRUE COLOUR. MarchingCubes adds each lump's colour times a falloff and never divides by it, and the
@@ -597,6 +632,7 @@ export function start(){
   let t0=performance.now(),cpuMs=0;
   function render(){
     const a0=performance.now(),now=a0,ph=now*0.000012;
+    GOOU.t.value=now/1000;GOOU.a.value=reduceMotion.matches?0:0.9/Math.max(1,mc?mc.scale.x:1);   // the breathing skin: 0.9 px, in the skin's own units
     if(placeDirty||++placeN%30===0){placeDirty=false;place();}setBoxMatrix();   // (and twice a second anyway, in case something shifted it)
     // the shape's turn, drawn BETWEEN physics ticks like the balls are: the spin steps 60 times a second, and on a
     // 90/120 Hz screen drawing it as-is turned the glass in little stutters while the balls glided
@@ -673,7 +709,7 @@ export function start(){
     ballMesh.material=CRAY?crayBall:ballMat;
     solidIn.material=CRAY?craySolidIn:solidInGlass;solidOut.material=CRAY?craySolidOut:solidOutGlass;
     if(mc)mc.material=CRAY?crayGoo:gooMat;}
-  function setLite(v){v=!!v;if(v===lite)return;lite=v;GRES=lite?32:40;mcEvery=lite?2:1;makeGoo();place();}
+  function setLite(v){v=!!v;if(v===lite)return;lite=v;GRES=useW()?(lite?40:60):(lite?32:40);mcEvery=lite?2:1;makeGoo();place();}
   let lost=false;
   glc.addEventListener('webglcontextlost',e=>{e.preventDefault();lost=true;if(window.__glLost)window.__glLost();},false);
   function show(v){glc.style.display=v?'block':'none';}
@@ -682,7 +718,7 @@ export function start(){
   function gooColors(){if(!mc||!mc.count)return null;const ca=mc.colorArray,h={h:0,s:0,l:0},C=new T.Color();let sx=0,sy=0,ss=0,sl=0,n=0;
     for(let i=0;i<mc.count;i+=7){C.setRGB(ca[i*3],ca[i*3+1],ca[i*3+2]);C.getHSL(h,T.SRGBColorSpace);sx+=Math.cos(h.h*6.2832)*h.s;sy+=Math.sin(h.h*6.2832)*h.s;ss+=h.s;sl+=h.l;n++;}
     return {spread:1-Math.hypot(sx,sy)/Math.max(1e-6,ss),sat:ss/n,light:sl/n,n};}
-  return {render,setLite,setLook,show,canvas:glc,gooOut,gooColors,rimState(){return rims&&rimA?{a:rimA,own:rims.geometry.userData.owner,col:rimCol}:null;},get noteScale(){return noteScale();},squash(){const m=sqMax;sqMax=0;return m;},get look(){return CRAY?'crayon':'glass';},get lost(){return lost;},
+  return {render,setLite,setLook,show,canvas:glc,gooOut,gooColors,gooWobble:()=>GOOU.a.value,gooWorker:()=>!!gooW,gooSync:v=>{gooSyncOn=!!v;const g=useW()?(lite?40:60):(lite?32:40);if(g!==GRES){GRES=g;makeGoo();}},rimState(){return rims&&rimA?{a:rimA,own:rims.geometry.userData.owner,col:rimCol}:null;},get noteScale(){return noteScale();},squash(){const m=sqMax;sqMax=0;return m;},get look(){return CRAY?'crayon':'glass';},get lost(){return lost;},
     gooBuild(){gooUpdate();return gooMs;},
     worms(){return wormMeshes.map(m=>({on:m.visible,at:[m.matrix.elements[12],m.matrix.elements[13],m.matrix.elements[14]].map(Math.round),size:Math.round(Math.hypot(m.matrix.elements[0],m.matrix.elements[1],m.matrix.elements[2])),open:m.material.uniforms.uOpen.value}));},   // test hook: the two wormholes as drawn   // test hook: rebuild the goo's surface alone (no drawing), and how long it took
     gooShape(){if(!mc||!mc.count)return null;const pa=mc.positionArray;let sx=0,sy=0,sz=0,x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;const n=mc.count;

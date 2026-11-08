@@ -23,7 +23,7 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
  await p.goto('http://127.0.0.1:8765/index.html?m=play&view=3d&space=normal');await p.waitForTimeout(3500);
  ok(await p.evaluate(()=>!!(window.__gl&&window.__gl.api)),'the GPU tank is running');
  await p.evaluate(async()=>{const s=document.getElementById('shape');s.value='cube';s.dispatchEvent(new Event('change'));await new Promise(r=>setTimeout(r,2500));
-   startBreak=()=>{};spawn=()=>{};balls.length=0;window.requestAnimationFrame=()=>0;
+   startBreak=()=>{};spawn=()=>{};balls.length=0;window.requestAnimationFrame=()=>0;window.__gl.api.gooSync(true);   /* frames drawn in one go: the skin is built here, not in the worker */
    const lt=lavaTick;lavaTick=function(n){const L=lt(n);L.kick[0]=L.kick[1]=L.kick[2]=0;return L;};});
  for(const HZ of [120,60]){
   const r=await p.evaluate(HZ=>{fillState='fill';particles.length=0;balls.length=0;

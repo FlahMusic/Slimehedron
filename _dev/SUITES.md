@@ -18,7 +18,7 @@ Every page a suite opens presses a lesson's pulsing "listen" button the moment i
 | the solid maths (any solid, orbs) | dev-solid, dev-orb, then `node _dev/solid-ref.js` and `cargo test` in `vst/` (the plugin checks against it) |
 | auto-notes pace per shape (the auto adjuster) | dev-autoadjust (~4 min, seeded) |
 | play mode's first minute (slime on, the tap bubble, the notes toggle under the tank) | dev-play, dev-firsttouch, dev-ux 1 |
-| the goo | dev-goo3d, dev-goosmooth, dev-goolook, dev-gl |
+| the goo | dev-goopro (SLIME_GL=1: wet, volume, colour, the worker), dev-goo3d, dev-goosmooth, dev-goolook, dev-gl |
 | the 3D look / GPU tank | dev-gl, dev-look3d, dev-crayon, dev-3d, dev-shapes, dev-potato |
 | the frame loop, render cost, pixel ratio (the render governor) | dev-governor, dev-perfmode, dev-potato, dev-phone, dev-gl |
 | harmony, keys, scales, the chord chip | dev-chordtest, dev-harmony, dev-harmony2, dev-world, dev-tuning, dev-band, dev-melody |
@@ -35,6 +35,10 @@ In the cloud workspace: `/root/run.sh <log> -- <suites...>` writes `/tmp/<log>.l
 Then rerun only what failed. A failure that passes on rerun goes on the flaky list below, with a note.
 
 ## Known flaky (fix the cause; until then, rerun and run a control on the previous commit)
+- Failing on 6b39647 too (controls 2026-11-07, not from the slime work): `dev-gl` "its clear faces flood with their notes' colours
+  when struck" (38.0 -> 37.1 on the control) and `dev-look3d` "a note's rim is clearly darker than its middle" / "its edge
+  stands out" / "the rim is its own colour". Not chased yet.
+- `dev-sw` served `/root/plinktest` (the cloud box only): it now serves the project folder and passes here.
 - `dev-chordbed` "the chords stay audible at every bass/pad crossfader position": 2 of 4 runs read ~0.004 at position 1
   (2026-11-07). A direct tap shows the chord bus loud there on this commit and the one before (0.36-0.90): the crossfader
   does not touch the chords; the 6 s window sometimes lands on a near-silent stretch of the band. Not chased further.

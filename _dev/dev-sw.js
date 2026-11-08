@@ -18,7 +18,7 @@ const srv=http.createServer((rq,rs)=>{
   let u=decodeURIComponent(rq.url.split('?')[0]);
   if(u===GONE){rs.writeHead(404);return rs.end('gone');}
   if(u.endsWith('/'))u+='index.html';
-  const f=path.join('/root/plinktest',u);
+  const f=path.join(path.join(__dirname,'..'),u);   // the project folder (it was the cloud container's /root/plinktest, which no other machine has)
   fs.readFile(f,(e,d)=>{if(e){rs.writeHead(404);return rs.end('no');}
     rs.writeHead(200,{'Content-Type':TYPES[path.extname(f)]||'application/octet-stream'});rs.end(d);});
 });

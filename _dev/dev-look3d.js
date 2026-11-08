@@ -35,10 +35,11 @@ print(json.dumps({'mid':ring(0,r*0.35),'rim':ring(r*0.72,r*0.92),'bg':ring(r*1.6
  ok(await p.evaluate(()=>!!(window.__gl&&window.__gl.api)),'the GPU tank is running');
  // ---- 1. one candy, not mud ----
  for(const look of ['glass','crayon']){
-  const g=await p.evaluate(look=>{window.setLook3D(look);const sb=startBreak;startBreak=()=>{};fillState='fill';particles.length=0;
+  const g=await p.evaluate(async look=>{window.setLook3D(look);const sb=startBreak;startBreak=()=>{};fillState='fill';particles.length=0;
     liqRGB[0]=150;liqRGB[1]=140;liqRGB[2]=128;                       // a muddy pool colour: what averaging many notes gives
     for(let i=0;i<500;i++)particles.push({x:CX+(Math.random()-0.5)*R*1.2,y:CY+(Math.random()-0.5)*R*1.2,z:Math.random(),vx:0,vy:0,vz:0,r:8,hue:Math.random(),pooled:true,age:80});
-    for(let i=0;i<4;i++)window.__gl.api.render();const c=window.__gl.api.gooColors();startBreak=sb;particles.length=0;return c;},look);
+    for(let i=0;i<4;i++)window.__gl.api.render();await new Promise(r=>setTimeout(r,500));window.__gl.api.render();   /* the skin comes back from goo-worker.js a moment later */
+    const c=window.__gl.api.gooColors();startBreak=sb;particles.length=0;return c;},look);
   ok(g&&g.spread<0.2,'['+look+'] fed every colour at once, the goo is still one candy (hue spread '+(g?g.spread.toFixed(3):'?')+')');
   ok(g&&g.sat>0.45,'['+look+'] and it is clearly coloured, not grey (saturation '+(g?g.sat.toFixed(2):'?')+')');
   ok(g&&g.light>0.55&&g.light<0.88,'['+look+'] and pastel-light, not dark or muddy (lightness '+(g?g.light.toFixed(2):'?')+')');}

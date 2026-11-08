@@ -54,7 +54,7 @@ const px=(...f)=>JSON.parse(execFileSync('python3',['-c',PY,...f]).toString());
   // goo in crayon: still clipped to the glass (the same goo dev-gl uses: a tank's worth, pooled, then settled)
   const goo=await p.evaluate(()=>{const sb=startBreak;startBreak=()=>{};fillState='fill';
     for(let i=0;i<500;i++)particles.push({x:CX+(Math.random()-0.5)*R*1.4,y:CY+(Math.random()-0.5)*R*1.4,z:Math.random(),vx:0,vy:0,vz:0,r:8,hue:Math.random(),pooled:true,age:80});
-    for(let i=0;i<60;i++)simTick(performance.now());for(let i=0;i<4;i++)draw();const o=window.__gl.api.gooOut();startBreak=sb;return o;});
+    window.__gl.api.gooSync(true);for(let i=0;i<60;i++)simTick(performance.now());for(let i=0;i<4;i++)draw();const o=window.__gl.api.gooOut();startBreak=sb;return o;});
   ok(goo&&goo.clip>=goo.glass&&goo.glass>0&&goo.reach<=4,'the goo is still clipped to every pane of glass in crayon, its skin at most 4px past it ('+JSON.stringify(goo)+')');
   await p.reload();await p.waitForTimeout(3500);
   ok(await p.evaluate(()=>window.__gl.api&&window.__gl.api.look)==='crayon','the crayon look is still on after a reload');

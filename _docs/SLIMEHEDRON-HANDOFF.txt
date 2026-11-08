@@ -91,10 +91,15 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     4.5 LU under lesson notes, dev-learn3 16). Review of 7ec61dc (standards + spec) fixed: jazz tooltip/accents, lesson
     kit pinned, count-in helper, hooks cleared, teachers page, song part 3 rounds, wrong-answer checks (dev-learn3 14b).
     NOT CHECKED BY A MACHINE: how the sequencer feels and grooves; how the presence dip and lift sound.
-    IN PROGRESS (uncommitted): the slime overhaul in tank3d.js + goo-worker.js (research _docs/research/2026-11-07-slime-
-    rendering.md): wet material, thickness cue, 60-cell skin built in a worker (main thread 0.2-0.7 ms, was 3-4),
-    surface-tension blur, wobble. Next: its suite and the existing GL suites, then the crayon removal (ADR 0012, written),
-    the UI pass (research _docs/research/2026-11-07-daw-layout.md, 4 decisions for Flah), the audio overhaul.
+    SLIME OVERHAUL (2026-11-07, sw v146; research _docs/research/2026-11-07-slime-rendering.md): the goo was matte wax on a
+    40-cell grid (Flah: "N64 slop"). Now: a wet skin (roughness 0.15, clearcoat 1, sheen in a lighter chord shade, room
+    reflections at 0.6, own-colour floor 0.22 so a pastel's shadow side never goes olive), a thickness cue (thin edges
+    lighter and clearer, a richer core), a 60-cell skin built in goo-worker.js (main thread 0.2-0.7 ms a frame, was 3-4),
+    surface tension (a box blur of the field melts the lumps into one body), and a breathing wobble (off under reduced
+    motion). No Worker: the old 40-cell build on the main thread. api.gooSync(true) is a test switch for pinned-clock
+    suites. dev-goopro (new, measured old vs new first; 6 sabotages caught). NOT CHECKED BY A MACHINE: how it looks in
+    motion on Flah's screen. Next: the crayon removal (ADR 0012, written), the UI pass (research
+    _docs/research/2026-11-07-daw-layout.md, 4 decisions for Flah), the audio overhaul.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto
