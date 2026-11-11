@@ -230,6 +230,13 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     5 scenes, 1,879 hits, every number the plugin's. Rust's cbrt is correctly rounded, glibc's is not (goo.c rounds it
     exactly). Sabotaged 4 ways. 924 KB of RAM, nearly all goo grids: ticket 07's light goo is a must for the RP2350.
     Rust installed in WSL for this (~/.rustup, ~/.cargo; minimal profile).
+    KEPT MUSIC ON THE REVIEW SHELF (2026-11-11, sw v160). A loop kept in Make and a tune kept in Compose are saved
+    (localStorage slimehedron-kept, twelve newest, cents over the key they were made in, read back through keptOk so a
+    broken entry is dropped). Review shows "your music" above the lessons: a card per piece, its notes as dots in the
+    note colours; a press plays it (a loop twice round over Make's groove, through the same grooveBar Make now uses;
+    a tune at Compose's pace) and the card glows while it plays. dev-learn3 19 (sabotaged 4 ways: make keeps nothing,
+    a loop's notes all at once, broken entries let through, a tune a tone off). Subtraction budget: no control added
+    to any toolbar; the cards are the child's own pieces on a screen that lists things to play.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

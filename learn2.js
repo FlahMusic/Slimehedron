@@ -225,6 +225,7 @@ const LANG={
     exc_do:'Press them. Hear what each one sounds like.',
     ex_ready:'ask me questions',
     rev_do:'Play one again.',
+    rev_mine:'your music', rev_lessons:'lessons', rev_loop:'loop', rev_tune:'tune', rev_play:'Play your {what}',
     rev_name:'You still had it.',
     rev_ago:'{n} days ago',
     rev_ago1:'yesterday', rev_today:'today',
@@ -899,6 +900,39 @@ function dynamicUnit(){
 // ================================================================================================
 const MAKE_BPM=96, MAKE_SLOTS=8;                  // 4 beats of eighth notes
 const MAKE_DEG=[0,1,2,3,4];                        // do re mi so la -- no wrong notes exist here
+// One bar of Make's groove (a kick on beats 1 and 3, the backbeat, light off-beat hats) with notes (cents, or null)
+// on their steps. Make plays it live; the review shelf plays a kept loop through the same bar.
+function grooveBar(t0,slot,notes,play){
+  for(let i=0;i<MAKE_SLOTS;i++){
+    const t=t0+i*slot;
+    try{
+      if(i%4===0)dHit('K',t,i===0?1.15:0.95,true);
+      if(i%2===1)dHit('h',t,0.30+Math.random()*0.10);
+      if(i===4)dHit('s',t,0.85,true);
+    }catch(e){}
+    if(notes[i]!=null){try{play(notes[i],t);}catch(e){}}   // AT its step: without t every note of the bar sounded at once (Flah 2026-11-03)
+  }
+}
+// KEPT MUSIC (logic pass): a loop kept in Make and a tune kept in Compose come back on the review shelf to play
+// again. The twelve newest, in this browser only. Stored as cents over the key they were made in, so a later key
+// cannot move them; read back through keptOk, so a hand-edited or broken entry is dropped, never played.
+const KEPT_KEY='slimehedron-kept', KEPT_MAX=12;
+function keptOk(k){return !!k&&typeof k==='object'&&(k.k==='loop'||k.k==='tune')&&Number.isFinite(k.root)&&Number.isFinite(k.at)&&
+  Array.isArray(k.c)&&k.c.length>0&&k.c.length<=16&&k.c.every(c=>c===null||(Number.isFinite(c)&&Math.abs(c)<=4800));}
+function keptList(){try{const a=JSON.parse(localStorage.getItem(KEPT_KEY)||'[]');return Array.isArray(a)?a.filter(keptOk).slice(0,KEPT_MAX):[];}catch(e){return [];}}
+function keepMusic(kind,cents){
+  const k={k:kind,c:cents,root:Number.isFinite(S.root)?S.root:60,at:Date.now()};if(!keptOk(k))return;
+  try{localStorage.setItem(KEPT_KEY,JSON.stringify([k].concat(keptList()).slice(0,KEPT_MAX)));}catch(e){}
+}
+function playKept(k){   // plays it now; returns how long it lasts, in ms
+  try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
+  const hz=c=>440*Math.pow(2,(k.root+c/100-69)/12), t0=AC.currentTime+0.08;
+  if(k.k==='loop'){const slot=60/MAKE_BPM/2;   // twice round, as it looped when it was made
+    for(let b=0;b<2;b++)grooveBar(t0+b*slot*MAKE_SLOTS,slot,k.c,(c,t)=>playSynth(hz(c),98,0.72,slot*1.6,true,t));
+    return 2*MAKE_SLOTS*slot*1000+200;}
+  k.c.forEach((c,i)=>{if(c!=null)playSynth(hz(c),94,0.72,0.40,true,t0+i*0.46);});   // Compose's own pace
+  return k.c.length*460+300;
+}
 function makeUnit(){
   stageOff();
   const SLOT=60/MAKE_BPM/2, LOOP=SLOT*MAKE_SLOTS;  // an eighth, and one bar
@@ -936,16 +970,7 @@ function makeUnit(){
   // Schedule one whole bar at once: the groove, plus whatever the child has put in the grid. Doing
   // it a bar at a time keeps it sample-accurate without a per-frame scheduler fighting the browser.
   function bar(t0){
-    for(let i=0;i<MAKE_SLOTS;i++){
-      const t=t0+i*SLOT;
-      try{
-        if(i%4===0)dHit('K',t,i===0?1.15:0.95,true);          // a kick on each beat 1 and 3
-        if(i%2===1)dHit('h',t,0.30+Math.random()*0.10);        // light off-beat hats
-        if(i===4)dHit('s',t,0.85,true);                        // backbeat
-      }catch(e){}
-      const d=grid[i];
-      if(d!=null){try{note(degCents(d),98,SLOT*1.6,t);}catch(e){}}   // AT its step: without t every note of the bar sounded at once, on step 1 (Flah 2026-11-03)
-    }
+    grooveBar(t0,SLOT,grid.map(d=>d==null?null:degCents(d)),(c,t)=>note(c,98,SLOT*1.6,t));
     bars++;
   }
   function tick(){
@@ -984,6 +1009,7 @@ function makeUnit(){
       if(btn.dataset.mk==='keep'){
         if(!grid.some(g=>g!=null))return;                       // nothing made yet: ignore, never scold
         kept++; score('make',true);
+        keepMusic('loop',grid.map(d=>d==null?null:degCents(d)));   // back on the review shelf to play again
         if(kept===1)seen('make');     // one loop made IS the lesson learned. no need to make a second.
         const fd=document.querySelector('.lgSay');if(fd)fd.textContent=t('mk_kept');
         grid=new Array(MAKE_SLOTS).fill(null);
@@ -2052,6 +2078,7 @@ function composeUnit(){
       if(a==='keep'){
         if(slots.length<3)return;                 // too short to be a tune: ignore, never scold
         busy=true;kept++;score('compose',true);
+        keepMusic('tune',slots.map(st=>STAFF_SEMI[st]*100));   // back on the review shelf to play again
         if(kept===1)seen('compose');              // one tune written down IS the lesson learned
         const fd=document.getElementById('lgFeed');if(fd)fd.textContent=t('cm_kept');
         hear(()=>{slots=[];busy=false;paint();});  // you hear the finished thing before it clears
@@ -2130,9 +2157,10 @@ function reviewUnit(){
   // asks about it correctly. So review is a SHELF of what is ready to play again, oldest first, and
   // tapping one re-runs that lesson. Finishing it calls finish() as usual, which stamps its clock
   // and rotates it off the shelf.
+  const agoText=at=>{const days=Math.floor((Date.now()-(at||0))/DAY);
+    return days<1?t('rev_today'):days===1?t('rev_ago1'):t('rev_ago',{n:days});};   // not "1 days ago"
   const card=(u,i)=>{
-    const days=Math.floor((Date.now()-(prog[u.id]&&prog[u.id].at||0))/DAY);
-    const ago=days<1?t('rev_today'):days===1?t('rev_ago1'):t('rev_ago',{n:days});   // not "1 days ago"
+    const ago=agoText(prog[u.id]&&prog[u.id].at);
     const what=(prog[u.id]&&prog[u.id].learned)||t(u.sub);
     return '<button class="uCard" data-a2="unit" data-u="'+u.id+'" style="--ut:'+u.tint+'" '+
       'aria-label="'+t(u.title)+' \u2014 '+ago+'">'+
@@ -2140,14 +2168,29 @@ function reviewUnit(){
       (i===0?'<span class="uNext">'+t('revReady')+'</span>':'')+
       '</button>';
   };
+  // the child's own music: a dot per step (a loop) or per note (a tune), in the note colours, newest first
+  const kept=keptList();
+  const kcard=(k,i)=>{
+    const what=t(k.k==='loop'?'rev_loop':'rev_tune'), ago=agoText(k.at);
+    const dots=k.c.map(c=>c==null?'<i></i>':'<i class="on" style="--rc:'+RUNG_TINT[SEMI_TINT[((Math.round(c/100)%12)+12)%12]]+'"></i>').join('');
+    return '<button class="uCard kpCard" data-a2="kept" data-k="'+i+'" style="--ut:#cfe8d8" aria-label="'+t('rev_play',{what:what})+', '+ago+'">'+
+      '<span class="kpDots" aria-hidden="true">'+dots+'</span><span class="uTxt"><b>'+what+'</b><i>'+ago+'</i></span></button>';
+  };
   stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
       '<h3>'+t('u_review')+'</h3><span class="lgCount">'+list.length+'</span>'+
       '</div>'+
     '<p class="lgSay">'+t('rev_do')+'</p>'+
-    '<div class="uGrid" style="flex:1;align-content:start;overflow:auto">'+
-      list.map(card).join('')+'</div>');
+    '<div style="flex:1;min-height:0;overflow:auto">'+
+      (kept.length?'<div class="uBlk">'+t('rev_mine')+'</div><div class="uGrid kpGrid">'+kept.map(kcard).join('')+'</div>'+
+        '<div class="uBlk">'+t('rev_lessons')+'</div>':'')+
+      '<div class="uGrid" style="align-content:start">'+list.map(card).join('')+'</div></div>');
   _render=reviewUnit;
+  // a kept loop or tune plays where it sits; the card glows while it plays
+  window._lab_kept=(i,el)=>{const k=kept[i];if(!k)return;const ms=playKept(k);
+    if(el){el.classList.add('now');setTimeout(()=>el.classList.remove('now'),ms);}};
+  _cleanup=()=>{window._lab_kept=null;};
   window._labDue=list.map(u=>u.id);   // readable: dev-review.js proves the right kind of question comes back
+  window._labKept=()=>kept.map(k=>({k:k.k,c:k.c.slice(),root:k.root}));   // readable: dev-learn3 19
 }
 
 // ---------- GAME: ECHO (the flagship — call & response with varied repetition) ----------
@@ -2470,6 +2513,7 @@ if(ov)ov.addEventListener('click',(e)=>{
     try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(err){}
     u.run();return;}
   if(a==='tap'&&window._lab_tap)return window._lab_tap();
+  if(a==='kept'&&window._lab_kept)return window._lab_kept(+b.dataset.k,b);
   if(a==='lg_again'&&window._lab_lgAgain){_heard=true;b.classList.remove('go');return window._lab_lgAgain();}
 });
 

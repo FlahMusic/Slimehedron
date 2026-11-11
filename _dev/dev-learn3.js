@@ -334,6 +334,44 @@ const JUDGED=['howlong','sayplay','echo','notes'];   // (staff is read by sight 
   ok(g.steps===16&&g.lit.join()==='4,8','18 Steady Beat has a bar of 16 steps under the lane, and the beats tapped in time fill theirs (steps '+g.lit.join(' ')+' of '+g.steps+')');
   ok(g.after===0,'18 and the next bar starts empty ('+g.after+' lit)');}
 
+ // ---- 19: kept music (logic pass: "kept loops and tunes to replay"). A loop kept in Make and a tune kept in Compose come back
+ // on the review shelf, newest first, as dots in the note colours; a card plays it: the same notes, on the same steps,
+ // in the key it was made in. A broken entry in storage is dropped, not played.
+ {await p.evaluate(()=>localStorage.removeItem('slimehedron-kept'));
+  await open('make');
+  const loop=await p.evaluate(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));
+    window._lab_mkTap(0);await w(400);window._lab_mkTap(3);await w(400);window._lab_mkTap(4);await w(200);
+    const g=window._lab_mkGrid(),root=S.root,cents=g.map(d=>d==null?null:centsForDegree(d));
+    document.querySelector('[data-mk="keep"]').dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true}));
+    return {g,root,cents};});
+  await open('compose');
+  const tune=await p.evaluate(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms));
+    window._lab_cmpTap(0);window._lab_cmpTap(2);window._lab_cmpTap(4);await w(100);window._lab_cmpBtn('keep');await w(2200);
+    return {root:S.root};});
+  await p.evaluate(()=>{const a=JSON.parse(localStorage.getItem('slimehedron-kept')||'[]');
+    a.push({k:'loop',c:['x'],root:60,at:1},{k:'song',c:[0],root:60,at:1},{k:'tune',c:new Array(40).fill(0),root:60,at:1},null);
+    localStorage.setItem('slimehedron-kept',JSON.stringify(a));});
+  await open('review');
+  const shelf=await p.evaluate(()=>[...document.querySelectorAll('#learnOverlay .kpCard')].map(c=>({k:+c.dataset.k,txt:c.textContent,
+    dots:c.querySelectorAll('.kpDots i').length,on:c.querySelectorAll('.kpDots i.on').length,vis:c.checkVisibility()})));
+  const nNotes=loop.g.filter(d=>d!=null).length;
+  ok(shelf.length===2&&/tune/.test(shelf[0].txt)&&/loop/.test(shelf[1].txt),'19 the review shelf shows the kept tune, then the kept loop, newest first; the 4 broken entries are dropped ('+shelf.map(s=>s.txt).join(' | ')+')');
+  ok(shelf.length===2&&shelf[0].on===3&&shelf[1].dots===8&&shelf[1].on===nNotes&&shelf.every(s=>s.vis),'19 each shows its notes as dots: the tune 3, the loop '+nNotes+' of 8 steps ('+shelf.map(s=>s.on+'/'+s.dots).join(' ')+')');
+  const hz=(root,c)=>440*Math.pow(2,(root+c/100-69)/12);
+  const heard=async(idx)=>p.evaluate(async(i)=>{const w=ms=>new Promise(r=>setTimeout(r,ms));
+    window.__kp=[];const P0=playSynth;playSynth=function(f,v,im,h,fi,at){window.__kp.push({f,at});return P0.apply(this,arguments);};
+    const el=document.querySelector('#learnOverlay .kpCard[data-k="'+i+'"]');el.click();const glow=el.classList.contains('now');
+    await w(300);playSynth=P0;return {calls:window.__kp.slice(),glow};},idx);
+  const L=await heard(1);
+  {const slot=60/96/2,at0=Math.min(...L.calls.map(c=>c.at)),first=loop.g.findIndex(d=>d!=null);
+   const steps=L.calls.map(c=>Math.round((c.at-at0)/slot)+first),onGrid=L.calls.every(c=>{const x=(c.at-at0)/slot;return Math.abs(x-Math.round(x))<1e-6;});
+   const want=[];for(let b=0;b<2;b++)loop.g.forEach((d,i)=>{if(d!=null)want.push({s:b*8+i,f:hz(loop.root,loop.cents[i])});});
+   const same=want.length===L.calls.length&&want.every((x,j)=>steps[j]===x.s&&Math.abs(L.calls[j].f-x.f)<0.01);
+   ok(L.glow&&onGrid&&same,'19 the loop card plays the loop twice round: its '+nNotes+' notes on their own steps, in the key it was made in ('+L.calls.length+' notes, steps '+steps.join(' ')+')');}
+  const T=await heard(0);
+  {const gaps=T.calls.slice(1).map((c,i)=>+(c.at-T.calls[i].at).toFixed(3)),want=[0,4,7].map(s=>hz(tune.root,s*100));   /* C E G: staff 0, 2, 4 in C major */
+   ok(T.calls.length===3&&gaps.every(g=>g===0.46)&&T.calls.every((c,i)=>Math.abs(c.f-want[i])<0.01),'19 the tune card plays its 3 notes in order at Compose\'s pace ('+T.calls.map(c=>Math.round(c.f)).join(' ')+' Hz, gaps '+gaps.join(' ')+' s)');}}
+
  // ---- 12: Play It Again lists what was finished (the same day too), each with what it taught, and replays it
  {const fin=['howlong','sayplay','staff'];
   await p.evaluate(f=>{const pr=JSON.parse(localStorage.getItem('slimehedron-learn2')||'{}');const now=Date.now();
