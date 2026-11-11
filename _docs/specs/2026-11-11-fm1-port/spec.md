@@ -28,7 +28,7 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
 | 04 | The tank tick in normal space: 2D plus depth, walls as notes, beat lock, quantize hold, auto-notes, open walls (`core/tank.c`, `core/music.c`) | done (this pass): every number the plugin's |
 | 05 | 2.5D look for normal and portal space: front and back outline, near faces tinted, z-sized balls with floor shadows, banded, redraw only changed bands | open |
 | 06 | Music logic: the auto-notes melody (`core/melody.c`: the web's 6000 golden notes note for note, every random number used; sabotaged 3 ways) | melody done; the chord brain and pane chords open |
-| 07 | The goo, lighter but real: a capped particle count plus a level; it must still slow balls and soften notes | the full goo ported (`core/goo.c`, matches the plugin); the light device goo open |
+| 07 | The goo, lighter but real: a capped particle count plus a level; it must still slow balls and soften notes | done (this pass): the light goo, 94 KB, plays like the plugin's by statistics |
 | 08 | Firmware base: fork SLOOP, its toolchain (Docker), fm1-emu as the bench; the CPU budget per sound and golden render hashes (Felucca's discipline) | open |
 | 09 | Controls and LEDs (brief section 5), sounds from the FM-1's engines (brief 3c) | open |
 
@@ -67,3 +67,20 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
 - Still double. The device's float build (and whether the tank can stay double: the RP2350's M33 has no double FPU)
   is measured in fm1-emu (ticket 08).
 - The chord brain is not in the plugin's tank yet (the home chord stays the key's), so it is not here either.
+
+## Ticket 07 (the light goo), as built
+- `core/goo.c` has three builds. Default: the plugin's goo exactly, dense grids (the tank 903 KB). `-DSH_GOO_HASHED`:
+  the same goo with both grids hashed into small bucket tables; a bucket's chain, kept to its own cell, gives the same
+  pairs in the same order and the same sums in the same order, so it still matches the plugin to the last bit
+  (`node fm1/host/check-tank.js tank_hashed.txt`, 1,879 hits) in 270 KB. `-DSH_GOO_LIGHT` (the device): hashed,
+  float (built with `-fsingle-precision-constant`), half the drops at 2^(1/3) the size (the same volume, so the same fill
+  and the same thickness), 3 drops a splash instead of 5 (5 made the light goo end fuller in sparse scenes: 0.99
+  against 0.91). 94 KB for the whole tank; ~1.7x faster than the exact build on this pc.
+- `fm1/host/check-goolight.js` (`wsl make -C fm1/host goo-stats`): 16 seeds over three shapes (6 walls 72 bars,
+  3 walls 40 bars, 8 walls spinning 48 bars), the exact goo against the light one. Measured: fill means within 0.024
+  (allowed 0.05), notes a bar within 5% (12%), the late/early ball speed within 0.005 (0.02), gooed notes softer
+  (impact 0.40 against 0.77 clean; the plugin 0.45 against 0.78), the tank in 128 KB.
+- Sabotaged 4 ways: a light splash keeping 5 (caught: fill 0.079 off), density by area instead of volume (7 checks),
+  the full drop count (caught: ball slowdown), drops growing half as fast (NOT caught: they reach full size in ~1.7 s
+  instead of ~0.9 s, which no bar-level statistic sees; left as is rather than tightening a tolerance to catch it).
+- Not measured yet: the light goo's time on the RP2350 (ticket 08, fm1-emu), and how it looks (ticket 05 draws it).

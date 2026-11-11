@@ -237,6 +237,10 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     a tune at Compose's pace) and the card glows while it plays. dev-learn3 19 (sabotaged 4 ways: make keeps nothing,
     a loop's notes all at once, broken entries let through, a tune a tone off). Subtraction budget: no control added
     to any toolbar; the cards are the child's own pieces on a screen that lists things to play.
+    FM-1 TICKET 07: THE LIGHT GOO (2026-11-11). goo.c builds three ways: exact (dense), hashed (the same numbers to
+    the bit, 270 KB) and light (the device: float, half the drops at 2^(1/3) the size, 3 a splash; the tank 94 KB).
+    check-goolight.js: 16 seeds, fill within 0.024, notes a bar 5%, slowdown 0.005, gooed notes as soft. Sabotaged 4
+    ways, 3 caught (drops growing half as fast is invisible at bar level; noted, not chased).
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

@@ -11,3 +11,10 @@ host/tank_c.txt
 host/tank_rust.txt
 host/tankref/target/
 host/tankref/Cargo.lock
+host/tanktest_hashed
+host/tanktest_light
+host/tank_hashed.txt
+host/tank_light.txt
+host/goo_light.o
+host/goo_exact.txt
+host/goo_light.txt

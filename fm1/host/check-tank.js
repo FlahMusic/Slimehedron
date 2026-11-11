@@ -5,7 +5,7 @@ const fs = require('fs'), path = require('path');
 const read = f => fs.readFileSync(path.join(__dirname, f), 'utf8').trim().split('\n');
 const scenes = lines => { const o = {}; let cur; for (const l of lines) { if (l.startsWith('scene ')) { cur = l.slice(6); o[cur] = []; } else if (cur) o[cur].push(l); } return o; };
 const same = (a, b) => { const x = Number(a), y = Number(b); return Number.isNaN(x) || Number.isNaN(y) ? a === b : x === y; };
-const C = scenes(read('tank_c.txt')), R = scenes(read('tank_rust.txt'));
+const C = scenes(read(process.argv[2] || 'tank_c.txt')), R = scenes(read('tank_rust.txt'));   // or another C build's output: tank_hashed.txt
 let bad = 0;
 for (const name of Object.keys(R)) {
   const r = R[name], c = C[name] || [];

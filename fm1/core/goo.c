@@ -12,6 +12,25 @@
 #define FILL_BARS 66.0      /* the shape's song: bars to fill */
 #define CELL      (2.0 * PR)
 #define TAU       6.283185307179586
+#define DS        SH_GOO_DS /* a drop's size against the plugin's (1 but in the light goo) */
+#ifdef SH_GOO_LIGHT
+#define SPLASH    3         /* drops a hit throws: the plugin's 5 for drops twice the volume, rounded up */
+#else
+#define SPLASH    5
+#endif
+
+/* the per-drop maths runs in greal: double to match the plugin, float in the light goo */
+#ifdef SH_GOO_LIGHT
+#define GSQRT  sqrtf
+#define GSIN   sinf
+#define GFLOOR floorf
+#define GCBRT  cbrtf
+#else
+#define GSQRT  sqrt
+#define GSIN   sin
+#define GFLOOR floor
+#define GCBRT  cbrt_exact
+#endif
 
 /* the 13 neighbour cells "after" a cell (dz, then dy, then dx, from -1): each pair of drops is met once */
 static const int HALF_SHELL[13][3] = {
@@ -19,6 +38,7 @@ static const int HALF_SHELL[13][3] = {
   {-1, -1, 1}, {0, -1, 1}, {1, -1, 1}, {-1, 0, 1}, {0, 0, 1}, {1, 0, 1}, {-1, 1, 1}, {0, 1, 1}, {1, 1, 1},
 };
 
+#ifndef SH_GOO_LIGHT
 /* (2m+1)^3 against x's mantissa shifted by sh bits, exactly, in 32-bit limbs: <0, 0, >0 */
 static int cube_cmp(uint64_t m, uint64_t mx, int sh) {
   uint32_t M[2] = { (uint32_t)(2 * m + 1), (uint32_t)((2 * m + 1) >> 32) }, S[4] = { 0 }, C[6] = { 0 }, X[8] = { 0 };
@@ -57,6 +77,7 @@ static double cbrt_exact(double x) {
   for (int i = 0; i < 8 && !root_above_mid(nextafter(y, -INFINITY), x); i++) y = nextafter(y, -INFINITY);
   return y;
 }
+#endif
 
 static sh_grid grid_new(double cell) {
   double span = 2.0 * SH_TR * 1.3 + 4.0 * cell;
@@ -66,12 +87,18 @@ static sh_grid grid_new(double cell) {
 }
 static int clampcell(double v, double o, int n, double cell) {
   double a = floor((v - o) / cell); return a < 0.0 ? 0 : a >= (double)n ? n - 1 : (int)a; }
+#ifdef SH_GOO_HASHED
+/* a cell's bucket; a bucket can hold several cells, so every chain is walked checking the cell itself */
+static int hkey(int a, int b, int c, int n) { return (int)(((uint32_t)a * 73856093u ^ (uint32_t)b * 19349663u ^ (uint32_t)c * 83492791u) & (uint32_t)(n - 1)); }
+static int same(const int16_t *c, int a, int b, int z) { return c[0] == a && c[1] == b && c[2] == z; }
+#else
 static int gkey(const sh_grid *g, int a, int b, int c) { return (c * g->nx + b) * g->nx + a; }
+#endif
 
 void sh_goo_init(sh_goo *g, double area, double room) {
   g->room[0] = room; g->room[1] = room; g->room[2] = SH_TBOXD / 2.0;
   double c = area * SH_TBOXD * GOO_SHARE / 3300.0;
-  g->cap = (int)floor(c < 1600.0 ? c : 1600.0);
+  g->cap = (int)floor((c < 1600.0 ? c : 1600.0) / (DS * DS * DS));   /* the light goo: half as many, each twice the volume */
   if (g->cap > SH_GOO_MAXCAP) g->cap = SH_GOO_MAXCAP;
   if (g->cap < 0) g->cap = 0;
   g->max = g->cap * 2 + 16; g->n = 0;
@@ -79,7 +106,9 @@ void sh_goo_init(sh_goo *g, double area, double room) {
   g->has_lava = 0; g->lava_beat = 0; g->axis[0] = 1.0; g->axis[1] = 0.0; g->axis[2] = 0.0; g->kick = 0.0;
   g->heart[0] = g->heart[1] = g->heart[2] = 0.0; g->core = 0.0;
   g->rg = grid_new(CELL); g->gd = grid_new(GOOC);
+#ifndef SH_GOO_HASHED
   for (int i = 0; i < SH_GOO_GD_MAX; i++) g->dens[i] = 0.0;
+#endif
   g->dens_n = 0;
 }
 
@@ -91,9 +120,9 @@ void sh_goo_splash(sh_goo *g, double x, double y, double z, double inx, double i
   int feed = 0; for (int i = 0; i < g->n; i++) if (!g->d[i].fade) feed++;
   double al = g->fill_beats / 4.0 / (FILL_BARS * 1.13); if (al > 1.0) al = 1.0;
   double allowance = al * (double)g->cap;
-  double kf = floor(allowance - (double)feed); kf = kf < 0.0 ? 0.0 : kf > 5.0 ? 5.0 : kf;
+  double kf = floor(allowance - (double)feed); kf = kf < 0.0 ? 0.0 : kf > SPLASH ? SPLASH : kf;
   int keep = (int)kf;
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < SPLASH; i++) {
     if (i >= keep && (double)g->n >= (double)g->cap * 1.15) break;   /* spray that only fades is capped too */
     if (g->n == g->max) break;
     double sp = 1.4 + sh_rng_f(rng) * 2.6;
@@ -103,7 +132,7 @@ void sh_goo_splash(sh_goo *g, double x, double y, double z, double inx, double i
     double py = y + (sh_rng_f(rng) - 0.5) * 8.0;
     sh_drop *p = &g->d[g->n++];
     p->x = px; p->y = py; p->z = z; p->vx = inx * sp + tx * tang; p->vy = iny * sp + ty * tang; p->vz = 0.0;
-    p->r = 2.0; p->age = 0; p->pooled = 0; p->fade = i >= keep;
+    p->r = 2.0 * DS; p->age = 0; p->pooled = 0; p->fade = i >= keep;
   }
 }
 
@@ -116,7 +145,14 @@ double sh_goo_density(const sh_goo *g, double x, double y, double z) {
   for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
     long long a = cx + i, b = cy + j, c = cz + k;
     if (a < 0 || b < 0 || c < 0 || a >= G->nx || b >= G->nx || c >= G->nz) continue;
+#ifdef SH_GOO_HASHED
+    double sc = 0.0;   /* this cell's volume, summed in drop order as the dense grid adds it */
+    for (int d = g->dhead[hkey((int)a, (int)b, (int)c, SH_GOO_DHASH)]; d != -1; d = g->dnext[d])
+      if (same(g->dcell[d], (int)a, (int)b, (int)c)) { const sh_drop *p = &g->d[d]; sc += p->r * p->r * p->r; }
+    s += sc;
+#else
     s += g->dens[gkey(G, (int)a, (int)b, (int)c)];
+#endif
   }
   double v = s * 4.18879 / (27.0 * GOOC * GOOC * GOOC) * 1.9;
   return v < 1.0 ? v : 1.0;
@@ -153,43 +189,45 @@ static double lava(sh_goo *g, double beats, int pooled_n, sh_rng *rng) {
 
 /* keep one drop inside the prism, GOO_IN in from the glass; an open wall lets the goo through */
 static void contain(sh_drop *p, const sh_wall *walls, int nw) {
-  double r = p->r + GOO_IN;
+  greal r = p->r + GOO_IN;
   for (int it = 0; it < 3; it++) {
-    double x = p->x, y = p->y;
+    greal x = p->x, y = p->y;
     for (int i = 0; i < nw; i++) {
       const sh_wall *e = &walls[i];
       if (e->broken) continue;
-      double dist = (p->x - e->ax) * e->nx + (p->y - e->ay) * e->ny;
+      greal ax = (greal)e->ax, ay = (greal)e->ay, nx = (greal)e->nx, ny = (greal)e->ny;
+      greal dist = (p->x - ax) * nx + (p->y - ay) * ny;
       if (dist < r) {
-        p->x += (r - dist) * e->nx; p->y += (r - dist) * e->ny;
-        double vn = p->vx * e->nx + p->vy * e->ny;
-        if (vn < 0.0) { p->vx -= 1.7 * vn * e->nx; p->vy -= 1.7 * vn * e->ny; }
+        p->x += (r - dist) * nx; p->y += (r - dist) * ny;
+        greal vn = p->vx * nx + p->vy * ny;
+        if (vn < 0.0) { p->vx -= 1.7 * vn * nx; p->vy -= 1.7 * vn * ny; }
       }
     }
     if (p->x == x && p->y == y) break;
   }
-  double m = r / SH_TBOXD;
+  greal m = r / SH_TBOXD;
   if (p->z < m) { p->z = m; if (p->vz < 0.0) p->vz *= -0.4; }
   else if (p->z > 1.0 - m) { p->z = 1.0 - m; if (p->vz > 0.0) p->vz *= -0.4; }
 }
 
 /* a ball moving through the goo shoves it aside and drags a little along */
 static void wake(sh_goo *g, const sh_ball *balls, int nb) {
-  double reach = SH_BR + PR + 6.0;
+  greal reach = SH_BR + PR + 6.0;
   for (int bi = 0; bi < nb; bi++) {
     const sh_ball *b = &balls[bi];
-    double vz = b->vz * SH_TBOXD;
+    greal bx = (greal)b->x, by = (greal)b->y, bz = (greal)b->z, bvx = (greal)b->vx, bvy = (greal)b->vy;
+    greal vz = (greal)b->vz * SH_TBOXD;
     for (int i = 0; i < g->n; i++) {
       sh_drop *p = &g->d[i];
       if (!p->pooled) continue;
-      double dx = p->x - b->x; if (dx > reach || dx < -reach) continue;
-      double dy = p->y - b->y; if (dy > reach || dy < -reach) continue;
-      double dz = (p->z - b->z) * SH_TBOXD; if (dz > reach || dz < -reach) continue;
-      double d = sqrt(dx * dx + dy * dy + dz * dz); if (d == 0.0) d = 1.0;
+      greal dx = p->x - bx; if (dx > reach || dx < -reach) continue;
+      greal dy = p->y - by; if (dy > reach || dy < -reach) continue;
+      greal dz = (p->z - bz) * SH_TBOXD; if (dz > reach || dz < -reach) continue;
+      greal d = GSQRT(dx * dx + dy * dy + dz * dz); if (d == 0.0) d = 1.0;
       if (d >= reach) continue;
-      double f = 1.0 - (d / reach) * (d / reach);
-      p->vx += b->vx * 0.22 * f + dx / d * f * 1.2;
-      p->vy += b->vy * 0.22 * f + dy / d * f * 1.2;
+      greal f = 1.0 - (d / reach) * (d / reach);
+      p->vx += bvx * 0.22 * f + dx / d * f * 1.2;
+      p->vy += bvy * 0.22 * f + dy / d * f * 1.2;
       p->vz += vz * 0.22 * f + dz / d * f * 1.2;
     }
   }
@@ -197,14 +235,14 @@ static void wake(sh_goo *g, const sh_ball *balls, int nb) {
 
 static void pair(sh_goo *g, int i, int j) {
   sh_drop p = g->d[i], q = g->d[j];
-  double dx = q.x - p.x, dy = q.y - p.y, dz = (q.z - p.z) * SH_TBOXD;
-  double d2 = dx * dx + dy * dy + dz * dz, min = p.r + q.r;
+  greal dx = q.x - p.x, dy = q.y - p.y, dz = (q.z - p.z) * SH_TBOXD;
+  greal d2 = dx * dx + dy * dy + dz * dz, min = p.r + q.r;
   if (d2 < min * min && d2 > 1e-8) {
-    double d = sqrt(d2), push = (min - d) / 2.0;
+    greal d = GSQRT(d2), push = (min - d) / 2.0;
     dx /= d; dy /= d; dz /= d;
     p.x -= dx * push; p.y -= dy * push; p.z -= dz * push / SH_TBOXD;
     q.x += dx * push; q.y += dy * push; q.z += dz * push / SH_TBOXD;
-    double rvx = (p.vx - q.vx) * 0.25, rvy = (p.vy - q.vy) * 0.25, rvz = (p.vz - q.vz) * 0.25;
+    greal rvx = (p.vx - q.vx) * 0.25, rvy = (p.vy - q.vy) * 0.25, rvz = (p.vz - q.vz) * 0.25;
     p.vx -= rvx; p.vy -= rvy; p.vz -= rvz;
     q.vx += rvx; q.vy += rvy; q.vz += rvz;
     g->d[i] = p; g->d[j] = q;
@@ -214,7 +252,29 @@ static void pair(sh_goo *g, int i, int j) {
 /* drops push apart and trade a little speed, so the goo slumps like a liquid; binned once per pass */
 static void relax(sh_goo *g) {
   int n = g->n; if (n == 0) return;
-  const sh_grid *G = &g->rg; int len = G->nx * G->nx * G->nz;
+  const sh_grid *G = &g->rg;
+#ifdef SH_GOO_HASHED
+  /* the same pairs in the same order as the dense grid: a bucket's chain, kept to its own cell, is that cell's list */
+  for (int k = 0; k < SH_GOO_HASH; k++) g->head[k] = -1;
+  for (int i = 0; i < n; i++) {
+    const sh_drop *p = &g->d[i];
+    int a = clampcell(p->x, G->ox, G->nx, G->cell), b = clampcell(p->y, G->oy, G->nx, G->cell);
+    int c = clampcell((p->z - 0.5) * SH_TBOXD, G->oz, G->nz, G->cell);
+    int k = hkey(a, b, c, SH_GOO_HASH);
+    g->next[i] = g->head[k]; g->head[k] = (int16_t)i;
+    g->cells[i][0] = (int16_t)a; g->cells[i][1] = (int16_t)b; g->cells[i][2] = (int16_t)c;
+  }
+  for (int i = 0; i < n; i++) {
+    int ca = g->cells[i][0], cb = g->cells[i][1], cc = g->cells[i][2];
+    for (int j = g->next[i]; j != -1; j = g->next[j]) if (same(g->cells[j], ca, cb, cc)) pair(g, i, j);
+    for (int o = 0; o < 13; o++) {
+      int gx = ca + HALF_SHELL[o][0], gy = cb + HALF_SHELL[o][1], gz = cc + HALF_SHELL[o][2];
+      if (gx < 0 || gy < 0 || gz < 0 || gx >= G->nx || gy >= G->nx || gz >= G->nz) continue;
+      for (int j = g->head[hkey(gx, gy, gz, SH_GOO_HASH)]; j != -1; j = g->next[j]) if (same(g->cells[j], gx, gy, gz)) pair(g, i, j);
+    }
+  }
+#else
+  int len = G->nx * G->nx * G->nz;
   for (int k = 0; k < len; k++) g->head[k] = -1;
   for (int i = 0; i < n; i++) {
     const sh_drop *p = &g->d[i];
@@ -233,20 +293,34 @@ static void relax(sh_goo *g) {
       for (int j = g->head[gkey(G, gx, gy, gz)]; j != -1; j = g->next[j]) pair(g, i, j);
     }
   }
+#endif
 }
 
 /* the density grid the balls feel: each pooled drop's volume in its cell */
 static void build_density(sh_goo *g) {
-  const sh_grid *G = &g->gd; int len = G->nx * G->nx * G->nz;
+  const sh_grid *G = &g->gd;
+#ifdef SH_GOO_HASHED
+  for (int k = 0; k < SH_GOO_DHASH; k++) { g->dhead[k] = -1; g->dtail[k] = -1; }
+#else
+  int len = G->nx * G->nx * G->nz;
   for (int k = 0; k < len; k++) g->dens[k] = 0.0;
+#endif
   g->dens_n = 0;
   for (int i = 0; i < g->n; i++) {
     const sh_drop *p = &g->d[i];
     if (!p->pooled) continue;
-    double a = floor((p->x - G->ox) / GOOC), b = floor((p->y - G->oy) / GOOC);
-    double c = floor(((p->z - 0.5) * SH_TBOXD - G->oz) / GOOC);
+    greal a = GFLOOR((p->x - (greal)G->ox) / GOOC), b = GFLOOR((p->y - (greal)G->oy) / GOOC);
+    greal c = GFLOOR(((p->z - 0.5) * SH_TBOXD - (greal)G->oz) / GOOC);
     if (a < 0.0 || b < 0.0 || c < 0.0 || a >= G->nx || b >= G->nx || c >= G->nz) continue;
+#ifdef SH_GOO_HASHED
+    /* appended at the tail, so a cell's drops are summed in drop order, as the dense grid adds them */
+    int k = hkey((int)a, (int)b, (int)c, SH_GOO_DHASH);
+    g->dnext[i] = -1; g->dcell[i][0] = (int16_t)a; g->dcell[i][1] = (int16_t)b; g->dcell[i][2] = (int16_t)c;
+    if (g->dtail[k] < 0) g->dhead[k] = (int16_t)i; else g->dnext[g->dtail[k]] = (int16_t)i;
+    g->dtail[k] = (int16_t)i;
+#else
     g->dens[gkey(G, (int)a, (int)b, (int)c)] += p->r * p->r * p->r;
+#endif
     g->dens_n++;
   }
 }
@@ -255,31 +329,31 @@ static void step3d(sh_goo *g, double now_ms, double bpm, const sh_wall *walls, i
   int pooled_n = sh_goo_pooled(g);
   double phase = lava(g, now_ms / 60000.0 * bpm, pooled_n, rng);
   double env = exp(-phase * 10.0);   /* the squeeze, sharp on the beat and gone before the next */
-  g->core = 8.5 * cbrt_exact((double)(pooled_n > 1 ? pooled_n : 1));
-  double h0 = g->heart[0], h1 = g->heart[1], h2 = g->heart[2], kick = g->kick, core = g->core;
-  const double *axis = g->axis;
-  double t = now_ms * 0.001;
+  g->core = 8.5 * DS * GCBRT((double)(pooled_n > 1 ? pooled_n : 1));   /* a packed heart of that many drops */
+  greal h0 = (greal)g->heart[0], h1 = (greal)g->heart[1], h2 = (greal)g->heart[2], kick = (greal)g->kick, core = (greal)g->core;
+  const greal axis[3] = { (greal)g->axis[0], (greal)g->axis[1], (greal)g->axis[2] };
+  greal t = (greal)(now_ms * 0.001), envg = (greal)env;
   for (int i = 0; i < g->n; i++) {
     sh_drop *p = &g->d[i];
     p->age++;
-    if (!p->pooled && !p->fade && (p->age > 40 || (p->age > 10 && sqrt(p->vx * p->vx + p->vy * p->vy + p->vz * p->vz) < 1.2))) p->pooled = 1;
+    if (!p->pooled && !p->fade && (p->age > 40 || (p->age > 10 && GSQRT(p->vx * p->vx + p->vy * p->vy + p->vz * p->vz) < 1.2))) p->pooled = 1;
     if (p->pooled) {
-      if (p->r < PR) p->r += 0.12;
-      double rx = p->x - SH_TCX - h0, ry = p->y - SH_TCY - h1, rz = (p->z - 0.5) * SH_TBOXD - h2;
-      double d = sqrt(rx * rx + ry * ry + rz * rz); if (d == 0.0) d = 1.0;
-      double c = core * 0.75;
-      if (d > c) { double k = 0.012 * (d - c) / d; p->vx -= rx * k; p->vy -= ry * k; p->vz -= rz * k; }
+      if (p->r < PR) p->r += 0.12 * DS;
+      greal rx = p->x - SH_TCX - h0, ry = p->y - SH_TCY - h1, rz = (p->z - 0.5) * SH_TBOXD - h2;
+      greal d = GSQRT(rx * rx + ry * ry + rz * rz); if (d == 0.0) d = 1.0;
+      greal c = core * 0.75;
+      if (d > c) { greal k = 0.012 * (d - c) / d; p->vx -= rx * k; p->vy -= ry * k; p->vz -= rz * k; }
       if (env > 0.01) {   /* the beat: a sharp stretch along its axis, a squeeze across it, a breath out */
-        double ka = kick * env;
-        double al = rx * axis[0] + ry * axis[1] + rz * axis[2];
-        double sx = axis[0] * al, sy = axis[1] * al, sz = axis[2] * al;
+        greal ka = kick * envg;
+        greal al = rx * axis[0] + ry * axis[1] + rz * axis[2];
+        greal sx = axis[0] * al, sy = axis[1] * al, sz = axis[2] * al;
         p->vx += ka * (0.045 * sx - 0.024 * (rx - sx) + 0.01 * rx);
         p->vy += ka * (0.045 * sy - 0.024 * (ry - sy) + 0.01 * ry);
         p->vz += ka * (0.045 * sz - 0.024 * (rz - sz) + 0.01 * rz);
       }
-      p->vx += 0.035 * sin(t * 1.3 + p->y * 0.035);   /* a slow shimmer: never a perfect ball */
-      p->vy += 0.035 * sin(t * 1.1 + p->z * SH_TBOXD * 0.035);
-      p->vz += 0.035 * sin(t * 0.9 + p->x * 0.035);
+      p->vx += 0.035 * GSIN(t * 1.3 + p->y * 0.035);   /* a slow shimmer: never a perfect ball */
+      p->vy += 0.035 * GSIN(t * 1.1 + p->z * SH_TBOXD * 0.035);
+      p->vz += 0.035 * GSIN(t * 0.9 + p->x * 0.035);
       p->vy += GRAV * 0.1;                            /* nearly afloat, like wax in warm oil */
       p->vx *= 0.88; p->vy *= 0.88; p->vz *= 0.88;
     } else {

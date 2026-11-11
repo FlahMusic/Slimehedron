@@ -18,5 +18,8 @@ Plan and open questions: `_docs/specs/2026-11-03-fm1-firmware/brief.md`, `_docs/
   for line. `wsl make -C fm1/host tank && node fm1/host/check-tank.js` runs the plugin's own tank (`host/tankref`, Rust,
   needs `~/.cargo` in WSL) and the C one through `host/scenes.txt`: every hit and every 30th tick must be the same
   double. `TANKDBG=1` makes both print every drop every tick, to find where two runs part.
+- The goo has three builds (`core/goo.h`): exact (dense grids), `SH_GOO_HASHED` (the same numbers in 270 KB:
+  `node fm1/host/check-tank.js tank_hashed.txt` after `wsl make -C fm1/host goo`) and `SH_GOO_LIGHT`, the device's
+  (float, half the drops, 94 KB for the tank): `wsl make -C fm1/host goo-stats && node fm1/host/check-goolight.js`.
 - The port's tickets: `_docs/specs/2026-11-11-fm1-port/spec.md`. The firmware base is SLOOP (Flah 2026-11-11); the
   device build comes with it (ticket 08). Never flash Flah's FM-1 without asking.

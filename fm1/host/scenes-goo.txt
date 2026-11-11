@@ -1,0 +1,18 @@
+# Seeds for the light goo's statistics (check-goolight.js): the exact goo and the light one, scene by scene.
+# name walls scale octs spin chaos quantize swing vel_rand auto bpm seed bars
+studio1 6 major 2 0 0.12 1 0.15 1 1 80 1 72
+studio2 6 major 2 0 0.12 1 0.15 1 1 80 2 72
+studio3 6 major 2 0 0.12 1 0.15 1 1 80 3 72
+studio4 6 major 2 0 0.12 1 0.15 1 1 80 4 72
+studio5 6 major 2 0 0.12 1 0.15 1 1 80 5 72
+studio6 6 major 2 0 0.12 1 0.15 1 1 80 6 72
+studio7 6 major 2 0 0.12 1 0.15 1 1 80 7 72
+studio8 6 major 2 0 0.12 1 0.15 1 1 80 8 72
+tri11 3 minor 3 -60 0.12 1 0 1 1 140 11 40
+tri12 3 minor 3 -60 0.12 1 0 1 1 140 12 40
+tri13 3 minor 3 -60 0.12 1 0 1 1 140 13 40
+tri14 3 minor 3 -60 0.12 1 0 1 1 140 14 40
+oct21 8 dorian 2 25 0.12 1 0.15 1 1 100 21 48
+oct22 8 dorian 2 25 0.12 1 0.15 1 1 100 22 48
+oct23 8 dorian 2 25 0.12 1 0.15 1 1 100 23 48
+oct24 8 dorian 2 25 0.12 1 0.15 1 1 100 24 48

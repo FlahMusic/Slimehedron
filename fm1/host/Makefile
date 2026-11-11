@@ -46,3 +46,23 @@ tank: tanktest
 	CARGO_TARGET_DIR=$$HOME/fm1-tankref $$HOME/.cargo/bin/cargo build --release -q --manifest-path tankref/Cargo.toml
 	$$HOME/fm1-tankref/release/tankref scenes.txt > tank_rust.txt
 .PHONY: tank
+
+# the same tank with the goo's grids hashed: must still match the plugin exactly (check-tank.js tank_hashed.txt)
+tanktest_hashed: $(TANKSRC) ../core/tank.h ../core/goo.h ../core/music.h ../core/melody.h tanktest.c
+	$(CC) $(CFLAGS) -DSH_GOO_HASHED -o $@ $(TANKSRC) tanktest.c -lm
+
+# the device's light goo (float, half the drops at 2^(1/3) the size): checked by statistics (check-goolight.js)
+tanktest_light: $(TANKSRC) ../core/tank.h ../core/goo.h ../core/music.h ../core/melody.h tanktest.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -fsingle-precision-constant -c -o goo_light.o ../core/goo.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -o $@ ../core/tank.c ../core/music.c ../core/melody.c goo_light.o tanktest.c -lm
+
+goo: tanktest tanktest_hashed tanktest_light
+	./tanktest_hashed scenes.txt > tank_hashed.txt
+	./tanktest_light scenes.txt > tank_light.txt
+.PHONY: goo
+
+# the 16 seeds through the exact goo and the light one; then: node fm1/host/check-goolight.js
+goo-stats: tanktest tanktest_light
+	./tanktest scenes-goo.txt > goo_exact.txt
+	./tanktest_light scenes-goo.txt > goo_light.txt
+.PHONY: goo-stats

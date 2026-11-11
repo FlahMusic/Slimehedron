@@ -11,6 +11,7 @@ static sh_tank T;   /* ~1.6 MB with the full goo: static, not on the stack */
 int main(int argc, char **argv) {
   if (argc < 2) { fprintf(stderr, "tanktest SCENES\n"); return 2; }
   FILE *f = fopen(argv[1], "r"); if (!f) { perror(argv[1]); return 2; }
+  printf("# sizeof(sh_tank) %zu\n", sizeof T);   /* the RAM the tank takes, for check-goolight.js */
   char line[512];
   while (fgets(line, sizeof line, f)) {
     char name[64], scale[64]; int walls, octs, quant, velr, autn; double spin, chaos, swing, bpm; unsigned long long seed; int bars;
