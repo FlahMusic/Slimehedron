@@ -2180,7 +2180,7 @@ function reviewUnit(){
       '<h3>'+t('u_review')+'</h3><span class="lgCount">'+list.length+'</span>'+
       '</div>'+
     '<p class="lgSay">'+t('rev_do')+'</p>'+
-    '<div style="flex:1;min-height:0;overflow:auto">'+
+    '<div style="flex:1;min-height:0;overflow:auto;padding:4px 12px 16px">'+   /* a gutter: cards off the phone's edge, their shadows not clipped */
       (kept.length?'<div class="uBlk">'+t('rev_mine')+'</div><div class="uGrid kpGrid">'+kept.map(kcard).join('')+'</div>'+
         '<div class="uBlk">'+t('rev_lessons')+'</div>':'')+
       '<div class="uGrid" style="align-content:start">'+list.map(card).join('')+'</div></div>');
