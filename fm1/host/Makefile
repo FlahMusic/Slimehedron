@@ -3,7 +3,16 @@
 CFLAGS = -std=c99 -O2 -Wall -Wextra -Werror -Wno-unused-parameter
 SRC = ../core/solid.c ../core/draw.c main.c
 
-all: solidtest_double solidtest_float
+all: solidtest_double solidtest_float spacetest_double spacetest_float
+
+spacetest_double: ../core/space.c ../core/space.h ../core/drawspace.c ../core/drawspace.h spacetest.c
+	$(CC) $(CFLAGS) -DSH_REAL=double -o $@ ../core/space.c ../core/drawspace.c spacetest.c -lm
+
+spacetest_float: ../core/space.c ../core/space.h ../core/drawspace.c ../core/drawspace.h spacetest.c
+	$(CC) $(CFLAGS) -DSH_REAL=float -o $@ ../core/space.c ../core/drawspace.c spacetest.c -lm
+
+space: spacetest_double spacetest_float
+.PHONY: space
 
 solidtest_double: $(SRC) ../core/solid.h ../core/draw.h
 	$(CC) $(CFLAGS) -DSH_REAL=double -o $@ $(SRC) -lm

@@ -1,6 +1,6 @@
 # Slimehedron for the M-VAVE FM-1 (custom firmware)
 
-Status: needs-info (grill Flah on section 8 first, then /to-spec and /to-tickets)
+Status: answered (Flah 2026-11-11: the recommended answers; question 5 still open). The port: _docs/specs/2026-11-11-fm1-port/
 Written 2026-11-03 by Cowork from Flah's ask. Facts were read from the source of `m-vave/fm1_open` (V14) and
 `hugelton/Felucca` (1.x), and from the pages in Sources. CHECK = not verified, measure before trusting.
 
@@ -221,6 +221,9 @@ Track layout:
 4. Sounds: OK with the starting map in section 3c, and keep the CC0-sample kits (1-5) and SAMPLE presets OFF?
    Recommended: yes, synth only.
 5. Do you own an FM-1 now, and is it on V15?
+
+Answers (Flah, 2026-11-11, "stick with recommended, yes to all"): 1 fork SLOOP, 2 the map as is, 3 lighter but real,
+4 synth only. 5 has no recommended answer and stays open.
 
 ## Sources
 - https://github.com/m-vave/fm1_open (README, `sdk/include/fm1.h`, `fm1_block.h`, `app/board/*`, `app/screen.c`, linker)

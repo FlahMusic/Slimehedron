@@ -3,3 +3,5 @@ host/solidtest_float
 host/dump_*.json
 host/*.ppm
 host/*.png
+host/spacetest_double
+host/spacetest_float
