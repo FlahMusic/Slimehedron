@@ -50,6 +50,10 @@ Then rerun only what failed. A failure that passes on rerun goes on the flaky li
 - Failing on 1d535a6 too (controls 2026-11-08): `dev-goolook` (its saved reference is older than the slime overhaul:
   112 % of cells moved, a channel off by 255) and `dev-fluid` "[play] a paused tank is completely still" (37-39
   moving frames). Not chased yet.
+- Sweep 2026-11-08/10, passed on rerun: `dev-mix` 4. pop "every hit's loudest 100 ms" (ht -1.6 LU, once), `dev-audiopro` 3.
+  "the whole mix is wide but whole" (r 0.961, once; 0.91-0.93 in three runs before it). Not chased yet.
+- `dev-governor` "gets to 1 within 5 s" (5019 ms) and "steps back up" (never): failing on 6b39647 too; it reads this
+  machine's real frame cost, which never counts as light here. Not chased yet.
 - `dev-daw` "mute really silences the drums": 1 run of 3 read the drums at 0.0029 before mute (0.025 otherwise;
   2026-11-08): the 1.4 s window caught them before they started. Not chased yet.
 - `dev-goopro` 1. "the main thread spends at most 1.5 ms a frame on the goo": read 3.0 and 3.9 ms p95 in two runs of

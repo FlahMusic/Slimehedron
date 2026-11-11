@@ -58,7 +58,10 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
  ok(q.dots>0,'and the score comes back');
 
  const done=()=>p.evaluate(()=>!!document.querySelector('.lgDone'));
+ // the chord lesson's part 2 (intervals, ADR 0014) follows its rounds and opens on its own explore screen: press ready
+ // there too, as a child would
  for(let i=0;i<70&&!(await done());i++){
+   await p.evaluate(()=>{if(window._lab_exploring&&window._lab_exploring()&&window._lab_ready)window._lab_ready();});
    await p.evaluate(()=>{const w=String(window._labExpect);
      const el=document.querySelector('[data-ch="'+w+'"]');
      if(el)el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));});

@@ -25,12 +25,16 @@ const PRESSABLE='.lgRung,[data-ch],.stKey,.mkPad,.rjPad,.stHit,[data-sp]';
 (async()=>{
 const b=await launch();
 const ctx=await b.newContext({viewport:{width:1100,height:860}});
+// COUNT NOTES, NOT NODES. The engine runs three sources forever from the moment audio starts (the tape stage's two
+// wobble oscillators and its hiss loop), so counting every oscillator and buffer gave every lesson 3 for free and a
+// lesson that made no sound at all still passed (staff, melody and compose read exactly 3, 2026-11-10). A note is given
+// an end: count the sources that are told when to stop. The engine's loops never are.
 await ctx.addInitScript(()=>{
   window.__osc=0;window.__buf=0;
-  const o=AudioContext.prototype.createOscillator;
-  AudioContext.prototype.createOscillator=function(){window.__osc++;return o.call(this);};
-  const s=AudioContext.prototype.createBufferSource;
-  AudioContext.prototype.createBufferSource=function(){window.__buf++;return s.call(this);};});
+  const st=AudioScheduledSourceNode.prototype.stop;
+  AudioScheduledSourceNode.prototype.stop=function(...a){if(this instanceof OscillatorNode)window.__osc++;else window.__buf++;return st.apply(this,a);};
+  const go=AudioBufferSourceNode.prototype.start;   // a buffer note can also be ended by start's duration argument
+  AudioBufferSourceNode.prototype.start=function(...a){if(a.length>=3)window.__buf++;return go.apply(this,a);};});
 const p=await ctx.newPage();
 p.on('pageerror',e=>{FAIL.push('pageerror: '+e.message);});
 
@@ -42,7 +46,9 @@ const pressOne=(sel)=>p.evaluate(ss=>{const el=document.querySelector(ss);
   if(!el)return false;el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));return true;},sel);
 for(const id of EARS){
   await p.goto('http://127.0.0.1:8765/index.html?l='+id);
-  await zero();
+  // no zero() here: the init script starts the count at 0 on every page, and a listen-first round's whole beat is
+  // scheduled (its oscillators made) the moment the listen button is pressed, which the listening kid in browser.js does
+  // as soon as it pulses, often before a zero() here would land (Copy the Beat read 0 for that reason, 2026-11-10)
   await p.waitForTimeout(2600);
   let onOwn=await voices(), onPress=null, onAsk=null;
   const exploring=await p.evaluate(()=>!!(window._lab_exploring&&window._lab_exploring())).catch(()=>false);

@@ -3,7 +3,7 @@
 //  Not opinion: bytes over the wire, requests, time to interactive, third-party calls, console
 //  errors, offline survival, touch-target compliance. Run: node dev-bench.js
 // ============================================================================================
-const {chromium}=require('playwright');
+const {launch}=require('./browser');   // one place decides where Chromium is (it pointed at the cloud box's)
 const TARGETS=[
   ['Slimehedron',      'https://flahmusic.github.io/Slimehedron/'],
   ['CML Song Maker',   'https://musiclab.chromeexperiments.com/Song-Maker/'],
@@ -17,9 +17,7 @@ const fmt=n=>n>=1048576?(n/1048576).toFixed(2)+' MB':(n/1024).toFixed(0)+' KB';
 (async()=>{
  // this container reaches the internet only through the agent proxy, and Chromium does not read the
  // env vars the way curl does — it has to be told, and told to trust the proxy's CA.
- const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
-   proxy:{server:process.env.HTTPS_PROXY||'http://127.0.0.1:33605'},
-   args:['--autoplay-policy=no-user-gesture-required','--ignore-certificate-errors']});
+ const b=await launch({args:['--autoplay-policy=no-user-gesture-required']});
  const rows=[];
  for(const [name,url] of TARGETS){
   const ctx=await b.newContext({viewport:{width:390,height:844},hasTouch:true,isMobile:true,

@@ -61,7 +61,9 @@ const URL='http://127.0.0.1:8765/index.html';
   // Balls die and respawn, so the tank is legitimately empty for a moment now and then. The thing that
   // matters is that it is not empty as a RULE — sampling one unlucky instant is a flaky test, not a bug.
   const withBalls=live.filter(x=>x.balls>0).length;
-  ok(withBalls>=live.length*0.8,L+'the tank is populated throughout (balls present in '+withBalls+'/'+live.length+' samples)');
+  // ...in studio. In play auto-notes are off and nothing drops a note before a touch (GLOSSARY, Auto-notes; Tap invite),
+  // so an untouched play tank is empty by design: this used to expect play populated too (7-12 of 30, 2026-11-10)
+  if(mode==='studio')ok(withBalls>=live.length*0.8,L+'the tank is populated throughout (balls present in '+withBalls+'/'+live.length+' samples)');
   // a fixed 4-bar loop is the signature of the fallback path — catch it explicitly
   const seq=live.map(x=>x.chord);
   let looped=true;for(let i=4;i<seq.length;i++)if(seq[i]!==seq[i%4]){looped=false;break;}
