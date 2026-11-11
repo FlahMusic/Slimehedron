@@ -1249,12 +1249,26 @@ function pulseUnit(){
         '<h3>'+t('u_pulse')+'</h3><span class="lgCount">'+run+' / '+PULSE_NEED+'</span>'+
         '</div>'+
       '<div class="lgDots">'+Array.from({length:PULSE_NEED},(_,i)=>'<i class="'+(i<run?'got':'')+'"></i>').join('')+'</div>'+
-      '<div class="lgLane" id="lgLane"><div class="lgFloor" id="lgFloor"></div></div>'+
+      '<div class="lgLane" id="lgLane"><div class="lgFloor" id="lgFloor"></div></div>'+pulseGrid()+
       '<p class="lgSay">'+t('pulse_do')+'</p>'+
       '<div class="lgFeed" id="lgFeed"></div>'+
       '<div class="lgPad" id="lgPad" role="button" tabindex="0" aria-label="tap"><img src="'+SLIME+'" alt="" draggable="false"></div>');
     layout();
   }
+  // THE GRID UNDER THE LANE (logic pass): one bar on the same step grid as count to four and studio's drum grid, four
+  // steps to a beat, a ball hopping from beat to beat, and every beat tapped in time filled in. The beat the kid keeps
+  // becomes the picture a DAW shows. A new bar starts empty.
+  function pulseGrid(){let h='';for(let s=0;s<16;s++)h+='<i class="rgStep'+(s%4===0?' beat':'')+'" data-s="'+s+'"></i>';
+    return '<div class="rgWrap" id="rgWrap" style="--steps:16;--beats:4;width:min(calc(100% - 28px),560px);margin:6px auto 0"><div class="rgBall" id="rgBall"></div><div class="rgSteps">'+h+
+      '</div><div class="rgNums"><b>1</b><b>2</b><b>3</b><b>4</b></div></div>';}
+  let gridBar=-1;const still=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){return false;}})();
+  function drawGrid(now){const ball=document.getElementById('rgBall'),steps=[...document.querySelectorAll('#rgWrap .rgStep')];if(!ball||!steps.length)return;
+    const bp=(now-t0)/P-4;   /* beats since the count-in ended */
+    if(bp<0){ball.style.transform='translate(0cqw,0px)';ball.dataset.beat='lead';return;}
+    const bar=Math.floor(bp/4),bb=bp-bar*4,fr=bb-Math.floor(bb),up=still?0:Math.abs(Math.sin(Math.PI*fr))*16;
+    if(bar>gridBar){gridBar=bar;steps.forEach(e=>e.classList.remove('on'));}   // forward only: a tap just ahead of a bar's first beat already moved it
+    ball.style.transform='translate('+(Math.floor(bb)/4*100)+'cqw,'+(-up)+'px)';ball.dataset.beat=String(Math.floor(bb));
+    const si=Math.floor(bb*4);steps.forEach((e,i)=>e.classList.toggle('now',i===si));}
   // the floor sits just above the pad; the ball falls the height of the lane onto it
   function layout(){
     const lane=document.getElementById('lgLane'),floor=document.getElementById('lgFloor');
@@ -1274,7 +1288,7 @@ function pulseUnit(){
       if(ci<4)hit('r',nextBeat,ci===0?1.0:0.8);else hit('K',nextBeat,1.15);
       nextBeat+=P; sched++;
     }
-    draw(now);
+    draw(now);drawGrid(now);
     raf=requestAnimationFrame(tick);
   }
   function draw(now){
@@ -1322,6 +1336,8 @@ function pulseUnit(){
       if(pad)pad.classList.add('good');
       if(fl){fl.classList.remove('flash');void fl.offsetWidth;fl.classList.add('flash');}
       if(fd)fd.textContent=(err<=PULSE_GREAT?t('pulse_great'):t('pulse_good'));
+      {const tb=Math.floor((n-4)/4);if(tb>gridBar){gridBar=tb;document.querySelectorAll('#rgWrap .rgStep').forEach(e=>e.classList.remove('on'));}   // a tap a moment early on beat 1 opens its bar
+       const st=document.querySelector('#rgWrap .rgStep[data-s="'+(((n-4)%4)*4)+'"]');if(st)st.classList.add('on');}   // the beat kept, on the grid
       const d=document.querySelectorAll('.lgDots i');
       if(d[run-1])d[run-1].classList.add('got');
       const c=document.querySelector('.lgCount'); if(c)c.textContent=run+' / '+PULSE_NEED;

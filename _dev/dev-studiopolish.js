@@ -7,7 +7,8 @@
 //    4. tempo: drag the number (up 40 px = +8..12 BPM, down lowers, clamped 40..220), the wheel steps it, a tap
 //       still lets you type; no spinner arrows; TAP's text is as bold as the strip's other buttons
 //    5. the mixer: mute pressed is blue / periwinkle (Logic, GarageBand), solo yellow; each part has its own colour
-//    6. the first screen: Groove sits in the Pattern card, Timing is under "more settings"; no sideways page scroll
+//    6. the first screen: Groove sits in the Pattern card, Timing is under "more settings"; the strip never leaves one
+//       group alone on a row (it breaks into two balanced rows when one will not do); no sideways page scroll
 //       at 360, 390, 1280 and 1440 px
 //  Sabotaged 6 ways (2026-11-07), each caught: the tap-mode handler matching every row (2), the drum grid not hidden (1),
 //  no segmented tracks (3), tempo drag twice as fast (4), mute back to pink (5), Timing back on the first screen (6).
@@ -114,6 +115,9 @@ const hd=(a,b)=>{const d=Math.abs(a-b)%360;return Math.min(d,360-d);};
  for(const w of [360,390,1280,1440]){const c2=await b.newContext({viewport:{width:w,height:w<500?800:900}});await c2.addInitScript(init);
    const q=await c2.newPage();await q.goto(URL);await q.waitForTimeout(2000);
    const sx=await q.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
+   const rows=await q.evaluate(()=>{const bar=document.getElementById('studioBar');if(!bar||!bar.checkVisibility())return null;const tops=[...bar.querySelectorAll(':scope>.sbGrp')].filter(g=>g.checkVisibility()).map(g=>g.getBoundingClientRect().top).sort((a,b)=>a-b);
+     const rows=[];for(const y of tops){if(rows.length&&y-rows[rows.length-1].y<25)rows[rows.length-1].n++;else rows.push({y,n:1});}return rows.map(r=>r.n);});   // a row: tops within 25 px
+   if(rows&&w>820)ok(rows.every(n=>n>=2),'6. the strip at '+w+' px: no group left alone on a row (groups a row: '+rows.join(', ')+')');
    ok(sx<=0,'6. no sideways page scroll at '+w+' px ('+sx+' px over)');await c2.close();}
  await b.close();
  console.log(FAIL.length?'\n'+FAIL.length+' FAILURE(S)':'\nstudio: tabs, rows, tempo, mixer and first screen all hold');process.exit(FAIL.length?1:0);})();

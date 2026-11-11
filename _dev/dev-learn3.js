@@ -321,6 +321,19 @@ const JUDGED=['howlong','sayplay','echo','notes'];   // (staff is read by sight 
     const c=document.querySelector('.rjCell[data-rj="s'+k+'"]');return {late:hit?(hit.t-hit.now)*1000:99,mark:!!(c&&c.classList.contains('you')),k};});
   ok(tp.late<5&&tp.mark,'17 a tap sounds now ('+tp.late.toFixed(1)+' ms) and marks the step it lands on (snare, step '+(tp.k+1)+': '+tp.mark+')');}
 
+ // ---- 18: Steady Beat's grid (logic pass: "grid under the lane"): one bar of 16 steps under the falling balls; a beat tapped in
+ // time fills its step, the others stay empty, and the next bar starts empty
+ await open('pulse');
+ {const g=await p.evaluate(async()=>{const w=ms=>new Promise(r=>setTimeout(r,ms)),beat=()=>{const b=document.getElementById('rgBall');return b?b.dataset.beat:null;};
+    const steps=document.querySelectorAll('#rgWrap .rgStep').length;
+    for(let i=0;i<600&&beat()!=='0';i++)await w(10);for(let i=0;i<600&&beat()!=='1';i++)await w(5);window._lab_tap();   // beat 2 of a bar
+    for(let i=0;i<600&&beat()!=='2';i++)await w(5);window._lab_tap();                                                  // beat 3
+    await w(150);const lit=[...document.querySelectorAll('#rgWrap .rgStep.on')].map(e=>+e.dataset.s);
+    for(let i=0;i<600&&beat()!=='0';i++)await w(10);await w(120);
+    return {steps,lit,after:document.querySelectorAll('#rgWrap .rgStep.on').length};});
+  ok(g.steps===16&&g.lit.join()==='4,8','18 Steady Beat has a bar of 16 steps under the lane, and the beats tapped in time fill theirs (steps '+g.lit.join(' ')+' of '+g.steps+')');
+  ok(g.after===0,'18 and the next bar starts empty ('+g.after+' lit)');}
+
  // ---- 12: Play It Again lists what was finished (the same day too), each with what it taught, and replays it
  {const fin=['howlong','sayplay','staff'];
   await p.evaluate(f=>{const pr=JSON.parse(localStorage.getItem('slimehedron-learn2')||'{}');const now=Date.now();

@@ -17,7 +17,7 @@ twice running, 6 grid + playhead + count-in, 7 one drum colour code, 8 every but
 ## Per unit
 | Unit | Done | Still open |
 |---|---|---|
-| pulse | 4 3 2 1 count-in on the balls (heard as clicks, not judged); a miss no longer resets the count (that was a streak) | grid under the lane |
+| pulse | 4 3 2 1 count-in on the balls (heard as clicks, not judged); a miss no longer resets the count (that was a streak); a bar of 16 steps under the lane, a ball on the beat, every beat tapped in time filled in (2026-11-11, dev-learn3 18) | |
 | make | each pick plays on its step (07) | move to the end of the rhythm block: needs Flah's yes + ADR (it sits at #2 on purpose, retention data) |
 | sayplay | rebuilt as Copy the Beat, the drum grid (08, 09, ADR 0013) | |
 | howlong | listen first, a lead-in, the note alone (10) | |

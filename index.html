@@ -281,10 +281,13 @@ header h1{flex-shrink:0}
   gap:4px;padding:5px 9px;border-radius:14px;
   background:rgba(252,249,255,.9);border:1.5px solid var(--card-brd);box-shadow:var(--shadow);
   -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-#studioBar .sbGrp{display:flex;align-items:center;gap:5px;flex:none}
+#studioBar .sbGrp{display:flex;align-items:center;gap:4px;flex:none}
 #studioBar .sbSep{width:1px;height:22px;background:rgba(150,140,185,.3);flex:none;margin:0 3px}
+#studioBar .sbBrk{display:none}
+#studioBar.two .sbBrk{display:block;flex-basis:100%;height:0}
+#studioBar.two .sbSepBrk{display:none}
 #studioBar .sbLbl{font:700 9.5px system-ui,sans-serif;letter-spacing:.5px;text-transform:uppercase;color:var(--ink-soft);flex:none}
-#studioBar select,#studioBar input[type=number]{flex:none;width:auto;font-size:12.5px;padding:5px 7px;min-height:34px}
+#studioBar select,#studioBar input[type=number]{flex:none;width:auto;font-size:12.5px;padding:5px 6px;min-height:34px}
 #studioBar input[type=number]{width:62px}
 #studioBar #sbTap{border:1.5px solid rgba(160,150,200,.45);background:#fff;border-radius:9px;padding:6px 10px;
   font:800 var(--fs-xs)/1 system-ui,sans-serif;color:#5a4f78;cursor:pointer;min-height:var(--tap);min-width:var(--tap);flex:none}
@@ -1013,7 +1016,7 @@ body.lab-stage #exitMode,body.lab-stage #cofWheel,body.lab-stage #toast{display:
    the call fills in its drum's colour as it sounds, a tap of yours leaves a dot (shape as well as colour, WCAG 1.4.1) */
 .rjGrid{width:min(100%,560px);margin:8px auto 0;gap:4px;flex:none}
 .rjGrid .geRow{gap:3px;padding:2px}
-.rjGrid .geLbl{flex:0 0 58px;font-size:12px}
+.rjGrid .geLbl{flex:0 0 auto;min-width:58px;font-size:12px;white-space:nowrap}   /* sized to the word: a fixed 58 px clipped "snare" on an iPad (dev-devices) */
 .rjCell{flex:1 1 0;min-width:0;height:22px;border-radius:6px;border:1.5px solid var(--lc);background:#fff;opacity:.5;position:relative}
 .rjCell.beat{opacity:.8}
 .rjCell.bar{margin-left:6px}
@@ -9650,7 +9653,10 @@ function applyControls(o){if(!o||typeof o!=='object')return;
   // 4/4 is the decision; the step grid is a setting you touch once
   const stepLbl=document.createElement('span');stepLbl.className='sbLbl';stepLbl.textContent='step';   // "4/4 1/8" read as one odd fraction: name the second one
   bar.appendChild(grp('time sig',[grab('#drumSig')],'time signature and grid (step size)',[stepLbl,grab('#divSel')]));
-  bar.appendChild(sep());
+  {const sp=sep();sp.classList.add('sbSepBrk');bar.appendChild(sp);}
+  // TWO BALANCED ROWS when one will not do: the time things (undo, tempo, time sig, step) above, the musical setup
+  // (key, scale, kit) below. Left to wrap on its own, the kit went alone onto a second row at 1280 px.
+  {const br=document.createElement('span');br.className='sbBrk';br.setAttribute('aria-hidden','true');bar.appendChild(br);}
   // KEY — the app is scale-locked, so the key is the single biggest musical decision on screen.
   // the key moves far more often than the scale does
   bar.appendChild(grp('key',[grab('#keyTop')],'key and scale',[grab('#scaleTop')]));
@@ -9659,6 +9665,13 @@ function applyControls(o){if(!o||typeof o!=='object')return;
   // which kit, not which family of kits
   bar.appendChild(grp('kit',[grab('#drumKit')],'drum kit',[grab('#kitStyle')]));
   if(hasMore)bar.appendChild(moreAll());
+  const balance=()=>{if(bar.querySelector('.sbExp')&&bar.querySelector('.sbExp').checkVisibility())return;   // the phone strip folds instead
+    bar.classList.remove('two');const g=[...bar.querySelectorAll(':scope>.sbGrp')].filter(e=>e.checkVisibility());
+    if(g.length>1&&g[g.length-1].getBoundingClientRect().top>g[0].getBoundingClientRect().top+8)bar.classList.add('two');};
+  // the strip's width is set after this by the layout (it is narrowed to sit beside the side column), so watch the strip
+  // itself, and only a change of WIDTH re-balances (two rows change its height, which must not loop)
+  let lastW=-1;try{new ResizeObserver(()=>{const w=Math.round(bar.getBoundingClientRect().width);if(w!==lastW){lastW=w;balance();}}).observe(bar);}catch(e){addEventListener('resize',balance);}
+  balance();
   // the drum selects used to be gated behind a dimmed wrapper; in the strip they are always live
   const dc=document.getElementById('drumCtl');if(dc){dc.style.opacity='';dc.style.pointerEvents='';}
 }catch(e){console.warn('studio strip skipped:',e);}})();
