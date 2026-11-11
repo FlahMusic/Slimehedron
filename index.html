@@ -2754,7 +2754,7 @@ function initAudio(){
   hissG=AC.createGain();hissG.gain.value=0;
   hissSrc.connect(hissFilt);hissFilt.connect(hissG);hissG.connect(tapeDly);hissSrc.start();
   // ---- reverb: a room, built from noise, costing zero bytes (makeRoomIR) ----
-  rvb=AC.createConvolver();rvb.buffer=makeRoomIR(AC);
+  rvb=AC.createConvolver();buildRoomLater(AC,ir=>{rvb.buffer=ir;});
   rvbPre=AC.createBiquadFilter();rvbPre.type='highpass';rvbPre.frequency.value=380; // keep kick + bass out of the tail, or it turns to mud
   rvbWet=AC.createGain();rvbWet.gain.value=0.85;
   rvbSend=AC.createGain();rvbSend.gain.value=1;
@@ -2777,7 +2777,14 @@ function initAudio(){
 // pluck's attack dry, a few sparse early reflections give it walls, and L and R are independent noise, so it is wide.
 // The convolver normalises the IR's power, so the wet level stays where it was.
 const ROOM_RT={125:1.6,250:1.5,500:1.4,1000:1.3,2000:1.0,4000:0.75,8000:0.5,16000:0.35};
-function makeRoomIR(c){const sr=c.sampleRate,pre=0.016,len=Math.round(sr*(pre+1.05*1.6)),ir=c.createBuffer(2,len,sr);
+// BUILT IN SLICES. All at once it costs 30-60 ms of the main thread on a desktop (several times that on a phone), and
+// it is built when the audio starts, which is a child's first tap: the first note waited for it (dev-firsttouch read
+// 440 ms in the 2026-11-08 sweep, the line is 250). roomIRSteps yields after every band of every side (16 slices);
+// buildRoomLater runs one slice per timer turn and hands the finished room over. Until then the room is silent.
+function makeRoomIR(c){const it=roomIRSteps(c);let r;while(!(r=it.next()).done);return r.value;}
+function buildRoomLater(c,done){const it=roomIRSteps(c);(function step(){let r;try{r=it.next();}catch(e){oops('room: '+(e&&e.message||e));return;}
+  if(r.done)done(r.value);else setTimeout(step,0);})();}
+function* roomIRSteps(c){const sr=c.sampleRate,pre=0.016,len=Math.round(sr*(pre+1.05*1.6)),ir=c.createBuffer(2,len,sr);
   const p0=Math.round(sr*pre),fade=sr*0.004;
   for(let ch=0;ch<2;ch++){const d=ir.getChannelData(ch);
     for(const fc in ROOM_RT){if(fc>=sr*0.45)continue;const rt=ROOM_RT[fc];
@@ -2790,7 +2797,8 @@ function makeRoomIR(c){const sr=c.sampleRate,pre=0.016,len=Math.round(sr*(pre+1.
         bd[i]=v*Math.exp(-6.908*t/rt)*Math.min(1,(i-p0)/fade);}
       // random noise gives each band and side its own level by chance (a note's room leaned one way): every band gets
       // the energy white noise would give it on average (its width, fc, times its decay, rt), the same on both sides
-      let e=0;for(const q of bd)e+=q*q;const sc=Math.sqrt(rt*fc/1000/(e/sr+1e-20))*0.01;for(let i=p0;i<len;i++)d[i]+=bd[i]*sc;}
+      let e=0;for(const q of bd)e+=q*q;const sc=Math.sqrt(rt*fc/1000/(e/sr+1e-20))*0.01;for(let i=p0;i<len;i++)d[i]+=bd[i]*sc;
+      yield;}
     // early reflections: 8 single taps 5-60 ms after the pre-delay, their own times on each side
     for(let k=0;k<8;k++){const t=0.005+Math.random()*0.055,i=p0+Math.round(t*sr);if(i<len)d[i]+=(Math.random()<0.5?-1:1)*0.5*Math.exp(-t/0.05)*0.35;}}
   return ir;}

@@ -77,7 +77,8 @@ const init=()=>{try{localStorage.setItem('slimehedron-coach','1');localStorage.s
    const pass=(n,fn)=>{window._seqLog=[];for(let p=0;p<n;p++)for(let k=0;k<8;k++)seqPlay(SEQ.A[k],{i:k,row:'A',k},t0,dur);const L=window._seqLog;fn&&fn(L);return L;};
    const zero=pass(50),zeroSame=zero.every(x=>x.t===t0&&x.hit===0&&x.deg===SEQ.A[x.k].deg&&x.vel===SEQ.A[x.k].vel)&&zero.length===400;
    const res={zeroSame};
-   SEQ.mac.chance=1;{const L=pass(400);const c=[0,0,0,0,0,0,0,0];L.forEach(x=>c[x.k]++);res.chance={s1:c[0],off:[1,3,5,7].map(k=>c[k]/400),beat:[2,4,6].map(k=>c[k]/400)};}SEQ.mac.chance=0;
+   // 2000 passes, not 400: at 400 a step's share has a 2.4 % spread, so +-6 % across 7 steps failed about 1 run in 10 by chance
+   SEQ.mac.chance=1;{const L=pass(2000);const c=[0,0,0,0,0,0,0,0];L.forEach(x=>c[x.k]++);res.chance={s1:c[0],off:[1,3,5,7].map(k=>c[k]/2000),beat:[2,4,6].map(k=>c[k]/2000)};}SEQ.mac.chance=0;
    SEQ.mac.human=1;{const L=pass(400);const cap=Math.min(0.25*dur,0.03);res.human={maxOff:Math.max(...L.map(x=>Math.abs(x.t-t0))),cap,maxDv:Math.max(...L.map(x=>Math.abs(x.vel-SEQ.A[x.k].vel)))*127,spread:new Set(L.map(x=>Math.round((x.t-t0)*1000))).size};}SEQ.mac.human=0;
    SEQ.mac.wander=1;{const L=pass(400);const ch=L.filter(x=>x.deg!==SEQ.A[x.k].deg);res.wander={frac:ch.length/L.length,maxD:Math.max(0,...ch.map(x=>Math.abs(x.deg-SEQ.A[x.k].deg))),inRange:L.every(x=>x.deg>=0&&x.deg<=SEQ_DEG_MAX),same:JSON.stringify([SEQ.A,SEQ.B])===before};}SEQ.mac.wander=0;
    SEQ.mac.repeat=1;{const L=pass(400);const groups={};L.forEach(x=>{const key=Math.round((x.t-t0-(x.hit?0:0))*1e6);});
@@ -86,8 +87,8 @@ const init=()=>{try{localStorage.setItem('slimehedron-coach','1');localStorage.s
      res.repeat={frac:multi/steps,maxN,minGap,firsts};}SEQ.mac.repeat=0;
    playSynth=P0;sendMidiAt=M0;return res;});
  ok(st.zeroSame,'4. all four at 0 %: nothing moves, nothing drops, nothing repeats (400 notes as written)');
- ok(st.chance.s1===400&&st.chance.off.every(f=>Math.abs(f-0.4)<0.06)&&st.chance.beat.every(f=>Math.abs(f-0.7)<0.06),
-   '4. chance 100 %: step 1 every time ('+st.chance.s1+'/400), off-beats ~40 % ('+st.chance.off.map(f=>Math.round(f*100)).join(' ')+'), beats ~70 % ('+st.chance.beat.map(f=>Math.round(f*100)).join(' ')+')');
+ ok(st.chance.s1===2000&&st.chance.off.every(f=>Math.abs(f-0.4)<0.06)&&st.chance.beat.every(f=>Math.abs(f-0.7)<0.06),
+   '4. chance 100 %: step 1 every time ('+st.chance.s1+'/2000), off-beats ~40 % ('+st.chance.off.map(f=>Math.round(f*100)).join(' ')+'), beats ~70 % ('+st.chance.beat.map(f=>Math.round(f*100)).join(' ')+')');
  ok(st.human.maxOff<=st.human.cap+1e-9&&st.human.maxDv<=24.01&&st.human.spread>=20,'4. humanize 100 %: timing within '+(st.human.cap*1000).toFixed(0)+' ms (worst '+(st.human.maxOff*1000).toFixed(1)+'), velocity within 24 (worst '+st.human.maxDv.toFixed(1)+'), and it really varies ('+st.human.spread+' different offsets)');
  ok(Math.abs(st.wander.frac-0.25)<0.04&&st.wander.maxD<=2&&st.wander.maxD>=2&&st.wander.inRange&&st.wander.same,'4. wander 100 %: ~25 % of notes move ('+Math.round(st.wander.frac*100)+' %), 1-2 degrees at most, in range, and the pattern itself is unchanged');
  ok(Math.abs(st.repeat.frac-0.35)<0.05&&st.repeat.maxN<=4&&st.repeat.maxN>=3&&st.repeat.minGap>=0.03-1e-9,'4. repeat 100 %: ~35 % of steps stutter ('+Math.round(st.repeat.frac*100)+' %), 2-'+st.repeat.maxN+' hits, never under 30 ms apart ('+(st.repeat.minGap*1000).toFixed(1)+' ms)');
