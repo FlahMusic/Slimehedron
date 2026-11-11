@@ -75,3 +75,12 @@ drawtanktest: ../core/drawtank.c ../core/drawtank.h ../core/paint.h $(TANKSRC) .
 draw: drawtanktest
 	./drawtanktest .
 .PHONY: draw
+
+# portal space: the web's dev-portal checks as numbers, on the light goo
+portaltest: $(TANKSRC) ../core/tank.h ../core/goo.h portaltest.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -fsingle-precision-constant -c -o goo_light.o ../core/goo.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -o $@ ../core/tank.c ../core/music.c ../core/melody.c goo_light.o portaltest.c -lm
+
+portal: portaltest
+	./portaltest
+.PHONY: portal

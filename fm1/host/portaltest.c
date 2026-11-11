@@ -1,0 +1,110 @@
+/* Host test of portal space in the FM-1 core (core/tank.c), the web's own checks (_dev/dev-portal.js) as numbers:
+ *   2  both holes lie on a wall, inside it, open at rest, and never overlap
+ *   3  a ball that meets a hole goes in silently, is never lost, and comes out of the OTHER hole: just off its wall,
+ *      heading away from it, at the speed it went in, inside the tank, ringing the wall it came out of
+ *   4  anywhere else a ball bounces and rings, as always
+ *   5  the holes slide in the first part of each beat and rest in the rest, visit more than one wall, glide (never
+ *      jump), and shrink to slip round a corner
+ *   6  a busy portal tank: no ball ever lost, some go through, most notes are plain bounces
+ *   0  normal space has no holes (and stays the plugin's, number for number: check-tank.js)
+ * Prints PASS/FAIL; exit 1 on a fail.   portaltest */
+#include <stdio.h>
+#include <math.h>
+#include "../core/tank.h"
+
+static sh_tank T; static int fails = 0;
+static void ok(int c, const char *m) { printf("  %s  %s\n", c ? "PASS" : "FAIL", m); if (!c) fails++; }
+static long tick = 0;
+static int step1(double bpm) { int n = sh_tank_tick(&T, tick * SH_FIXED, bpm, 1); tick++; return n; }
+static sh_tank_settings portal(void) { sh_tank_settings s = sh_tank_defaults(); s.space = SH_SPACE_PORTAL; s.auto_notes = 0; s.chaos = 0; return s; }
+static double beat_frac(double bpm) { double b = tick * SH_FIXED / 60000.0 * bpm; return b - floor(b); }
+
+int main(void) {
+  char m[300];
+  /* ---- 0: normal space has none */
+  { sh_tank_settings s = sh_tank_defaults(); s.auto_notes = 0; sh_tank_init(&T, s, 1); sh_tank_start(&T, 0); tick = 0;
+    for (int i = 0; i < 300; i++) step1(80);
+    ok(!T.worm_on && T.worm[0].rad == 0 && T.worm[1].rad == 0, "0  a normal tank has no wormholes"); }
+  /* ---- 2: on the walls, inside them, open at rest, apart */
+  const double bpm = 60;
+  sh_tank_init(&T, portal(), 3); sh_tank_start(&T, 0); tick = 0;
+  for (int i = 0; i < 150; i++) step1(bpm);
+  while (beat_frac(bpm) < 0.7) step1(bpm);   /* at rest */
+  { double off = 0, rmin = 1e9; int inside = 1;
+    for (int i = 0; i < 2; i++) { const sh_worm *P = &T.worm[i]; const sh_wall *e = &T.walls[P->wall];
+      double d = fabs((P->x + SH_TCX - e->ax) * e->nx + (P->y + SH_TCY - e->ay) * e->ny), ex = e->bx - e->ax, ey = e->by - e->ay;
+      double u = ((P->x + SH_TCX - e->ax) * ex + (P->y + SH_TCY - e->ay) * ey) / (ex * ex + ey * ey);
+      if (d > off) off = d;
+      if (u < 0 || u > 1) inside = 0;
+      if (P->rad < rmin) rmin = P->rad; }
+    snprintf(m, sizeof m, "2  both holes lie on a wall, inside it (%.2f px off at most)", off); ok(off < 0.6 && inside, m);
+    snprintf(m, sizeof m, "   both are open at rest (%.0f px at least; a ball is %.0f)", rmin, SH_BR); ok(rmin > SH_BR * 1.4, m); }
+  { double apart = 1e9;
+    for (int i = 0; i < 8 * 60; i++) { step1(bpm); const sh_worm *A = &T.worm[0], *B = &T.worm[1];
+      double d = sqrt((A->x - B->x) * (A->x - B->x) + (A->y - B->y) * (A->y - B->y) + (A->z - B->z) * (A->z - B->z)) - A->rad - B->rad;
+      if (d < apart) apart = d; }
+    snprintf(m, sizeof m, "   and over 8 beats they never overlap (%.1f px between their rims at the closest)", apart); ok(apart >= 0, m); }
+  /* ---- 3: in one, out of the other */
+  while (beat_frac(bpm) < 0.62 || beat_frac(bpm) > 0.66) step1(bpm);
+  { const sh_worm *A = &T.worm[0]; double sp = (bpm / 80.0) * 3.4, z = A->z / SH_TBOXD + 0.5;
+    sh_tank_add_ball_at(&T, SH_TCX + A->x + A->n[0] * 24, SH_TCY + A->y + A->n[1] * 24, z, -A->n[0] * sp, -A->n[1] * sp, 0.0);
+    int went = 0, noteIn = 0, lost = 0, out = 0, outNote = 0; double outCents = 0, across = 0, along = 0, head = 0, spOut = 0; int insideT = 0; sh_worm Bq = T.worm[1];
+    for (int i = 0; i < 400 && !out; i++) {
+      int was = T.balls[T.nb - 1].warp, nh = step1(bpm); if (T.nb != 1) lost = 1;
+      const sh_ball *b = &T.balls[0];
+      if (!was && b->warp) { went = 1; noteIn = nh; }
+      if (was && !b->warp) { out = 1; Bq = T.worm[1];
+        for (int k = 0; k < nh; k++) if (!T.hits[k].pane) { outNote++; outCents = T.hits[k].cents; }
+        double rx = b->x - SH_TCX - Bq.x, ry = b->y - SH_TCY - Bq.y, rz = (b->z - 0.5) * SH_TBOXD - Bq.z;
+        along = rx * Bq.n[0] + ry * Bq.n[1] + rz * Bq.n[2];
+        double ax = rx - along * Bq.n[0], ay = ry - along * Bq.n[1], az = rz - along * Bq.n[2]; across = sqrt(ax * ax + ay * ay + az * az);
+        spOut = sqrt(b->vx * b->vx + b->vy * b->vy); head = (b->vx * Bq.n[0] + b->vy * Bq.n[1]) / spOut;
+        insideT = sh_tank_inside(&T, b->x, b->y); } }
+    snprintf(m, sizeof m, "3  a ball that meets a hole goes in, silently (%d notes as it went)", noteIn); ok(went && noteIn == 0, m);
+    ok(!lost, "   and it is never lost: the tank still holds it the whole time");
+    snprintf(m, sizeof m, "   it comes out of the OTHER hole (%.1f px from its middle, %.1f px out from its wall)", across, along);
+    ok(out && across < Bq.rad && fabs(along - (SH_BR + 1.5)) < SH_BR, m);
+    snprintf(m, sizeof m, "   heading away from that wall (%.2f), at the speed it went in at (%.2f vs %.2f)", head, spOut, sp);
+    ok(out && head > 0.5 && fabs(spOut - sp) < sp * 0.05, m);
+    ok(out && insideT, "   inside the tank");
+    snprintf(m, sizeof m, "   ringing the wall it came out of (%d note, %.0f cents; the wall %.0f)", outNote, outCents, Bq.cents);
+    ok(outNote >= 1 && fabs(outCents - Bq.cents) < 0.01, m); }
+  /* ---- 4: anywhere else, a bounce */
+  { T.nb = 0; while (beat_frac(bpm) < 0.62 || beat_frac(bpm) > 0.66) step1(bpm);
+    int w = 0; while (w == T.worm[0].wall || w == T.worm[1].wall) w++;
+    const sh_wall *e = &T.walls[w]; double mx = (e->ax + e->bx) / 2, my = (e->ay + e->by) / 2, sp = (bpm / 80.0) * 3.4;
+    sh_tank_add_ball_at(&T, mx + e->nx * 24, my + e->ny * 24, 0.5, -e->nx * sp, -e->ny * sp, 0.0);
+    int warped = 0, note = 0, turned = 0;
+    for (int i = 0; i < 40; i++) { int nh = step1(bpm); if (T.balls[0].warp) warped = 1;
+      for (int k = 0; k < nh; k++) if (T.hits[k].wall == w) note = 1;
+      if (T.balls[0].vx * e->nx + T.balls[0].vy * e->ny > 0) turned = 1; }
+    ok(!warped && turned && note, "4  anywhere else on the walls a ball bounces and rings, as always"); T.nb = 0; }
+  /* ---- 5: the glide */
+  { double early = 0, late = 0, maxStep = 0, rmax = fmin(84.0, SH_TBOXD * 0.24), cornerMin = 1e9; int seen[2][SH_MAXWALLS] = { { 0 } };
+    double px[2], py[2], pz[2]; int pw[2];
+    for (int i = 0; i < 2; i++) { px[i] = T.worm[i].x; py[i] = T.worm[i].y; pz[i] = T.worm[i].z; pw[i] = T.worm[i].wall; }
+    for (int i = 0; i < 8 * 60; i++) { double f = beat_frac(bpm); step1(bpm);
+      for (int h = 0; h < 2; h++) { const sh_worm *P = &T.worm[h];
+        double d = sqrt((P->x - px[h]) * (P->x - px[h]) + (P->y - py[h]) * (P->y - py[h]) + (P->z - pz[h]) * (P->z - pz[h]));
+        if (f < 0.6) early += d; else late += d;
+        if (d > maxStep) maxStep = d;
+        if (P->wall != pw[h] && P->rad < cornerMin) cornerMin = P->rad;
+        seen[h][P->wall] = 1; px[h] = P->x; py[h] = P->y; pz[h] = P->z; pw[h] = P->wall; } }
+    int v0 = 0, v1 = 0; for (int w = 0; w < SH_MAXWALLS; w++) { v0 += seen[0][w]; v1 += seen[1][w]; }
+    snprintf(m, sizeof m, "5  the holes slide in the first part of each beat and rest in the rest (%.0f px vs %.0f px)", early, late); ok(early > late * 4, m);
+    snprintf(m, sizeof m, "   over 8 beats each visits more than one wall (%d, %d)", v0, v1); ok(v0 >= 2 && v1 >= 2, m);
+    snprintf(m, sizeof m, "   gliding, not jumping (largest move in one tick %.1f px)", maxStep); ok(maxStep < rmax * 0.6, m);
+    snprintf(m, sizeof m, "   and a hole shrinks to slip round a corner (down to %.0f of %.0f px where it changes wall)", cornerMin, rmax); ok(cornerMin < rmax * 0.35, m); }
+  /* ---- 6: busy */
+  { sh_tank_settings s = portal(); s.chaos = 0.12; sh_tank_init(&T, s, 9); sh_tank_start(&T, 0); tick = 0;
+    for (int i = 0; i < 8; i++) sh_tank_add_ball(&T);
+    int lost = 0, warps = 0, hits = 0; int was[SH_BALLCAP] = { 0 };
+    for (int i = 0; i < 14 * 60; i++) { int nh = step1(80); if (T.nb != 8) lost = 1;
+      for (int k = 0; k < nh; k++) if (!T.hits[k].pane) hits++;
+      for (int k = 0; k < T.nb; k++) { if (T.balls[k].warp && !was[k]) warps++; was[k] = T.balls[k].warp; } }
+    snprintf(m, sizeof m, "6  14 s of a busy portal tank: every ball still there at every look (%d balls)", T.nb); ok(!lost && T.nb == 8, m);
+    snprintf(m, sizeof m, "   some went through a wormhole (%d)", warps); ok(warps >= 1, m);
+    snprintf(m, sizeof m, "   and most notes are plain bounces (%d trips, %d wall notes)", warps, hits); ok(warps < hits * 0.4, m); }
+  printf(fails ? "FAILED: %d\n" : "the FM-1 tank's wormholes behave like the web's\n", fails);
+  return fails ? 1 : 0;
+}

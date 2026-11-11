@@ -215,6 +215,7 @@ static void wake(sh_goo *g, const sh_ball *balls, int nb) {
   greal reach = SH_BR + PR + 6.0;
   for (int bi = 0; bi < nb; bi++) {
     const sh_ball *b = &balls[bi];
+    if (b->warp) continue;   /* a ball in a wormhole is not in the tank */
     greal bx = (greal)b->x, by = (greal)b->y, bz = (greal)b->z, bvx = (greal)b->vx, bvy = (greal)b->vy;
     greal vz = (greal)b->vz * SH_TBOXD;
     for (int i = 0; i < g->n; i++) {

@@ -2,7 +2,8 @@
  * (GPL-3.0-or-later). The web's canvas 3D view (index.html: draw3D, P3, drawBalls3D, drawGoo3D) at 240 px: the box
  * seen through a turning camera, its back pane in lilac glass with the balls' shadows on it, each wall a glass pane in
  * its note's colour (lit when struck), the corner rails, the goo inside, the balls back to front (a near ball is
- * bigger, a far one hazier), then the front rim in the walls' colours on top. An open wall is not drawn.
+ * bigger, a far one hazier), then the front rim in the walls' colours on top. An open wall is not drawn. In portal
+ * space the two wormholes lie on their walls (pink and teal, the web's), and a ball inside one is not drawn.
  * st_view_prepare() once a frame (project everything), st_draw_band() per band, like sh_draw_band(). */
 #ifndef SH_DRAWTANK_H
 #define SH_DRAWTANK_H
@@ -11,6 +12,7 @@
 
 #define ST_K    0.30f      /* web px to FM-1 px: the web's 720 px tank, R 300, drawn ~90 px from the middle */
 #define ST_CAM  1000.0f    /* the web's camera distance (the back of the box shows at ~74% size) */
+#define ST_HOLE 20         /* points round a wormhole's rim */
 
 typedef struct {
   float fx[SH_MAXWALLS], fy[SH_MAXWALLS], bx[SH_MAXWALLS], by[SH_MAXWALLS];   /* each corner at the front and the back */
@@ -18,6 +20,7 @@ typedef struct {
   float x[SH_BALLCAP], y[SH_BALLCAP], r[SH_BALLCAP], z[SH_BALLCAP], sx[SH_BALLCAP], sy[SH_BALLCAP], sr[SH_BALLCAP];
   uint16_t bc[SH_BALLCAP]; int order[SH_BALLCAP], nb;                         /* balls, drawn back to front */
   float dx[SH_GOO_MAXD], dy[SH_GOO_MAXD], dr[SH_GOO_MAXD]; uint8_t dpool[SH_GOO_MAXD]; int nd;
+  float hx[2][ST_HOLE], hy[2][ST_HOLE]; int hn[2]; uint16_t hrim[2], hdeep[2];   /* the wormholes, on their walls */
   uint16_t goo, pane;
   float pymin, pymax;      /* the box's rows on screen */
 } st_view;

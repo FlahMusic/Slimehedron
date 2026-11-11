@@ -24,9 +24,9 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
 |---|---|---|
 | 01 | Solids: planes, faces, cut/flip/puff, orbs (`core/solid.c`), banded renderer (`core/draw.c`) | done (00354f4, 69e746a) |
 | 02 | CURVED SPACE: the hyperbolic tank, walls as arcs, the ball step (`core/space.c`), and its look with the mirrored copies (`core/drawspace.c`) | done (this pass) |
-| 03 | PORTAL SPACE: two wormholes gliding round the walls with the beat; a ball drawn in and spat out (web: wormPlace, wormEnter, wormExit, wormPull) | open |
+| 03 | PORTAL SPACE: two wormholes gliding round the walls with the beat; a ball drawn in and spat out (web: wormPlace, wormEnter, wormExit, wormPull) | done (this pass): the web's dev-portal checks as numbers |
 | 04 | The tank tick in normal space: 2D plus depth, walls as notes, beat lock, quantize hold, auto-notes, open walls (`core/tank.c`, `core/music.c`) | done (this pass): every number the plugin's |
-| 05 | 2.5D look for normal and portal space: front and back outline, near faces tinted, z-sized balls with floor shadows, banded, redraw only changed bands | normal space done (this pass, `core/drawtank.c`); portal's wormholes come with 03; redrawing only changed bands open (needs fm1-emu to be worth measuring) |
+| 05 | 2.5D look for normal and portal space: front and back outline, near faces tinted, z-sized balls with floor shadows, banded, redraw only changed bands | normal and portal space done (this pass, `core/drawtank.c`); redrawing only changed bands open (needs fm1-emu to be worth measuring) |
 | 06 | Music logic: the auto-notes melody (`core/melody.c`: the web's 6000 golden notes note for note, every random number used; sabotaged 3 ways) | melody done; the chord brain and pane chords open |
 | 07 | The goo, lighter but real: a capped particle count plus a level; it must still slow balls and soften notes | done (this pass): the light goo, 94 KB, plays like the plugin's by statistics |
 | 08 | Firmware base: fork SLOOP, its toolchain (Docker), fm1-emu as the bench; the CPU budget per sound and golden render hashes (Felucca's discipline) | open |
@@ -101,5 +101,25 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
 - Sabotaged 3 ways, each caught: drops near a band's top left out (seams), each wall in the next note's colour (rim;
   the first version compared the pixel with the view's own colour and missed it, so it now asks the tank), no
   perspective (near/far size).
-- NOT CHECKED BY A MACHINE: whether it reads well on the real screen (`fm1/host/tank0..2.png`), the goo's look (a hard
+- NOT CHECKED BY A MACHINE: whether it reads well on the real screen (`fm1/host/tank0..3.png`), the goo's look (a hard
   mint mass; the web blurs its blobs), the speed on the RP2350.
+
+## Ticket 03 (portal space), as built
+- `core/tank.c`: the web's wormPlace, wormTick, wormAt, wormEnter, wormExit and wormPull for the 3D box (settings
+  `space = SH_SPACE_PORTAL`). Two holes rest mid-wall and glide to a neighbouring wall on every beat (the slide in the
+  first 60% of the beat, eased; mostly the same way round; never both to one wall; drifting front to back), shrinking to
+  slip round corners and making room for each other on one wall. A ball meeting a hole is gone for half a beat
+  (240-520 ms) and comes out of the other one at its speed, its heading across the wall carried over, ringing that wall.
+  Near a hole a ball heading for its wall bends toward it. Off (normal space) it takes no random numbers, so the normal
+  tank still matches the plugin number for number (check-tank, both goo builds).
+- The plugin has no portal space, so there is nothing to match number for number: `fm1/host/portaltest.c`
+  (`wsl make -C fm1/host portal`) runs the web's own checks (`_dev/dev-portal.js` 2-6) as numbers: holes on a wall and
+  inside it, open at rest (84 px), never overlapping; in silently, never lost, out of the OTHER hole 10.5 px off its wall,
+  heading away at the same speed, inside the tank, ringing its wall; a bounce anywhere else; the glide (4927 px moved in
+  the first 60% of the beats against 10 in the rest, 6 walls visited, 13.6 px the largest step a tick, 29 of 84 px at a
+  corner); 14 s busy: no ball lost, 2 trips among 56 wall notes.
+- Sabotaged 4 ways, each caught: out of the same hole, gliding all beat long, no ball ever going in, the wrong speed out.
+- The look (`drawtank.c`): each hole a disc on its wall's plane in the web's colours (deep purple rimmed pink, deep
+  blue rimmed teal), a ball inside one not drawn. drawtanktest: two drawn, each standing out against the same frame with
+  them hidden (colour change 1.18 and 1.22; sabotaged: holes barely drawn, caught), none in a normal tank.
+- Left out (visual only): the ball's spiral in and its swell out (wormView), the holes' pulse before a spit.

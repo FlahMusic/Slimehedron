@@ -34,14 +34,24 @@ void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0,
     v->wc[i] = pastel(hue0 + (td > 0 ? (float)e->deg / (float)td : 0), 0.38f + 0.3f * v->lit[i], 0.97f);
     v->open[i] = e->broken && !(e->reform > 0);                          /* an open gap is not drawn */
   }
-  v->nb = t->nb;
-  for (int i = 0; i < t->nb; i++) {
-    const sh_ball *b = &t->balls[i];
+  for (int h = 0; h < 2; h++) {   /* a wormhole: a disc in its wall's plane, across the wall and front to back */
+    const sh_worm *P = &t->worm[h]; v->hn[h] = 0;
+    if (!t->worm_on || P->rad < SH_BR) continue;
+    for (int k = 0; k < ST_HOLE; k++) { float a = 6.2831853f * (float)k / ST_HOLE, c = cosf(a) * (float)P->rad, sn = sinf(a) * (float)P->rad;
+      p3(M, SH_TCX + P->x + P->t1[0] * c, SH_TCY + P->y + P->t1[1] * c, (P->z + sn) / SH_TBOXD + 0.5, &v->hx[h][k], &v->hy[h][k], &s); }
+    v->hn[h] = ST_HOLE; }
+  v->hrim[0] = rgb565(255 / 255.0f, 156 / 255.0f, 207 / 255.0f); v->hdeep[0] = rgb565(122 / 255.0f, 69 / 255.0f, 200 / 255.0f);   /* the web's WORMC */
+  v->hrim[1] = rgb565(134 / 255.0f, 232 / 255.0f, 214 / 255.0f); v->hdeep[1] = rgb565(47 / 255.0f, 116 / 255.0f, 196 / 255.0f);
+  v->nb = 0;
+  for (int bi = 0; bi < t->nb; bi++) {
+    const sh_ball *b = &t->balls[bi];
+    if (b->warp) continue;   /* in the other dimension: not drawn */
+    int i = v->nb++;
     p3(M, b->x, b->y, b->z, &v->x[i], &v->y[i], &s);
     v->r[i] = (float)SH_BR * s * 1.5f; v->z[i] = (float)b->z;            /* a touch bigger than the web's: 240 px */
     p3(M, b->x, b->y, 1.0, &v->sx[i], &v->sy[i], &s);                    /* its shadow on the back pane */
     v->sx[i] += 3.0f * ST_K; v->sy[i] += 5.0f * ST_K; v->sr[i] = (float)SH_BR * s * 1.05f;
-    v->bc[i] = pastel(ballHue ? ballHue[i] : hue0 + 0.618f * (float)i, 0.6f, 0.98f);
+    v->bc[i] = pastel(ballHue ? ballHue[b - t->balls] : hue0 + 0.618f * (float)(b - t->balls), 0.6f, 0.98f);
     int k = i; while (k > 0 && v->z[v->order[k - 1]] < v->z[i]) { v->order[k] = v->order[k - 1]; k--; }   /* far first */
     v->order[k] = i;
   }
@@ -76,6 +86,9 @@ void st_draw_band(const st_view *v, int y0, int rows, uint16_t *buf, uint16_t bg
       paint_poly_row(qx, qy, 4, yc, row, v->wc[i], 0.16f + 0.3f * v->lit[i]); }
     for (int i = 0; i < v->n; i++) paint_seg_row(v->fx[i], v->fy[i], v->bx[i], v->by[i], 1.0f, yc, row, white, 0.55f);   /* rails */
     for (int i = 0; i < v->n; i++) { int j = (i + 1) % v->n; if (!v->open[i]) paint_seg_row(v->bx[i], v->by[i], v->bx[j], v->by[j], 1.1f, yc, row, v->wc[i], 0.7f); }
+    for (int h = 0; h < 2; h++) if (v->hn[h]) {                                                       /* the wormholes, on the walls */
+      paint_poly_row(v->hx[h], v->hy[h], v->hn[h], yc, row, v->hdeep[h], 0.85f);
+      for (int k = 0; k < v->hn[h]; k++) { int j = (k + 1) % v->hn[h]; paint_seg_row(v->hx[h][k], v->hy[h][k], v->hx[h][j], v->hy[h][j], 1.2f, yc, row, v->hrim[h], 0.9f); } }
     for (int q = 0; q < nd; q++) { int k = dl[q];                                                  /* the goo, then its spray */
       DISC_ROW(v->dx[k], v->dy[k], v->dr[k], yc, row[px] = v->dpool[k] ? mix565(row[px], v->goo, 0.92f) : mix565(row[px], v->goo, 0.6f);); }
     for (int o = 0; o < v->nb; o++) { int i = v->order[o]; float R = v->r[i], hz = 1.0f - 0.3f * v->z[i];   /* balls, far first */

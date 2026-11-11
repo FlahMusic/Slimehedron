@@ -37,7 +37,10 @@ typedef struct {
   double chaos;                   /* how far a bounce knocks a ball off its angle */
   int vel_rand; int vel_fix, vel_min, vel_max;
   int auto_notes;
+  int space;                      /* SH_SPACE_NORMAL, or SH_SPACE_PORTAL: two wormholes glide round the walls */
 } sh_tank_settings;
+#define SH_SPACE_NORMAL 0
+#define SH_SPACE_PORTAL 1
 
 /* studio with the slime on, at the plugin's start state */
 sh_tank_settings sh_tank_defaults(void);
@@ -62,7 +65,19 @@ typedef struct sh_ball {
   uint32_t bl;
   double last_hit, last_pane; uint32_t pane_n;
   double visc;                    /* how thick a goo this ball tolerates (0 = not met it yet) */
+  /* in a wormhole (portal space): which hole it went into, when, for how long, and the frame it is carried across in */
+  int warp, wa; double wt0, wdur, wc[3], wn[3], wt1[3], wv[3], wspd;
+  double spit;                    /* when it last came out of one (the draw swells it back), or -inf */
 } sh_ball;
+
+/* a wormhole (portal space): it rests mid-wall and glides to a neighbouring wall on every beat */
+typedef struct {
+  double x, y, z, n[3], t1[3];    /* where it is (box-local, from the middle), its wall's inward normal, along the wall */
+  double rad, want, cents;        /* how open it is, how open it is going to be (px), its wall's note */
+  int wall, from, at, dir;        /* its wall now; the walls it is gliding from and to; which way round it tends */
+  double za, zb;                  /* its depth gliding from, to */
+  double suck, spit, pre;         /* for the draw: just swallowed a ball, just spat one, about to */
+} sh_worm;
 
 typedef struct {
   sh_tank_settings s;
@@ -79,6 +94,7 @@ typedef struct {
   sh_melody melody; int has_mel_next; double mel_next; uint64_t mel_step_n;
   int aim_deg;
   double phi;                     /* the view's slow lean: the balls fall toward its "down" as the goo grows heavy */
+  int worm_on, worm_key; int64_t worm_beat; double worm_open; sh_worm worm[2];   /* portal space */
   sh_goo goo;
 } sh_tank;
 

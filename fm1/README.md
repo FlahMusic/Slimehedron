@@ -24,5 +24,7 @@ Plan and open questions: `_docs/specs/2026-11-03-fm1-firmware/brief.md`, `_docs/
 - `core/drawtank.c`: the normal tank drawn 2.5D (the web's canvas 3D view) in bands; `core/paint.h` the pixel helpers
   all three renderers share. `wsl make -C fm1/host draw && node fm1/host/check-drawtank.js` checks three camera turns and
   writes `host/tank0..2.png`.
+- Portal space (`space = SH_SPACE_PORTAL` in the tank's settings): `wsl make -C fm1/host portal` runs the web's own
+  portal checks (dev-portal) as numbers; `host/tank3.png` is a portal frame.
 - The port's tickets: `_docs/specs/2026-11-11-fm1-port/spec.md`. The firmware base is SLOOP (Flah 2026-11-11); the
   device build comes with it (ticket 08). Never flash Flah's FM-1 without asking.

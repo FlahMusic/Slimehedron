@@ -84,6 +84,29 @@ int main(int argc, char **argv) {
     for (int p = 0; p < SH_SCREEN * SH_SCREEN; p++) { uint16_t q = FRAME[p]; unsigned char c[3] = { (unsigned char)((q >> 11) * 255 / 31), (unsigned char)(((q >> 5) & 63) * 255 / 63), (unsigned char)((q & 31) * 255 / 31) }; fwrite(c, 1, 3, fp); }
     fclose(fp);
   }
+  /* PORTAL: the normal tank above drew no holes; a portal tank draws two, each standing out where it is (the web's
+   * dev-portal 7: against the same frame with the holes hidden) */
+  { char m[200]; snprintf(m, sizeof m, "a normal tank draws no wormholes (%d, %d)", V.hn[0], V.hn[1]); ok(!V.hn[0] && !V.hn[1], m);
+    sh_tank_settings ps = sh_tank_defaults(); ps.space = SH_SPACE_PORTAL;
+    sh_tank_init(&T, ps, 5); sh_tank_start(&T, 0.0);
+    long i = 0; for (; i < 600; i++) sh_tank_tick(&T, i * SH_FIXED, 80.0, 1);
+    for (; ; i++) { double b = i * SH_FIXED / 60000.0 * 80.0; if (b - floor(b) > 0.7) break; sh_tank_tick(&T, i * SH_FIXED, 80.0, 1); }   /* at rest */
+    float M[9]; st_tumble(0.5f, 0.3f, M); st_view_prepare(&V, &T, M, 0.0f, bh);
+    st_draw_band(&V, 0, SH_SCREEN, WHOLE, bg);
+    int hn[2] = { V.hn[0], V.hn[1] }; float cx[2] = { 0, 0 }, cy[2] = { 0, 0 };
+    for (int h = 0; h < 2; h++) { for (int k = 0; k < V.hn[h]; k++) { cx[h] += V.hx[h][k]; cy[h] += V.hy[h][k]; } if (V.hn[h]) { cx[h] /= V.hn[h]; cy[h] /= V.hn[h]; } }
+    V.hn[0] = V.hn[1] = 0; st_draw_band(&V, 0, SH_SCREEN, FRAME, bg); V.hn[0] = hn[0]; V.hn[1] = hn[1];
+    snprintf(m, sizeof m, "portal: two wormholes are drawn (%d, %d points)", hn[0], hn[1]); ok(hn[0] && hn[1], m);
+    float diff[2] = { 0, 0 };
+    for (int h = 0; h < 2; h++) { int px = (int)cx[h], py = (int)cy[h]; if (px < 0 || py < 0 || px >= SH_SCREEN || py >= SH_SCREEN) continue;
+      float r0, g0, b0, r1, g1, b1; rgb(WHOLE[py * SH_SCREEN + px], &r0, &g0, &b0); rgb(FRAME[py * SH_SCREEN + px], &r1, &g1, &b1);
+      diff[h] = fabsf(r0 - r1) + fabsf(g0 - g1) + fabsf(b0 - b1); }
+    snprintf(m, sizeof m, "portal: each one clearly stands out where it is (colour change %.2f, %.2f against the frame without them)", diff[0], diff[1]);
+    ok(diff[0] > 0.3f && diff[1] > 0.3f, m);
+    FILE *fp = fopen("tank3.ppm", "wb");
+    if (fp) { fprintf(fp, "P6 %d %d 255\n", SH_SCREEN, SH_SCREEN);
+      for (int p = 0; p < SH_SCREEN * SH_SCREEN; p++) { uint16_t q = WHOLE[p]; unsigned char c[3] = { (unsigned char)((q >> 11) * 255 / 31), (unsigned char)(((q >> 5) & 63) * 255 / 63), (unsigned char)((q & 31) * 255 / 31) }; fwrite(c, 1, 3, fp); }
+      fclose(fp); } }
   printf("view %zu bytes, band %zu bytes\n", sizeof V, sizeof BAND);
   printf(fails ? "FAILED: %d\n" : "the tank draws right from every turn\n", fails);
   return fails ? 1 : 0;
