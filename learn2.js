@@ -139,7 +139,7 @@ const LANG={
     u_high:'High and Low', u_highSub:'high notes and low notes \u2014 pitch',
     u_notes:'Five Notes', u_notesSub:'do re mi so la \u2014 the major pentatonic',
     u_home:'The Home Note', u_homeSub:'the note a melody comes home to \u2014 the tonic',
-    u_steps:'Step or Jump', u_stepsSub:'how a melody moves \u2014 steps and skips',
+    u_steps:'Step or Skip', u_stepsSub:'how a melody moves \u2014 steps and skips',
     u_newhome:'A New Home Note', u_newhomeSub:'same five sounds, a new home \u2014 the relative minor',
     u_majorscale:'Seven Notes', u_majorscaleSub:'add fa, then ti \u2014 the major scale',
     u_brightdark:'Bright and Dark', u_brightdarkSub:'one note sets the mood \u2014 major and minor',
@@ -167,7 +167,7 @@ const LANG={
     nt_name:'DO RE MI SO LA \u2014 five notes. That is the MAJOR PENTATONIC SCALE.',
     home_do:'Tap the note that finishes it.',
     home_name:'The note a melody rests on is the TONIC. Here it is DO.',
-    steps_do:'Go up one note at a time.',
+    steps_hear:'Two notes, one after the other.', steps_do:'Was it a step or a skip?', st_step:'step', st_skip:'skip',
     steps_name:'To the next note is a STEP. Jumping over one is a SKIP.',
     sad_do:'Tap the note you hear.',
     sad_name:'Same five sounds, a new tonic. That is the MINOR PENTATONIC.',
@@ -1549,15 +1549,25 @@ function homeUnit(){
     pick:()=>Math.random()<0.5?DEG.do:5,
     play:leanHome});
 }
-// ---------- 6. STEPS AND SKIPS -- walk up the ladder one rung at a time ----------
+// ---------- 6. STEP OR SKIP -- how a melody moves ----------
+// It was a ladder: hear where you are and the next note, then find that note's rung. That asked "which note" (the
+// lessons before it already do) and its own words said "go up one note at a time" while the notes went down and
+// skipped too. The question is now the idea itself (logic pass): two notes, was it a STEP (to the next rung) or a
+// SKIP (over one)? Up and down both, anywhere on the five notes. The ruler shows the two notes after the answer.
 function stepsUnit(){
-  let from=2;                                  // start in the middle so both directions are available
-  ladderUnit({id:'steps',title:'u_steps',doIt:'steps_do',name:'steps_name',
-    use:[0,1,2,3,4],need:5,showTarget:false,
-    pick:()=>{const o=[from-2,from-1,from+1,from+2].filter(d=>d>=0&&d<=4);
-      return o[(Math.random()*o.length)|0];},  // a step (next rung) or a skip (over one), either way
-    correct:(d,tg)=>{const ok=(d===tg);if(ok)from=tg;return ok;},
-    play:(d)=>{sing(from,84,.42);later(()=>sing(d,94,.5),500);}});  // where you are, then where to go
+  let q=null, last=[2,3];                      // this question's two rungs; the last two played (for the ruler)
+  const pairFor=v=>{const k=v==='skip'?2:1;
+    const opts=[];for(let a=0;a<=4;a++)for(const s of [k,-k])if(a+s>=0&&a+s<=4)opts.push([a,a+s]);
+    return opts[(Math.random()*opts.length)|0];};
+  choiceUnit({id:'steps',title:'u_steps',hear:'steps_hear',doIt:'steps_do',name:'steps_name',
+    need:5,
+    opts:[{v:'step',label:'st_step',tint:'#9fe6cf'},{v:'skip',label:'st_skip',tint:'#c4a9f5'}],
+    pick:()=>Math.random()<0.5?'step':'skip',
+    onAsk:(v)=>{q={v,pair:pairFor(v)};},
+    art:()=>last.map(d=>((Math.round(degCents(d)/100)%12)+12)%12),
+    // "listen" again replays this question's two notes; exploring, each press is a fresh example
+    play:(v)=>{const pr=(q&&q.v===v)?q.pair:pairFor(v);last=pr;
+      sing(pr[0],88,.45);later(()=>sing(pr[1],94,.55),560);}});
 }
 // ---------- 7. SAME NOTES, NEW HOME -- the la-pentatonic ----------
 // Kodaly Grade 2: the step after the major pentatonic is not the major scale, it is these same five
@@ -2268,7 +2278,7 @@ function choiceUnit(cfg){
     LAB.labels(null);LAB.clear(); }
   window._labRoam=()=>roamAt;   // readable: dev-earwork proves the key actually moves
   const hist=[];
-  function ask(){reKey();cur=freshPick(()=>cfg.pick(),hist);armed=true;window._labExpect=cur;showArt(null);needListen();}
+  function ask(){reKey();cur=freshPick(()=>cfg.pick(),hist);if(cfg.onAsk)cfg.onAsk(cur);armed=true;window._labExpect=cur;showArt(null);needListen();}   // onAsk: once the answer is fixed (pick runs 24 times)
   function startAsking(){ if(!exploring)return; exploring=false; paint(); later(ask,420); }
   window._lab_ready=startAsking;
   window._lab_exploring=()=>exploring;

@@ -64,10 +64,15 @@ for(const L of EAR){
   await p.waitForTimeout(2600);await askQuestions(p);
   const data=await p.evaluate(async(rounds)=>{
     const seen=[];
+    // stop when the lesson does: a part 2 (high's up or down) now starts asking straight away (2026-11-11), and its
+    // notes were being filed under the last answer of the lesson before it
+    const title=()=>((document.querySelector('#learnOverlay .lgTop h3')||{}).textContent||'');const t0=title();
     for(let k=0;k<rounds;k++){
+      if(title()!==t0||document.querySelector('.lgDone'))break;
       window.__f=[];
       await new Promise(r=>setTimeout(r,1500));          // let the phrase finish
-      const tgt=window._labHintDeg;
+      if(title()!==t0)break;                             // the part 2 began while it played: not this lesson's sound
+      const tgt=window._labHintDeg!=null?window._labHintDeg:window._labExpect;   // a ladder's rung, or a two-button answer (steps)
       seen.push({t:tgt,f:window.__f.slice().join(',')});   // order preserved: a melody is a sequence
       // answer correctly so it moves on
       const rung=(tgt!=null)&&document.querySelector('.lgRung[data-deg="'+tgt+'"]');

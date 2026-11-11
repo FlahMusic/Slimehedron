@@ -55,13 +55,20 @@ const pitches=async(b,id,rounds)=>{
       clearInterval(h);} },25);});
   await p.goto('http://127.0.0.1:8765/index.html?l='+id);
   await p.waitForTimeout(2000);await askQuestions(p);
+  // only this lesson's notes: a part 2 (high's up or down, the tonic's find home) starts asking straight away now
+  // (2026-11-11) and roams the key on purpose
+  const title=()=>p.evaluate(()=>((document.querySelector('#learnOverlay .lgTop h3')||{}).textContent||''));const t0=await title();let upto=0;
   for(let i=0;i<rounds;i++){
-    const d=await p.evaluate(()=>window._labHintDeg);
-    if(d!=null)await p.evaluate(dd=>{const r=document.querySelector('.lgRung[data-deg="'+dd+'"]');
-      if(r)r.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));},d);
+    if(await title()!==t0)break;
+    upto=await p.evaluate(()=>window.__f.length);   /* every note so far is still this lesson's */
+    await p.evaluate(()=>{const d=window._labHintDeg;   /* a ladder, or two buttons (Step or Skip) */
+      const r=(d!=null)&&document.querySelector('.lgRung[data-deg="'+d+'"]');
+      if(r){r.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));return;}
+      const c=(window._labExpect!=null)&&document.querySelector('[data-ch="'+window._labExpect+'"]');
+      if(c)c.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));});
     await p.waitForTimeout(230);
   }
-  const f=await p.evaluate(()=>window.__f.slice());
+  const f=await p.evaluate(n=>window.__f.slice(0,n),upto);
   await ctx.close();
   return [...new Set(f)];};
 

@@ -277,14 +277,14 @@ for(const id of ids){
      await p.waitForTimeout(done?1300:250);}
    ok(await doneUp(),id.toUpperCase()+' ends with a "you did it" card');}
 
- // STEPS walks the scale and wraps; follow the hint rather than assuming how far it counts.
+ // STEP OR SKIP: two buttons now (logic pass); answer what was asked
  await home();await open('steps');
  for(let i=0;i<220&&!(await doneUp());i++){
-   const d=await p.evaluate(()=>window._labHintDeg);
-   if(d==null){await p.waitForTimeout(200);continue;}
-   await p.evaluate(dd=>{const r=document.querySelector('.lgRung[data-deg="'+dd+'"]');
-     if(r)r.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));},d);
-   await p.waitForTimeout(240);}
+   const v=await p.evaluate(()=>window._labExpect);
+   if(v==null){await p.waitForTimeout(200);continue;}
+   await p.evaluate(vv=>{const c=document.querySelector('[data-ch="'+vv+'"]');
+     if(c)c.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));},v);
+   await p.waitForTimeout(1100);}
  ok(await doneUp(),'STEPS ends with a "you did it" card');
 
  // ECHO: the game names its own next target (window._labHintDeg); follow it

@@ -250,6 +250,15 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     one and out of the other at its speed, ringing that wall, the pull); off, it takes no random numbers (normal space
     still the plugin's to the bit). portaltest: the web's dev-portal checks 2-6 as numbers; sabotaged 4 ways. drawtank
     draws the holes on their walls (tank3.png).
+    STEP OR SKIP (2026-11-11, sw v162). The steps lesson asked "find the rung" (the lesson before it already does) and
+    said "go up one note at a time" while its notes went down and skipped too. Now two buttons: two notes, step or skip,
+    up or down, anywhere on the five notes; "listen" replays the same pair; the ruler shows the two notes after the
+    answer. choiceUnit got an onAsk hook (pick runs 24 times inside freshPick, so a pair made in pick could belong to a
+    different draw). Suites moved with it: answerable reads a two-button answer and stops at a part 2 (high's up or
+    down now asks at once and was filed under high's last answer: a real test bug since 07c5d30), cheat has two-button
+    strategies (53% always-first, 53% take-turns) and goes again after a lesson ends, oneanswer brute-forces The Tonic
+    (Find the Note starts on 2 rungs), earwork answers either screen and stops at a part 2 (home's find-home roams on
+    purpose), lessons answers the buttons.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

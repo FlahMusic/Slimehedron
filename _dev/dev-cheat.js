@@ -44,7 +44,17 @@ async function run(page,lesson,strategy,rounds){
     card.click();await sleep(1400);
     let right=0;
     for(let i=0;i<rounds;i++){
+      // a lesson of five ends before ten honest answers: go again (Step or Skip has no part 2 to carry on into)
+      if(document.querySelector('.lgDone')){const a=document.querySelector('[data-a2="again"]');if(a)a.click();await sleep(1500);}
       const rungs=[...document.querySelectorAll('.lgRung')];
+      const btns=[...document.querySelectorAll('[data-ch]')];
+      if(!rungs.length&&btns.length){                                   // two buttons (Step or Skip)
+        if(window._lab_exploring&&window._lab_exploring()){window._lab_ready();await sleep(1600);}   // its try-it screen first
+        const want=String(window._labExpect);
+        const el=strategy==='first'?btns[0]:strategy==='turns'?btns[i%btns.length]:(btns.find(x=>x.dataset.ch===want)||btns[0]);
+        if(el.dataset.ch===want)right++;
+        el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));
+        await sleep(1300);continue;}
       if(!rungs.length)return{err:'no ladder for '+lesson};
       const degs=rungs.map(r=>+r.dataset.deg);
       const target=window._labHintDeg;
@@ -80,8 +90,8 @@ await p.waitForTimeout(3000);
 const BLOCK=8, BLOCKS=4;
 const CASES=[
   {id:'home',    cheat:'bottom', label:'The Tonic'},
-  {id:'steps',   cheat:'lit',    label:'Steps and Skips (tap whatever is lit)'},
-  {id:'steps',   cheat:'walk',   label:'Steps and Skips (march up the ladder)'},
+  {id:'steps',   cheat:'first',  label:'Step or Skip (always the first button)'},
+  {id:'steps',   cheat:'turns',  label:'Step or Skip (take turns)'},
   {id:'high',    cheat:'bottom', label:'Pitch'},
 ];
 for(const c of CASES){

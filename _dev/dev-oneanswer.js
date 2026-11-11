@@ -48,7 +48,7 @@ const askQuestions=async(page)=>{
  // ---- 1. THE LADDER: brute-forcing one question must earn nothing --------------------------
  // Tap EVERY rung on a single question, in one burst, with the correct one included. Before the
  // fix the correct one scored and the counter moved. After it, the first tap is the answer.
- await home();await open('steps');
+ await home();await open('home');   /* steps is two buttons now (logic pass): The Tonic is a ladder of four rungs */
  const before=await count();
  const rungs=await p.evaluate(()=>document.querySelectorAll('.lgRung').length);
  ok(rungs>=3,'the ladder lesson is on screen ('+rungs+' rungs)');
@@ -62,7 +62,7 @@ const askQuestions=async(page)=>{
  ok(after===before,'tapping every rung on one question earns nothing ('+before+' -> '+after+', brute force is worth 0)');
 
  // ---- 2. and the lesson still FINISHES when answered one tap at a time ---------------------
- await home();await open('steps');
+ await home();await open('home');
  for(let i=0;i<60&&!(await doneUp());i++){
    await p.evaluate(()=>{const d=window._labHintDeg;
      const r=[...document.querySelectorAll('.lgRung')].find(x=>+x.dataset.deg===d);

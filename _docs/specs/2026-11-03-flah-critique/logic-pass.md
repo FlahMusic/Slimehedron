@@ -26,7 +26,7 @@ twice running, 6 grid + playhead + count-in, 7 one drum colour code, 8 every but
 | tempo | same number of notes both ways, speed varies per round, a different tune | |
 | dynamic | the tune varies per round | |
 | rjam | kick / snare / hi-hat pads in the drum colours, a click as the pulse; the call drawn on a 3 x 16 grid as it sounds, your taps dotted where they land, the call started on a bar line (it ran off the click) (2026-11-10, dev-learn3 17) | |
-| high, notes, home, steps, newhome, majorscale, brightdark, intervals, chords, minorscale, minorshapes, modes | listen first, no repeats; merged: updown is part 2 of high, findhome of home, intervals of chords; minor and modes kept and moved last (ADR 0014) | steps as a step/skip choice |
+| high, notes, home, steps, newhome, majorscale, brightdark, intervals, chords, minorscale, minorshapes, modes | listen first, no repeats; merged: updown is part 2 of high, findhome of home, intervals of chords; minor and modes kept and moved last (ADR 0014); steps is now "Step or Skip", two buttons: two notes, a step (the next rung) or a skip (over one), up or down, the ruler after the answer (2026-11-11) | |
 | staff | reading now: see the note, press its letter (it was answered by sight); no repeats | |
 | melody, compose | no change needed for 06-13; a tune kept in compose (and a loop kept in make) is saved for review (2026-11-11, dev-learn3 19) | |
 | echo | listen first, 3 rounds | |
