@@ -2205,7 +2205,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
     </div>
     </div><!-- /.fadeRow -->
     <button class="btn primary big" id="playBtn" title="play / pause" aria-label="play or pause">▶</button>
-    <button class="btn big" id="drumBtn" title="drums (D)" aria-label="drums" data-l="drums"><svg width="30" height="30" viewBox="0 0 24 24"><use href="#icKit"/></svg></button>
+    <button class="btn big" id="drumBtn" title="drums (shift+D)" aria-label="drums" data-l="drums"><svg width="30" height="30" viewBox="0 0 24 24"><use href="#icKit"/></svg></button>
     <button class="btn big" id="bandBtn" title="backing band" aria-label="backing band" data-l="band"><svg width="45" height="34" viewBox="0 0 32 24"><use href="#icBass"/></svg></button>
     <button class="btn big" id="dropBtn" title="drop a ball" aria-label="drop a ball" data-l="ball"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icBall"/></svg></button>
     <button class="btn big" id="newShapeBtn" title="new shape!" aria-label="new shape">🎲</button>
@@ -2226,7 +2226,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
      Populated at runtime by MOVING the existing (already-wired) controls in, so there is exactly one
      #bpmNum, one #drumSig etc. in the document - duplicating them would fork the state. -->
 <div id="studioBar"></div>
-<div id="autoRow"><button class="slimeswitch" id="slimeBig" title="auto-play (A)"><span class="ss-knob"><span class="sic">✨</span></span></button><button type="button" id="autoNotesBtn" aria-pressed="false" aria-label="the slime plays notes too" title="the slime plays notes too"><span class="anWord" aria-hidden="true">notes</span><svg viewBox="0 0 28 28" width="30" height="30" aria-hidden="true"><defs><radialGradient id="anG" cx=".34" cy=".3" r=".85"><stop offset="0" stop-color="#fff"/><stop offset=".28" stop-color="#d4f7ea"/><stop offset=".7" stop-color="#8fdcc4"/><stop offset="1" stop-color="#3fae90"/></radialGradient></defs><path d="M16.6 19.5V4.2" fill="none" stroke="#4a4170" stroke-width="2.3" stroke-linecap="round"/><path d="M16.6 4.2c3.2.9 5.6 3 5.9 6.6-.9-1.4-2.6-2.4-5.9-2.8" fill="#4a4170" stroke="#4a4170" stroke-width="1.2" stroke-linejoin="round"/><ellipse class="anHead" cx="11.6" cy="20" rx="6.2" ry="4.9" transform="rotate(-22 11.6 20)" fill="url(#anG)" stroke="#2f9c80" stroke-width="1.2"/><ellipse cx="9.4" cy="18.3" rx="1.8" ry="1.1" transform="rotate(-22 9.4 18.3)" fill="#fff" opacity=".9"/><path class="anDash" d="M4.5 4.5 L23.5 23.5" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/><path class="anDash" d="M4.5 4.5 L23.5 23.5" fill="none" stroke="#e0332f" stroke-width="2.2" stroke-linecap="round"/></svg></button></div>
+<div id="autoRow"><button class="slimeswitch" id="slimeBig" title="auto-play (shift+A)"><span class="ss-knob"><span class="sic">✨</span></span></button><button type="button" id="autoNotesBtn" aria-pressed="false" aria-label="the slime plays notes too" title="the slime plays notes too"><span class="anWord" aria-hidden="true">notes</span><svg viewBox="0 0 28 28" width="30" height="30" aria-hidden="true"><defs><radialGradient id="anG" cx=".34" cy=".3" r=".85"><stop offset="0" stop-color="#fff"/><stop offset=".28" stop-color="#d4f7ea"/><stop offset=".7" stop-color="#8fdcc4"/><stop offset="1" stop-color="#3fae90"/></radialGradient></defs><path d="M16.6 19.5V4.2" fill="none" stroke="#4a4170" stroke-width="2.3" stroke-linecap="round"/><path d="M16.6 4.2c3.2.9 5.6 3 5.9 6.6-.9-1.4-2.6-2.4-5.9-2.8" fill="#4a4170" stroke="#4a4170" stroke-width="1.2" stroke-linejoin="round"/><ellipse class="anHead" cx="11.6" cy="20" rx="6.2" ry="4.9" transform="rotate(-22 11.6 20)" fill="url(#anG)" stroke="#2f9c80" stroke-width="1.2"/><ellipse cx="9.4" cy="18.3" rx="1.8" ry="1.1" transform="rotate(-22 9.4 18.3)" fill="#fff" opacity=".9"/><path class="anDash" d="M4.5 4.5 L23.5 23.5" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/><path class="anDash" d="M4.5 4.5 L23.5 23.5" fill="none" stroke="#e0332f" stroke-width="2.2" stroke-linecap="round"/></svg></button></div>
 <div id="triMixBar">
   <div id="triMix" title="drag to mix: melody (top) · drums (left) · band (right)">
     <svg viewBox="-40 -46 180 172" width="248" height="238" style="display:block;overflow:visible">
@@ -3786,6 +3786,10 @@ function relLum(c){const f=v=>{v/=255;return v<=0.04045?v/12.92:Math.pow((v+0.05
 // a slime the same hue as the page (mint, ~150 deg: Flah's case, green on the green grass; yellow-greens and teals read
 // green on it too, so 75 deg either side) has only lightness to stand out by, so it goes a fifth deeper
 const PAGE_HUE=150/360;
+// an RGB colour (0..255) held to the same shade as slimeShade, hue and saturation kept
+function slimeRGB(c){const r=c[0]/255,g=c[1]/255,b=c[2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;
+  let h=0,s=0;if(d){s=l>0.5?d/(2-mx-mn):d/(mx+mn);h=(mx===r?((g-b)/d+(g<b?6:0)):mx===g?(b-r)/d+2:(r-g)/d+4)/6;}
+  const q=slimeShade([h,s,l]);return hslRGB(q[0],q[1],q[2]);}
 function slimeShade(h,yMax){const dh=Math.abs(((h[0]-PAGE_HUE)%1+1.5)%1-0.5)*360,Ym=(yMax||SLIME_Y_MAX)*(dh<75?0.8:1);let l=h[2];for(let i=0;i<70&&l>0.05&&relLum(hslRGB(h[0],h[1],l))>Ym;i++)l-=0.01;return [h[0],h[1],l];}
 let liqRGB=[178,205,240],liqHSL=null; // eased every frame so the color glides between chords, never snaps (round the wheel: liqHSL)
 function liquidColor(){
@@ -6580,7 +6584,10 @@ function drawGoo3D(){if(fillState==="fill"&&goo3D()){
     if(!particles.length){mMask=null;measuredFill=Math.max(0,measuredFill-0.02);return;}
     liquidColor();if(++mFrame%10===0||!mMask)measureFill();
     const m=(liqRGB[0]+liqRGB[1]+liqRGB[2])/3,c=liqRGB.map(v=>Math.max(0,Math.min(255,m+(v-m)*2.2)));   // the chord's colour, pushed to a clear pastel: the flat blend reads grey through tinted glass
-    softBlobs(`rgba(${c.map(v=>(v+(255-v)*0.25)|0).join(',')},.9)`,true);return;}
+    // ...and still a shade darker than the page (look question 6): the pastel push and the lift toward white made a
+    // green slime near white again in this canvas view (the one without a graphics card)
+    const f=slimeRGB(c.map(v=>v+(255-v)*0.25));
+    softBlobs(`rgba(${f.map(v=>v|0).join(',')},.9)`,true);return;}
   ctx.save();ctx.transform(...planeAt(0.5));drawParticles(true);ctx.restore();}
 function drawDroplets3D(){for(const p of particles){if(p.pooled)continue;const s=P3(p.x,p.y,p.z==null?0.5:p.z);
   ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(s[0],s[1],2.2*s[2],0,7);ctx.fill();}}
@@ -7887,7 +7894,7 @@ addEventListener('pointerdown',()=>{_ptrAt=performance.now();},true);
 addEventListener('focusin',e=>{_kbFocusEl=(performance.now()-_ptrAt<500)?null:e.target;},true);
 addEventListener('keydown',e=>{
   const tg=e.target.tagName;if(tg==='SELECT'||tg==='INPUT'||tg==='TEXTAREA')return;
-  if((kbOn||S.mode==='learn')&&!e.repeat){ // instrument mode: letters are keys, not shortcuts. learn lessons: always on — no toggle hunting
+  if((kbOn||S.mode==='learn')&&!e.repeat&&!e.shiftKey){ // instrument mode: letters are keys, not shortcuts (shift+letter still is one, Ableton's way). learn lessons: always on
     if(e.code==='KeyZ'||e.code==='KeyX'){
       kbOct=e.code==='KeyZ'?Math.max(-3,kbOct-1):Math.min(3,kbOct+1);
       const ov2=$("kbOctV");if(ov2)ov2.textContent='oct '+(kbOct>=0?'+':'')+kbOct;
@@ -7903,12 +7910,14 @@ addEventListener('keydown',e=>{
   // STUDIO: Space plays and pauses, as in every DAW (Ableton Live 12 manual 42.20 "Play/Stop: Space"; GarageBand "Start or
   // stop playback: Space bar"). The ball rainstorm stays on Enter and Shift there, and on all three in play.
   if(S.mode==='studio'&&e.code==='Space'){e.preventDefault();if(!e.repeat)$("playBtn").click();return;}
-  if(e.code==='Space'||e.code==='Enter'||e.code==='ShiftLeft'||e.code==='ShiftRight'){e.preventDefault(); // hold any of them for a ball rainstorm
+  if(e.code==='Space'||e.code==='Enter'){e.preventDefault(); // hold either for a ball rainstorm (Shift was one too: it is the shortcuts' key now)
     const nw=performance.now();if(nw-lastKb<110)return;lastKb=nw;
     initAudio();if(AC&&AC.state==='suspended')AC.resume();
     spawn(CX+(Math.random()-.5)*R*1.2,CY-R*0.45);if(!S.playing)setPlaying(true);}
-  else if(e.code==='KeyA'&&!e.repeat)$("slimeBig").click();
-  else if(e.code==='KeyD'&&!e.repeat)$("drumBtn").click();
+  // SHIFT+LETTER, NOT A BARE LETTER (WCAG 2.2 SC 2.1.4 Character Key Shortcuts: a printable-key shortcut must be
+  // possible to turn off or remap, or include a modifier; Flah 2026-11-11). A bare A or D typed anywhere did this.
+  else if(e.code==='KeyA'&&e.shiftKey&&!e.repeat)$("slimeBig").click();
+  else if(e.code==='KeyD'&&e.shiftKey&&!e.repeat)$("drumBtn").click();
   else if(e.code==='ArrowUp'||e.code==='ArrowDown'){e.preventDefault();
     setBpm(S.bpm+(e.code==='ArrowUp'?2:-2));}
 });

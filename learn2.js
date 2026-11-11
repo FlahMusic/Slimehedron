@@ -1072,7 +1072,7 @@ function ladderUnit(cfg){
   // honest fix is: let the child play them first. No target, no scoring, no clock. They press the
   // button themselves when they want the questions, which means the questions arrive to a child who
   // already knows what these notes sound like under their own finger.
-  let exploring=(cfg.explore!==false);
+  let exploring=(cfg.explore!==false)&&!_part2Of;   // a part 2 goes straight to its questions: its lesson already explored (Flah 2026-11-11)
   let touched=0;   // how many notes they tried before asking for the questions
 
 
@@ -2171,7 +2171,7 @@ function choiceUnit(cfg){
   // method and wrong about the principle. What a child needs to hear freely HERE is the two things
   // being compared: press "bright", hear bright; press "dark", hear dark; as many times as they
   // like, with nothing scored. Then they ask for the questions.
-  let exploring=(cfg.explore!==false);
+  let exploring=(cfg.explore!==false)&&!_part2Of;   // a part 2 goes straight to its questions: its lesson already explored (Flah 2026-11-11)
 
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
   // PIN THE KEY, like ladderUnit does. A lesson that does not name a root inherits whatever the last

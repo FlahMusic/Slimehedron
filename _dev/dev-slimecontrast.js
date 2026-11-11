@@ -13,6 +13,7 @@
 //  no deeper than the rest (2, the 3D green), the chord hue handed over in degrees again (1, the wheel).
 //  Needs a local server: python -m http.server 8765. Run from the project root: node _dev/dev-slimecontrast.js
 // ============================================================================================
+process.env.SLIME_GL='1';   // the graphics-card tank loads; ?gl=0 asks for the canvas one (no WebGL), so both are drawn
 const {launch}=require('./browser');
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 const init=()=>{try{for(const k of ['slimehedron-coach','slimehedron-coach-studio','slimehedron-tapped'])localStorage.setItem(k,'1');}catch(e){}};
@@ -40,7 +41,7 @@ const init=()=>{try{for(const k of ['slimehedron-coach','slimehedron-coach-studi
   ok(hw.gap>=10,'1. the 12 keys\' chord colours spread round the wheel, at least 10 deg apart (the table\'s own closest pair is 14; closest '+hw.gap.toFixed(0)+': '+hw.hs.join(' ')+')');
   worst=[t.green,...t.top.slice(0,2)];await ctx.close();}
  // ---- 2. drawn, in 2D and 3D ----
- for(const view of ['2d','3d']){
+ for(const view of ['2d','3d&gl=0','3d']){   // the flat view, the canvas 3D view (no graphics card), the graphics-card view
   const ctx=await b.newContext({viewport:{width:1280,height:900}});await ctx.addInitScript(init);const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
   await p.goto('http://127.0.0.1:8765/index.html?m=play&view='+view+'&space=normal');await p.waitForTimeout(3500);
   for(const w of worst){
@@ -69,7 +70,7 @@ const init=()=>{try{for(const k of ['slimehedron-coach','slimehedron-coach-studi
    // 1.4:1 for the green on the green page, and everywhere in 2D. In 3D a colour whose hue already stands out (a yellow
    // on mint) needs 1.2:1: the wet skin's light draws it ~2x its base, and holding a yellow's base low enough for 1.4
    // turned it mustard (screenshots 2026-11-08: base 0.30 -> 1.41:1 and olive, base 0.36 -> 1.24:1 and still candy)
-   const cr=(bg+0.05)/(r.goo+0.05),need=(w.g||view==='2d')?1.4:1.2;
+   const cr=(bg+0.05)/(r.goo+0.05),need=(w.g||view!=='3d')?1.4:1.2;   // 1.2 only for the lit graphics-card skin
    ok(r.n>2000&&cr>=need,'2. ['+view+'] '+(w.g?'the green, ':'')+w.q+' in key '+w.pc+' (needs '+need+':1; rgb '+r.liq.join(',')+'): the slime is '+cr.toFixed(2)+':1 darker than the page behind it (goo '+r.goo.toFixed(3)+', page '+bg.toFixed(3)+', '+r.n+' px)');}
   ok(errs.length===0,'['+view+'] no page errors ('+errs.slice(0,2).join(' | ')+')');
   await ctx.close();}

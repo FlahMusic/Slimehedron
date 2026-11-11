@@ -242,7 +242,7 @@ const JUDGED=['howlong','sayplay','echo','notes'];   // (staff is read by sight 
  ok(cx.count.trim().startsWith('1 '),'11b the next, tapped the same plus one tap on a small count, does not ('+cx.taps+' taps: '+cx.count+', "'+cx.feed+'")');
 
  // ---- 14: a merged lesson: High and Low's rounds, then Up or Down as its part 2, then ONE ending
- {await open('high');let saw2=false,title2='';
+ {await open('high');let saw2=false,title2='',p2explore=null;
   for(let i=0;i<120&&!(await p.evaluate(()=>!!document.querySelector('.lgDone')));i++){
    await p.evaluate(()=>{const r=document.querySelector('#learnOverlay [data-lg="ready"]');if(r){r.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true}));return;}
      const l=document.querySelector('#learnOverlay .lgListen.go');if(l)l.click();});await p.waitForTimeout(500);   /* part 2 opens on its own explore screen */
@@ -250,10 +250,11 @@ const JUDGED=['howlong','sayplay','echo','notes'];   // (staff is read by sight 
      const d=window._labHintDeg,e=window._labExpect;
      const el=(e!=null&&document.querySelector('#learnOverlay [data-ch="'+e+'"]'))||(d!=null&&document.querySelector('#learnOverlay .lgRung[data-deg="'+d+'"]'));
      if(el)el.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,cancelable:true}));return h3;});
-   if(/up or down/i.test(h)){saw2=true;title2=h;}await p.waitForTimeout(700);}
+   if(/up or down/i.test(h)&&!saw2){saw2=true;title2=h;p2explore=await p.evaluate(()=>!!document.querySelector('#learnOverlay [data-lg="ready"]'));}await p.waitForTimeout(700);}
   const end=await p.evaluate(()=>({done:!!document.querySelector('.lgDone'),h3:(document.querySelector('#learnOverlay .lgTop h3')||{}).textContent||'',
     line:[...document.querySelectorAll('#learnOverlay .lgSay')].map(e=>e.textContent).join(' '),again:(document.querySelector('[data-a2="again"]')||{dataset:{}}).dataset.u}));
   ok(saw2,'14 High and Low runs Up or Down as its part 2 ("'+title2+'")');
+  ok(p2explore===false,'14 and the part 2 goes straight to its questions, no second explore screen (Flah 2026-11-11; ready shown: '+p2explore+')');
   ok(end.done&&end.again==='high'&&/PITCH/.test(end.line)&&/UP/.test(end.line),'14 and ends once, as High and Low, with both lines ("'+end.line.slice(0,90)+'")');
   const onMap=await p.evaluate(async()=>{window.LEARN2.home();await new Promise(r=>setTimeout(r,500));return ['updown','findhome','intervals','song'].filter(id=>document.querySelector('.lmMap .uCard[data-u="'+id+'"]'));});
   ok(onMap.length===0,'14 a part is never on the map on its own ('+onMap.join(' ')+')');}
@@ -277,6 +278,8 @@ const JUDGED=['howlong','sayplay','echo','notes'];   // (staff is read by sight 
   ok(bad.length===0,'14 a wrong answer in every judged unit says "Close, listen and try again!" and counts nothing ('+judged.length+' units'+(bad.length?'; '+bad.join(' | '):'')+')');}
 
  // ---- 16: a lesson's drums: the lesson kit whatever studio last picked, about as loud as a lesson's notes allow
+ // (from the map: a lesson left running by 14b, its part 2 now asking at once, played under the measurement)
+ await home();await p.waitForTimeout(600);
  {const lv=await p.evaluate(async()=>{const k1=AC.createBiquadFilter(),k2=AC.createBiquadFilter();k1.type='highshelf';k1.frequency.value=1681.97;k1.gain.value=4;
     k2.type='highpass';k2.frequency.value=38.13;k2.Q.value=0.5;const sp=AC.createScriptProcessor(1024,1,1);outClip.connect(k1);k1.connect(k2);k2.connect(sp);sp.connect(AC.destination);
     let s=0,n=0,on=false;sp.onaudioprocess=e=>{if(!on)return;for(const x of e.inputBuffer.getChannelData(0)){s+=x*x;n++;}};

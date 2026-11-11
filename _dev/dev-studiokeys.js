@@ -4,7 +4,8 @@
 //    1. in studio, Space plays and pauses (and drops no ball); in play it still drops a ball (the kids' room keeps its toy)
 //    2. Space on a button reached with the keyboard presses that button (WCAG: a focused control answers Space), and
 //       does not touch the transport; after a mouse click leaves a button focused, Space is the transport again
-//    3. the controls with keys say so: play names Space (studio), drums D, the slime A, the tempo box says it drags
+//    3. the controls with keys say so: play names Space (studio), drums shift+D, the slime shift+A (a bare letter does
+//       nothing: WCAG 2.1.4), the tempo box says it drags
 //    4. the sequencer's "on" with the transport stopped starts it: one press, and it sounds (seqSetOn already did; now asserted)
 //  Sabotaged 5 ways (2026-11-10), each caught: no Space transport (1, 2), a keyboard-focused button losing Space (2),
 //  :focus-visible instead of how focus arrived (2), seqSetOn not starting the transport (4), drums' key not named (3).
@@ -46,10 +47,22 @@ const init=()=>{try{for(const k of ['slimehedron-coach','slimehedron-coach-studi
   const aft2=await p.evaluate(()=>({pl:S.playing,pressed:document.activeElement.getAttribute('aria-pressed')}));
   ok(aft2.pl!==pl1&&aft2.pressed===mp,'2. after a mouse click, Space is the transport again ('+pl1+' -> '+aft2.pl+'), the clicked button untouched ('+mp+' -> '+aft2.pressed+')');
   if(aft2.pl)await p.evaluate(()=>setPlaying(false));
+  // 3b. shift+letter, not a bare letter (WCAG 2.1.4), and Shift alone drops nothing
+  await p.evaluate(()=>{if(document.activeElement)document.activeElement.blur();});
+  const a0=await p.evaluate(()=>({sl:S.slimeMode,dr:drumOn,b:balls.length}));
+  await p.keyboard.press('a');await p.keyboard.press('d');await p.waitForTimeout(200);
+  const a1=await p.evaluate(()=>({sl:S.slimeMode,dr:drumOn,b:balls.length}));
+  await p.keyboard.press('Shift');await p.waitForTimeout(150);const a1b=await p.evaluate(()=>balls.length);
+  await p.keyboard.press('Shift+A');await p.keyboard.press('Shift+D');await p.waitForTimeout(250);
+  const a2=await p.evaluate(()=>({sl:S.slimeMode,dr:drumOn}));
+  ok(a1.sl===a0.sl&&a1.dr===a0.dr,'3. a bare A or D does nothing (slime '+a0.sl+' -> '+a1.sl+', drums '+a0.dr+' -> '+a1.dr+')');
+  ok(a2.sl!==a0.sl&&a2.dr!==a0.dr,'3. shift+A and shift+D switch the slime and the drums (slime '+a2.sl+', drums '+a2.dr+')');
+  ok(a1b===a1.b,'3. Shift alone drops no ball ('+a1.b+' -> '+a1b+')');
+  await p.keyboard.press('Shift+A');await p.keyboard.press('Shift+D');await p.waitForTimeout(150);
   // 3. the keys are named
   const tt=await p.evaluate(()=>({play:$("playBtn").title,drums:$("drumBtn").title,slime:$("slimeBig").title,bpm:$("bpmNum").title}));
   ok(/space/i.test(tt.play),'3. [studio] play names its key ("'+tt.play+'")');
-  ok(/\(D\)/.test(tt.drums)&&/\(A\)/.test(tt.slime),'3. drums and the slime name theirs ("'+tt.drums+'", "'+tt.slime+'")');
+  ok(/shift\+D/i.test(tt.drums)&&/shift\+A/i.test(tt.slime),'3. drums and the slime name theirs ("'+tt.drums+'", "'+tt.slime+'")');
   ok(/drag/i.test(tt.bpm),'3. the tempo box says it drags ("'+tt.bpm+'")');
   // 4. the sequencer's on, with the transport stopped
   await p.click('.patTabs [data-pt="seq"]');await p.waitForTimeout(150);

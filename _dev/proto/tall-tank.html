@@ -1,0 +1,32 @@
+<!doctype html>
+<!-- PROTOTYPE (throwaway, look question 4: "the phone play tank about twice as tall"). Not the app: a quick page that
+     answers one question for Flah: does a tank stretched 1.5x tall on a portrait phone still read as the same shape
+     while it spins? The space is stretched, not the shape, so a spinning hexagon squashes and unsquashes as it turns
+     (a rigid tall shape would need 1.5x the room across, which a phone does not have). Left: today. Right: 1.5x. -->
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tall tank prototype</title>
+<style>
+  body{margin:0;background:#eef6f1;font:600 14px system-ui,sans-serif;color:#463b66;display:flex;gap:24px;justify-content:center;padding:16px}
+  figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:8px}
+  canvas{background:linear-gradient(#cfeee0,#ffffff 45%,#fde7ef);border-radius:28px;box-shadow:0 8px 24px rgba(54,36,104,.18)}
+</style>
+<figure><canvas id="a" width="390" height="844"></canvas><figcaption>today: 290 px tall</figcaption></figure>
+<figure><canvas id="b" width="390" height="844"></canvas><figcaption>stretched 1.5x: about 435 px tall</figcaption></figure>
+<script>
+const N=6,R=145,COL=['#f08ab8','#f5a46c','#ead25a','#4fc79e','#6f9ff0','#b18cf0'];
+function tank(cv,SY){const x=cv.getContext('2d'),CX=195,CY=SY>1?470:479;
+  const balls=Array.from({length:7},(_,i)=>({x:(Math.random()-.5)*80,y:(Math.random()-.5)*80,vx:Math.cos(i*2.1)*2.2,vy:Math.sin(i*2.1)*2.2,c:COL[i%6]}));
+  return t=>{const rot=t*0.00035;x.clearRect(0,0,390,844);
+    // the walls: a regular hexagon turned by the spin, THEN stretched by SY (the space is tall, not the shape)
+    const P=[];for(let i=0;i<N;i++){const a=-Math.PI/2+i*2*Math.PI/N+rot;P.push([Math.cos(a)*R,Math.sin(a)*R*SY]);}
+    x.lineWidth=5;x.lineCap='round';
+    for(let i=0;i<N;i++){const p=P[i],q=P[(i+1)%N];x.strokeStyle=COL[i];x.beginPath();x.moveTo(CX+p[0],CY+p[1]);x.lineTo(CX+q[0],CY+q[1]);x.stroke();}
+    // a few balls bouncing off the walls (inward normals), so the stretched space can be judged in motion
+    for(const b of balls){b.x+=b.vx;b.y+=b.vy;
+      for(let i=0;i<N;i++){const p=P[i],q=P[(i+1)%N];let nx=-(q[1]-p[1]),ny=q[0]-p[0];const l=Math.hypot(nx,ny);nx/=l;ny/=l;
+        if(nx*(-p[0])+ny*(-p[1])<0){nx=-nx;ny=-ny;}const d=(b.x-p[0])*nx+(b.y-p[1])*ny;
+        if(d<9){const vn=b.vx*nx+b.vy*ny;if(vn<0){b.vx-=2*vn*nx;b.vy-=2*vn*ny;}b.x+=(9-d)*nx;b.y+=(9-d)*ny;}}
+      x.fillStyle=b.c;x.beginPath();x.arc(CX+b.x,CY+b.y,9,0,7);x.fill();}};}
+const A=tank(document.getElementById('a'),1),B=tank(document.getElementById('b'),1.5);
+(function loop(t){A(t);B(t);requestAnimationFrame(loop);})(0);
+</script>
