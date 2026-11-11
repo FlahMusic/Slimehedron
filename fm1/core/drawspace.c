@@ -1,24 +1,7 @@
 /* The banded curved-tank renderer. See drawspace.h. */
 #include <math.h>
 #include "drawspace.h"
-#include "draw.h"   /* SH_SCREEN */
-
-/* the same two small colour helpers as draw.c (kept static there) */
-static uint16_t rgb565(float r, float g, float b) {
-  int R = (int)(r * 31.0f + 0.5f), G = (int)(g * 63.0f + 0.5f), B = (int)(b * 31.0f + 0.5f);
-  R = R < 0 ? 0 : R > 31 ? 31 : R; G = G < 0 ? 0 : G > 63 ? 63 : G; B = B < 0 ? 0 : B > 31 ? 31 : B;
-  return (uint16_t)((R << 11) | (G << 5) | B);
-}
-static void hsv(float h, float s, float v, float *r, float *g, float *b) {
-  h -= floorf(h); h *= 6.0f; int i = (int)h; float f = h - (float)i, p = v * (1 - s), q = v * (1 - s * f), t = v * (1 - s * (1 - f));
-  switch (i % 6) { case 0: *r = v; *g = t; *b = p; break; case 1: *r = q; *g = v; *b = p; break; case 2: *r = p; *g = v; *b = t; break;
-    case 3: *r = p; *g = q; *b = v; break; case 4: *r = t; *g = p; *b = v; break; default: *r = v; *g = p; *b = q; }
-}
-static uint16_t pastel(float h, float s, float v) { float r, g, b; hsv(h, s, v, &r, &g, &b); return rgb565(r, g, b); }
-static uint16_t mix565(uint16_t a, uint16_t b, float t) {   /* a toward b by t */
-  int ar = a >> 11, ag = (a >> 5) & 63, ab = a & 31, br = b >> 11, bg = (b >> 5) & 63, bb = b & 31;
-  return (uint16_t)(((int)(ar + (br - ar) * t) << 11) | ((int)(ag + (bg - ag) * t) << 5) | (int)(ab + (bb - ab) * t));
-}
+#include "paint.h"
 
 /* the tank's outline in the disk: each wall's arc as SP_ARCK points (a straight wall: its first corner) */
 static int outline(const sp_tank *t, float *x, float *y) {
@@ -55,25 +38,11 @@ void sp_view_prepare(sp_view *v, const sp_tank *t, float rot, const float *hue, 
     v->bc[i] = pastel(ballHue ? ballHue[i] : 0.8f, 0.65f, 0.95f); }
 }
 
-/* even-odd fill of one polygon on one row, blended over the row; and its outline, about 2 px wide */
+/* one polygon on one row: its inside blended in, then its outline about edgeW px wide */
 static void fill_row(const sp_poly *p, float yc, uint16_t *row, float edgeW) {
   if (yc < p->ymin - edgeW || yc > p->ymax + edgeW) return;
-  float xs[SP_PTS]; int nx = 0;
-  for (int i = 0; i < p->n; i++) { int j = (i + 1) % p->n; float y0 = p->y[i], y1 = p->y[j];
-    if ((y0 <= yc && y1 > yc) || (y1 <= yc && y0 > yc)) xs[nx++] = p->x[i] + (yc - y0) / (y1 - y0) * (p->x[j] - p->x[i]); }
-  for (int a = 1; a < nx; a++) { float k = xs[a]; int b = a - 1; while (b >= 0 && xs[b] > k) { xs[b + 1] = xs[b]; b--; } xs[b + 1] = k; }
-  for (int a = 0; a + 1 < nx; a += 2) { int x0 = (int)ceilf(xs[a] - 0.5f), x1 = (int)floorf(xs[a + 1] - 0.5f);
-    x0 = x0 < 0 ? 0 : x0; x1 = x1 >= SH_SCREEN ? SH_SCREEN - 1 : x1;
-    for (int x = x0; x <= x1; x++) row[x] = mix565(row[x], p->fill, p->alpha); }
-  /* the outline: each segment, the pixels within edgeW of it on this row */
-  for (int i = 0; i < p->n; i++) { int j = (i + 1) % p->n; float ax = p->x[i], ay = p->y[i], bx = p->x[j], by = p->y[j];
-    if ((ay < yc - edgeW && by < yc - edgeW) || (ay > yc + edgeW && by > yc + edgeW)) continue;
-    float lo = ax < bx ? ax : bx, hi = ax < bx ? bx : ax; int x0 = (int)(lo - edgeW), x1 = (int)(hi + edgeW) + 1;
-    x0 = x0 < 0 ? 0 : x0; x1 = x1 >= SH_SCREEN ? SH_SCREEN - 1 : x1;
-    float dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy; if (L2 < 1e-6f) L2 = 1e-6f;
-    for (int x = x0; x <= x1; x++) { float px = x + 0.5f, t = ((px - ax) * dx + (yc - ay) * dy) / L2; t = t < 0 ? 0 : t > 1 ? 1 : t;
-      float qx = ax + dx * t - px, qy = ay + dy * t - yc, d = sqrtf(qx * qx + qy * qy);
-      if (d < edgeW) row[x] = mix565(row[x], p->edge, d < edgeW - 1 ? 0.9f : 0.9f * (edgeW - d)); } }
+  paint_poly_row(p->x, p->y, p->n, yc, row, p->fill, p->alpha);
+  for (int i = 0; i < p->n; i++) { int j = (i + 1) % p->n; paint_seg_row(p->x[i], p->y[i], p->x[j], p->y[j], edgeW, yc, row, p->edge, 0.9f); }
 }
 
 void sp_draw_band(const sp_view *v, int y0, int rows, uint16_t *buf, uint16_t bg) {

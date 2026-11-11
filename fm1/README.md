@@ -21,5 +21,8 @@ Plan and open questions: `_docs/specs/2026-11-03-fm1-firmware/brief.md`, `_docs/
 - The goo has three builds (`core/goo.h`): exact (dense grids), `SH_GOO_HASHED` (the same numbers in 270 KB:
   `node fm1/host/check-tank.js tank_hashed.txt` after `wsl make -C fm1/host goo`) and `SH_GOO_LIGHT`, the device's
   (float, half the drops, 94 KB for the tank): `wsl make -C fm1/host goo-stats && node fm1/host/check-goolight.js`.
+- `core/drawtank.c`: the normal tank drawn 2.5D (the web's canvas 3D view) in bands; `core/paint.h` the pixel helpers
+  all three renderers share. `wsl make -C fm1/host draw && node fm1/host/check-drawtank.js` checks three camera turns and
+  writes `host/tank0..2.png`.
 - The port's tickets: `_docs/specs/2026-11-11-fm1-port/spec.md`. The firmware base is SLOOP (Flah 2026-11-11); the
   device build comes with it (ticket 08). Never flash Flah's FM-1 without asking.

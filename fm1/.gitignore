@@ -18,3 +18,6 @@ host/tank_light.txt
 host/goo_light.o
 host/goo_exact.txt
 host/goo_light.txt
+host/drawtanktest
+host/tank?.ppm
+host/tank?.png

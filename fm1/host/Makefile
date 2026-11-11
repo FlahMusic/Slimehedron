@@ -66,3 +66,12 @@ goo-stats: tanktest tanktest_light
 	./tanktest scenes-goo.txt > goo_exact.txt
 	./tanktest_light scenes-goo.txt > goo_light.txt
 .PHONY: goo-stats
+
+# the normal tank drawn 2.5D on the light goo, three camera turns: checks and tankN.ppm (node check-drawtank.js: PNGs)
+drawtanktest: ../core/drawtank.c ../core/drawtank.h ../core/paint.h $(TANKSRC) ../core/tank.h ../core/goo.h drawtanktest.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -fsingle-precision-constant -c -o goo_light.o ../core/goo.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -o $@ ../core/drawtank.c ../core/tank.c ../core/music.c ../core/melody.c goo_light.o drawtanktest.c -lm
+
+draw: drawtanktest
+	./drawtanktest .
+.PHONY: draw

@@ -1,21 +1,9 @@
 /* The banded solid renderer. See draw.h. */
-#include "draw.h"
+#include "paint.h"   /* draw.h, and the colour helpers */
 #include <math.h>
 
 #define CAMD   (3.0f * (float)SH_R)            /* camera distance in front of the middle: a mild perspective */
 #define FOCAL  (110.0f / (float)SH_SOLID_R)    /* a solid's corners reach ~110 px from the screen's middle */
-
-static uint16_t rgb565(float r, float g, float b) {
-  int R = (int)(r * 31.0f + 0.5f), G = (int)(g * 63.0f + 0.5f), B = (int)(b * 31.0f + 0.5f);
-  R = R < 0 ? 0 : R > 31 ? 31 : R; G = G < 0 ? 0 : G > 63 ? 63 : G; B = B < 0 ? 0 : B > 31 ? 31 : B;
-  return (uint16_t)((R << 11) | (G << 5) | B);
-}
-/* pastel hue wheel: h 0..1, s, v */
-static void hsv(float h, float s, float v, float *r, float *g, float *b) {
-  h -= floorf(h); h *= 6.0f; int i = (int)h; float f = h - (float)i, p = v * (1 - s), q = v * (1 - s * f), t = v * (1 - s * (1 - f));
-  switch (i % 6) { case 0: *r = v; *g = t; *b = p; break; case 1: *r = q; *g = v; *b = p; break; case 2: *r = p; *g = v; *b = t; break;
-    case 3: *r = p; *g = q; *b = v; break; case 4: *r = t; *g = p; *b = v; break; default: *r = v; *g = p; *b = q; }
-}
 
 void sh_view_prepare(sh_view *v, const sh_solid *s, const float rot[9], const int *deg, int td, const float *flash, float hue0) {
   /* light from up-left-front (y is down, z points away from you) */

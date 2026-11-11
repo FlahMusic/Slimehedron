@@ -26,7 +26,7 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
 | 02 | CURVED SPACE: the hyperbolic tank, walls as arcs, the ball step (`core/space.c`), and its look with the mirrored copies (`core/drawspace.c`) | done (this pass) |
 | 03 | PORTAL SPACE: two wormholes gliding round the walls with the beat; a ball drawn in and spat out (web: wormPlace, wormEnter, wormExit, wormPull) | open |
 | 04 | The tank tick in normal space: 2D plus depth, walls as notes, beat lock, quantize hold, auto-notes, open walls (`core/tank.c`, `core/music.c`) | done (this pass): every number the plugin's |
-| 05 | 2.5D look for normal and portal space: front and back outline, near faces tinted, z-sized balls with floor shadows, banded, redraw only changed bands | open |
+| 05 | 2.5D look for normal and portal space: front and back outline, near faces tinted, z-sized balls with floor shadows, banded, redraw only changed bands | normal space done (this pass, `core/drawtank.c`); portal's wormholes come with 03; redrawing only changed bands open (needs fm1-emu to be worth measuring) |
 | 06 | Music logic: the auto-notes melody (`core/melody.c`: the web's 6000 golden notes note for note, every random number used; sabotaged 3 ways) | melody done; the chord brain and pane chords open |
 | 07 | The goo, lighter but real: a capped particle count plus a level; it must still slow balls and soften notes | done (this pass): the light goo, 94 KB, plays like the plugin's by statistics |
 | 08 | Firmware base: fork SLOOP, its toolchain (Docker), fm1-emu as the bench; the CPU budget per sound and golden render hashes (Felucca's discipline) | open |
@@ -84,3 +84,22 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
   the full drop count (caught: ball slowdown), drops growing half as fast (NOT caught: they reach full size in ~1.7 s
   instead of ~0.9 s, which no bar-level statistic sees; left as is rather than tightening a tolerance to catch it).
 - Not measured yet: the light goo's time on the RP2350 (ticket 08, fm1-emu), and how it looks (ticket 05 draws it).
+
+## Ticket 05 (the 2.5D look, normal space), as built
+- `core/drawtank.c`: the web's canvas 3D view (draw3D, P3, drawBalls3D) at 240 px, in 16-row bands: the box through
+  the web's camera (P3, CAM 1000; `st_tumble` is the web's play/studio turn, Ry(a)*Rx(b)), the lilac back pane with
+  the balls' shadows, each wall a glass pane in its note's colour (lit when struck), the corner rails, the back rim, the
+  goo (pooled drops mint, a shade darker than the page; spray fainter), the balls far to near (a near ball bigger, a far
+  one hazier), the front rim on top. An open wall is not drawn.
+- `core/paint.h`: the pixel helpers the three renderers share (colours, a polygon's span and a line's pixels on one
+  row). draw.c and drawspace.c moved onto it; their frames are byte-identical to before (orb93, icosa.cut, curved 5/6/7).
+- `wsl make -C fm1/host draw` (then `node fm1/host/check-drawtank.js` for PNGs, 2x): the studio scene played 40 bars
+  on the light goo (fill 0.58), drawn from three camera turns. Checks: banded = whole (no seams); each wall's front edge
+  shows its note's colour, from the tank's degrees (edges under 10 px, seen edge-on, skipped); each ball shows its colour
+  at its projected centre (balls under a rim, a rail or a nearer ball skipped); a near ball drawn bigger; the goo shows.
+  0.19-0.29 ms a frame on this pc; the view 22 KB, the band 7.5 KB.
+- Sabotaged 3 ways, each caught: drops near a band's top left out (seams), each wall in the next note's colour (rim;
+  the first version compared the pixel with the view's own colour and missed it, so it now asks the tank), no
+  perspective (near/far size).
+- NOT CHECKED BY A MACHINE: whether it reads well on the real screen (`fm1/host/tank0..2.png`), the goo's look (a hard
+  mint mass; the web blurs its blobs), the speed on the RP2350.
