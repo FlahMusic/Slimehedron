@@ -6,3 +6,8 @@ host/*.png
 host/spacetest_double
 host/spacetest_float
 host/melodytest
+host/tanktest
+host/tank_c.txt
+host/tank_rust.txt
+host/tankref/target/
+host/tankref/Cargo.lock

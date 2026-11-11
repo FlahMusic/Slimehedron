@@ -1,0 +1,7 @@
+# The tank scenes the C tank must play exactly like the plugin's (fm1/host/check-tank.js).
+# name walls scale octs spin chaos quantize swing vel_rand auto bpm seed bars
+studio   6  major     2   0   0.12 1 0.15 1 1  80  4 72
+spin5    5  pentaMaj  2  40   0.12 1 0.15 1 1 120  7 24
+edo19   12  edo19all  2   0   0.3  0 0.15 0 1  96 11 16
+tri      3  minor     3 -60   0.12 1 0    1 1 140  2 40
+manual   8  dorian    2   0   0.12 1 0.15 1 0  80  9 12

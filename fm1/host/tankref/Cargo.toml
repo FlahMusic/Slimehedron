@@ -1,0 +1,12 @@
+# The plugin's headless tank, run through fixed scenes: the reference the FM-1's C tank must match number for number.
+# Built in WSL (the same libm as the C host build): see fm1/host/check-tank.js. Not part of the plugin workspace.
+[package]
+name = "tankref"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+slimehedron-core = { path = "../../../vst/slimehedron-core" }
+
+[workspace]

@@ -14,5 +14,9 @@ Plan and open questions: `_docs/specs/2026-11-03-fm1-firmware/brief.md`, `_docs/
   the arc direction. Frames: `fm1/host/curved5/6/7.png` (`./spacetest_float render N curvedN.ppm`).
 - `core/melody.c`: the auto-notes melody, the same line as the web and the plugin: `wsl make -C fm1/host melody` replays
   the web's golden notes (`vst/slimehedron-core/src/tank/melody_golden.txt`, 6000 notes) and must match every one.
+- `core/tank.c` + `core/goo.c` + `core/music.c`: the tank in normal space with its goo, the plugin's headless tank line
+  for line. `wsl make -C fm1/host tank && node fm1/host/check-tank.js` runs the plugin's own tank (`host/tankref`, Rust,
+  needs `~/.cargo` in WSL) and the C one through `host/scenes.txt`: every hit and every 30th tick must be the same
+  double. `TANKDBG=1` makes both print every drop every tick, to find where two runs part.
 - The port's tickets: `_docs/specs/2026-11-11-fm1-port/spec.md`. The firmware base is SLOOP (Flah 2026-11-11); the
   device build comes with it (ticket 08). Never flash Flah's FM-1 without asking.

@@ -35,3 +35,14 @@ check: all
 
 clean:
 	rm -f solidtest_double solidtest_float dump_*.json *.ppm
+
+TANKSRC = ../core/tank.c ../core/goo.c ../core/music.c ../core/melody.c
+tanktest: $(TANKSRC) ../core/tank.h ../core/goo.h ../core/music.h ../core/melody.h tanktest.c
+	$(CC) $(CFLAGS) -o $@ $(TANKSRC) tanktest.c -lm
+
+# the C tank and the plugin's tank through the same scenes; then: node fm1/host/check-tank.js
+tank: tanktest
+	./tanktest scenes.txt > tank_c.txt
+	CARGO_TARGET_DIR=$$HOME/fm1-tankref $$HOME/.cargo/bin/cargo build --release -q --manifest-path tankref/Cargo.toml
+	$$HOME/fm1-tankref/release/tankref scenes.txt > tank_rust.txt
+.PHONY: tank
