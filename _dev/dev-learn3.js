@@ -226,6 +226,21 @@ const JUDGED=['howlong','sayplay','echo','notes'];   // (staff is read by sight 
   ok(cbLead.join('')==='4321','11 and on screen: '+cbLead.join(' '));
   ok(cb.length>=8&&cb.every(x=>x.got===x.want&&Math.abs(x.x-x.wx)<0.02),'11 the ball is on the right beat at each beat ('+cb.filter(x=>x.got===x.want&&Math.abs(x.x-x.wx)<0.02).length+' of '+cb.length+' looks)');}
 
+ // ---- 11b: an extra tap is judged (logic pass: "a tap on a small count is still free"). A bar tapped exactly on its notes
+ // counts; the next bar, tapped the same plus one tap on a small count (between note starts), does not.
+ await open('countbar');await p.click('#learnOverlay .lgListen',{force:true});
+ const tapBar=extra=>p.evaluate(async extra=>{const P=0.6,w=ms=>new Promise(r=>setTimeout(r,ms));
+   const t00=window._labReadT0;for(let i=0;i<100&&!(window._labReadBeats&&window._labReadT0&&window._labReadT0!==window.__lastT0);i++)await w(50);
+   const t0=window._labReadT0;window.__lastT0=t0;const B=window._labReadBeats,R=window._labReadRests,L=window._labReadLens;
+   const at=[];B.forEach((b,i)=>{if(!R[i])at.push(t0+b*P);});
+   if(extra){const i=R.findIndex(r=>!r);at.push(t0+(B[i]+Math.min(0.5,L[i]/2))*P);}
+   for(const T of at)setTimeout(()=>window._lab_tap&&window._lab_tap(),Math.max(0,(T-AC.currentTime)*1000));
+   const end=t0+(B[B.length-1]+L[L.length-1]+1.3)*P;await w(Math.max(0,(end-AC.currentTime)*1000)+300);
+   return {count:document.querySelector('.lgCount').textContent,feed:document.getElementById('lgFeed').textContent,taps:at.length};},extra);
+ const cl=await tapBar(false),cx=await tapBar(true);
+ ok(cl.count.trim().startsWith('1 '),'11b a bar tapped exactly on its notes counts ('+cl.taps+' taps: '+cl.count+')');
+ ok(cx.count.trim().startsWith('1 '),'11b the next, tapped the same plus one tap on a small count, does not ('+cx.taps+' taps: '+cx.count+', "'+cx.feed+'")');
+
  // ---- 14: a merged lesson: High and Low's rounds, then Up or Down as its part 2, then ONE ending
  {await open('high');let saw2=false,title2='';
   for(let i=0;i<120&&!(await p.evaluate(()=>!!document.querySelector('.lgDone')));i++){

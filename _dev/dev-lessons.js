@@ -217,15 +217,17 @@ for(const id of ids){
  // REST DURATION: play the notes, stay silent on the rests. dev-rest.js proves the silence MATTERS;
  // this just proves the lesson terminates like every other one.
  for(const RID of ['rest','split']){
-  await home();await open(RID);
+  await home();await open(RID);let tapped='';   // one tap a note: the units judge extra taps now (they used to be free)
   for(let i=0;i<700&&!(await doneUp());i++){
     const r=await p.evaluate(()=>{
       if(typeof AC==='undefined'||!AC||window._labReadAt==null)return null;
       const c=[...document.querySelectorAll('.lgCell')][window._labReadIdx];
-      return {wait:(window._labReadAt-AC.currentTime)*1000,rest:!!(c&&c.classList.contains('rest'))};});
+      return {wait:(window._labReadAt-AC.currentTime)*1000,rest:!!(c&&c.classList.contains('rest')),key:window._labReadT0+':'+window._labReadIdx};});
     if(!r){await p.waitForTimeout(80);continue;}
+    if(r.key===tapped){await p.waitForTimeout(60);continue;}
     if(r.wait>0)await p.waitForTimeout(Math.min(700,r.wait));
-    if(!r.rest)await p.evaluate(()=>window._lab_tap&&window._lab_tap());
+    if(r.wait>700)continue;   // not there yet: look again
+    tapped=r.key;if(!r.rest)await p.evaluate(()=>window._lab_tap&&window._lab_tap());
     await p.waitForTimeout(90);}
   ok(await doneUp(),RID.toUpperCase()+' ends with a "you did it" card');}
 

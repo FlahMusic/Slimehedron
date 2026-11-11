@@ -771,7 +771,7 @@ function readUnit(cfg){
     if(!started){started=true;paint();}
     idx=0; t0=AC.currentTime+0.15+4*P;
     countIn(t0-4*P,P);
-    window._labReadT0=t0;
+    window._labReadT0=t0;window._labReadBeats=beatOf.slice();window._labReadRests=seq.map(isRest);window._labReadLens=seq.map(k=>NOTEV[k]);   // test hooks
     const cells=[...document.querySelectorAll('.lgCell')];
     const ball=document.getElementById('rgBall'),stepEls=[...document.querySelectorAll('.rgStep')],fdL=document.getElementById('lgFeed');
     let lead=true;
@@ -821,6 +821,10 @@ function readUnit(cfg){
     if(best>=0&&bd<=win&&cells[best]){
       if(cells[best].classList.contains('rest'))cells[best].classList.remove('hitok');
       else cells[best].classList.add('hitok');}
+    else{   // AN EXTRA TAP IS A MISTAKE (logic pass): nowhere near a note's start, so on a small count or between notes. It
+      // used to be ignored, so tapping every count of a long note still passed. It costs the note it lands in.
+      const beat=(now-t0)/P;
+      if(beat>=0&&beat<total){let j=0;for(let i=0;i<seq.length;i++)if(beatOf[i]<=beat)j=i;if(cells[j])cells[j].classList.remove('hitok');}}
   }
   const onDown=(e)=>{const p=e.target.closest&&e.target.closest('#lgPad');if(!p)return;e.preventDefault();judge();};
   ov.addEventListener('pointerdown',onDown,true);

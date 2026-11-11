@@ -21,7 +21,7 @@ twice running, 6 grid + playhead + count-in, 7 one drum colour code, 8 every but
 | make | each pick plays on its step (07) | move to the end of the rhythm block: needs Flah's yes + ADR (it sits at #2 on purpose, retention data) |
 | sayplay | rebuilt as Copy the Beat, the drum grid (08, 09, ADR 0013) | |
 | howlong | listen first, a lead-in, the note alone (10) | |
-| countbar, rest, split | lead-in, 4/4 step grid with a bouncing ball (11) | judge extra taps (a tap on a "small" count is still free) |
+| countbar, rest, split | lead-in, 4/4 step grid with a bouncing ball (11); an extra tap (a small count, or between notes) costs the note it lands in (2026-11-10, dev-learn3 11b) | |
 | song | merged: part 2 of count to four (ADR 0014) | |
 | tempo | same number of notes both ways, speed varies per round, a different tune | |
 | dynamic | the tune varies per round | |

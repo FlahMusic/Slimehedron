@@ -191,6 +191,11 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     focus arrived is tracked (_kbFocusEl), since a key press turns :focus-visible on for mouse focus too. Tooltips name
     the keys (play "(space)" in studio, drums "(D)", slime "(A)"; the tempo box says it drags). dev-studiokeys (new,
     sabotaged 5 ways). FOR FLAH: WCAG 2.1.4, A and D are global single-letter shortcuts (recommended: Shift+A/Shift+D).
+    EXTRA TAPS JUDGED (2026-11-10, sw v156; logic pass). countbar / rest / split: a tap nowhere near a note's start (on a
+    small count, or between notes) used to be ignored, so tapping every count of a long note passed. It now costs the
+    note it lands in (the bar reads "Close, listen and try again!"). dev-learn3 11b (a clean bar counts, the same bar
+    plus one extra tap does not; sabotaged). Test hooks: _labReadBeats / _labReadRests / _labReadLens.
+    dev-lessons's rest/split driver tapped every 90 ms through each held note (the old leniency hid it): one tap a note now.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto
