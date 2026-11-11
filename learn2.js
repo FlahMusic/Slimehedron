@@ -1890,18 +1890,22 @@ const RJ_PADS=[{v:'K',k:'ge_kick',col:'#7b4fd6'},{v:'s',k:'ge_snare',col:'#e0453
 function rhythmJamUnit(){
   stageOff();
   const BPM=96, BEAT=60/BPM, SLOT=BEAT/2, SLOTS=8, LOOP=SLOT*SLOTS;   // one bar of eighth notes
-  let mine=true, rounds=0, played=0, busy=false, raf=0, loopAt=0, cur=-1;
+  let mine=true, rounds=0, played=0, busy=false, raf=0, loopAt=0, cur=-1, gridT0=0, callCells=new Set(), youCells=new Set();
   try{initAudio();if(AC&&AC.state==='suspended')AC.resume();}catch(e){}
   LAB.take({scale:'pentaMaj',octs:1,drums:false,band:false,touch:false});
   LAB.labels(null);LAB.clear();
   function paint(){
     const pads=RJ_PADS.map((p,i)=>
       '<button class="mkPad rjPad" data-rj="'+p.v+'" style="--rc:'+p.col+'">'+t(p.k)+'</button>').join('');
-    const dots=Array.from({length:SLOTS},(_,i)=>'<i class="mkSlot'+(i===cur?' now':'')+'"></i>').join('');
+    // THE CALL ON A GRID (logic pass): three lanes in the drum colours, two bars of eighths. A step of the call fills as
+    // it sounds; a tap of yours puts a dot on the step it lands on. A picture, not buttons (the pads below are the drums).
+    const lanes=RJ_PADS.map(p=>'<div class="geRow" style="--lc:'+p.col+'"><span class="geLbl"><i></i>'+t(p.k)+'</span>'+
+      Array.from({length:SLOTS*2},(_,i)=>'<i class="rjCell'+(i%2===0?' beat':'')+(i===SLOTS?' bar':'')+(callCells.has(p.v+i)?' call':'')+
+        (youCells.has(p.v+i)?' you':'')+(i===cur?' now':'')+'" data-rj="'+p.v+i+'"></i>').join('')+'</div>').join('');
     stage('<div class="lgTop"><button class="lgBack" data-a2="home">&lsaquo; '+t('home')+'</button>'+
         '<h3>'+t('u_rjam')+'</h3><span class="lgCount">'+(played?t('rj_tally',{n:played}):'')+'</span>'+
         '</div>'+
-      '<div class="mkRing">'+dots+'</div>'+
+      '<div class="rjGrid geGrid" aria-hidden="true">'+lanes+'</div>'+
       '<p class="lgSay">'+t(mine?'rj_mine':'rj_yours')+'</p>'+
       '<div class="lgFeed" id="lgFeed">'+(mine?'':t('rj_free'))+'</div>'+
       '<div class="mkPads">'+pads+'</div>'+
@@ -1918,27 +1922,30 @@ function rhythmJamUnit(){
     if(busy)return;
     const now=AC.currentTime;
     if(now>=loopAt-0.08){groove(loopAt);loopAt+=LOOP;}
-    const pos=Math.floor((now-(loopAt-LOOP))/SLOT)%SLOTS;
-    if(pos!==cur&&pos>=0){cur=pos;
-      document.querySelectorAll('.mkSlot').forEach((e,i)=>e.classList.toggle('now',i===cur));}
+    const pos=gridT0&&now>=gridT0?Math.floor((now-gridT0)/SLOT)%(SLOTS*2):-1;   // the playhead walks the grid's two bars
+    if(pos!==cur){cur=pos;
+      document.querySelectorAll('.rjCell').forEach(e=>e.classList.toggle('now',+e.dataset.rj.slice(1)===cur));}
     raf=requestAnimationFrame(tick);
   }
   function flash(v){const el=document.querySelector('.rjPad[data-rj="'+v+'"]');
     if(!el)return;el.classList.remove('hit');void el.offsetWidth;el.classList.add('hit');}
   function call(){
-    mine=true;paint();
-    const t0=AC.currentTime+0.25, lead=(t0-AC.currentTime)*1000;
+    // ON A BAR LINE: the call used to start a quarter second from whenever it was asked for, so it ran off the click it
+    // is heard against. It starts on the groove's next bar now.
+    let t0=loopAt;while(t0<AC.currentTime+0.12)t0+=LOOP;
+    mine=true;callCells=new Set();youCells=new Set();gridT0=t0;window._labRJamT0=t0;paint();
+    const lead=(t0-AC.currentTime)*1000;
     const n=5+((Math.random()*4)|0), used=[];
     while(used.length<n){const k=(Math.random()*(SLOTS*2))|0;if(used.indexOf(k)<0)used.push(k);}
     used.sort((a,b)=>a-b);
     used.forEach(k=>{
       const p=RJ_PADS[(Math.random()*RJ_PADS.length)|0];
       try{dHit(p.v,t0+k*SLOT,1.0);}catch(e){}
-      later(()=>flash(p.v),lead+k*SLOT*1000);
+      later(()=>{flash(p.v);callCells.add(p.v+k);const c=document.querySelector('.rjCell[data-rj="'+p.v+k+'"]');if(c)c.classList.add('call');},lead+k*SLOT*1000);
     });
     later(()=>{mine=false;rounds++;paint();window._labJamTurn='child';
-      later(()=>{if(!busy)call();},LOOP*2*1000);      // their two bars, then it comes round again
-    },LOOP*2*1000+200);
+      later(()=>{if(!busy)call();},LOOP*2*1000-150);  // their two bars, then it comes round again, on the bar after them
+    },lead+LOOP*2*1000);
   }
   const onDown=(e)=>{
     const dn=e.target.closest&&e.target.closest('[data-rj="done"]');
@@ -1949,6 +1956,8 @@ function rhythmJamUnit(){
     const v=pd.dataset.rj;
     try{dHit(v,AC.currentTime,1.05);}catch(err){}
     flash(v);
+    if(gridT0){const k=((Math.round((AC.currentTime-gridT0)/SLOT))%(SLOTS*2)+SLOTS*2)%(SLOTS*2);youCells.add(v+k);   // the dot shows where it landed; the sound was now
+      const c=document.querySelector('.rjCell[data-rj="'+v+k+'"]');if(c)c.classList.add('you');}
     // NOTHING IS CHECKED. Not against the call, not against the grid. Playing through the call is
     // allowed too -- interrupting is allowed, this is a jam.
     played++;
@@ -1964,7 +1973,7 @@ function rhythmJamUnit(){
   later(call,700);
   _cleanup=()=>{_noteAnswer=null;busy=true;cancelAnimationFrame(raf);
     try{ov.removeEventListener('pointerdown',onDown,true);}catch(e){}
-    window._labRJam=null;window._lab_rjTap=null;stageOff();LAB.clear();};
+    window._labRJam=null;window._lab_rjTap=null;window._labRJamT0=null;stageOff();LAB.clear();};
 }
 
 // ---------- COMPOSE: ORFF'S FOURTH STAGE, AND THE OTHER HALF OF READING ----------

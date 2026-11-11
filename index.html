@@ -1009,6 +1009,18 @@ body.lab-stage #exitMode,body.lab-stage #cofWheel,body.lab-stage #toast{display:
   color:rgba(47,42,68,.85);pointer-events:none;text-shadow:0 2px 0 #fff}
 .geCount:empty{display:none}
 .geCheck{min-height:var(--tap);min-width:96px}
+/* RHYTHM JAM: the call drawn on the same kind of grid, two bars of eighths (logic pass). A picture, not buttons: a step of
+   the call fills in its drum's colour as it sounds, a tap of yours leaves a dot (shape as well as colour, WCAG 1.4.1) */
+.rjGrid{width:min(100%,560px);margin:8px auto 0;gap:4px;flex:none}
+.rjGrid .geRow{gap:3px;padding:2px}
+.rjGrid .geLbl{flex:0 0 58px;font-size:12px}
+.rjCell{flex:1 1 0;min-width:0;height:22px;border-radius:6px;border:1.5px solid var(--lc);background:#fff;opacity:.5;position:relative}
+.rjCell.beat{opacity:.8}
+.rjCell.bar{margin-left:6px}
+.rjCell.call{background:var(--lc);opacity:1}
+.rjCell.you{opacity:1}
+.rjCell.you::after{content:"";position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--lc);box-shadow:0 0 0 2px #fff}
+.rjCell.now{outline:2px solid #2f2a44;outline-offset:1px}
 .lgBall .lgCi{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font:900 22px system-ui,sans-serif;color:#fff;text-shadow:0 1px 2px rgba(47,42,68,.6)}
 /* THE GRID UNDER A READING BAR (ticket 11): studio's step grid, four steps a beat, a ball hopping beat to beat */
 .rgWrap{position:relative;width:min(100%,560px);container-type:inline-size;padding-top:26px}

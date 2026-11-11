@@ -196,6 +196,12 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     note it lands in (the bar reads "Close, listen and try again!"). dev-learn3 11b (a clean bar counts, the same bar
     plus one extra tap does not; sabotaged). Test hooks: _labReadBeats / _labReadRests / _labReadLens.
     dev-lessons's rest/split driver tapped every 90 ms through each held note (the old leniency hid it): one tap a note now.
+    RHYTHM JAM'S CALL ON A GRID (2026-11-10, sw v157; logic pass). Three lanes in the drum colours, 16 steps (two bars of
+    eighths): a step of the call fills as it sounds, a tap leaves a dot on the step it lands on (the sound stays
+    immediate), and one playhead walks the grid (the 8-dot ring is gone from rjam; Make a Loop keeps its ring). Found on
+    the way: the call started 0.25 s from whenever it was asked for, off the groove's click; it starts on the next bar
+    line now (worst hit 0.0 ms off an eighth). dev-learn3 17 (sabotaged 4 ways: off the bar line, not drawn, no dot,
+    the ring instead of the grid).
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

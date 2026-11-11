@@ -25,7 +25,7 @@ twice running, 6 grid + playhead + count-in, 7 one drum colour code, 8 every but
 | song | merged: part 2 of count to four (ADR 0014) | |
 | tempo | same number of notes both ways, speed varies per round, a different tune | |
 | dynamic | the tune varies per round | |
-| rjam | kick / snare / hi-hat pads in the drum colours, a click as the pulse | draw the call on a grid |
+| rjam | kick / snare / hi-hat pads in the drum colours, a click as the pulse; the call drawn on a 3 x 16 grid as it sounds, your taps dotted where they land, the call started on a bar line (it ran off the click) (2026-11-10, dev-learn3 17) | |
 | high, notes, home, steps, newhome, majorscale, brightdark, intervals, chords, minorscale, minorshapes, modes | listen first, no repeats; merged: updown is part 2 of high, findhome of home, intervals of chords; minor and modes kept and moved last (ADR 0014) | steps as a step/skip choice |
 | staff | reading now: see the note, press its letter (it was answered by sight); no repeats | |
 | melody, compose | no change needed for 06-13 | compose: save kept tunes for review |

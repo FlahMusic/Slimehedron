@@ -292,6 +292,32 @@ const JUDGED=['howlong','sayplay','echo','notes'];   // (staff is read by sight 
   const gap=lv.drums-lv.notes;
   ok(gap<=-1&&gap>=-6,'16 and its drums sit just under its notes, audible, not buried (drums '+gap.toFixed(1)+' LU against the notes; window -6..-1)');}
 
+ // ---- 17: rhythm jam's call, drawn (logic pass: "draw the call on a grid"), and on the beat. Three lanes in the drum
+ // colours, 16 steps (two bars of eighths); every hit of the call lights its step as it sounds; the call starts on a bar
+ // line of the groove, so each hit lands on an eighth of the click; a tap marks the step it lands on and sounds now.
+ await p.evaluate(()=>{window.__rj=[];if(!window.__rjOn){window.__rjOn=1;const D0=dHit;dHit=function(v,t,a){window.__rj.push({v,t:t==null?AC.currentTime:t,now:AC.currentTime});return D0.apply(this,arguments);};}});   // before it opens: the call is scheduled 0.7 s in
+ await open('rjam');
+ let rjT0=null;for(let i=0;i<60&&rjT0==null;i++){await p.waitForTimeout(100);rjT0=await p.evaluate(()=>window._labRJamT0||null);}
+ await p.waitForTimeout(400);
+ const callEnd=await p.evaluate(()=>window._labRJamT0+2*8*(60/96/2));
+ for(let i=0;i<80;i++){const nowA=await p.evaluate(()=>AC.currentTime);if(nowA>callEnd+0.1)break;await p.waitForTimeout(100);}
+ const rj=await p.evaluate(()=>{const SLOT=60/96/2,t0=window._labRJamT0,hits=window.__rj.filter(x=>x.v!=='r'&&x.t>=t0-0.001&&x.t<t0+16*SLOT),
+     clicks=window.__rj.filter(x=>x.v==='r');
+   const grid=document.querySelector('.rjGrid'),cells=grid?[...grid.querySelectorAll('.rjCell.call')].map(c=>c.dataset.rj):[];
+   const want=hits.map(x=>x.v+Math.round((x.t-t0)/SLOT)).sort(),got=cells.slice().sort();
+   const c0=clicks.length?clicks[0].t:t0,off=hits.map(x=>{const q=(x.t-c0)/SLOT;return Math.abs(q-Math.round(q))*SLOT*1000;});
+   return {grid:!!grid,lanes:grid?grid.querySelectorAll('.geRow:not(.geNums)').length:0,steps:grid?grid.querySelectorAll('.geRow:not(.geNums)')[0].querySelectorAll('.rjCell').length:0,
+     want,got,off:off.length?Math.max(...off):99,ring:!!document.querySelector('.mkRing'),now:grid?grid.querySelectorAll('.rjCell.now').length:0};});
+ ok(rj.grid&&rj.lanes===3&&rj.steps===16,'17 rhythm jam draws a grid: 3 drum lanes, 16 steps ('+rj.lanes+' x '+rj.steps+')');
+ ok(rj.want.length>=5&&rj.want.join()===rj.got.join(),'17 every hit of the call lit its step ('+rj.got.length+' of '+rj.want.length+': '+rj.got.slice(0,6).join(' ')+')');
+ ok(rj.off<2,'17 the call starts on a bar line: each hit lands on an eighth of the click (worst '+rj.off.toFixed(1)+' ms off)');
+ ok(!rj.ring,'17 one playhead: the grid, not the old ring of dots as well');
+ {const tp=await p.evaluate(async()=>{const SLOT=60/96/2,t0=window._labRJamT0;window.__rj=[];
+    const at=AC.currentTime;window._lab_rjTap('s');const hit=window.__rj.find(x=>x.v==='s');
+    const k=((Math.round((at-t0)/SLOT))%16+16)%16;await new Promise(r=>setTimeout(r,60));
+    const c=document.querySelector('.rjCell[data-rj="s'+k+'"]');return {late:hit?(hit.t-hit.now)*1000:99,mark:!!(c&&c.classList.contains('you')),k};});
+  ok(tp.late<5&&tp.mark,'17 a tap sounds now ('+tp.late.toFixed(1)+' ms) and marks the step it lands on (snare, step '+(tp.k+1)+': '+tp.mark+')');}
+
  // ---- 12: Play It Again lists what was finished (the same day too), each with what it taught, and replays it
  {const fin=['howlong','sayplay','staff'];
   await p.evaluate(f=>{const pr=JSON.parse(localStorage.getItem('slimehedron-learn2')||'{}');const now=Date.now();
