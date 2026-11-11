@@ -2193,7 +2193,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
     </div>
     </div><!-- /.fadeRow -->
     <button class="btn primary big" id="playBtn" title="play / pause" aria-label="play or pause">▶</button>
-    <button class="btn big" id="drumBtn" title="drums" aria-label="drums" data-l="drums"><svg width="30" height="30" viewBox="0 0 24 24"><use href="#icKit"/></svg></button>
+    <button class="btn big" id="drumBtn" title="drums (D)" aria-label="drums" data-l="drums"><svg width="30" height="30" viewBox="0 0 24 24"><use href="#icKit"/></svg></button>
     <button class="btn big" id="bandBtn" title="backing band" aria-label="backing band" data-l="band"><svg width="45" height="34" viewBox="0 0 32 24"><use href="#icBass"/></svg></button>
     <button class="btn big" id="dropBtn" title="drop a ball" aria-label="drop a ball" data-l="ball"><svg width="28" height="28" viewBox="0 0 24 24"><use href="#icBall"/></svg></button>
     <button class="btn big" id="newShapeBtn" title="new shape!" aria-label="new shape">🎲</button>
@@ -2214,7 +2214,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
      Populated at runtime by MOVING the existing (already-wired) controls in, so there is exactly one
      #bpmNum, one #drumSig etc. in the document - duplicating them would fork the state. -->
 <div id="studioBar"></div>
-<div id="autoRow"><button class="slimeswitch" id="slimeBig" title="auto-play"><span class="ss-knob"><span class="sic">✨</span></span></button><button type="button" id="autoNotesBtn" aria-pressed="false" aria-label="the slime plays notes too" title="the slime plays notes too"><span class="anWord" aria-hidden="true">notes</span><svg viewBox="0 0 28 28" width="30" height="30" aria-hidden="true"><defs><radialGradient id="anG" cx=".34" cy=".3" r=".85"><stop offset="0" stop-color="#fff"/><stop offset=".28" stop-color="#d4f7ea"/><stop offset=".7" stop-color="#8fdcc4"/><stop offset="1" stop-color="#3fae90"/></radialGradient></defs><path d="M16.6 19.5V4.2" fill="none" stroke="#4a4170" stroke-width="2.3" stroke-linecap="round"/><path d="M16.6 4.2c3.2.9 5.6 3 5.9 6.6-.9-1.4-2.6-2.4-5.9-2.8" fill="#4a4170" stroke="#4a4170" stroke-width="1.2" stroke-linejoin="round"/><ellipse class="anHead" cx="11.6" cy="20" rx="6.2" ry="4.9" transform="rotate(-22 11.6 20)" fill="url(#anG)" stroke="#2f9c80" stroke-width="1.2"/><ellipse cx="9.4" cy="18.3" rx="1.8" ry="1.1" transform="rotate(-22 9.4 18.3)" fill="#fff" opacity=".9"/><path class="anDash" d="M4.5 4.5 L23.5 23.5" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/><path class="anDash" d="M4.5 4.5 L23.5 23.5" fill="none" stroke="#e0332f" stroke-width="2.2" stroke-linecap="round"/></svg></button></div>
+<div id="autoRow"><button class="slimeswitch" id="slimeBig" title="auto-play (A)"><span class="ss-knob"><span class="sic">✨</span></span></button><button type="button" id="autoNotesBtn" aria-pressed="false" aria-label="the slime plays notes too" title="the slime plays notes too"><span class="anWord" aria-hidden="true">notes</span><svg viewBox="0 0 28 28" width="30" height="30" aria-hidden="true"><defs><radialGradient id="anG" cx=".34" cy=".3" r=".85"><stop offset="0" stop-color="#fff"/><stop offset=".28" stop-color="#d4f7ea"/><stop offset=".7" stop-color="#8fdcc4"/><stop offset="1" stop-color="#3fae90"/></radialGradient></defs><path d="M16.6 19.5V4.2" fill="none" stroke="#4a4170" stroke-width="2.3" stroke-linecap="round"/><path d="M16.6 4.2c3.2.9 5.6 3 5.9 6.6-.9-1.4-2.6-2.4-5.9-2.8" fill="#4a4170" stroke="#4a4170" stroke-width="1.2" stroke-linejoin="round"/><ellipse class="anHead" cx="11.6" cy="20" rx="6.2" ry="4.9" transform="rotate(-22 11.6 20)" fill="url(#anG)" stroke="#2f9c80" stroke-width="1.2"/><ellipse cx="9.4" cy="18.3" rx="1.8" ry="1.1" transform="rotate(-22 9.4 18.3)" fill="#fff" opacity=".9"/><path class="anDash" d="M4.5 4.5 L23.5 23.5" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="round"/><path class="anDash" d="M4.5 4.5 L23.5 23.5" fill="none" stroke="#e0332f" stroke-width="2.2" stroke-linecap="round"/></svg></button></div>
 <div id="triMixBar">
   <div id="triMix" title="drag to mix: melody (top) · drums (left) · band (right)">
     <svg viewBox="-40 -46 180 172" width="248" height="238" style="display:block;overflow:visible">
@@ -2240,7 +2240,7 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
     <svg width="15" height="15" viewBox="0 0 24 24" style="flex:none"><use href="#icNote"/></svg>
     <select id="voiceTop" style="flex:none;width:auto" title="oscillator waveform"><option value="sine">∿ sine · smooth</option><option value="triangle" selected>△ triangle · mellow</option><option value="sawtooth">⊿ saw · bright</option><option value="square">⊓ square · buzzy</option><option value="random">⚄ random · surprise</option></select>
     <span style="display:flex;flex-direction:column;gap:3px"><!-- tempo with swing tucked right under it, where groove lives -->
-      <span style="display:flex;align-items:center;gap:6px"><span class="sub">Tempo</span><input type="number" id="bpmNum" class="numin" min="40" max="220" step="any" value="80" title="tempo in beats per minute: type a number"><span class="sub" style="font-size:10px">BPM</span><input type="range" id="bpmTop" min="40" max="220" value="80" style="width:64px;flex:none" title="tempo (BPM)"></span>
+      <span style="display:flex;align-items:center;gap:6px"><span class="sub">Tempo</span><input type="number" id="bpmNum" class="numin" min="40" max="220" step="any" value="80" title="tempo in beats per minute: drag up or down, scroll, or tap to type (arrow keys step it)"><span class="sub" style="font-size:10px">BPM</span><input type="range" id="bpmTop" min="40" max="220" value="80" style="width:64px;flex:none" title="tempo (BPM)"></span>
       <span id="swingWrap" style="display:flex;align-items:center;gap:6px"><svg width="28" height="28" viewBox="0 0 24 24" style="flex:none"><use href="#icSwing"/></svg><input type="range" id="swingSl" min="0" max="100" value="15" style="width:58px;flex:none" title="swing — offbeats land late"></span>
     </span>
   </span>
@@ -7016,6 +7016,7 @@ $("dlyTop").addEventListener('input',e=>{const x=Math.pow(e.target.value/100,2)*
 $("dly").addEventListener('input',()=>{const t=$("dlyTop");if(t&&!dlyGrab)t.value=$("dly").value;}); // card slider keeps the top fader honest
 // ---------- modes: one engine, three doors — the class on <body> decides what shows ----------
 function applyMode(m){S.mode=m;
+  {const pb=$("playBtn");if(pb)pb.title=m==='studio'?'play / pause (space)':'play / pause';}   // Space is the transport in studio only (a ball in play)
   try{applyMix();}catch(e){}   // the studio mixer applies in studio only
   if(TSPACE.pick==='auto'&&m!=='play'&&!S.slimeMode&&TSPACE.cur!=='normal'){TSPACE.cur='normal';try{rebuild();}catch(e){}}   // auto only mixes spaces in play
   if(window._spaceChip)window._spaceChip();
@@ -7868,6 +7869,10 @@ async function enableMidiIn(){
   }catch(e){toast('MIDI permission denied');}}
 // keyboard autonomy: space = balls, A = auto play, D = drums, arrows = tempo (recording is button-only — no hotkey to fat-finger mid-take)
 let lastKb=0;
+// how focus arrived: within half a second of a pointer press it is the mouse's; otherwise the keyboard's (or a script's)
+let _ptrAt=0,_kbFocusEl=null;
+addEventListener('pointerdown',()=>{_ptrAt=performance.now();},true);
+addEventListener('focusin',e=>{_kbFocusEl=(performance.now()-_ptrAt<500)?null:e.target;},true);
 addEventListener('keydown',e=>{
   const tg=e.target.tagName;if(tg==='SELECT'||tg==='INPUT'||tg==='TEXTAREA')return;
   if((kbOn||S.mode==='learn')&&!e.repeat){ // instrument mode: letters are keys, not shortcuts. learn lessons: always on — no toggle hunting
@@ -7878,6 +7883,14 @@ addEventListener('keydown',e=>{
     if(KEYMAP[e.code]!==undefined){e.preventDefault();playNote(60+kbOct*12+KEYMAP[e.code],100);
       const k=document.querySelector(`#kbMap [data-k="${e.code}"]`);if(k){k.classList.add('lit');setTimeout(()=>k.classList.remove('lit'),160);}
       return;}}
+  // A control reached with the keyboard answers Space and Enter itself (WCAG 2.1.1). After a mouse click leaves a button
+  // focused, the keys are the app's again. (Not :focus-visible: a key press turns that on for whatever has focus, mouse
+  // or not, so how focus ARRIVED is tracked instead: _kbFocusEl.)
+  {const ft=e.target&&e.target.closest&&e.target.closest('button,[role=button],summary,a[href]');
+   if(ft&&(e.code==='Space'||e.code==='Enter')&&_kbFocusEl&&ft.contains(_kbFocusEl))return;}
+  // STUDIO: Space plays and pauses, as in every DAW (Ableton Live 12 manual 42.20 "Play/Stop: Space"; GarageBand "Start or
+  // stop playback: Space bar"). The ball rainstorm stays on Enter and Shift there, and on all three in play.
+  if(S.mode==='studio'&&e.code==='Space'){e.preventDefault();if(!e.repeat)$("playBtn").click();return;}
   if(e.code==='Space'||e.code==='Enter'||e.code==='ShiftLeft'||e.code==='ShiftRight'){e.preventDefault(); // hold any of them for a ball rainstorm
     const nw=performance.now();if(nw-lastKb<110)return;lastKb=nw;
     initAudio();if(AC&&AC.state==='suspended')AC.resume();

@@ -185,6 +185,12 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     in play by design; studio only now). dev-entry's play tap passes 3 of 3 since 9ca1b21 (91, 70, 65 ms); why it
     failed on 6b39647 is not pinned. dev-governor: machine-dependent, logged in SUITES.md. FOR FLAH: a part 2 opens its
     own explore-then-ready screen mid-lesson (chords -> intervals): keep, or go straight to its questions?
+    STUDIO KEYS (2026-11-10, sw v155; spec _docs/specs/2026-11-10-studio-keys). Studio: Space plays and pauses (Ableton
+    42.20, GarageBand; it dropped a ball), Enter/Shift still drop balls, play keeps Space as a ball. A control reached
+    with the keyboard now answers Space/Enter itself (the global handler swallowed Space on every focused button); how
+    focus arrived is tracked (_kbFocusEl), since a key press turns :focus-visible on for mouse focus too. Tooltips name
+    the keys (play "(space)" in studio, drums "(D)", slime "(A)"; the tempo box says it drags). dev-studiokeys (new,
+    sabotaged 5 ways). FOR FLAH: WCAG 2.1.4, A and D are global single-letter shortcuts (recommended: Shift+A/Shift+D).
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto
