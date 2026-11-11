@@ -27,7 +27,7 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
 | 03 | PORTAL SPACE: two wormholes gliding round the walls with the beat; a ball drawn in and spat out (web: wormPlace, wormEnter, wormExit, wormPull) | open |
 | 04 | The tank tick in normal space: 2D plus depth, walls as notes, beat lock, quantize hold (blueprint: the Rust core and `web-stats.json`) | open |
 | 05 | 2.5D look for normal and portal space: front and back outline, near faces tinted, z-sized balls with floor shadows, banded, redraw only changed bands | open |
-| 06 | Music logic: the chord brain, the auto-notes melody (golden: `vst/slimehedron-core/src/tank/melody_golden.txt`), pane chords | open |
+| 06 | Music logic: the auto-notes melody (`core/melody.c`: the web's 6000 golden notes note for note, every random number used; sabotaged 3 ways) | melody done; the chord brain and pane chords open |
 | 07 | The goo, lighter but real: a capped particle count plus a level; it must still slow balls and soften notes | open |
 | 08 | Firmware base: fork SLOOP, its toolchain (Docker), fm1-emu as the bench; the CPU budget per sound and golden render hashes (Felucca's discipline) | open |
 | 09 | Controls and LEDs (brief section 5), sounds from the FM-1's engines (brief 3c) | open |

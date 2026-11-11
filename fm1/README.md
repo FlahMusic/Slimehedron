@@ -12,5 +12,7 @@ Plan and open questions: `_docs/specs/2026-11-03-fm1-firmware/brief.md`, `_docs/
   node fm1/host/check-space.js` against `_dev/space-ref.json` (rerun `node _dev/space-ref.js` after a change to the
   web's curved space). Sabotaged 4 ways, each caught: the reflection's sign, cosh/sinh swapped, the corner radius,
   the arc direction. Frames: `fm1/host/curved5/6/7.png` (`./spacetest_float render N curvedN.ppm`).
+- `core/melody.c`: the auto-notes melody, the same line as the web and the plugin: `wsl make -C fm1/host melody` replays
+  the web's golden notes (`vst/slimehedron-core/src/tank/melody_golden.txt`, 6000 notes) and must match every one.
 - The port's tickets: `_docs/specs/2026-11-11-fm1-port/spec.md`. The firmware base is SLOOP (Flah 2026-11-11); the
   device build comes with it (ticket 08). Never flash Flah's FM-1 without asking.

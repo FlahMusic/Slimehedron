@@ -14,6 +14,13 @@ spacetest_float: ../core/space.c ../core/space.h ../core/drawspace.c ../core/dra
 space: spacetest_double spacetest_float
 .PHONY: space
 
+melodytest: ../core/melody.c ../core/melody.h melodytest.c
+	$(CC) $(CFLAGS) -o $@ ../core/melody.c melodytest.c -lm
+
+melody: melodytest
+	./melodytest ../../vst/slimehedron-core/src/tank/melody_golden.txt
+.PHONY: melody
+
 solidtest_double: $(SRC) ../core/solid.h ../core/draw.h
 	$(CC) $(CFLAGS) -DSH_REAL=double -o $@ $(SRC) -lm
 

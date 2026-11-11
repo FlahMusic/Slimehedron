@@ -5,3 +5,4 @@ host/*.ppm
 host/*.png
 host/spacetest_double
 host/spacetest_float
+host/melodytest
