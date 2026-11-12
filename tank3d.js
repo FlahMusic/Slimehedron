@@ -402,9 +402,17 @@ export function start(){
   let gooW=null,gooBusy=false,gooWms=0,gooSyncOn=false;   // gooSyncOn: a test switch (pinned-clock suites draw many frames in one go; a worker cannot answer inside that)
   const useW=()=>gooW&&!gooSyncOn;
   try{gooW=new Worker(new URL('./goo-worker.js',import.meta.url),{type:'module'});
-    gooW.onmessage=e=>{gooBusy=false;const m=e.data;gooWms=m.ms;if(mc&&m.res===GRES&&!gooSyncOn)applySkin(m);};
+    gooW.onmessage=e=>{gooBusy=false;const m=e.data;gooWms=m.ms;gooWavg+=(m.ms-gooWavg)*0.2;
+      // THE GRID FOLLOWS THE CORE THAT BUILDS IT. A 60-cell skin took 25 ms a build on a slow core (measured 2026-11-11), and
+      // a build was posted the moment the last one came back: a whole core pinned, the skin lagging. Too slow (over 28 ms,
+      // more than two frames, for 20 builds) and the grid steps down 60 -> 48 -> 40; well under 10 ms for 90 builds and it
+      // steps back up. The new grid starts when its first skin arrives, so the goo never blinks.
+      const top=lite?40:60;if(gooWavg>28&&GRESwant>40){if(++gooWslow>=20){gooWslow=0;GRESwant=GRESwant>48?48:40;}}else gooWslow=0;
+      if(gooWavg<10&&GRESwant<top){if(++gooWfast>=90){gooWfast=0;GRESwant=GRESwant<48?48:top;}}else gooWfast=0;
+      if(!mc||gooSyncOn)return;if(m.res===GRES)applySkin(m);else if(m.res===GRESwant){GRES=m.res;makeGoo();applySkin(m);}};
     gooW.onerror=()=>{gooW=null;gooBusy=false;GRES=lite?32:40;makeGoo();};}catch(e){gooW=null;}
   if(gooW){GRES=lite?40:60;makeGoo();}   // the worker builds the fine skin; without one, the old 40-cell grid on this thread
+  let GRESwant=GRES,gooWavg=0,gooWslow=0,gooWfast=0,gooLastPost=0;   // the grid the worker is asked for (see onmessage), and when it was last asked
   function applySkin(m){mc.positionArray.set(m.pos);mc.normalArray.set(m.nor);mc.colorArray.set(m.col);mc.count=m.n;
     mc.position.set(m.fit[0],m.fit[1],m.fit[2]);mc.scale.set(m.fit[3],m.fit[3],m.fit[3]);
     const g=mc.geometry;g.setDrawRange(0,m.n);
@@ -506,7 +514,9 @@ export function start(){
       GC.setHSL(((lh%1)+1)%1,Math.max(0.55,LQH.s*0.95),ll,T.SRGBColorSpace);   // one candy in the chord's colour, each lump nudged a little warmer or cooler by its own notes (blending the notes' own hues went grey)
       const lx=0.5+(L.x-fitC[0])/F,ly=0.5+(L.y-fitC[1])/F,lz=0.5+(L.z-fitC[2])/F,lr=L.r/F;
       if(useW())_job.push(lx,ly,lz,lr,GC.r,GC.g,GC.b);else addLump(lx,ly,lz,lr,GC);}
-    if(useW()){if(!gooBusy){gooBusy=true;GC.setHSL(LQH.h,Math.max(0.55,LQH.s*0.95),LQH.l,T.SRGBColorSpace);gooW.postMessage({res:GRES,col:[GC.r,GC.g,GC.b],fit:[fitC[0],fitC[1],fitC[2],fitH],lumps:new Float32Array(_job)});}
+    // a build at most every 28 ms (every other frame): the lumps ease over 55-90 ms, so a skin twice a frame showed nothing
+    // more and kept a core busy. The worker's res is the grid it is asked for; a skin at an old grid is dropped on arrival.
+    if(useW()){const nowP=performance.now();if(!gooBusy&&nowP-gooLastPost>=28){gooBusy=true;gooLastPost=nowP;GC.setHSL(LQH.h,Math.max(0.55,LQH.s*0.95),LQH.l,T.SRGBColorSpace);gooW.postMessage({res:GRESwant,col:[GC.r,GC.g,GC.b],fit:[fitC[0],fitC[1],fitC[2],fitH],lumps:new Float32Array(_job)});}
       gooMs=performance.now()-g0;gooAvg+=(gooMs-gooAvg)*0.05;window.__gooT=[gooMs,0,0,0,live.length,fitH,GRES,gooWms];return;}
     const lim=mc.size-2;mc.bounds=[Math.max(1,BB[0]-1),Math.min(lim,BB[1]+1),Math.max(1,BB[2]-1),Math.min(lim,BB[3]+1),Math.max(1,BB[4]-1),Math.min(lim,BB[5]+1)];
     const tC=performance.now();mc.update();const tD=performance.now();window.__gooT=[tA-g0,tB-tA,tC-tB,tD-tC,live.length,fitH,GRES];
@@ -547,8 +557,12 @@ export function start(){
 
   // ---------- sizing: the GL canvas sits exactly on the tank canvas ----------
   let lastW=0,lastH=0,dpr=1;
+  let placeKey='';
   function place(){const s=stage.getBoundingClientRect(),c=cv.getBoundingClientRect();
-    glc.style.left=(c.left-s.left)+'px';glc.style.top=(c.top-s.top)+'px';glc.style.width=c.width+'px';glc.style.height=c.height+'px';
+    // written only when it moved: an unchanged style write still dirties the style tree, and this ran every frame (traced
+    // 2026-11-11: a style recalc + layout on every frame, ~0.8 ms on a phone, with nothing changed)
+    const key=(c.left-s.left)+','+(c.top-s.top)+','+c.width+','+c.height;
+    if(key!==placeKey){placeKey=key;glc.style.left=(c.left-s.left)+'px';glc.style.top=(c.top-s.top)+'px';glc.style.width=c.width+'px';glc.style.height=c.height+'px';}
     const want=Math.min(window.devicePixelRatio||1,lite?1:2,window.__dprCap||2);   // __dprCap: the render governor (index.html, GOV)
     if(Math.round(c.width)!==lastW||Math.round(c.height)!==lastH||want!==dpr){lastW=Math.round(c.width);lastH=Math.round(c.height);dpr=want;
       renderer.setPixelRatio(dpr);renderer.setSize(Math.max(1,lastW),Math.max(1,lastH),false);}
@@ -639,7 +653,7 @@ export function start(){
     cpuMs=performance.now()-a0;
     renderer.render(scene,camera);}
 
-  function setLite(v){v=!!v;if(v===lite)return;lite=v;GRES=useW()?(lite?40:60):(lite?32:40);mcEvery=lite?2:1;makeGoo();place();}
+  function setLite(v){v=!!v;if(v===lite)return;lite=v;GRES=useW()?(lite?40:60):(lite?32:40);GRESwant=GRES;gooWavg=0;gooWslow=gooWfast=0;mcEvery=lite?2:1;makeGoo();place();}
   let lost=false;
   glc.addEventListener('webglcontextlost',e=>{e.preventDefault();lost=true;if(window.__glLost)window.__glLost();},false);
   function show(v){glc.style.display=v?'block':'none';}
@@ -648,7 +662,7 @@ export function start(){
   function gooColors(){if(!mc||!mc.count)return null;const ca=mc.colorArray,h={h:0,s:0,l:0},C=new T.Color();let sx=0,sy=0,ss=0,sl=0,n=0;
     for(let i=0;i<mc.count;i+=7){C.setRGB(ca[i*3],ca[i*3+1],ca[i*3+2]);C.getHSL(h,T.SRGBColorSpace);sx+=Math.cos(h.h*6.2832)*h.s;sy+=Math.sin(h.h*6.2832)*h.s;ss+=h.s;sl+=h.l;n++;}
     return {spread:1-Math.hypot(sx,sy)/Math.max(1e-6,ss),sat:ss/n,light:sl/n,n};}
-  return {render,setLite,show,canvas:glc,gooOut,gooColors,gooWobble:()=>GOOU.a.value,gooWorker:()=>!!gooW,gooSync:v=>{gooSyncOn=!!v;const g=useW()?(lite?40:60):(lite?32:40);if(g!==GRES){GRES=g;makeGoo();}},rimState(){return rims&&rimA?{a:rimA,own:rims.geometry.userData.owner,col:rimCol}:null;},get noteScale(){return noteScale();},squash(){const m=sqMax;sqMax=0;return m;},get look(){return 'glass';},get lost(){return lost;},
+  return {render,setLite,show,canvas:glc,gooOut,gooColors,gooWobble:()=>GOOU.a.value,gooWorker:()=>!!gooW,gooSync:v=>{gooSyncOn=!!v;const g=useW()?(lite?40:60):(lite?32:40);GRESwant=g;if(g!==GRES){GRES=g;makeGoo();}},gooRes:()=>({res:GRES,want:GRESwant,avg:+gooWavg.toFixed(1)}),rimState(){return rims&&rimA?{a:rimA,own:rims.geometry.userData.owner,col:rimCol}:null;},get noteScale(){return noteScale();},squash(){const m=sqMax;sqMax=0;return m;},get look(){return 'glass';},get lost(){return lost;},
     gooBuild(){gooUpdate();return gooMs;},
     worms(){return wormMeshes.map(m=>({on:m.visible,at:[m.matrix.elements[12],m.matrix.elements[13],m.matrix.elements[14]].map(Math.round),size:Math.round(Math.hypot(m.matrix.elements[0],m.matrix.elements[1],m.matrix.elements[2])),open:m.material.uniforms.uOpen.value}));},   // test hook: the two wormholes as drawn   // test hook: rebuild the goo's surface alone (no drawing), and how long it took
     gooShape(){if(!mc||!mc.count)return null;const pa=mc.positionArray;let sx=0,sy=0,sz=0,x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;const n=mc.count;

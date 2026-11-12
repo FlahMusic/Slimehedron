@@ -280,7 +280,7 @@ header h1{flex-shrink:0}
   flex-wrap:wrap;row-gap:4px;overflow:visible;
   gap:4px;padding:5px 9px;border-radius:14px;
   background:rgba(252,249,255,.9);border:1.5px solid var(--card-brd);box-shadow:var(--shadow);
-  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+  }
 #studioBar .sbGrp{display:flex;align-items:center;gap:4px;flex:none}
 #studioBar .sbSep{width:1px;height:22px;background:rgba(150,140,185,.3);flex:none;margin:0 3px}
 #studioBar .sbBrk{display:none}
@@ -338,7 +338,7 @@ header h1{flex-shrink:0}
 /* tempo dial — the app's standard rknob (drag up/down) flanked by turtle/rabbit, in the header next to pause. */
 #tempoDial{display:none}
 .mode-play #tempoDial{display:flex;align-items:center;gap:8px;
-  background:rgba(255,255,255,.6);border:2px solid rgba(255,255,255,.9);border-radius:999px;padding:6px 13px;box-shadow:0 4px 12px rgba(120,110,160,.24);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  background:rgba(255,255,255,.6);border:2px solid rgba(255,255,255,.9);border-radius:999px;padding:6px 13px;box-shadow:0 4px 12px rgba(120,110,160,.24);}
 #tempoDial .td-ico{font-size:11px;font-weight:700;line-height:1;opacity:.7;text-transform:uppercase;letter-spacing:.5px;color:#5a4f78}
 /* master volume in the top bar (left of the tempo knob): icon + short lilac fader */
 /* The fader slot is a FIXED WIDTH on a real screen. Without it the transport drifted 106px between play
@@ -371,7 +371,7 @@ header h1{flex-shrink:0}
 /* DAW-style editable tempo box (Ableton/Logic convention: type or drag the number) — soft to match the UI */
 .numin{width:58px;font-family:inherit;font-weight:800;font-size:14px;color:var(--ink);text-align:center;
   background:rgba(255,255,255,.75);border:1.5px solid var(--card-brd);border-radius:10px;padding:4px 6px;
-  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:var(--shadow)}
+  box-shadow:var(--shadow)}
 .numin:focus{outline:none;border-color:var(--lav);box-shadow:0 0 0 3px rgba(179,136,240,.25)}
 .numin::-webkit-inner-spin-button,.numin::-webkit-outer-spin-button{opacity:.5;height:22px}
 @media (max-width:820px){.mode-play #tempoDial{padding:3px 7px;gap:4px}#tempoDial .td-ico{font-size:14px}#tempoDial svg{width:38px;height:38px}}
@@ -435,7 +435,7 @@ header #shareApp{position:static;top:auto;right:auto;left:auto;z-index:auto} /* 
 body:has(#splash:not(.gone)) #kbBtn{display:none}
 .mode-learn #kbBtn{display:none} /* learn has its own lesson piano — the floating key toggle just overlaps the cards */
 #kbMap{position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:259;max-width:97vw;overflow-x:auto;
-  background:rgba(255,255,255,.6);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  background:rgba(255,255,255,.6);
   border:1px solid rgba(255,255,255,.85);border-radius:16px;padding:10px 14px;touch-action:manipulation;
   display:flex;flex-direction:column;gap:5px;align-items:center;box-shadow:0 8px 28px rgba(90,79,120,.28)}
 #kbMap b i{display:block;font-size:8px;opacity:.72;font-style:normal;line-height:1;margin-top:1px}
@@ -486,7 +486,7 @@ body.cc-learn input[type=range],body.cc-learn select{cursor:crosshair}
 .psBtn{width:82px;height:82px;border-radius:24px;border:2px solid rgba(255,255,255,.9);cursor:pointer;pointer-events:auto;
   display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
   box-shadow:0 5px 0 var(--edge), 0 8px 16px rgba(120,110,160,.26), inset 0 2px 6px rgba(255,255,255,.6);
-  transition:transform .14s, box-shadow .14s;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+  transition:transform .14s, box-shadow .14s;}
 .psBtn::after{content:"";position:absolute;inset:0;border-radius:22px;background:linear-gradient(160deg,rgba(255,255,255,.55),rgba(255,255,255,0) 55%);pointer-events:none} /* glossy sheen */
 /* PERFORMANCE MODE TAKES THE GLASS OFF. Nine elements in play mode carry a backdrop blur and they
    all sit over a canvas that repaints every frame, so the blur is recomputed every frame too.
@@ -547,7 +547,7 @@ body.lite *{backdrop-filter:none!important;-webkit-backdrop-filter:none!importan
 @media (max-width:820px){#grooveFolders .gBtn{min-height:48px;padding:9px 11px}#grooveFolders .gBtn b{font-size:14px}}
 @media (max-width:820px){.psCol{gap:8px}.psCol.left{left:4px}.psCol.right{right:4px}.psBtn .psNum{font-size:11px}}
 #kbMapOld{position:absolute;bottom:44px;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid var(--card-brd);
-  border-radius:14px;padding:9px 12px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:5px;align-items:center}
+  border-radius:14px;padding:9px 12px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:5px;align-items:center}
 #kbMap[hidden]{display:none}
 #kbMap .krow{display:flex;gap:4px}
 #kbMap b{width:26px;height:26px;border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;font-weight:800;
@@ -734,7 +734,7 @@ body.lm-map .slime.peeker,body.lm-map .mote{visibility:hidden}
 #labKeys{position:fixed;left:50%;transform:translateX(-50%);z-index:118;display:none;
   gap:4px;padding:7px 9px;border-radius:14px;background:rgba(252,249,255,.94);
   border:1.5px solid var(--card-brd);box-shadow:0 6px 22px rgba(120,110,160,.25);
-  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);max-width:96vw;overflow-x:auto;
+  max-width:96vw;overflow-x:auto;
   touch-action:manipulation;scrollbar-width:thin}
 body.lab-on #labKeys{display:flex}
 body.lab-nokeys #labKeys{display:none!important} /* the beat lesson is not about pitch */
@@ -1209,7 +1209,7 @@ body.lab-stage #exitMode,body.lab-stage #cofWheel,body.lab-stage #toast{display:
 @media (max-width:560px){.pxPiano.two{transform:none;margin:24px -14px 8px}
   .pxPiano.two .pxKeys{zoom:1.2;margin:0}} /* phones: full-size scrollable keybed — fingers need real keys, not a shrunken toy */
 .btn{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--card-brd);border-radius:14px;padding:9px 16px;cursor:pointer;
-  box-shadow:var(--depth);transition:transform .11s cubic-bezier(.2,.9,.3,1), box-shadow .11s;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+  box-shadow:var(--depth);transition:transform .11s cubic-bezier(.2,.9,.3,1), box-shadow .11s;}
 .btn:hover{transform:translateY(-2px);box-shadow:var(--depthUp)}
 .btn:active{transform:translateY(3px);box-shadow:var(--depthIn)}   /* travels the full thickness = it got pushed */
 .btn.primary{background:linear-gradient(135deg,var(--lav),var(--sky));color:#3d3756}
@@ -1454,10 +1454,10 @@ canvas{background:none;border:0;box-shadow:none;border-radius:0;max-width:100%;m
   text-shadow:0 2px 0 #fff, 0 -2px 0 #fff, 2px 0 0 #fff, -2px 0 0 #fff,   /* white outline, like a sticker */
               0 4px 0 rgba(120,98,170,.30), 0 7px 12px rgba(120,100,165,.22)}
 .splashWm .dot{color:#e38ab8}
-.hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-soft);font-weight:500;background:var(--card);padding:5px 12px;border-radius:10px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.hint{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--ink-soft);font-weight:500;background:var(--card);padding:5px 12px;border-radius:10px;}
 /* CHORD READOUT — sits beside the circle-of-fifths wheel (top-left cluster). shows the live chord as a full, readable
    name (root + type) plus where it's heading, with a progress bar. Scaler/Captain-Chords style, in our pastel palette. */
-#chordPill{position:fixed;left:clamp(140px,24vw,314px);top:58px;background:rgba(252,249,255,.82);border:1.5px solid var(--card-brd);border-radius:14px;padding:8px 13px 9px;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);box-shadow:var(--shadow);text-align:left;pointer-events:none;min-width:104px;z-index:31} /* sits clear of the bigger 186px wheel */
+#chordPill{position:fixed;left:clamp(140px,24vw,314px);top:58px;background:rgba(252,249,255,.82);border:1.5px solid var(--card-brd);border-radius:14px;padding:8px 13px 9px;box-shadow:var(--shadow);text-align:left;pointer-events:none;min-width:104px;z-index:31} /* sits clear of the bigger 186px wheel */
 #chordPill .cpMain{display:flex;align-items:baseline;gap:7px;line-height:1}
 #chordPill b{font-size:26px;font-weight:800;color:#5a4f78;letter-spacing:.5px} /* the root, big & clear */
 #chordPill .cpMain i{font-size:14px;font-weight:700;font-style:normal;color:#9a8fc4} /* the type word: minor / major / dim / 7th */
@@ -1513,7 +1513,7 @@ canvas{background:none;border:0;box-shadow:none;border-radius:0;max-width:100%;m
 #chordBtn.on{background:#c9b3f0;color:#fff;border-color:#b79fe8}
 @media (max-width:820px){#chordBtn{font-size:var(--fs-s);padding:6px 14px}} /* position handled by the mobile top-band block below */
 /* lime→lilac candy panel — playful, matches the meadow palette instead of a plain white box */
-#chordPanel{position:fixed;left:clamp(80px,10vw,116px);top:56px;width:min(290px,80vw);z-index:40;background:linear-gradient(150deg,rgba(213,245,214,.92),rgba(233,226,255,.92) 60%,rgba(244,230,255,.92));border:1.5px solid rgba(200,225,190,.85);border-radius:16px;padding:11px 12px 12px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(120,150,110,.24)}
+#chordPanel{position:fixed;left:clamp(80px,10vw,116px);top:56px;width:min(290px,80vw);z-index:40;background:linear-gradient(150deg,rgba(213,245,214,.92),rgba(233,226,255,.92) 60%,rgba(244,230,255,.92));border:1.5px solid rgba(200,225,190,.85);border-radius:16px;padding:11px 12px 12px;box-shadow:0 8px 30px rgba(120,150,110,.24)}
 /* mobile chord panel position handled by the top-band block below */
 #chordPanel .cpHead{display:flex;align-items:center;gap:8px;margin-bottom:9px}
 #chordPanel .cpTitle{flex:1;font:800 13px system-ui,sans-serif;color:#5a4f78;letter-spacing:.3px}
@@ -1635,7 +1635,7 @@ body.tools-on #topRight,body.tools-on #triMixBar,body.tools-on #autoRow,body.too
 .streakBadge b{color:#e0863f;font-size:17px}
 aside::-webkit-scrollbar{width:8px}
 aside::-webkit-scrollbar-thumb{background:rgba(180,170,210,.5);border-radius:8px}
-.card{position:relative;background:var(--card);border:1px solid var(--card-brd);border-radius:20px;padding:14px 16px;box-shadow:var(--shadow);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);overflow:visible}
+.card{position:relative;background:var(--card);border:1px solid var(--card-brd);border-radius:20px;padding:14px 16px;box-shadow:var(--shadow);overflow:visible}
 .card h2{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--ink-soft);margin:0 0 12px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none}
 .card h2::after{content:"▾";font-size:13px;opacity:.85;transition:transform .2s;color:var(--accent)} /* collapse chevron — points down when open */
 .card.collapsed h2{margin:0}
@@ -1840,7 +1840,7 @@ select{font-family:inherit;font-weight:600;font-size:13px;color:var(--ink);backg
   #chordPanel{left:50%!important;top:64px!important;transform:translateX(-50%)!important;width:min(300px,90vw)}
   .mode-play main{padding:10px 40px 8px} /* the header is in flow and reserves itself; this is just breathing room */
   main{padding:0 8px 8px}
-  aside{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:74vh;background:rgba(246,240,255,.94);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-radius:22px 22px 0 0;box-shadow:0 -12px 40px rgba(120,100,170,.4);padding:8px 14px calc(78px + env(safe-area-inset-bottom,0px));transform:translateY(105%);transition:transform .32s cubic-bezier(.3,1,.3,1);z-index:80;overflow-y:auto}
+  aside{position:fixed;left:0;right:0;bottom:0;width:auto;max-height:74vh;background:rgba(246,240,255,.94);border-radius:22px 22px 0 0;box-shadow:0 -12px 40px rgba(120,100,170,.4);padding:8px 14px calc(78px + env(safe-area-inset-bottom,0px));transform:translateY(105%);transition:transform .32s cubic-bezier(.3,1,.3,1);z-index:80;overflow-y:auto}
   aside.open{transform:translateY(0)}
   #dragBar{display:block}
   #menuBtn{display:flex;position:fixed;right:12px;bottom:12px;z-index:81;width:54px;height:54px;border-radius:50%;align-items:center;justify-content:center;font-size:24px;border:1px solid var(--card-brd);background:linear-gradient(135deg,var(--lav),var(--sky));box-shadow:var(--shadow);cursor:pointer}
@@ -8038,8 +8038,11 @@ window.growBack=growBack;
   addEventListener('pointerdown',e=>{if(!menu.hidden&&!chip.contains(e.target))open(false);},true);
   addEventListener('keydown',e=>{if(e.key==='Escape'&&!menu.hidden){open(false);btn.focus();}});
   chip.addEventListener('pointerdown',e=>e.stopPropagation());
-  try{new ResizeObserver(place).observe(cv);}catch(e){}
-  addEventListener('resize',place);setInterval(()=>{if(!document.hidden){paint();place();}},1000);   // controls move with mode changes; a cheap re-check
+  // place() reads every control's layout (offsetWidth, a computed style, a rect: ~70 forced layouts a run). It ran 23 times a
+  // second here (profiled 2026-11-11), so it is coalesced: at most once every 400 ms, and the 1 s re-check only when the tab shows.
+  let _placeT=0;const placeSoon=()=>{if(_placeT)return;_placeT=setTimeout(()=>{_placeT=0;place();},400);};
+  try{new ResizeObserver(placeSoon).observe(cv);}catch(e){}
+  addEventListener('resize',placeSoon);setInterval(()=>{if(!document.hidden){paint();placeSoon();}},1000);   // controls move with mode changes; a cheap re-check
   paint();setTimeout(place,0);})();
 // ---------- PREFERENCES dialog ----------
 (function(){const b=$("prefsBtn"),d=$("prefsDlg");if(!b||!d)return;
@@ -8285,10 +8288,18 @@ function seedTick(){if(!SEEDS.length||!S.playing||!handsOn())return;const bb=bea
 // #handSpot: an invisible marker on the bottom edge of the tank, for the first-run hint about the gestures to point at
 // (the whole tank as a target put the hint over the transport)
 const _spot=document.createElement('div');_spot.id='handSpot';_spot.dataset.coachPass='1';_spot.setAttribute('aria-hidden','true');document.body.appendChild(_spot);
+let _cvRect=null,_cvRectF=0;addEventListener('resize',()=>{_cvRect=null;});
 function seedDraw(){const on=handsOn()&&!document.body.classList.contains('tools-on');
-  const r=on?cv.getBoundingClientRect():null;   // read the layout once, then write: a read between writes forces a layout each time
-  _spot.style.display=on?'':'none';if(on){const q=tankToScreen(CX,CY+R*0.9,r);_spot.style.left=q[0]+'px';_spot.style.top=q[1]+'px';}
-  for(const s of SEEDS){s.el.style.display=on?'':'none';if(!on)continue;const q=tankToScreen(s.x,s.y,r,s.z);s.el.style.left=q[0]+'px';s.el.style.top=q[1]+'px';}}
+  // the tank's place on the page, read at 10 Hz, not every frame: the read forces a layout, and it cost 0.8 ms a frame on a
+  // phone (profiled 2026-11-11: the single biggest JS cost in play). A panel opening moves the tank at most 100 ms before the seeds follow.
+  if(on&&(!_cvRect||++_cvRectF>=6)){_cvRect=cv.getBoundingClientRect();_cvRectF=0;}
+  const r=on?_cvRect:null;
+  // a style is written only when it changes (to the pixel): an unchanged write still dirties the style tree, and these ran
+  // every frame (traced 2026-11-11: a style recalc on every frame with nothing moved)
+  const put=(el,show,q)=>{const d=show?'':'none';if(el.dataset.d!==d){el.dataset.d=d;el.style.display=d;}if(!show)return;
+    const k=Math.round(q[0])+','+Math.round(q[1]);if(el.dataset.at!==k){el.dataset.at=k;el.style.left=Math.round(q[0])+'px';el.style.top=Math.round(q[1])+'px';}};
+  put(_spot,on,on?tankToScreen(CX,CY+R*0.9,r):null);
+  for(const s of SEEDS)put(s.el,on,on?tankToScreen(s.x,s.y,r,s.z):null);}
 function clearSeeds(){while(SEEDS.length)dropSeed(0);}
 // ---- the spin, on the physics clock (simTick calls this) ----
 function handSpin(){let u=0;
@@ -9133,7 +9144,7 @@ const chillers=[]; // full-view slimes with cursor physics
   function tick(){
     const now=performance.now(),dt=Math.min(50,now-lastT);lastT=now;
     if(S.playing&&!drumOn)wBeat+=dt*S.bpm/60000;
-    if((++_lf%20)===0)relayout(); // catch mode/layout changes a few times a second — cheap vs every frame
+    if((++_lf%60)===0)relayout(); // catch mode/layout changes once a second (five rect reads a run; mode changes call _wormRelayout themselves)
     // ground cycle: rest ~4 bars (only the head pokes), then rise & wiggle ~8 bars, loop
     const bt=beats(), bar=Math.floor(bt/4), cyc=((bar%12)+12)%12, up=cyc>=4;
     rise+=((up?1:0)-rise)*0.045;                                   // smooth emerge / sink
@@ -9145,6 +9156,7 @@ const chillers=[]; // full-view slimes with cursor physics
     const amp=(dbl?48:34)*wig, span=VB_H-HEAD_Y-20;
     // COLOR: a new vibrant-pastel hue is picked on each beat (like the original) and GLIDED toward smoothly
     const hueT=((150+Math.floor(bt)*40)%360+360)%360; let dH=((hueT-hueNow+540)%360)-180; hueNow=(hueNow+dH*0.16+360)%360;
+    if(_lf&1){requestAnimationFrame(tick);return;}   // drawn at 30 Hz: five SVG writes a frame cost a style recalc and layout on every frame (traced 2026-11-11); a background character does not need 60
     const pts=[];
     for(let i=0;i<N;i++){const f=i/(N-1);
       const wave=Math.sin(u*Math.PI-f*3.6)*(8+16*f)*(0.28+0.72*f)*wig;

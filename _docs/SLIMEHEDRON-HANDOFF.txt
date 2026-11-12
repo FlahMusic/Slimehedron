@@ -259,6 +259,24 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     strategies (53% always-first, 53% take-turns) and goes again after a lesson ends, oneanswer brute-forces The Tonic
     (Find the Note starts on 2 rungs), earwork answers either screen and stops at a part 2 (home's find-home roams on
     purpose), lessons answers the buttons.
+    FRAME PASS 1 (2026-11-11, sw v163; Flah: "nintendo level of sleek and optimized for modern devices"). Measured first
+    (headless Chromium, GPU on, phone viewport at DPR 3, goo 60% full): 44 long frames (>20 ms) in 300, a blank page 0,
+    500 canvas circles 3. CDP trace: the 10 frosted-glass pills (backdrop-filter) over the live tank cost 780 ms of GPU
+    render passes per 4 s (2.8 ms a frame on a desktop GPU); the goo worker took 25 ms a skin and was asked for a new
+    one the moment the last came back (a core pinned); seedDraw read the tank's rect every frame (0.8 ms of forced
+    layout); the GL canvas and the hand spot had their styles written every frame unchanged; the worm redrew 5 SVG
+    attributes a frame. Done: backdrop blur removed from the 13 live-room rules (kept on #learnOverlay, the prefs
+    dialog's backdrop, #toolsOv); the worker's grid follows its own build time (60 -> 48 -> 40 when a skin takes over
+    28 ms, back up under 10; GLV.api.gooRes()) and a skin is asked for at most every 28 ms; the tank rect for seeds read
+    at 10 Hz; glc and seed styles written only on change; the worm drawn at 30 Hz; the corner chip's control scan
+    coalesced to 400 ms; worm relayout once a second. After: long frames 44 -> 24, GPU render passes 780 -> 126 ms,
+    main thread BeginMainFrame 2621 -> 1990 ms per 4 s. The slime's colours were checked by swatch (all 12 keys x 10
+    chords, raw / 2D / 3D): vivid and distinct; the flat matte disc in early shots was the no-WebGL canvas fallback.
+    NOT DONE (usage limit hit mid-pass): the kit card's rim spins a conic gradient on the main thread (rimSpin on a
+    custom property: make it a transform), #handSpot moves 25 Hz while no hint shows, the canvas fallback goo is a flat
+    disc, the studio strip on a phone is three rows tall, the tall phone tank (prototype looks fine: ship it), the
+    targeted suites were NOT rerun after these edits (run dev-goopro dev-gl dev-decor dev-surface dev-a11y dev-phone
+    dev-ux dev-governor dev-devices dev-topbar first thing). Probe scripts: the job tmp folder (perfbd/perfraf/perftrace).
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto
