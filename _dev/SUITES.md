@@ -12,6 +12,7 @@ Every page a suite opens presses a lesson's pulsing "listen" button the moment i
 ## 2. Targeted runs: the suites for what you touched (run these right after the change, not at the end)
 | You touched | Run |
 |---|---|
+| the tall phone tank (play, portrait phones: the canvas at 2:3) | dev-tall, dev-phone, dev-devices, dev-hands |
 | the header / transport / any control's size | dev-decor (mascots whole, off the tank), dev-topbar, dev-a11y, dev-devices, dev-phone, dev-surface, dev-crowding |
 | play mode, the tank gestures, auto-notes | dev-hands, dev-ux, dev-firsttouch, dev-firstfive, dev-controls, dev-guide |
 | tank physics, spin, shapes, spaces | dev-hands, dev-space, dev-solid, dev-orb, dev-portal, dev-beatlock, dev-revive, dev-fluid |
@@ -62,8 +63,9 @@ Then rerun only what failed. A failure that passes on rerun goes on the flaky li
 - `dev-3d` 1. "they travel front to back through the box" (1 in 3 runs on the tumble commit: 2 of 6 balls past 0.8 of depth in 9 s).
 - `dev-portal` "each one clearly stands out" (both looks): the saturation behind a hole swings 0.09-0.27 from run to run
   because the holes sit over different parts of the background art (grass vs cloud); about 1 run in 3 fails on any commit
-  (control 2026-11-02 on a810fb2 too). Goo and balls are now cleared before the picture. Real fix: compare the hole
-  with the same spot in the same frame by colour difference, not a saturation ratio.
+  (control 2026-11-02 on a810fb2 too). Goo and balls are now cleared before the picture. Fixed 2026-11-12: it compares the
+  hole with the same spot in the same frame by colour difference (>= 60 of 765; a hole reads 80+, hidden 0), not a
+  saturation ratio.
 - `dev-look3d` needs `python3` with PIL (dev-crayon was retired with the crayon look, ADR 0012); on Flah's Windows box `python3` is a Store alias (make a venv shim named python3).
 - `dev-gl` (needs SLIME_GL=1; runs on Flah's GPU) "the goo is a real 3D surface": 96-120 triangles some runs (fails 1 in 2; also before the tumble, 7d3f3bb).
 - `dev-hands` 3. "a flick keeps it spinning": 0.00 turns a second once (2026-11-02, right after a long run of suites), then 0.77 and 1.14 on reruns; the flick reads pointer timing.

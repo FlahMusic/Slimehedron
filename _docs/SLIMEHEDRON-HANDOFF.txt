@@ -277,6 +277,17 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     disc, the studio strip on a phone is three rows tall, the tall phone tank (prototype looks fine: ship it), the
     targeted suites were NOT rerun after these edits (run dev-goopro dev-gl dev-decor dev-surface dev-a11y dev-phone
     dev-ux dev-governor dev-devices dev-topbar first thing). Probe scripts: the job tmp folder (perfbd/perfraf/perftrace).
+    TALL PHONE TANK + FRAME PASS 1 PROVED (2026-11-12, sw v164). The tall tank shipped as ONE CSS rule: on a portrait phone
+    in play #cv is shown at 2:3 (the physics, the goo and the tank's 720x720 coordinates are untouched; every screen-to-
+    tank mapping goes per axis through the canvas rect, and the GL camera's square aspect over a 2:3 canvas IS the
+    stretch). 362x543 on a 390x844 phone, 76% of the stage, sitting at the TOP of the stage: centred, the notes toggle (at 94%
+    of the canvas) landed on the mixer's keys sticker; at the top it clears the mixer by 15 px. dev-tall (new, 6 checks). The spec's plan to stretch the
+    physics was not needed. Frame pass 1's suites: all green but dev-governor (the known flake) and dev-portal's hole
+    colour check, which a control on 13c0173 passed by luck: it was a saturation ratio against whatever the glass showed
+    behind the hole (grass 0.23, cloud 0.08); it is a colour difference now (>= 60 of 765; sabotaged: holes hidden -> 0,
+    red), the fix SUITES.md had asked for. Also: the hand spot (#handSpot) follows the tumbling tank only while the coach
+    points at it (once a second otherwise); the studio strip's "..." sits after TAP on phones (it wrapped alone onto a
+    third row at 390 px, the strip was 146 px tall).
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

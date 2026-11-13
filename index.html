@@ -1220,6 +1220,14 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 /* FLUID TANK: the 720×720 canvas scales DOWN to fit whatever room the stage has (any zoom / window size),
    staying a perfect square. This is the core of "always fits" — no more clipping off the edge at 125%+ zoom. */
 #cv{max-width:100%;max-height:100%;width:auto;height:auto;aspect-ratio:1/1;position:relative;z-index:1}
+/* THE TALL PHONE TANK (look question 4, Flah 2026-11-11: 1.5x on portrait phones, play only; prototype _dev/proto/tall-tank.html).
+   The tank's SPACE is drawn 1.5x taller: the canvas keeps its 720x720 tank coordinates (the physics, the goo, the plugin's
+   numbers are untouched) and is shown at 2:3, so a hexagon squashes and unsquashes as it turns. Every screen-to-tank
+   mapping goes through the canvas rect per axis (touches, seeds, the GL canvas, which takes cv's rect and lets the
+   camera's square aspect stretch with it), so nothing else changes. Studio and landscape keep the square. dev-tall. */
+/* ...and the tank sits at the top of its stage, not its middle: centred, a 543 px canvas put the notes toggle (which sits at 94% of
+   the canvas) on the mixer's keys sticker (measured 390x844: toggle 717-761, mixer from 698). At the top: toggle 639, 59 px clear. */
+@media (max-width:820px) and (orientation:portrait){body.mode-play #cv{aspect-ratio:2/3;margin-top:8px}body.mode-play #stage{align-items:flex-start}}
 #cvGL{position:absolute;z-index:0;pointer-events:none;display:none}  /* the 3D tank on the graphics card sits under the canvas */
 /* the MIXER + auto-toggle FLOAT (absolute) so they don't steal vertical height from the tank — the shapes+notes
    are the whole point, so the canvas gets to be the biggest thing on screen. */
@@ -8288,7 +8296,7 @@ function seedTick(){if(!SEEDS.length||!S.playing||!handsOn())return;const bb=bea
 // #handSpot: an invisible marker on the bottom edge of the tank, for the first-run hint about the gestures to point at
 // (the whole tank as a target put the hint over the transport)
 const _spot=document.createElement('div');_spot.id='handSpot';_spot.dataset.coachPass='1';_spot.setAttribute('aria-hidden','true');document.body.appendChild(_spot);
-let _cvRect=null,_cvRectF=0;addEventListener('resize',()=>{_cvRect=null;});
+let _cvRect=null,_cvRectF=0,_spotF=0;addEventListener('resize',()=>{_cvRect=null;});
 function seedDraw(){const on=handsOn()&&!document.body.classList.contains('tools-on');
   // the tank's place on the page, read at 10 Hz, not every frame: the read forces a layout, and it cost 0.8 ms a frame on a
   // phone (profiled 2026-11-11: the single biggest JS cost in play). A panel opening moves the tank at most 100 ms before the seeds follow.
@@ -8298,7 +8306,10 @@ function seedDraw(){const on=handsOn()&&!document.body.classList.contains('tools
   // every frame (traced 2026-11-11: a style recalc on every frame with nothing moved)
   const put=(el,show,q)=>{const d=show?'':'none';if(el.dataset.d!==d){el.dataset.d=d;el.style.display=d;}if(!show)return;
     const k=Math.round(q[0])+','+Math.round(q[1]);if(el.dataset.at!==k){el.dataset.at=k;el.style.left=Math.round(q[0])+'px';el.style.top=Math.round(q[1])+'px';}};
-  put(_spot,on,on?tankToScreen(CX,CY+R*0.9,r):null);
+  // the spot is invisible; it is only read while the coach points at it (startCoach reads its rect when a hint shows and on
+  // resize), so it follows the tumbling tank every frame then and once a second otherwise (it moved 25 times a second unseen)
+  const spotLive=!!document.getElementById('coach');   /* while the coach is up at all: it reads the spot's rect the moment it points at it, so the spot must already be fresh */
+  if(spotLive||!(_spotF++%60))put(_spot,on,on?tankToScreen(CX,CY+R*0.9,r):null);
   for(const s of SEEDS)put(s.el,on,on?tankToScreen(s.x,s.y,r,s.z):null);}
 function clearSeeds(){while(SEEDS.length)dropSeed(0);}
 // ---- the spin, on the physics clock (simTick calls this) ----
@@ -9630,14 +9641,13 @@ function applyControls(o){if(!o||typeof o!=='object')return;
     if(more&&more.filter(Boolean).length){
       const m=document.createElement('span');m.className='sbMore';
       more.forEach(n=>{if(n)m.appendChild(n);});
-      g.appendChild(m);hasMore=true;
+      g.appendChild(m);
     }
     return g;
   }
   /* ONE "more" FOR THE WHOLE STRIP (2026-10-27). Each group used to carry its own three dots, so a phone
      showed three identical buttons in a row. One button at the end now opens every group's extras in
      place (the step size, the scale, the kit style), each beside the label that names it. */
-  let hasMore=false;
   function moreAll(){
     const b=document.createElement('button');b.type='button';b.className='sbExp';b.id='sbMoreAll';
     b.setAttribute('aria-expanded','false');b.setAttribute('aria-label','more options');b.title='more options';
@@ -9665,6 +9675,7 @@ function applyControls(o){if(!o||typeof o!=='object')return;
   /* ONE TEMPO CONTROL: the number and TAP, like a DAW. #bpmTop stays in the document (hidden, it carries the
      saved tempo) but not on the strip: a third way to set the same number was one too many. */
   bar.appendChild(grp('tempo',[grab('#bpmNum'),tap],'tempo in beats per minute'));
+  bar.appendChild(moreAll());   // on a phone the strip folds behind this; it sits after TAP, where the first row has room (at the end it wrapped alone onto a third row at 390 px). A desktop hides it.
   bar.appendChild(sep());
   // METER + STEP — a DAW never hides the time signature.
   // 4/4 is the decision; the step grid is a setting you touch once
@@ -9681,7 +9692,6 @@ function applyControls(o){if(!o||typeof o!=='object')return;
   // KIT — two selects, and switching kit is a constant move while building a beat.
   // which kit, not which family of kits
   bar.appendChild(grp('kit',[grab('#drumKit')],'drum kit',[grab('#kitStyle')]));
-  if(hasMore)bar.appendChild(moreAll());
   const balance=()=>{if(bar.querySelector('.sbExp')&&bar.querySelector('.sbExp').checkVisibility())return;   // the phone strip folds instead
     bar.classList.remove('two');const g=[...bar.querySelectorAll(':scope>.sbGrp')].filter(e=>e.checkVisibility());
     if(g.length>1&&g[g.length-1].getBoundingClientRect().top>g[0].getBoundingClientRect().top+8)bar.classList.add('two');};

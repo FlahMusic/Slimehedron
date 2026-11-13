@@ -154,14 +154,19 @@ const URL='http://127.0.0.1:8765/index.html';
       return {worms:window.__gl.api.worms(),at};},look);
     const satAt=async(png,at)=>p.evaluate(async ([png,at])=>{const img=new Image();img.src='data:image/png;base64,'+png;await img.decode();const c=document.createElement('canvas');c.width=img.width;c.height=img.height;
       const x=c.getContext('2d');x.drawImage(img,0,0);return at.map(([cx,cy,r])=>{const d=x.getImageData(Math.round(cx-r*0.3),Math.round(cy-r*0.3),Math.max(2,Math.round(r*0.6)),Math.max(2,Math.round(r*0.6))).data;
-        let s=0,n=0;for(let i=0;i<d.length;i+=4){const mx=Math.max(d[i],d[i+1],d[i+2]),mn=Math.min(d[i],d[i+1],d[i+2]);s+=(mx-mn)/255;n++;}return s/n;});},[png,at]);
+        let n=0,R=0,G=0,B=0;for(let i=0;i<d.length;i+=4){R+=d[i];G+=d[i+1];B+=d[i+2];n++;}return [R/n,G/n,B/n];});},[png,at]);
     const sh1=await p.screenshot();if(process.env.KEEP)require('fs').writeFileSync('/tmp/claude-0/shots/pt-'+look+'.png',sh1);const sat=await satAt(sh1.toString('base64'),r.at);if(process.env.KEEP)console.log(JSON.stringify(r.at));
     // the same spots with the holes switched off (same frame: only the wormholes hidden)
     await p.evaluate(()=>{const o=__worm.open;__worm.open=0;window.__gl.api.render();window.__wo=o;});
     const base=await satAt((await p.screenshot()).toString('base64'),r.at);
     await p.evaluate(()=>{__worm.open=window.__wo;});
     ok(r.worms.filter(w=>w.on).length===2,'['+look+'] two wormholes are drawn ('+r.worms.map(w=>w.on?'on':'off').join(', ')+')');
-    ok(sat.every((x,i)=>x>base[i]*1.5+0.03),'['+look+'] and each one clearly stands out where it is (colour '+sat.map(x=>x.toFixed(2)).join(', ')+' against '+base.map(x=>x.toFixed(2)).join(', ')+' with the holes hidden)');}
+    // the hole's colour against the same spot with the holes hidden, as a colour DIFFERENCE (sum of |dR|+|dG|+|dB|, of 765). It
+    // was a saturation ratio, which swung with whatever the glass showed behind the hole (the green grass or a white cloud,
+    // by which wall the hole had wandered to: 0.08-0.24 run to run), the flake in SUITES.md. A pink or teal hole over
+    // either reads at 80+ here; hidden, the difference is 0.
+    const dif=sat.map((x,i)=>Math.abs(x[0]-base[i][0])+Math.abs(x[1]-base[i][1])+Math.abs(x[2]-base[i][2]));
+    ok(dif.every(d=>d>=60),'['+look+'] and each one clearly stands out where it is (its colour differs from the same spot with the holes hidden by '+dif.map(d=>d.toFixed(0)).join(', ')+' of 765; at least 60)');}
    const off=await p.evaluate(async()=>{window.setSpace('normal');await new Promise(r=>setTimeout(r,300));window.__gl.api.render();window.__gl.api.render();return window.__gl.api.worms().filter(w=>w.on).length;});
    ok(off===0,'   and none in a normal tank');}
   ok(errs.length===0,'no page errors on the graphics card'+(errs.length?': '+errs[0]:''));
