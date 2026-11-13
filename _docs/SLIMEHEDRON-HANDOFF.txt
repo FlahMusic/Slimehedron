@@ -288,6 +288,17 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     red), the fix SUITES.md had asked for. Also: the hand spot (#handSpot) follows the tumbling tank only while the coach
     points at it (once a second otherwise); the studio strip's "..." sits after TAP on phones (it wrapped alone onto a
     third row at 390 px, the strip was 146 px tall).
+    SLOW-DEVICE TICK CAP (2026-11-13, sw v165). Measured with CDP CPU throttling on a phone viewport: at 4x the app fell to
+    7 fps because every late frame ran five catch-up physics ticks (49 ms) and made the next frame later. Past two frames
+    late ON A DEVICE THE WATCHDOG HAS MARKED SLOW (LITE), update() runs at most two ticks and drops the backlog (the tank
+    runs a touch slow instead of dying). Not on a mere hitch: a first version dropped backlog whenever a frame was late,
+    which slipped the physics clock off the audio clock and beat lock missed the grid (dev-beatlock 87%, twice). At 2x: p50 25-30 ms (~35 fps), physics 6.7 ms a frame, the draw 12-14 ms (three.js + the goo build; the GL
+    draw is where a mid phone's time goes next, not measured further: diminishing returns for the tokens). The splash and
+    the learn map were screenshotted on phone and desktop and need nothing. Hand spot now fresh whenever the coach is up
+    (dev-guide caught the stale rect). A struck wall's flash (and a face's, and the panes') faded per DRAWN frame, so a
+    120 Hz screen (and the suites' mobile emulation) faded it twice as fast (dev-hands 11h read 0.30): it fades by the clock
+    now, 0.86 a 60 Hz tick, in the draw (so a paused tank still fades). dev-fluid's pause check and dev-governor remain
+    the known flakes; dev-perfmode timed out once (timing, SUITES.md).
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

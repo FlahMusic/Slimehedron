@@ -6136,7 +6136,7 @@ function strokeSeg(e,i,N,extra){
   grad.addColorStop(0,aurora(e.hue+ph,68+formGlow*15));grad.addColorStop(1,aurora(((i+1)%N)/N+ph,68+formGlow*15));
   ctx.strokeStyle=grad;}ctx.lineWidth=7+e.flash*7;
   ctx.shadowBlur=e.flash>0.02?20*e.flash:(extra>0.02?20*extra:0);ctx.shadowColor=aurora(e.hue+ph,72);
-  ctx.beginPath();edgePath(e);ctx.stroke();e.flash*=0.86;
+  ctx.beginPath();edgePath(e);ctx.stroke();
   // a lesson can write on the walls (solfège, scale numbers, note names). Drawn just inside the wall so it
   // never leaves the tank, and only while a lesson asked for it.
   if(LAB&&LAB._labels&&e.deg!=null){
@@ -6654,15 +6654,20 @@ window.__gl=GLV;
 // what the canvas views do inside their drawing that the physics depends on, done here for the GL view
 // the wall upkeep drawShape() does for the flat views: a gap grows back, a struck wall fades
 function wallUpkeep(decay){if(fillState==="fill")for(const e of edges){if(e.broken&&e.reform){e.reform=Math.min(1,e.reform+0.007);if(e.reform>=1){e.broken=false;e.reform=0;}}}
-  if(decay)for(const e of edges)e.flash*=0.86;}
+  }   // (decay: nothing now; a flash fades per physics tick, see simTick)
 function glFrame(){viewTick();
   wallUpkeep(false);
   if(!particles.length){surfY=null;mMask=null;_poolMode=false;measuredFill=Math.max(0,measuredFill-0.02);}
   else{liquidColor();if(fillState==="fill"&&(++mFrame%10===0||!mMask))measureFill();}
   for(let i=ripples.length-1;i>=0;i--){const r=ripples[i];r.r+=r.vr;r.a*=0.92;if(r.a<0.03)ripples.splice(i,1);}
   GLV.api.setLite(LITE);GLV.api.render();
-  for(const e of edges)e.flash*=0.86;_pane.back*=0.88;_pane.front*=0.86;}
+  }
 function draw(){
+  // A FLASH FADES ON THE CLOCK, not per drawn frame: 0.86 a tick at 60 Hz, whatever the screen runs at (at 120 Hz, and in
+  // the mobile emulation the suites use, a struck wall faded twice as fast: dev-hands 11h read 0.30 where 60 Hz reads 0.64).
+  // In the draw, not the tick, so it fades while paused too. The plugin fades per 60 Hz tick (tank.c): the same curve.
+  {const nowD=performance.now(),ticks=Math.min(6,(nowD-(_lastDraw||nowD))/FIXED),fk=Math.pow(0.86,ticks);_lastDraw=nowD;
+    for(const e of edges)e.flash*=fk;for(let i=0;i<SOLID.flash.length;i++)SOLID.flash[i]*=fk;_pane.back*=Math.pow(0.88,ticks);_pane.front*=fk;}
   ctx.clearRect(0,0,W,H);
   const useGL=VIEW.d3&&!!GLV.api&&!_labOn()&&!window.PIX;
   if(GLV.api)GLV.api.show(useGL);
@@ -6676,7 +6681,7 @@ function draw(){
   // EVERY FRAME, which quietly undid applyMode's attempt to hide it.
   const cp=document.getElementById('chordPill');
   if(cp&&!cp.hidden)cp.hidden=true;
-  for(let i=0;i<SOLID.flash.length;i++)SOLID.flash[i]*=0.86;   // a struck face fades, whichever view drew it
+
   if(burstFlash>0.01){const g=ctx.createRadialGradient(CX,CY,10,CX,CY,R*1.35);
     g.addColorStop(0,`rgba(255,255,255,${0.45*burstFlash})`);g.addColorStop(0.5,`rgba(255,225,245,${0.28*burstFlash})`);g.addColorStop(1,"rgba(255,255,255,0)");
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(CX,CY,R*1.35,0,7);ctx.fill();}
@@ -6763,7 +6768,7 @@ function simTick(now){
 // FIXED TIMESTEP: physics used to run once per drawn frame, so a 30fps phone moved balls half as fast
 // as a 60fps desktop (and a 144Hz monitor ran too fast). Now we run exactly 60 ticks per real second on
 // every device — same ball speed everywhere. Audio (transport) is already time-based, so it stays per-frame.
-let _acc=0,_lastTick=0,_beatIdx=-1,_alpha=0;const FIXED=1000/60,MAXTICKS=5;
+let _acc=0,_lastTick=0,_beatIdx=-1,_alpha=0,_lastDraw=0;const FIXED=1000/60,MAXTICKS=5;
 // RENDER INTERPOLATION. The simulation runs on a fixed 60Hz step, which is right -- it is what makes
 // the bounces deterministic and stops a fast ball tunnelling through a wall. But the DRAW was reading
 // the raw simulated position, so on any display that is not exactly in phase with the step, frames
@@ -6779,8 +6784,14 @@ function update(now){ // shared by the rAF loop (visible) and the worker heartbe
   _lastTick=now;
   _acc+=dt;if(!isFinite(_acc))_acc=FIXED; // accumulator can never get stuck on NaN
   let n=0;
-  while(_acc>=FIXED&&n<MAXTICKS){_tickT=now-_acc+FIXED;simTick(now);_acc-=FIXED;n++;}   // _tickT: the moment this tick stands for (a slow frame runs several)
-  if(n>=MAXTICKS)_acc=0; // fell way behind (tab stalled) — drop the backlog instead of spiraling
+  // A SLOW DEVICE SLIPS, IT DOES NOT SPIRAL. Five catch-up ticks a frame is right for a hitch; on a phone that cannot keep up at
+  // all (a 4x-throttled CPU: 122 ms frames, 49 ms of them physics, 7 fps) every late frame ran five ticks and made the next
+  // frame later. On a device the watchdog has already marked slow (LITE), past two frames late at most two ticks run and the
+  // rest of the backlog is dropped: the tank runs a touch slow instead of dying. Only there: dropping backlog on a mere
+  // hitch slips the physics clock off the audio clock, and beat lock misses the grid (dev-beatlock went 87% on this box).
+  const cap=(LITE&&dt>2.5*FIXED)?2:MAXTICKS;
+  while(_acc>=FIXED&&n<cap){_tickT=now-_acc+FIXED;simTick(now);_acc-=FIXED;n++;}   // _tickT: the moment this tick stands for (a slow frame runs several)
+  if(n>=cap)_acc=0; // fell way behind (tab stalled, or a slow device) — drop the backlog instead of spiraling
   _alpha=Math.max(0,Math.min(1,_acc/FIXED)); // how far into the NEXT tick the next frame will be
   return n;   // ticks run (the render governor skips a busy frame with none)
 }
