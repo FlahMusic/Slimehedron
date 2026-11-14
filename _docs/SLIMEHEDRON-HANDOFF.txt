@@ -321,6 +321,16 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     8.02 hits a bar +-0.14, 83% on grid; melody golden unchanged). Playwright for the suites: the scratch install was cleaned
     out of temp; NODE_PATH=C:/Users/Flah/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules works (1.61.1).
     Not checked by a machine: the rim on a real phone's GPU; Safari (mask + filter over a turning child).
+    FM-1 FIRMWARE BEGUN (2026-11-14; Flah: "begin working on an alternate version compatible with FM1, latest chip model").
+      Its own branch: fm1/ only, nothing in index.html / tank3d.js / vst/ touched. "Latest chip" = the UC25HQ80 flash of
+      units sold from late 2026 (same CPU); only SLOOP >= 2.8.5 saves and updates on it, so the base is pinned there
+      (fm1/firmware/SLOOP_PIN, bac9c05). Research: _docs/research/2026-11-14-fm1-firmware-base.md. Built: the bridge
+      (fm1/firmware/slime.c): the C tank plays SLOOP's own engines, microtonal to 1.4 cents, on a host bench made of
+      SLOOP's DSP sources (sh fm1/firmware/check-host.sh in WSL: 20 checks, 4 sabotages). Tickets 08a-e / 09a-c in
+      _docs/specs/2026-11-11-fm1-port/spec.md. BLOCKED: the device build needs JieLi's toolchain download (command in
+      the spec); until then nothing has run on an emulated FM-1. Facts that change the plan: the tank (99 KB) does not
+      fit beside all of SLOOP (pool 10 KB free), and a full screen frame is 77 ms of SPI (redraw changed bands only).
+      SLOOP checkout + fm1-emu: WSL ~/fm1w/. Nobody has listened to the renders (~/fm1w/out/song-*.wav).
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

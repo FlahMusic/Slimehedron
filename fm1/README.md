@@ -28,3 +28,6 @@ Plan and open questions: `_docs/specs/2026-11-03-fm1-firmware/brief.md`, `_docs/
   portal checks (dev-portal) as numbers; `host/tank3.png` is a portal frame.
 - The port's tickets: `_docs/specs/2026-11-11-fm1-port/spec.md`. The firmware base is SLOOP (Flah 2026-11-11); the
   device build comes with it (ticket 08). Never flash Flah's FM-1 without asking.
+- `firmware/`: the firmware itself, as files that sit on top of SLOOP 2.8.5 (not vendored; `SLOOP_PIN` names the
+  commit). `slime.c` is the bridge from the tank to SLOOP's sound engines. `wsl -e bash -lc 'sh fm1/firmware/check-host.sh'`
+  builds SLOOP's DSP with the tank on this pc and checks notes, timing and microtonal pitch. GPL-3.0-only, as SLOOP.

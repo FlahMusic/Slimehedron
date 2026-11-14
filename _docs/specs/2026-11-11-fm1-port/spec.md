@@ -43,8 +43,14 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
 | 05 | 2.5D look for normal and portal space: front and back outline, near faces tinted, z-sized balls with floor shadows, banded, redraw only changed bands | normal and portal space done (this pass, `core/drawtank.c`); redrawing only changed bands open (needs fm1-emu to be worth measuring) |
 | 06 | Music logic: the auto-notes melody (`core/melody.c`: the web's 6000 golden notes note for note, every random number used; sabotaged 3 ways) | melody done; the chord brain and pane chords open |
 | 07 | The goo, lighter but real: a capped particle count plus a level; it must still slow balls and soften notes | done (this pass): the light goo, 94 KB, plays like the plugin's by statistics |
-| 08 | Firmware base: fork SLOOP, its toolchain (Docker), fm1-emu as the bench; the CPU budget per sound and golden render hashes (Felucca's discipline) | open |
-| 09 | Controls and LEDs (brief section 5), sounds from the FM-1's engines (brief 3c) | open |
+| 08a | THE BRIDGE on the host: the tank plays SLOOP's engines through SLOOP's own DSP sources, microtonal (`fm1/firmware/slime.c`, `host/slimehost.c`) | done (2026-11-14): 20 checks, sabotaged 4 ways |
+| 08b | The device build: JieLi toolchain + 3 SDK files in WSL, stock SLOOP 2.8.5 built and booted in fm1-emu on BOTH flash parts | blocked: the toolchain download needs Flah's OK (see below) |
+| 08c | Make room: the tank is 99 KB and SLOOP's pool has 10 KB free. Drop the four project slots and the arranger first; measure the map after each cut | open |
+| 08d | The tank on the device: slime.c in the unity build, the tick on core 1 or the main loop (measure both in fm1-emu STRICT), float or double | open |
+| 08e | The screen: drawtank / drawspace / draw into SLOOP's LCD path, sending only changed bands (a full frame is 77 ms of SPI) | open |
+| 09a | Sounds by measurement (brief 3c): melody, pane chime, bass, pad, comp and the 11 kits matched to web renders | open |
+| 09b | The band: the chord brain and pane chords in C (ticket 06's rest), bass on track 2, pad/comp on track 3, drums from the web's patterns | open |
+| 09c | Controls and LEDs (brief section 5) on SLOOP's input layer; chord-tone key LEDs | open |
 
 ## Ticket 02 (curved space), as built
 - `_dev/space-ref.js` lifts the web's own curved-space code out of `index.html` and runs it in node (sound and
@@ -137,3 +143,26 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
   blue rimmed teal), a ball inside one not drawn. drawtanktest: two drawn, each standing out against the same frame with
   them hidden (colour change 1.18 and 1.22; sabotaged: holes barely drawn, caught), none in a normal tank.
 - Left out (visual only): the ball's spiral in and its swell out (wormView), the holes' pulse before a spit.
+
+## Ticket 08a (the bridge), as built 2026-11-14
+- Base pinned: SLOOP 2.8.5, commit bac9c05 (`fm1/firmware/SLOOP_PIN`), the first SLOOP that knows the UC25HQ80 flash of
+  units sold from late 2026 (research: `_docs/research/2026-11-14-fm1-firmware-base.md`). SLOOP is not vendored: `fm1/firmware/`
+  holds only our files, built on top of a checkout (`build-host.sh` refuses any other commit).
+- `fm1/firmware/slime.c` (GPL-3.0-only, as SLOOP): included into SLOOP's unity build after seq.c, changes no SLOOP file.
+  Once per 32-sample control block it runs the tank's 60 Hz ticks off the sample count and plays each hit on synth
+  track 1 at the moment the tank says it sounds. A wall's cents go to the nearest MIDI note and the rest into the
+  voice's `fine` (SLOOP's own unison/TUNE factor). A note waits while SLOOP fades a track to a new preset.
+- `sh fm1/firmware/check-host.sh` (WSL, gcc + python3 only): 3 scenes of 32 bars (major 6 walls, 19-EDO 12 walls,
+  pentatonic 5 walls): every hit a note (290 / 295 / 293), none dropped, none later than one block (0.73 ms), 9.1-9.2
+  notes a bar, peak -5.2 dB, 150-180x real time on this pc with the light goo; the tank 99,224 B. Pitch: every degree of
+  31-EDO, 19-EDO, 24-EDO and major within 1.4 cents on KALIMBA, GLOCKEN, SOFT KEYS, SUB BASS; without the fine pitch
+  48 cents out (the check can tell).
+- Sabotaged 4 ways, each caught: the note queue cut to 2 (dropped), notes fired from a stale time (late), the fine pitch
+  at half strength (24 cents), the fine pitch off (48 cents).
+- Not checked: detuned or inharmonic presets (SINE PAD, SAW PAD, FM6, PHYS bars) confuse the pitch meter, so they are
+  not in the check; FM6 read exact octaves off, which is the meter. How it sounds: `~/fm1w/out/song-*.wav`, nobody has
+  listened. Note length (110 ms), velocity and the goo's softening are placeholders for ticket 09a.
+- BLOCKED (08b): `tools/get_toolchain.sh` (JieLi's compiler from pkgman.jieliapp.com) and the SDK clone from gitee were
+  stopped by the session's permission check. Flah runs them once, or allows them:
+  `wsl -e bash -lc 'cd ~/fm1w/sloop-fm1 && tools/get_toolchain.sh && git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git ~/fw-AC79_AIoT_SDK'`
+- Changed by a fact: the brief's ">= 30 fps" needs partial redraw. fm1-emu times a full frame at ~77 ms of SPI.
