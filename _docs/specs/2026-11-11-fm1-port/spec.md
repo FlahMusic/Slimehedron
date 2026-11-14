@@ -24,12 +24,12 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
   part (units since autumn 2026 ship a different part). RAM and flash sizes: not published. Source: the fm1-emu README
   (https://github.com/joakimeriksson/fm1-emu).
 - **fm1-emu** (MIT, Joakim Eriksson) runs FM-1 firmwares unchanged in the browser and natively:
-  https://joakimeriksson.github.io/fm1-emu/ ;  loads a  from any https site with CORS,  a Hub
-  firmware;  adds cycle counts and LCD timing. This is the bench for tickets 08/09 (no device needed).
+  https://joakimeriksson.github.io/fm1-emu/ ; `?package=URL` loads a `.fwsc` from any https site with CORS, `?fw=` a Hub
+  firmware; `FM1_STRICT=1` adds cycle counts and LCD timing. This is the bench for tickets 08/09 (no device needed).
 - **SLOOP** (GPL-3.0-only, https://github.com/isod89/sloop-fm1) builds with the JieLi AC79 SDK (Apache-2.0,
   gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK, tag AC79NN_SDK_V1.2.1_2023-12-13) and JieLi's clang 4.0.1 pi32v2 toolchain
-  (; Linux native, macOS via Docker; Windows via WSL ). Output:  +
-   packed as . Install from a browser (Chrome/Edge, WebMIDI) at https://isod89.github.io/sloop-fm1/ ;
+  (`tools/get_toolchain.sh`; Linux native, macOS via Docker; Windows via WSL `INSTALL-SLOOP.bat`). Output: `build/*.bin` +
+  `loader/ota.bin` packed as `.fwsc`. Install from a browser (Chrome/Edge, WebMIDI) at https://isod89.github.io/sloop-fm1/ ;
   rescue: hold OCT- while switching on. Its DSP also builds to WASM (Emscripten) for a browser preview.
 - Felucca's wiki warns M-VAVE's updater can revert a unit to official V15.
 
