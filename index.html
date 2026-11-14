@@ -500,14 +500,18 @@ body.lite *{backdrop-filter:none!important;-webkit-backdrop-filter:none!importan
 /* THE CHOSEN ONE WEARS GLASS. A rainbow-glass rim runs round the inside edge of the selected sound and
    rhythm, with a highlight that slowly travels round it, plus a soft outer glow -- so which one is on
    reads at a glance, without relying on colour alone (the rim is a shape change too). */
-@property --rimA{syntax:'<angle>';inherits:false;initial-value:0deg}
-.psBtn.on::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:4px;z-index:3;pointer-events:none;
-  background:conic-gradient(from var(--rimA),rgba(255,255,255,.98),#c9a8ff 14%,#9fe6cf 30%,rgba(255,255,255,.95) 42%,#ffc7e4 58%,#a6c8ff 74%,rgba(255,255,255,.98));
+/* The rim is a real element (.rim) holding the ring's mask; the colours are its child, turned by a transform, so the
+   GPU spins it and nothing is repainted (a gradient angle animated on ::before repainted the button every frame:
+   70-140 ms of paint per 4 s, measured 2026-11-14). */
+.psBtn .rim{display:none}
+.psBtn.on .rim{display:block;position:absolute;inset:0;border-radius:inherit;padding:4px;z-index:3;pointer-events:none;overflow:hidden;
   -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
   mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);
-  filter:drop-shadow(0 0 2px rgba(255,255,255,.9));animation:rimSpin 4.5s linear infinite}
-@keyframes rimSpin{to{--rimA:360deg}}
-@media (prefers-reduced-motion:reduce){.psBtn.on::before{animation:none}}
+  filter:drop-shadow(0 0 2px rgba(255,255,255,.9))}
+.psBtn.on .rim>i{position:absolute;inset:-21%;animation:rimSpin 4.5s linear infinite;will-change:transform;
+  background:conic-gradient(rgba(255,255,255,.98),#c9a8ff 14%,#9fe6cf 30%,rgba(255,255,255,.95) 42%,#ffc7e4 58%,#a6c8ff 74%,rgba(255,255,255,.98))}
+@keyframes rimSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.psBtn.on .rim>i{animation:none}}
 .psBtn svg{width:48px;height:48px;position:relative;z-index:1}
 .psBtn.bandBtn img{width:100%;height:100%;object-fit:contain;position:relative;z-index:1;display:block;filter:drop-shadow(0 1px 1px rgba(120,100,160,.18))}
 .psBtn.bandBtn{padding:2px} /* a hair of the tile's own hue shows around the drawing */
@@ -7219,7 +7223,7 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
   const DIE='<rect x="4" y="4" width="16" height="16" rx="3.4" fill="none" stroke="'+'STK'+'" stroke-width="2"/><g fill="STK" stroke="none"><circle cx="8.5" cy="8.5" r="1.5"/><circle cx="15.5" cy="8.5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="8.5" cy="15.5" r="1.5"/><circle cx="15.5" cy="15.5" r="1.5"/></g>';
   const wl=$("psWaves");if(wl)wl.innerHTML=WV.map(([w,c1,c2,st,d,nm],i)=>{
     const icon=(d==='DICE')?`<svg viewBox="0 0 24 24">${DIE.replace(/STK/g,st)}</svg>`:`<svg viewBox="0 0 24 24" fill="none" stroke="${st}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
-    return `<div class="psItem"><button class="psBtn${w==='triangle'?' on':''}" data-w="${w}" title="${nm} wave" style="background:linear-gradient(160deg,${c1},${c2})">${icon}</button><span class="psLbl">${nm}</span></div>`;}).join('');
+    return `<div class="psItem"><button class="psBtn${w==='triangle'?' on':''}" data-w="${w}" title="${nm} wave" style="background:linear-gradient(160deg,${c1},${c2})">${icon}<i class="rim"><i></i></i></button><span class="psLbl">${nm}</span></div>`;}).join('');
   wl&&wl.addEventListener('pointerdown',e=>{const b=e.target.closest('.psBtn');if(!b)return;
     wl.querySelectorAll('.psBtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');
     const wb=$("waveSeg").querySelector(`button[data-w="${b.dataset.w}"]`);if(wb)wb.click();
@@ -7248,7 +7252,7 @@ $("waveSeg").addEventListener('click',e=>{const b=e.target.closest('button');if(
   // six-year-old is meant to read at 46px. Five of them looked identical. Children read objects.
   const dl=$("psDrums");if(dl)dl.innerHTML=DK.map(([k,c1,c2,nc,n,nm])=>
     `<div class="psItem"><button class="psBtn bandBtn" data-kit="${k}" title="${SIG_TITLE[k]||(nm+' beat')}" style="background:linear-gradient(160deg,${c1},${c2});border-color:${c2}">`+
-      `<img src="kits/kit-${k}.png" alt="" draggable="false" loading="lazy"></button><span class="psLbl">${nm}</span></div>`).join('');
+      `<img src="kits/kit-${k}.png" alt="" draggable="false" loading="lazy"><i class="rim"><i></i></i></button><span class="psLbl">${nm}</span></div>`).join('');
   dl&&dl.addEventListener('pointerdown',e=>{const b=e.target.closest('.psBtn');if(!b)return;
     initAudio();if(AC&&AC.state==='suspended')AC.resume();
     const wasOn=b.classList.contains('on');

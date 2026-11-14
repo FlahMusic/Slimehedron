@@ -312,6 +312,15 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     (no gzip) on emulated fast 4G: splash tappable at 3.9 s, slow 4G 9.7 s; live gzip roughly halves that. three.js is
     requested twice (tank3d and the goo worker) but the second comes from the HTTP cache (bytes on the wire confirm it).
     Nothing changed: the one-file app is the design (offline, no build step); splitting it would not cut the bytes.
+    THE RIM SPINS ON THE GPU (2026-11-14, sw v167): frame pass 1's last leftover. The chosen sound/kit button's rainbow rim
+    was a conic-gradient angle (--rimA) animated on ::before, repainted every frame: Paint 66-138 ms per 4 s for one 51 px
+    button (CDP trace, phone viewport, DPR 3), plus raster and layerize. It is a real element now (<i class="rim"><i></i></i>
+    in both button templates): .rim holds the ring mask, its child holds the colours and turns by transform. After: Paint 1 ms
+    per 4 s, same look (screenshots compared). dev-polish 3b (4 checks, sabotaged 5 ways, all red). Targeted green: polish, ux,
+    controls, devices, a11y, surface, naming, decor, phone. Plugin tripwire rerun for v165's tick cap and committed (e13085e:
+    8.02 hits a bar +-0.14, 83% on grid; melody golden unchanged). Playwright for the suites: the scratch install was cleaned
+    out of temp; NODE_PATH=C:/Users/Flah/AppData/Local/npm-cache/_npx/e41f203b7505f1fb/node_modules works (1.61.1).
+    Not checked by a machine: the rim on a real phone's GPU; Safari (mask + filter over a turning child).
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

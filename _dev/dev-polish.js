@@ -82,6 +82,21 @@ const open=async(b,w,h)=>{const ctx=await b.newContext({viewport:{width:w,height
   // bar-charts - flat vector clipart in a crayon app. What matters is that every button carries its
   // own picture and none is empty; line 77 above already proves they are distinct.
   ok(art.every(a=>a!=='EMPTY'),'every rhythm button carries a picture, not an empty box');
+  // ---- 3b. THE CHOSEN ONE'S RIM: shown on the chosen buttons only, turning, and turned by the GPU ----
+  // (it was a gradient angle animated on ::before, which repainted the button every frame: 70-140 ms of paint per 4 s)
+  const rimAt=()=>p.evaluate(()=>[...document.querySelectorAll('.psBtn')].filter(b=>b.checkVisibility()).map(b=>{const r=b.querySelector('.rim'),i=r&&r.firstElementChild;
+    const m=i?new DOMMatrix(getComputedStyle(i).transform):null;
+    return {on:b.classList.contains('on'),shown:!!r&&r.checkVisibility(),ring:r?parseFloat(getComputedStyle(r).paddingTop):0,deg:m?Math.atan2(m.b,m.a)*180/Math.PI:null,
+      props:i?i.getAnimations().flatMap(a=>a.effect.getKeyframes().flatMap(k=>Object.keys(k))).filter(k=>!/^(offset|easing|composite|computedOffset)$/.test(k)):[]};}));
+  const r0=await rimAt();await p.waitForTimeout(600);const r1=await rimAt();
+  const on0=r0.filter(x=>x.on),on1=r1.filter(x=>x.on);
+  ok(on0.length>=1&&on0.every(x=>x.shown&&x.ring>=3)&&r0.filter(x=>!x.on).every(x=>!x.shown),'the chosen buttons wear the rim and no other button does ('+on0.length+' chosen of '+r0.length+', ring '+(on0[0]||{}).ring+' px)');
+  const turn=on0.map((x,k)=>((on1[k].deg-x.deg)%360+360)%360);
+  ok(turn.length>0&&turn.every(d=>d>30&&d<70),'the rim turns: about 48 degrees in 0.6 s ('+turn.map(d=>d.toFixed(0)).join(', ')+')');
+  ok(on0.every(x=>x.props.length>0&&x.props.every(k=>k==='transform')),'and only a transform is animated, so nothing is repainted ('+[...new Set(on0.flatMap(x=>x.props))].join(',')+')');
+  await p.emulateMedia({reducedMotion:'reduce'});const q0=await rimAt();await p.waitForTimeout(400);const q1=await rimAt();
+  ok(q0.filter(x=>x.on).every((x,k)=>x.shown&&Math.abs(q1.filter(y=>y.on)[k].deg-x.deg)<0.01),'reduced motion: the rim is still there and stands still');
+  await p.emulateMedia({reducedMotion:'no-preference'});
   const shared=art.filter(a=>a.startsWith('IMG:')).map(a=>a.slice(4));
   ok(new Set(shared).size===shared.length,'no two rhythm buttons point at the SAME image file'
      +(new Set(shared).size!==shared.length?': '+shared.join(', '):''));
