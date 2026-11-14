@@ -6505,7 +6505,7 @@ function planeAt(z){const o=P3(CX,CY,z),a=P3(CX+100,CY,z),b=P3(CX,CY+100,z);
 function boxGravity(){const M=_M;return [M[3],M[4],M[5]];}   // transpose row of (0,1,0)
 // A SOLID ON THE CANVAS (no WebGL): faces projected with P3, the far ones first, then the goo and the
 // balls, then the near faces' edges on top. Flat shading, but the same solid, notes and colours.
-function drawSolidCanvas(){wallUpkeep(true);const F=solidFaces(SOLID.planes),c=Math.cos(rot),s=Math.sin(rot),td=totalDegrees()||1,ph=performance.now()*0.000012;
+function drawSolidCanvas(){wallUpkeep();const F=solidFaces(SOLID.planes),c=Math.cos(rot),s=Math.sin(rot),td=totalDegrees()||1,ph=performance.now()*0.000012;
   const M=_M,items=[];
   const curved=edges._space==='curved',K=HKR(),RB=HYP.RD;
   const mp=(p)=>{if(!curved)return p;const u=kleinToBall([p[0]/K,p[1]/K,p[2]/K]);return [u[0]*RB,u[1]*RB,u[2]*RB];};
@@ -6656,10 +6656,10 @@ window.__glLost=()=>{GLV.want=false;if(GLV.api)GLV.api.show(false);GLV.api=null;
 window.__gl=GLV;
 // what the canvas views do inside their drawing that the physics depends on, done here for the GL view
 // the wall upkeep drawShape() does for the flat views: a gap grows back, a struck wall fades
-function wallUpkeep(decay){if(fillState==="fill")for(const e of edges){if(e.broken&&e.reform){e.reform=Math.min(1,e.reform+0.007);if(e.reform>=1){e.broken=false;e.reform=0;}}}
-  }   // (decay: nothing now; a flash fades per physics tick, see simTick)
+function wallUpkeep(){if(fillState==="fill")for(const e of edges){if(e.broken&&e.reform){e.reform=Math.min(1,e.reform+0.007);if(e.reform>=1){e.broken=false;e.reform=0;}}}
+  }   // (the flash fade that lived here is in draw(), on the clock)
 function glFrame(){viewTick();
-  wallUpkeep(false);
+  wallUpkeep();
   if(!particles.length){surfY=null;mMask=null;_poolMode=false;measuredFill=Math.max(0,measuredFill-0.02);}
   else{liquidColor();if(fillState==="fill"&&(++mFrame%10===0||!mMask))measureFill();}
   for(let i=ripples.length-1;i>=0;i--){const r=ripples[i];r.r+=r.vr;r.a*=0.92;if(r.a<0.03)ripples.splice(i,1);}
