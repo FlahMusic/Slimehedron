@@ -19,6 +19,20 @@ audio block, a steady >= 30 fps at the worst case, >= 1.5x real time at the lowe
 song, RAM high-water pinned. Every core piece matches the web's numbers in the host build (double), and the device
 (float) build within a stated tolerance.
 
+## Facts found 2026-11-13 (primary sources; the earlier "RP2350" in this spec was a guess and is wrong)
+- The FM-1 is a **JieLi AC791N**: two 32-bit **pi32v2** cores at 240 MHz, a 240x240 SPI LCD (12 MHz SPI), stock flash a Puya
+  part (units since autumn 2026 ship a different part). RAM and flash sizes: not published. Source: the fm1-emu README
+  (https://github.com/joakimeriksson/fm1-emu).
+- **fm1-emu** (MIT, Joakim Eriksson) runs FM-1 firmwares unchanged in the browser and natively:
+  https://joakimeriksson.github.io/fm1-emu/ ;  loads a  from any https site with CORS,  a Hub
+  firmware;  adds cycle counts and LCD timing. This is the bench for tickets 08/09 (no device needed).
+- **SLOOP** (GPL-3.0-only, https://github.com/isod89/sloop-fm1) builds with the JieLi AC79 SDK (Apache-2.0,
+  gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK, tag AC79NN_SDK_V1.2.1_2023-12-13) and JieLi's clang 4.0.1 pi32v2 toolchain
+  (; Linux native, macOS via Docker; Windows via WSL ). Output:  +
+   packed as . Install from a browser (Chrome/Edge, WebMIDI) at https://isod89.github.io/sloop-fm1/ ;
+  rescue: hold OCT- while switching on. Its DSP also builds to WASM (Emscripten) for a browser preview.
+- Felucca's wiki warns M-VAVE's updater can revert a unit to official V15.
+
 ## Tickets
 | # | Ticket | Status |
 |---|---|---|
@@ -61,10 +75,10 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
   onto the home chord (4), quantize waiting 50 ms not 45 (4). (A first try, beat lock's 1.22 clamp, changed nothing:
   the target is already chosen within 0.22, so that clamp never bites. Not a useful sabotage, kept out.)
 - Cost on this pc: ~0.2 ms a tick averaged over 24,515 ticks (printing included). RAM: 924 KB, nearly all the goo's
-  two grids (the neighbour grid 403 KB, the density grid 255 KB). The RP2350 has 520 KB, so ticket 07's light goo is a
+  two grids (the neighbour grid 403 KB, the density grid 255 KB). The chip is a JieLi AC791N (see Facts below; its RAM is not published), so ticket 07's light goo is a
   must, not a nicety: a hashed neighbour list and a coarser density grid in float, checked by statistics (notes a bar,
   fill curve, how much the goo slows a ball) against this exact one.
-- Still double. The device's float build (and whether the tank can stay double: the RP2350's M33 has no double FPU)
+- Still double. The device's float build (and whether the tank can stay double: the pi32v2 core's float support is not published: measure in fm1-emu)
   is measured in fm1-emu (ticket 08).
 - The chord brain is not in the plugin's tank yet (the home chord stays the key's), so it is not here either.
 
@@ -83,7 +97,7 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
 - Sabotaged 4 ways: a light splash keeping 5 (caught: fill 0.079 off), density by area instead of volume (7 checks),
   the full drop count (caught: ball slowdown), drops growing half as fast (NOT caught: they reach full size in ~1.7 s
   instead of ~0.9 s, which no bar-level statistic sees; left as is rather than tightening a tolerance to catch it).
-- Not measured yet: the light goo's time on the RP2350 (ticket 08, fm1-emu), and how it looks (ticket 05 draws it).
+- Not measured yet: the light goo's time on the AC791N (ticket 08, fm1-emu), and how it looks (ticket 05 draws it).
 
 ## Ticket 05 (the 2.5D look, normal space), as built
 - `core/drawtank.c`: the web's canvas 3D view (draw3D, P3, drawBalls3D) at 240 px, in 16-row bands: the box through
@@ -102,7 +116,7 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
   the first version compared the pixel with the view's own colour and missed it, so it now asks the tank), no
   perspective (near/far size).
 - NOT CHECKED BY A MACHINE: whether it reads well on the real screen (`fm1/host/tank0..3.png`), the goo's look (a hard
-  mint mass; the web blurs its blobs), the speed on the RP2350.
+  mint mass; the web blurs its blobs), the speed on the AC791N.
 
 ## Ticket 03 (portal space), as built
 - `core/tank.c`: the web's wormPlace, wormTick, wormAt, wormEnter, wormExit and wormPull for the 3D box (settings

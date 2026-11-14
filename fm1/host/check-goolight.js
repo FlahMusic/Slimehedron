@@ -39,6 +39,6 @@ for (const [f, ns] of Object.entries(fam)) {
 const sr = k => [soft[k][0], soft[k][1] / Math.max(1, soft[k][0]), soft[k][3] / soft[k][2]];
 const [ne, ie, ce] = sr('E'), [nl, il, cl] = sr('L');
 ok(nl >= 5 && il < 0.8 * cl, `a note from deep in the light goo still rings softer (${nl} of them, impact ${il.toFixed(2)} against ${cl.toFixed(2)} clean; the plugin: ${ne}, ${ie.toFixed(2)} against ${ce.toFixed(2)})`);
-ok(L.bytes > 0 && L.bytes <= 128 * 1024, `the light tank fits the RP2350 with room to spare (${(L.bytes / 1024).toFixed(0)} KB, the exact one ${(E.bytes / 1024).toFixed(0)} KB; the chip has 520)`);
+ok(L.bytes > 0 && L.bytes <= 128 * 1024, `the light tank is small (${(L.bytes / 1024).toFixed(0)} KB, the exact one ${(E.bytes / 1024).toFixed(0)} KB; the chip's RAM is not published)`);
 console.log(FAIL.length ? `FAILED: ${FAIL.length}` : 'the light goo plays like the plugin\'s, in a fraction of the memory');
 process.exit(FAIL.length ? 1 : 0);

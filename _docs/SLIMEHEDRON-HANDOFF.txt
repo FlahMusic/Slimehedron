@@ -228,7 +228,7 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     FM-1 TICKET 04: THE TANK TICK IN C (2026-11-11). fm1/core/tank.c, goo.c, music.c: the plugin's headless tank and
     its goo line for line; fm1/host/tankref (Rust, outside vst/, the core by path) is the reference; check-tank.js:
     5 scenes, 1,879 hits, every number the plugin's. Rust's cbrt is correctly rounded, glibc's is not (goo.c rounds it
-    exactly). Sabotaged 4 ways. 924 KB of RAM, nearly all goo grids: ticket 07's light goo is a must for the RP2350.
+    exactly). Sabotaged 4 ways. 924 KB of RAM, nearly all goo grids: ticket 07's light goo is a must for the AC791N.
     Rust installed in WSL for this (~/.rustup, ~/.cargo; minimal profile).
     KEPT MUSIC ON THE REVIEW SHELF (2026-11-11, sw v160). A loop kept in Make and a tune kept in Compose are saved
     (localStorage slimehedron-kept, twelve newest, cents over the key they were made in, read back through keptOk so a
