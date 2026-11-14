@@ -49,7 +49,7 @@ const SCORE=()=>{GLV.api.render();const c=GLV.api.canvas,w=c.width,h=c.height,cv
     ts.sort((a,b)=>a-b);return {p95:ts[Math.floor(ts.length*0.95)],res:window.__gooT[6],worker:GLV.api.gooWorker(),wms:ws.length?ws[ws.length>>1]:0};});
   ok(t.worker&&t.wms>0,'1. the skin is built on another core (worker '+t.wms.toFixed(1)+' ms a build)');
   ok(t.p95<=1.5,'1. the main thread spends at most 1.5 ms a frame on the goo (p95 '+t.p95.toFixed(2)+' ms; it was 3-4)');
-  ok(t.res>=56,'1. on a fine grid ('+t.res+' cells; it was 40)');
+  ok(t.res>=48&&t.res<=60,'1. on a fine grid ('+t.res+' cells; it was 40; 48-60: the grid follows the core that builds it, 60 under 28 ms a skin, 48 then 40 over it)');
   const sc=[];for(const col of [[250,160,170],[160,230,190],[190,160,240]]){await p.evaluate(c=>{liqRGB[0]=c[0];liqRGB[1]=c[1];liqRGB[2]=c[2];},col);
    await p.waitForTimeout(600);await p.evaluate(()=>{S.playing=false;});await p.waitForTimeout(400);sc.push(await p.evaluate(SCORE));await p.evaluate(()=>{S.playing=true;});}
   console.log('        '+sc.map(s=>'max '+s.max+' range '+(s.p99-s.p50).toFixed(3)+' ring '+s.ring+' core '+s.core+' alpha ring '+s.ringA+' core '+s.coreA+' ('+s.n+' px)').join(' | '));

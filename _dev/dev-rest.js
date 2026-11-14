@@ -40,14 +40,19 @@ const run=async(tapRests)=>{
   const p=await ctx.newPage();
   await p.goto('http://127.0.0.1:8765/index.html?l=rest');
   await p.waitForTimeout(2200);
+  let lastAt=null;   // each note is tapped ONCE: a second tap on the same note is an extra tap and costs it (logic pass)
   for(let i=0;i<700;i++){
     if(await p.evaluate(()=>!!document.querySelector('.lgDone')))break;
     const r=await p.evaluate(()=>{
       if(typeof AC==='undefined'||!AC||window._labReadAt==null)return null;
       const c=[...document.querySelectorAll('.lgCell')][window._labReadIdx];
-      return {wait:(window._labReadAt-AC.currentTime)*1000,rest:!!(c&&c.classList.contains('rest'))};});
+      return {wait:(window._labReadAt-AC.currentTime)*1000,rest:!!(c&&c.classList.contains('rest')),at:window._labReadAt};});
     if(!r){await p.waitForTimeout(80);continue;}
-    if(r.wait>0)await p.waitForTimeout(Math.min(700,r.wait));
+    // wait the WHOLE way to the note, then tap: a tap up to 700 ms early (this used to wait at most 700 ms and tap anyway) lands
+    // on the rest or the note before it, and since the logic pass (2026-11-10) an extra tap costs the note it lands in, as it
+    // should: a tap during a rest is playing on the rest
+    if(r.wait>0){await p.waitForTimeout(Math.min(700,r.wait));continue;}
+    if(r.at===lastAt){await p.waitForTimeout(90);continue;}lastAt=r.at;
     if(tapRests||!r.rest)await p.evaluate(()=>window._lab_tap&&window._lab_tap());
     await p.waitForTimeout(90);
   }

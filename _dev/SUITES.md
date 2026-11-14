@@ -66,6 +66,10 @@ Then rerun only what failed. A failure that passes on rerun goes on the flaky li
   (control 2026-11-02 on a810fb2 too). Goo and balls are now cleared before the picture. Fixed 2026-11-12: it compares the
   hole with the same spot in the same frame by colour difference (>= 60 of 765; a hole reads 80+, hidden 0), not a
   saturation ratio.
+- `dev-mix` 6b "the drums sit at least 6 dB under the melody in the presence band": -5.3 to -6.0 dB on pop, samba and march
+  (sweep 2026-11-13, one of three kits on the rerun); a real-time capture sitting on the margin. Not loosened; not chased yet.
+- `dev-rest` "playing the notes... FINISHES the lesson" failed from 2026-11-10 (extra taps cost a note) until 2026-11-13: the
+  DRIVER tapped up to 700 ms early and tapped a note again every 90 ms; it taps each note once, on time, now.
 - `dev-look3d` needs `python3` with PIL (dev-crayon was retired with the crayon look, ADR 0012); on Flah's Windows box `python3` is a Store alias (make a venv shim named python3).
 - `dev-gl` (needs SLIME_GL=1; runs on Flah's GPU) "the goo is a real 3D surface": 96-120 triangles some runs (fails 1 in 2; also before the tumble, 7d3f3bb).
 - `dev-hands` 3. "a flick keeps it spinning": 0.00 turns a second once (2026-11-02, right after a long run of suites), then 0.77 and 1.14 on reruns; the flick reads pointer timing.

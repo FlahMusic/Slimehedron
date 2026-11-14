@@ -299,6 +299,10 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     120 Hz screen (and the suites' mobile emulation) faded it twice as fast (dev-hands 11h read 0.30): it fades by the clock
     now, 0.86 a 60 Hz tick, in the draw (so a paused tank still fades). dev-fluid's pause check and dev-governor remain
     the known flakes; dev-perfmode timed out once (timing, SUITES.md).
+    SWEEP 2026-11-13 (99 suites, after frame pass 1 + the tall tank): 11 red. Known flakes: fluid (pause), goolook, gl (flood),
+    look3d (rim), perfmode, potato. Reran green: crowding, goopro (its grid check now accepts 48-60, the adaptive grid),
+    rest (the suite's driver was wrong since the extra-tap rule, see SUITES.md). dev-mix 6b sits on its 6 dB margin
+    (-5.3..-6.0; audio untouched this pass): listed, not loosened.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto
