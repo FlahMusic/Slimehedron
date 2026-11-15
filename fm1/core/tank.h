@@ -28,7 +28,9 @@
 #define SH_QLATE    40.0                  /* a hit this soon after a grid line counts as on it (ms) */
 #define SH_QWAIT    45.0                  /* the most a held note waits for the next grid line (ms) */
 #define SH_MAXWALLS 16
-#define SH_MAXHITS  64
+#ifndef SH_MAXHITS
+#define SH_MAXHITS  64                    /* hits kept from one tick (the device build keeps 32: 72 B each) */
+#endif
 
 typedef struct {
   int walls; const sh_scale *scale; int octs;

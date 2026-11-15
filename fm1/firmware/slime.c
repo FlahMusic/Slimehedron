@@ -17,7 +17,8 @@
 
 typedef struct { uint8_t on, trk, note, vel; int16_t fine; uint32_t at; } sl_ev;   /* at: in control blocks */
 
-static sh_tank sl_tank;
+/* 99 KB: on the device it lives in SLOOP's .pool (zeroed at boot), never in the 96 KiB RAM region */
+static sh_tank sl_tank __attribute__((section(".pool")));
 static sl_ev sl_on_q[SL_NQ], sl_off_q[SL_NQ];
 static uint32_t sl_blocks;       /* control blocks since slime_start */
 static uint32_t sl_ticks;        /* tank ticks run */
@@ -151,3 +152,24 @@ static void slime_block(void)
         }
     sl_blocks++;
 }
+
+#ifdef SL_DEVICE
+/* The device: SLOOP's mixer calls this before each block it mixes (patch_sloop.py). The first call starts the tank on
+ * the web's studio start state, playing track 1. */
+static uint8_t sl_started;
+static volatile uint32_t sl_dbg_ticks, sl_dbg_notes;      /* for fm1-emu's memory dump */
+static void slime_hook(uint32_t n)
+{
+    uint32_t k;
+    if (!sl_started) {
+        int pi = sl_preset_named(1, "KALIMBA");
+        sl_started = 1;
+        sl_preset(&trk[SL_TRK_MEL], 1, pi < 0 ? 0 : (uint32_t)pi);
+        slime_start(sh_tank_defaults(), 7, 60);
+    }
+    for (k = 0; k < n; k += CTL)
+        slime_block();
+    sl_dbg_ticks = sl_ticks;
+    sl_dbg_notes = sl_stat.notes;
+}
+#endif

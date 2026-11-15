@@ -44,9 +44,9 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
 | 06 | Music logic: the auto-notes melody (`core/melody.c`: the web's 6000 golden notes note for note, every random number used; sabotaged 3 ways) | melody done; the chord brain and pane chords open |
 | 07 | The goo, lighter but real: a capped particle count plus a level; it must still slow balls and soften notes | done (this pass): the light goo, 94 KB, plays like the plugin's by statistics |
 | 08a | THE BRIDGE on the host: the tank plays SLOOP's engines through SLOOP's own DSP sources, microtonal (`fm1/firmware/slime.c`, `host/slimehost.c`) | done (2026-11-14): 20 checks, sabotaged 4 ways |
-| 08b | The device build: JieLi toolchain + 3 SDK files in WSL, stock SLOOP 2.8.5 built and booted in fm1-emu on BOTH flash parts | blocked: the toolchain download needs Flah's OK (see below) |
-| 08c | Make room: the tank is 99 KB and SLOOP's pool has 10 KB free. Drop the four project slots and the arranger first; measure the map after each cut | open |
-| 08d | The tank on the device: slime.c in the unity build, the tick on core 1 or the main loop (measure both in fm1-emu STRICT), float or double | open |
+| 08b | The device build: JieLi toolchain + 3 SDK files in WSL, stock SLOOP 2.8.5 built and booted in fm1-emu on BOTH flash parts | done (2026-11-15): stock 2.8.5 builds (571,820 B) and boots in fm1-emu on the P25Q80 and the UC25HQ80, keys sound |
+| 08c | Make room | first cut done (2026-11-15): pool 334,756 of 344,064 B with the tank in, flash 385,384 of 581,564 B (see below) |
+| 08d | The tank on the device | it runs and plays in fm1-emu (2026-11-15), in the audio interrupt, software doubles. Open: single-precision on the chip's float unit, the worst case (full goo, 12 balls), off the interrupt |
 | 08e | The screen: drawtank / drawspace / draw into SLOOP's LCD path, sending only changed bands (a full frame is 77 ms of SPI) | open |
 | 09a | Sounds by measurement (brief 3c): melody, pane chime, bass, pad, comp and the 11 kits matched to web renders | open |
 | 09b | The band: the chord brain and pane chords in C (ticket 06's rest), bass on track 2, pad/comp on track 3, drums from the web's patterns | open |
@@ -166,3 +166,27 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
   stopped by the session's permission check. Flah runs them once, or allows them:
   `wsl -e bash -lc 'cd ~/fm1w/sloop-fm1 && tools/get_toolchain.sh && git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git ~/fw-AC79_AIoT_SDK'`
 - Changed by a fact: the brief's ">= 30 fps" needs partial redraw. fm1-emu times a full frame at ~77 ms of SPI.
+
+## Tickets 08b-08d (the device build), as built 2026-11-15
+- Flah ran the downloads (JieLi toolchain 20260730.1, clang 4.0.1; the AC79 SDK tag). `fm1-emu`'s batch runner builds with
+  cargo in WSL (`fm1-live` needs ALSA headers, not installed, so no STRICT cycle counts yet). The runner is ~40x slower
+  than real time on this pc: 9 emulated seconds take about 6 minutes.
+- `sh fm1/firmware/build-device.sh` (WSL): copies the pinned checkout to `~/fm1w/slime-fw` without `assets/samples-cc0`
+  (synth only: the recordings were 234 KB of a flash window with 10 KB free), applies `patch_sloop.py` (8 exact-text
+  changes, each must match once), compiles `fm1/core` with JieLi's clang and links it with the toolchain's libm, libc
+  and compiler-rt. SLOOP's own build checks all pass.
+- RAM, measured: the punch-in effects' ring 65,536 -> 2,048 B and the SLICER's recordings 32,768 -> 2,048 B make room for
+  the tank (those two effects have nothing to chew on now; nothing else changes). The spectrogram's picture moved to the
+  low SRAM, and the device keeps 32 hits a tick, not 64 (`SH_MAXHITS`, 72 B each). RAM is 512 KB in all (app.ld).
+- In fm1-emu, UC25HQ80 flash, 9 s, no key touched: the tank starts by itself and plays KALIMBA on track 1 from 2 s on
+  (peaks up to -11 dB), 1,521 audio halves (none missing), SLOOP's screen alive and showing the preset. The audio
+  interrupt takes 23.1% of core 0 against 12.5% for stock SLOOP idling: about 10 points for the tank plus its voices,
+  with the goo still nearly empty. THE WORST CASE IS NOT MEASURED (full goo, 12 balls: minutes of emulated time).
+- Float, measured with the compiler: the default target has no float unit (every float and double operation is a
+  library call). JieLi's own SDK builds this chip with `-mcpu=r3 -mfprev1`; with those flags single-precision becomes
+  machine instructions and only doubles stay library calls. So the device tank should be single-precision. Not yet
+  tried: whether fm1-emu runs those instructions, and SLOOP itself is built without them.
+- `-fsingle-precision-constant` is not supported by this clang, so the light goo's constants are doubles on the device
+  for now (slower, same sound).
+- NOT CHECKED: nobody has listened to `~/fm1w/out/slime-uc.wav`; the P25Q80 run of our build (stock was run on both);
+  saving and updating with our build on either flash; anything on a real FM-1. Nothing has been flashed.
