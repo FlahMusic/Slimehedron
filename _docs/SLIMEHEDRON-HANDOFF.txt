@@ -337,6 +337,13 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
       core 0 (stock idle 12.5%), no audio half missed in 9 s. Not measured: the worst case (full goo). Found: the chip has
       a single-precision float unit (-mcpu=r3 -mfprev1), doubles are software, so the device tank goes single-precision
       next. The emulator is ~40x slower than real time here. Nothing flashed; nobody has listened. Details: the spec.
+    FM-1: THE TANK IS THE SCREEN (2026-11-15, later). Flah owns a NEWER unit (UC25HQ80). SLOOP's UI and logo are no longer
+      drawn (fm1/firmware/slime_ui.c): the screen is the 2.5D tank; keys fire balls, PLAY, tempo, spin, shape, space, sound
+      on the knobs, key LEDs. The web's pop drums on a synthesized kit; a 64-bar reform. Levels by dev-mix's rules with the
+      same meter: drums 7.5-8.4 LU under the melody, mix -19.2..-21.4 LUFS, peak -5.2 dBFS (SLOOP's limiter). Host checks
+      33. Emulator: fm1/firmware/emu-tank.png, audio interrupt 20.2%, no half missed. OPEN: the screen looks like ~3-4
+      fps (software float): next is the chip's float unit + a single-precision tank. Bass, chords, the other kits, key/
+      scale and FX pages, curved space and solids on screen: not done. Nothing flashed.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

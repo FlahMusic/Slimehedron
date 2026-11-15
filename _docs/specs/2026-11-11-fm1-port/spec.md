@@ -190,3 +190,34 @@ song, RAM high-water pinned. Every core piece matches the web's numbers in the h
   for now (slower, same sound).
 - NOT CHECKED: nobody has listened to `~/fm1w/out/slime-uc.wav`; the P25Q80 run of our build (stock was run on both);
   saving and updating with our build on either flash; anything on a real FM-1. Nothing has been flashed.
+
+## The tank on the screen, drums, levels (2026-11-15, second pass)
+Flah: owns one of the NEWER FM-1s (UC25HQ80 flash). "Get rid of anything that looks like sloop", keep its sound engine,
+fx and params; do the dB testing yourself from the site's levels; nobody listens to renders.
+- `fm1/firmware/slime_ui.c` replaces SLOOP's groovebox UI in the main loop (`patch_sloop.py`, 12 exact changes): the
+  screen is the tank only (drawtank.c, 2.5D, 16-row bands sent while the next is painted, in SLOOP's old canvas memory),
+  the boot screen says slimehedron. SLOOP's UI code is compiled but not called and the linker drops most of it
+  (image 309,268 B). Still SLOOP's on purpose: the update-mode messages, the updater, the USB rescue, the web editor.
+- Panel, first cut: keys = their note in the tank's scale at once + a ball; PLAY run/stand still; SELECT walls 3..12;
+  ALGORITHM normal/portal space; PRESETS the melody's sound (8 synthesized: KALIMBA, MARIMBA, GLOCKEN, MUSIC BOX, SOFT
+  KEYS, HARP, THUMB PNO, FM PLUCK); KNOB 1 tempo; KNOB 2 spin; HOME a new shape; MASTER volume. LEDs: PLAY, and the key
+  nearest a note that rings. Not mapped yet: SCL (key/scale), FX, SEQ (kits), OCT, REC, SAVE, KNOB 3-4.
+- The slime's cycle: after 64 bars or a full tank the shape reforms (walls from a list, 1 in 3 portal space, as the
+  web's auto). No burst animation yet; curved space and the solids are in `fm1/core` but not wired to the screen.
+- Drums: the web's own pop pattern (index.html KITS.pop, the masks checked against its lists) on SLOOP's synthesized
+  80S kit, on the tank's swung grid. The other 10 kits, the bass, the chords and the chord brain: not ported (09b).
+- Levels, by the site's rules (`_dev/dev-mix.js`) with the same K-weighted meter in the host bench: melody track 104,
+  drums 28 (SLOOP's stock 100 put the drums 0.4-1.0 LU under the melody; the rule is at least 6). Measured on three
+  scenes: drums 7.5-8.4 LU under, the mix -19.2 / -19.8 / -21.4 LUFS (site -18.8, window -21..-15), peak -5.2 dBFS:
+  SLOOP's master limiter holds it there, so the slow sparse scene cannot be pushed into the window by a fader.
+  `check-host.sh` is 33 checks now; the mix check is sabotaged (stock drum level: red).
+- In fm1-emu (UC25HQ80, 7 s, three keys pressed at 5.2-5.6 s): the tank on the screen with struck walls lit, balls, the
+  first goo, more balls after the key presses (`fm1/firmware/emu-tank.png`, frames at 3.0 / 5.0 / 6.9 s); 1,177 audio
+  halves, none missing; audio interrupt 20.2% of core 0.
+- THE OPEN PROBLEM: frame rate. The emulator counted 310 LCD transfers in 7 s; if that is one per band (15 a frame,
+  not confirmed) the screen runs at about 3-4 frames a second. The draw is all software floating point on this build.
+  Next: build with `-mcpu=r3 -mfprev1` (the chip's single-precision unit) and make the tank and the draw single-
+  precision; then send only bands that changed.
+- NOT CHECKED: anything on the real FM-1 (nothing flashed); saving, the updater and the rescue with our build; the old
+  P25Q80 flash with our build; knobs and buttons other than three note keys; LEDs; the worst case (full goo, 12 balls);
+  how it sounds.
