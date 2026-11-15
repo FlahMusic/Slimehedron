@@ -21,12 +21,12 @@ rm -rf "$WORK"; mkdir -p "$WORK"
 (cd "$SLOOP" && tar cf - --exclude=.git --exclude=./build --exclude=./assets/samples-cc0 .) | (cd "$WORK" && tar xf -)
 python3 "$HERE/patch_sloop.py" "$WORK"
 mkdir -p "$WORK/firmware/slime" "$WORK/build/slime"
-cp "$HERE/slime.c" "$WORK/firmware/slime/"
+cp "$HERE/slime.c" "$HERE/slime_ui.c" "$WORK/firmware/slime/"
 cp "$HERE"/../core/*.c "$HERE"/../core/*.h "$WORK/firmware/slime/"
 
 # our core, compiled as SLOOP compiles its own file (-Os, sections), with the device's light goo
 OBJS=""
-for f in tank music melody goo; do
+for f in tank music melody goo drawtank; do
   "$TC/pi32v2/bin/clang" -target pi32v2 -Os -ffunction-sections -std=c99 -DSH_GOO_LIGHT -DSH_MAXHITS=32 ${SLIME_CORE_FLAGS:-} \
     -I"$TC/pi32v2/include" -c "$WORK/firmware/slime/$f.c" -o "$WORK/build/slime/$f.o"
   OBJS="$OBJS build/slime/$f.o"

@@ -34,9 +34,15 @@ sub("firmware/src/fx.c", "static void events_block(uint32_t n);",
 sub("firmware/src/fx.c", "    events_block(n);\n    duck_block(", "    slime_hook(n);\n    events_block(n);\n    duck_block(")
 sub("firmware/src/felucca.c", '#include "audio.c"\n', '#include "slime.c"            /* slimehedron: the tank plays the engines */\n#include "audio.c"\n')
 
+# The screen and the panel are ours: SLOOP's groovebox UI is compiled but never called, its logo never drawn.
+sub("firmware/src/felucca.c", '#include "main.c"', '#include "slime_ui.c"         /* slimehedron: the tank on the screen */\n#include "main.c"')
+sub("firmware/src/main.c", "    sloop_splash();", "    slime_splash();")
+sub("firmware/src/main.c", "        ui_input();\n        felucca_dbg.stage = 2;\n        ui_leds();\n        ui_draw();\n", "        slime_ui();\n")
+sub("firmware/src/main.c", "            ui_input();\n#if FELUCCA_OTA", "            slime_poll();\n#if FELUCCA_OTA")
+
 # The build: our include paths, our objects and the toolchain's maths libraries on the link line.
 sub("tools/build.py", '    flags = [*CFLAGS, "-Ifirmware/hal", "-Ifirmware/src", "-Ibuild/gen"]\n    for flag in',
     '    flags = [*CFLAGS, "-Ifirmware/hal", "-Ifirmware/src", "-Ibuild/gen", *os.environ.get("SLIME_CFLAGS", "").split()]\n    for flag in')
 sub("tools/build.py", 'OUT / "fm1_cpu1.o", OUT / "felucca.o", "-o", elf)',
     'OUT / "fm1_cpu1.o", OUT / "felucca.o", *os.environ.get("SLIME_LINK", "").split(), "-o", elf)')
-print("patch_sloop: 8 changes applied")
+print("patch_sloop: 12 changes applied")

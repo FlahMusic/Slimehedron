@@ -33,6 +33,30 @@ static void setup(uint32_t engine, const char *preset, int bpm)
     sl_preset(&trk[SL_TRK_MEL], engine, (uint32_t)pi);
 }
 
+/* Loudness as the web's mix suite measures it (_dev/dev-mix.js): the mono mix through the two K-weighting filters of
+ * ITU-R BS.1770 (a +4 dB high shelf at 1682 Hz, a high-pass at 38 Hz), ungated, mean square, -0.691. */
+typedef struct { double b0, b1, b2, a1, a2, x1, x2, y1, y2; } biq;
+static double biq_run(biq *f, double x)
+{
+    double y = f->b0 * x + f->b1 * f->x1 + f->b2 * f->x2 - f->a1 * f->y1 - f->a2 * f->y2;
+    f->x2 = f->x1; f->x1 = x; f->y2 = f->y1; f->y1 = y;
+    return y;
+}
+static biq k_shelf(void)
+{
+    double A = pow(10.0, 4.0 / 40.0), w = 2.0 * M_PI * 1681.97 / FS, c = cos(w), al = sin(w) / 2.0 * sqrt(2.0), q = 2.0 * sqrt(A) * al;
+    double a0 = (A + 1) - (A - 1) * c + q;
+    biq f = {A * ((A + 1) + (A - 1) * c + q) / a0, -2 * A * ((A - 1) + (A + 1) * c) / a0, A * ((A + 1) + (A - 1) * c - q) / a0,
+             2 * ((A - 1) - (A + 1) * c) / a0, ((A + 1) - (A - 1) * c - q) / a0, 0, 0, 0, 0};
+    return f;
+}
+static biq k_hp(void)
+{
+    double w = 2.0 * M_PI * 38.13 / FS, c = cos(w), al = sin(w) / (2.0 * 0.5), a0 = 1 + al;
+    biq f = {(1 + c) / 2 / a0, -(1 + c) / a0, (1 + c) / 2 / a0, -2 * c / a0, (1 - al) / a0, 0, 0, 0, 0};
+    return f;
+}
+
 /* the pitch of a steady tone: the lag where it best matches itself (parabola through the peak) */
 static double pitch_hz(const float *x, int n)
 {
@@ -95,11 +119,19 @@ int main(int argc, char **argv)
         uint32_t frames = (uint32_t)((double)bars * 240.0 / bpm * FS) / CTL * CTL, i, k;
         sh_tank_settings s = sh_tank_defaults();
         FILE *f = fopen(argv[2], "wb");
-        double sum = 0, peak = 0; clock_t t0;
+        double sum = 0, peak = 0, ksum = 0; clock_t t0; biq ks = k_shelf(), kh = k_hp();
         if (!f) { perror(argv[2]); return 2; }
         s.scale = sh_scale_by_id(argv[4]); s.walls = atoi(argv[5]);
         if (!s.scale) { fprintf(stderr, "unknown scale\n"); return 2; }
         setup((uint32_t)atoi(argv[8]), argv[9], bpm);
+        sl_drum_kit("80S");
+        if (getenv("SL_MEL")) sl_mel_on = (uint8_t)atoi(getenv("SL_MEL"));
+        if (getenv("SL_DRUMS")) sl_drums_on = (uint8_t)atoi(getenv("SL_DRUMS"));
+        slime_levels();
+        if (getenv("SL_MLVL")) trk[SL_TRK_MEL].p[P_LEVEL] = (int16_t)atoi(getenv("SL_MLVL"));
+        if (getenv("SL_DLVL")) song.g[G_DRLVL] = (int16_t)atoi(getenv("SL_DLVL"));
+        if (getenv("SL_TRIM")) trk[SL_TRK_MEL].p[P_ED_FX] = (int16_t)(trk[SL_TRK_MEL].p[P_ED_FX] + atoi(getenv("SL_TRIM")));
+        if (getenv("SL_GAIN")) song.master_q12 = (uint32_t)atoi(getenv("SL_GAIN"));
         slime_start(s, strtoull(argv[7], 0, 10), 60);
         wav_head(f, frames);
         t0 = clock();
@@ -107,12 +139,14 @@ int main(int argc, char **argv)
             float *o; int16_t pcm[CTL * 2];
             slime_block();
             o = preview_render();
+            for (k = 0; k < CTL; k++) { double m = biq_run(&kh, biq_run(&ks, (o[2 * k] + o[2 * k + 1]) * 0.5)); ksum += m * m; }
             for (k = 0; k < CTL * 2; k++) { double v = o[k]; sum += v * v; if (fabs(v) > peak) peak = fabs(v); pcm[k] = (int16_t)(v * 32767.0f); }
             fwrite(pcm, sizeof pcm, 1, f);
         }
         fclose(f);
         {
             double secs = (double)frames / FS, cpu = (double)(clock() - t0) / CLOCKS_PER_SEC;
+            printf("lufs %.2f mlvl %d dlvl %d drum_hits %u ", -0.691 + 10.0 * log10(ksum / frames + 1e-20), trk[SL_TRK_MEL].p[P_LEVEL], song.g[G_DRLVL], sl_dstat.drum_hits);
             printf("bars %d hits %u notes %u per_bar %.2f late %u worst_late_ms %.2f dropped %u rms_db %.1f peak_db %.1f "
                    "x_realtime %.0f tank_bytes %zu goo_fill %.2f\n", bars, sl_stat.hits, sl_stat.notes,
                    (double)sl_stat.notes / bars, sl_stat.late, sl_stat.worst_late_blocks * CTL * 1000.0 / FS, sl_stat.dropped,

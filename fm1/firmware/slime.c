@@ -27,6 +27,27 @@ static int sl_root = 60;         /* the key: MIDI note of the scale's degree 0 *
 static uint32_t sl_gate_blocks;  /* how long a tank note holds its key down */
 static struct { uint32_t hits, notes, late, dropped; int32_t worst_late_blocks; } sl_stat;
 
+/* The drums: the web's own pattern for its pop kit (index.html KITS.pop: 64 sixteenth steps, 4 bars), on SLOOP's drum
+ * voices through one of its SYNTHESIZED kits. Steps follow the tank's grid (the same swing), so drums and balls agree. */
+static const uint16_t SL_POP[4][4] = {     /* per bar: kick, snare, closed hat, open hat; bit s = step s */
+    {0x0441, 0x1010, 0x5555, 0x0000}, {0x0441, 0x1010, 0x9555, 0x4000}, {0x0441, 0x1010, 0x5555, 0x0000}, {0x0441, 0x1410, 0x1555, 0x4000},
+};
+static const uint8_t SL_DRUM_NOTE[4] = {36, 38, 42, 46};   /* General MIDI: kick, snare, closed hat, open hat */
+static uint8_t sl_mel_on = 1, sl_drums_on = 1;
+static uint32_t sl_step; static double sl_next_step_ms;
+static struct { uint32_t drum_hits; } sl_dstat;
+static void sl_drum_kit(const char *name)                  /* a synthesized kit by its name */
+{
+    uint32_t i, k;
+    for (i = DRUM_SAMPLED; i < DRUM_USR; i++) {
+        for (k = 0; name[k] && DRUM_KIT_NAMES[i][k] == name[k]; k++) {}
+        if (!name[k] && !DRUM_KIT_NAMES[i][k]) { TDRUM->p[P_E0] = (int16_t)i; return; }
+    }
+}
+
+/* The mix, set by measurement (fm1/firmware/check-host.sh): see slime_levels() below. */
+static void slime_levels(void);
+
 /* a factory preset onto a synth track: what ui.c apply_preset_to writes, without the UI's bookkeeping */
 static void sl_preset(track_t *t, uint32_t engine, uint32_t pi)
 {
@@ -110,6 +131,7 @@ static void slime_start(sh_tank_settings s, uint64_t seed, int root_midi)
     sh_tank_init(&sl_tank, s, seed);
     sh_tank_start(&sl_tank, 0.0);
     sl_next_bar_ms = 240000.0 / (double)song.g[G_BPM];
+    sl_step = 0; sl_next_step_ms = 0.0;
 }
 
 /* once per control block, before the block is mixed */
@@ -129,10 +151,20 @@ static void slime_block(void)
             e.vel = (uint8_t)clamp(h->pane ? h->vel / 2 : h->vel, 1, 127);
             e.at = sl_ms_to_block(h->sound_ms);
             sl_stat.hits++;
-            sl_push(sl_on_q, e);
+            if (sl_mel_on) sl_push(sl_on_q, e);
         }
         if (tick_ms >= sl_next_bar_ms) { sh_tank_on_bar(&sl_tank); sl_next_bar_ms += 240000.0 / bpm; }
         sl_ticks++;
+    }
+    while (sl_next_step_ms <= now_ms) {                    /* the drums, a sixteenth at a time */
+        uint32_t st = sl_step % 64u, bar = st / 16u, l;
+        double len = 15000.0 / bpm, sw = sl_tank.s.swing;
+        if (sl_drums_on)
+            for (l = 0; l < 4u; l++)
+                if ((SL_POP[bar][l] >> (st % 16u)) & 1u) { drum_on(SL_DRUM_NOTE[l], l == 2u ? 80u : 110u); sl_dstat.drum_hits++; }
+        if (sw > 0.01) len *= (sl_step % 2u == 0u) ? 1.0 + sw * 0.5 : 1.0 - sw * 0.5;
+        sl_next_step_ms += len;
+        sl_step++;
     }
     for (i = 0; i < SL_NQ; i++)                            /* note-offs first: the same key may come straight back */
         if (sl_off_q[i].on && sl_off_q[i].at <= sl_blocks) {
@@ -153,23 +185,116 @@ static void slime_block(void)
     sl_blocks++;
 }
 
+/* Levels. Targets are the web app's own (_dev/dev-mix.js, _docs/research/2026-11-04-mix-levels.md): the whole mix
+ * -21..-15 LUFS (the site sits at -18.8), peaks under -0.9 dBFS, the drums at least 6 LU under the melody.
+ * The numbers below were found by measuring the host bench, not by ear. */
+#ifndef SL_MEL_LEVEL
+#define SL_MEL_LEVEL 104          /* SLOOP's own default: above it the master limiter (peak -5.2 dBFS) gives nothing back */
+#define SL_DRUM_LEVEL 28          /* measured: the pop pattern 7.5..8.4 LU under the melody (at 100 it was 0.4 under) */
+#endif
+static void slime_levels(void)
+{
+    trk[SL_TRK_MEL].p[P_LEVEL] = SL_MEL_LEVEL;
+    song.g[G_DRLVL] = SL_DRUM_LEVEL;
+}
 #ifdef SL_DEVICE
-/* The device: SLOOP's mixer calls this before each block it mixes (patch_sloop.py). The first call starts the tank on
- * the web's studio start state, playing track 1. */
-static uint8_t sl_started;
-static volatile uint32_t sl_dbg_ticks, sl_dbg_notes;      /* for fm1-emu's memory dump */
+double floor(double);                       /* the toolchain's libm */
+/* ------------------------------------------------------------------ the device ---
+ * SLOOP's mixer calls slime_hook before each block it mixes (patch_sloop.py), in the audio interrupt. The main loop
+ * (slime_ui.c) never touches the tank: it leaves requests here and the hook carries them out between ticks. */
+#define SL_NSOUND 8u
+static const struct { uint8_t eng; const char *name; } SL_SOUND[SL_NSOUND] = {   /* the melody's sounds, all synthesized */
+    {1, "KALIMBA"}, {1, "MARIMBA"}, {1, "GLOCKEN"}, {1, "MUSIC BOX"}, {2, "SOFT KEYS"}, {1, "HARP"}, {10, "THUMB PNO"}, {1, "FM PLUCK"},
+};
+static volatile uint32_t sl_key_req;        /* note keys pressed (bit k = key k, F3 up) */
+static volatile uint8_t sl_run = 1;         /* PLAY: the tank moves */
+static volatile uint8_t sl_reform_req;      /* a new shape now */
+static volatile uint8_t sl_sound_req = 0xFF;/* a melody sound (index into SL_SOUND) */
+static volatile uint8_t sl_walls = 6, sl_space, sl_sound;
+static volatile int8_t sl_spin;
+static volatile uint32_t sl_lit_until[27];  /* key LEDs: fm1_ms until which key k glows (a wall near its note rang) */
+static uint8_t sl_started, sl_was_run = 1;
+static uint32_t sl_bars, sl_seed = 7;
+static volatile uint32_t sl_reforms;
+
+static void sl_start_shape(void)
+{
+    sh_tank_settings s = sh_tank_defaults();
+    s.walls = sl_walls; s.space = sl_space ? SH_SPACE_PORTAL : SH_SPACE_NORMAL; s.spin = (double)sl_spin;
+    slime_start(s, sl_seed++, sl_root);
+    sl_bars = 0;
+    sl_reforms++;
+}
+/* a key: its own note now (a hand is never quantized), in the tank's scale, and a ball into the tank */
+static void sl_key(uint32_t k)
+{
+    const sh_scale *sc = sl_tank.s.scale;
+    double want = ((double)(53 + (int)k) - (double)sl_root) * 100.0, oct = floor(want / 1200.0), in = want - oct * 1200.0, best = 0, bd = 1e9;
+    int d, note, fine;
+    for (d = 0; d <= sc->n; d++) {
+        double c = d == sc->n ? 1200.0 : (double)sc->cents[d], a = c > in ? c - in : in - c;
+        if (a < bd) { bd = a; best = c; }
+    }
+    sl_split(oct * 1200.0 + best, &note, &fine);
+    {
+        sl_ev off = {0};
+        sl_note_on(SL_TRK_MEL, note, 100, fine);
+        off.trk = SL_TRK_MEL; off.note = (uint8_t)clamp(note, 0, 127); off.at = sl_blocks + sl_gate_blocks;
+        sl_push(sl_off_q, off);
+    }
+    sh_tank_add_ball(&sl_tank);
+    sl_lit_until[k] = fm1_ms + 140u;
+}
 static void slime_hook(uint32_t n)
 {
-    uint32_t k;
+    uint32_t k, keys, notes0;
     if (!sl_started) {
-        int pi = sl_preset_named(1, "KALIMBA");
         sl_started = 1;
-        sl_preset(&trk[SL_TRK_MEL], 1, pi < 0 ? 0 : (uint32_t)pi);
-        slime_start(sh_tank_defaults(), 7, 60);
+        sl_sound_req = 0;
+        sl_start_shape();
     }
-    for (k = 0; k < n; k += CTL)
+    if (sl_sound_req != 0xFFu && !sl_busy(SL_TRK_MEL)) {
+        int pi = sl_preset_named(SL_SOUND[sl_sound_req % SL_NSOUND].eng, SL_SOUND[sl_sound_req % SL_NSOUND].name);
+        sl_sound = sl_sound_req % SL_NSOUND;
+        sl_preset(&trk[SL_TRK_MEL], SL_SOUND[sl_sound].eng, pi < 0 ? 0 : (uint32_t)pi);
+        sl_sound_req = 0xFF;
+    }
+    if (sl_reform_req) { sl_reform_req = 0; sl_start_shape(); }
+    sl_tank.s.spin = (double)sl_spin;
+    keys = sl_key_req;
+    if (keys) {
+        fm1_irq_off(); sl_key_req &= ~keys; fm1_irq_on();
+        for (k = 0; k < 27u; k++)
+            if ((keys >> k) & 1u) sl_key(k);
+    }
+    if (!sl_run) {                                         /* stopped: what rings is let go, the tank stands still */
+        if (sl_was_run)
+            for (k = 0; k < SL_NQ; k++) {
+                if (sl_off_q[k].on) trk_note_off(&trk[sl_off_q[k].trk % NPART], sl_off_q[k].note);
+                sl_off_q[k].on = sl_on_q[k].on = 0;
+            }
+        sl_was_run = 0;
+        return;
+    }
+    sl_was_run = 1;
+    notes0 = sl_stat.notes;
+    for (k = 0; k < n; k += CTL) {
+        double bar0 = sl_next_bar_ms;
         slime_block();
-    sl_dbg_ticks = sl_ticks;
-    sl_dbg_notes = sl_stat.notes;
+        if (sl_next_bar_ms != bar0) sl_bars++;
+    }
+    if (sl_stat.notes != notes0) {                         /* light the key nearest the last note that rang */
+        for (k = 0; k < NVOICE; k++) {
+            const voice_t *v = &trk[SL_TRK_MEL].v[k];
+            if (v->active && v->gate && v->note >= 53u && v->note < 80u) sl_lit_until[v->note - 53u] = fm1_ms + 140u;
+        }
+    }
+    /* the slime's own cycle (the web: the tank fills, bursts and reforms as a new shape, about every 64 bars) */
+    if (sl_bars >= 64u || sh_goo_fill(&sl_tank.goo) > 0.97) {
+        static const uint8_t SHAPES[8] = {6, 5, 8, 3, 7, 4, 12, 6};
+        sl_walls = SHAPES[sl_seed % 8u];
+        sl_space = (uint8_t)(sl_seed % 3u == 2u);          /* 1 reform in 3 is portal space, as the web's auto */
+        sl_start_shape();
+    }
 }
 #endif
