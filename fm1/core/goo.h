@@ -21,8 +21,20 @@
 #define SH_GOO_HASHED
 #endif
 typedef float greal;
-#define SH_GOO_DS     1.2599210498948732   /* a drop's size against the plugin's: 2^(1/3), so half as many hold as much */
-#define SH_GOO_MAXCAP 800
+/* SH_GOO_DIV: the plugin's drops per light drop (2, the light goo; the FM-1 build uses 4: fm1-emu STRICT measured the
+ * 2-goo's tick at 4.8 ms mean, 11 ms worst a minute in, too much for 60 ticks a second on the chip). Each drop is
+ * DIV^(1/3) the size, so DIV times fewer hold the same volume: the goo fills in the same bars and is as thick. */
+#ifndef SH_GOO_DIV
+#define SH_GOO_DIV 2
+#endif
+#if SH_GOO_DIV == 2
+#define SH_GOO_DS     1.2599210498948732   /* 2^(1/3) */
+#elif SH_GOO_DIV == 4
+#define SH_GOO_DS     1.5874010519681994   /* 4^(1/3) */
+#else
+#error "SH_GOO_DIV: 2 or 4"
+#endif
+#define SH_GOO_MAXCAP (1600 / SH_GOO_DIV)
 #else
 typedef double greal;
 #define SH_GOO_DS     1.0

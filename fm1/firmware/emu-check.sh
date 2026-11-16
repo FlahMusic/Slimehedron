@@ -14,25 +14,33 @@ TC="${JIELI_TOOLCHAIN:-$HOME/.jieli/toolchain}"
 R="$HOME/local/root"; export LD_LIBRARY_PATH="$R/usr/lib/x86_64-linux-gnu"
 ELF="$(dirname "$FW")/felucca.elf"
 addr() { "$TC/common/bin/objdump" -t "$ELF" | awk -v s="$1" '$NF==s{print $1}'; }
-A="$(addr sl_frames)"
+A="$(addr sl_dbg)"
 rm -rf "$OUT/rec"
+REC="--record $OUT/rec"; [ "${NOREC:-0}" = 1 ] && REC=""
 cd "$EMU"
 FM1_STRICT=1 FM1_NO_PLAY=1 FM1_DUMP="$A" FM1_BENCH_KEYS="$KEYS" ./target/release/fm1-live --fwsc "$FW" --flash-chip uc25hq80 \
-  --midi none --shot "$MS" --lcd-only --record "$OUT/rec" > "$OUT/emu.log" 2>&1 || { tail -20 "$OUT/emu.log"; exit 1; }
+  --midi none --shot "$MS" --lcd-only $REC > "$OUT/emu.log" 2>&1 || { tail -20 "$OUT/emu.log"; exit 1; }
 grep -E "fault|EMU_MSG|crash" "$OUT/emu.log" && echo "  (see $OUT/emu.log)"
 python3 - "$OUT" "$MS" <<'EOF'
 import os, re, struct, sys
 out, ms = sys.argv[1], int(sys.argv[2])
 log = open(out + "/emu.log").read()
-d = re.search(r"dump 0x[0-9a-f]+: ([0-9a-f]+) ([0-9a-f]+) ([0-9a-f]+)", log)
-frames, fms, px = (int(x, 16) for x in d.groups()) if d else (0, 0, 0)
+d = re.search(r"dump 0x[0-9a-f]+: ([0-9a-f]+) ([0-9a-f]+) ([0-9a-f]+) ([0-9a-f]+)", log)
+w = [int(x, 16) for x in d.groups()] if d else [0, 0, 0, 0]
+frames, fms, amax, late, tmax, tmean, nlate, reform = w[0] & 0xFFFF, w[0] >> 16, w[1] & 0xFFFF, w[1] >> 16, w[2] & 0xFFFF, w[2] >> 16, w[3] & 0xFFFF, w[3] >> 16
 lcd = re.search(r"LCD: on the wire (\d+)%", log); isr = re.search(r"(\d+)% of instructions in ISRs", log)
-a = open(out + "/rec/audio.raw", "rb").read(); s = struct.unpack("<%dh" % (len(a) // 2), a); q = 22059 * 2
-peaks = [max(map(abs, s[i:i + q])) for i in range(0, len(s), q)]
-print(f"frames {frames} in {ms} ms (the first ~1.3 s is the boot); last frame {fms} ms; pixels sent {px} of 57600")
+peaks = []
+if os.path.exists(out + "/rec/audio.raw"):
+    a = open(out + "/rec/audio.raw", "rb").read(); s = struct.unpack("<%dh" % (len(a) // 2), a); q = 22059 * 2
+    peaks = [max(map(abs, s[i:i + q])) for i in range(0, len(s), q)]
+print(f"frames {frames} in {ms} ms (~{frames / max(0.1, ms / 1000 - 1.3):.0f} fps after the ~1.3 s boot); worst frame {fms} ms")
+print(f"audio interrupt worst half {amax} us of 5805 ({100 * amax / 5805:.0f}%), deadlines missed {late}")
+print(f"tank tick: worst {tmax} us, mean {tmean} us; 60 ticks a second = {60 * tmean / 10000:.1f}% of the core at the mean")
+print(f"notes later than one block: {nlate}; the slowest reform {reform} ms")
 print(f"LCD on the wire {lcd.group(1) if lcd else '?'}%, ISR share (last 40 ms) {isr.group(1) if isr else '?'}%")
 print("audio peak per 0.5 s:", peaks)
 try:
+    if not os.path.isdir(out + "/rec"): raise Exception("not recorded (NOREC=1)")
     from PIL import Image
     fs = sorted(f for f in os.listdir(out + "/rec") if f.endswith(".ppm"))
     pick = [fs[int(i * (len(fs) - 1) / 5)] for i in range(6)] if len(fs) >= 6 else fs

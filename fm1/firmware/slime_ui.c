@@ -3,14 +3,17 @@
  * ui_input / ui_leds / ui_draw are no longer called). The screen is the tank and nothing else: drawn 2.5D by
  * fm1/core/drawtank.c in 16-row bands, each band sent while the next is painted.
  *
- * Panel (brief section 5, first cut):
- *   keys      their note in the tank's scale, now, and a ball into the tank
- *   PLAY      the tank runs / stands still
- *   SELECT    the shape: 3..12 walls            ALGORITHM  space: normal / portal
- *   PRESETS   the melody's sound (SL_SOUND)     KNOB 1     tempo        KNOB 2  spin
- *   HOME      a new shape now
+ * Panel (studio):
+ *   keys      their note in the tank's scale, now (a hand is never quantized), and a ball into the tank
+ *   PLAY      everything runs / stands still              HOME   a new shape (on the next downbeat)
+ *   ARP       auto-notes: the slime drops notes by itself SEQ    the drums on / off
+ *   LFO       the slime: key journey, reforms             REC    the band (bass and chords) on / off
+ *   SCL       the next scale                              OCT- / OCT+  the key down / up a semitone
+ *   SELECT    the shape: 3..12 walls                      ALGORITHM  space: normal / portal
+ *   PRESETS   the melody's sound                          KNOB 1 tempo   KNOB 2 spin   KNOB 3 rhythm   KNOB 4 scale
  *   MASTER    volume (SLOOP's main loop, unchanged)
- * LEDs: PLAY while running; a key glows when a wall near its note rings.
+ * LEDs: PLAY, ARP, LFO, SEQ, REC show their state; a key glows when the melody rings its note.
+ * A change shows its new value in plain words at the top of the screen for 1.5 s.
  * The main loop never writes the tank: it leaves requests (slime.c) for the audio interrupt, which owns it. It READS
  * the tank while the interrupt may be moving it, so a frame can show a ball a tick ahead of a wall: seen, never stored. */
 #include "drawtank.h"
@@ -21,9 +24,12 @@ _Static_assert(sizeof(st_view) + 2u * SL_BAND_PX * 2u + 8u <= sizeof cv_px, "the
 static uint32_t sl_frames;
 static volatile uint32_t sl_frame_ms;       /* how long the last frame took (for fm1-emu's memory dump) */
 static volatile uint32_t sl_px;             /* pixels sent in the last frame (a whole screen is 57,600) */
+/* for fm1-emu (emu-check.sh dumps these 4 words): frames drawn, the worst frame (ms), the audio interrupt's worst half
+ * (us, of a 5,805 us deadline: SLOOP's own audio_max_us, the tank and the band included), deadlines missed */
+static volatile uint32_t sl_dbg[4];
 #define SL_MARGIN 8
 
-static uint16_t *sl_band(uint32_t k) { return cv_px + (k & 1u) * SL_BAND_PX; }
+static uint16_t *sl_strip(uint32_t k) { return cv_px + (k & 1u) * SL_BAND_PX; }
 static st_view *sl_view(void)
 {
     uintptr_t p = (uintptr_t)(cv_px + 2u * SL_BAND_PX);
@@ -38,21 +44,76 @@ UI_SMALL static void slime_splash(void)
     cv_blit(0, 110);
 }
 
+/* the label: what just changed, in plain words, at the top of the screen */
+static char sl_label[32];
+static uint32_t sl_label_until;
+static uint8_t sl_label_shown;              /* drawn last frame: its rows must be repainted once it goes */
+static void sl_say(const char *a, const char *b)
+{
+    uint32_t i = 0, j = 0;
+    while (a[j] && i < sizeof sl_label - 1u) sl_label[i++] = a[j++];
+    for (j = 0; b && b[j] && i < sizeof sl_label - 1u; j++) sl_label[i++] = b[j];
+    sl_label[i] = 0;
+    for (j = 0; j < i; j++) if (sl_label[j] >= 'A' && sl_label[j] <= 'Z') sl_label[j] = (char)(sl_label[j] + 32);   /* plain words */
+    sl_label_until = fm1_ms + 1500u;
+}
+static const char *const SL_NOTE[12] = {"c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"};
+static const char *sl_scale_word(uint32_t i)
+{
+    static const char *const W[SL_NSCALE] = {"major", "minor", "pentatonic", "minor pentatonic", "dorian", "mixolydian", "19 notes", "31 notes"};
+    return W[i % SL_NSCALE];
+}
+static int32_t sl_wrap(int32_t v, int32_t d, int32_t n) { return ((v + d) % n + n) % n; }
+
 static void slime_poll(void)                /* often: nothing a hand does waits for a frame */
 {
     uint32_t rel, pressed = fm1_input_edges(&rel), keys = fm1_input_note_edges();
     int32_t d;
+#define SL_PRESSED(b) (pressed & (1u << panel.btn[b]))
     if (keys) {
         fm1_irq_off(); sl_key_req |= keys; fm1_irq_on();
     }
-    if (pressed & (1u << panel.btn[B_PLAY])) sl_run = (uint8_t)!sl_run;
-    if (pressed & (1u << panel.btn[B_HOME])) sl_reform_req = 1;
-    if ((d = panel_enc(EN_K1)) != 0) song.g[G_BPM] = (int16_t)clamp(song.g[G_BPM] + d, 40, 200);
-    if ((d = panel_enc(EN_K2)) != 0) sl_spin = (int8_t)clamp(sl_spin + d * 4, -100, 100);
-    if ((d = panel_enc(EN_SELECT)) != 0) { sl_walls = (uint8_t)clamp((int32_t)sl_walls + d, 3, 12); sl_reform_req = 1; }
-    if ((d = panel_enc(EN_ALGO)) != 0) { sl_space = (uint8_t)(d > 0); sl_reform_req = 1; }
-    if ((d = panel_enc(EN_PRESET)) != 0) sl_sound_req = (uint8_t)(((int32_t)sl_sound + d % (int32_t)SL_NSOUND + (int32_t)SL_NSOUND) % (int32_t)SL_NSOUND);
-    panel_enc(EN_K3); panel_enc(EN_K4);     /* (not used yet: their turns are not kept for later) */
+    if (SL_PRESSED(B_PLAY)) { sl_run = (uint8_t)!sl_run; sl_say(sl_run ? "play" : "stop", 0); }
+    if (SL_PRESSED(B_HOME)) { sl_reform_req = 1; sl_say("new shape", 0); }
+    if (SL_PRESSED(B_ARP)) { sl_auto = (uint8_t)!sl_auto; sl_say("auto-notes ", sl_auto ? "on" : "off"); }
+    if (SL_PRESSED(B_LFO)) { sl_slime = (uint8_t)!sl_slime; sl_say("slime ", sl_slime ? "on" : "off"); }
+    if (SL_PRESSED(B_SEQ)) { sl_drums_on = (uint8_t)!sl_drums_on; sl_say("drums ", sl_drums_on ? "on" : "off"); }
+    if (SL_PRESSED(B_REC)) { sl_band_on = (uint8_t)!sl_band_on; sl_say("bass and chords ", sl_band_on ? "on" : "off"); }
+    if (SL_PRESSED(B_SCL) || (d = panel_enc(EN_K4)) != 0) {
+        if (SL_PRESSED(B_SCL)) d = 1;
+        sl_scale_req = (uint8_t)sl_wrap(sl_scale, d, (int32_t)SL_NSCALE);
+        sl_say("scale: ", sl_scale_word(sl_scale_req));
+    }
+    if (SL_PRESSED(B_OCTDN) || SL_PRESSED(B_OCTUP)) {
+        int32_t nr = clamp(sl_root + (SL_PRESSED(B_OCTUP) ? 1 : -1), 48, 71);
+        sl_root_req = (int8_t)(nr - sl_root);
+        sl_say("key: ", SL_NOTE[nr % 12]);
+    }
+    if ((d = panel_enc(EN_K1)) != 0) {
+        static char b[8];
+        int32_t v = clamp(song.g[G_BPM] + d, 40, 200);
+        song.g[G_BPM] = (int16_t)v;
+        b[0] = (char)('0' + v / 100); b[1] = (char)('0' + v / 10 % 10); b[2] = (char)('0' + v % 10); b[3] = 0;
+        sl_say("tempo ", v < 100 ? b + 1 : b);
+    }
+    if ((d = panel_enc(EN_K2)) != 0) { sl_spin = (int8_t)clamp(sl_spin + d * 4, -100, 100); sl_say(sl_spin ? "spin" : "spin off", 0); }
+    if ((d = panel_enc(EN_K3)) != 0) {
+        sl_kit_req = (uint8_t)sl_wrap(sl_kit, d, sh_band_nkits());
+        sl_say("rhythm: ", sh_band_kit_name(sl_kit_req));
+    }
+    if ((d = panel_enc(EN_SELECT)) != 0) {
+        static char b[12];
+        sl_walls = (uint8_t)clamp((int32_t)sl_walls + d, 3, 12); sl_reform_req = 1;
+        b[0] = sl_walls >= 10 ? '1' : (char)('0' + sl_walls); b[1] = sl_walls >= 10 ? (char)('0' + sl_walls - 10) : 0; b[2] = 0;
+        sl_say(b, " walls");
+    }
+    if ((d = panel_enc(EN_ALGO)) != 0) { sl_space = (uint8_t)(d > 0); sl_reform_req = 1; sl_say(sl_space ? "portals" : "normal space", 0); }
+    if ((d = panel_enc(EN_PRESET)) != 0) {
+        sl_sound_req = (uint8_t)sl_wrap(sl_sound, d, (int32_t)SL_NSOUND);
+        sl_say("sound: ", SL_SOUND[sl_sound_req].name);
+    }
+#undef SL_PRESSED
+    slime_conduct();                        /* the music, ahead of the audio clock (slime.c) */
 }
 
 static void slime_ui(void)
@@ -63,7 +124,9 @@ static void slime_ui(void)
     uint32_t k, i, t0 = fm1_ms;
     slime_poll();
     for (k = 0; k < 27u; k++) fm1_led_key(14u + k, (int32_t)(sl_lit_until[k] - fm1_ms) > 0);
-    for (k = 0; k < 14u; k++) fm1_led_key(k, k == panel.btn[B_PLAY] && sl_run);
+    for (k = 0; k < 14u; k++) fm1_led_key(k, (k == panel.btn[B_PLAY] && sl_run) || (k == panel.btn[B_ARP] && sl_auto) ||
+                                             (k == panel.btn[B_LFO] && sl_slime) || (k == panel.btn[B_SEQ] && sl_drums_on) ||
+                                             (k == panel.btn[B_REC] && sl_band_on));
     /* the camera sways slowly round the box, as the web's tumbling tank does */
     st_tumble(0.5f * sinf(t * 0.31f), 0.3f + 0.2f * sinf(t * 0.23f + 1.0f), M);
     st_view_prepare(v, &sl_tank, M, 0.0f, 0);
@@ -81,6 +144,11 @@ static void slime_ui(void)
         x0 -= SL_MARGIN; x1 += SL_MARGIN;                        /* a ball or a lit rim can stand a little proud */
         y0 = (int32_t)v->pymin - SL_MARGIN; y1 = (int32_t)v->pymax + SL_MARGIN;
         if (v->n < 3) { x0 = 0; x1 = 239; y0 = 0; y1 = 239; }
+        {   /* the label's rows join the box while it shows, and once more after, to paint it away */
+            uint8_t on = (int32_t)(sl_label_until - fm1_ms) > 0;
+            if (on || sl_label_shown) { y0 = 0; x0 = 0; x1 = 239; }
+            sl_label_shown = on;
+        }
         {
             int32_t ux0 = x0 < px0 ? x0 : px0, ux1 = x1 > px1 ? x1 : px1, uy0 = y0 < py0 ? y0 : py0, uy1 = y1 > py1 ? y1 : py1;
             px0 = x0; px1 = x1; py0 = y0; py1 = y1;
@@ -88,10 +156,15 @@ static void slime_ui(void)
         }
         w = x1 - x0 + 1;
         for (k = (uint32_t)y0 / 16u; k * 16u <= (uint32_t)y1; k++) {
-            uint16_t *b = sl_band((uint32_t)nb++);   /* (the other band may still be on its way to the panel) */
+            uint16_t *b = sl_strip((uint32_t)nb++);   /* (the other band may still be on its way to the panel) */
             uint32_t ry0 = k * 16u < (uint32_t)y0 ? (uint32_t)y0 - k * 16u : 0u, ry1 = k * 16u + 15u > (uint32_t)y1 ? (uint32_t)y1 - k * 16u : 15u;
             uint32_t rows = ry1 - ry0 + 1u;
             st_draw_band(v, (int)(k * 16u), 16, b, BG);
+            if (k == 0u && sl_label_shown && b == cv_px) {   /* SLOOP's font into this band (cv_text draws into cv_px) */
+                cv_w = 240; cv_h = 16; cv_oy = 0;
+                cv_text(120 - text_w(&FONT_S, sl_label) / 2, 0, &FONT_S, sl_label, swap16(RGB(90, 72, 150)));   /* (the band is
+                                                   * swapped to the panel's order below; cv_text writes swapped already) */
+            }
             for (r = 0; r < (int32_t)rows; r++) {             /* the box's columns, packed (the panel takes one window) */
                 const uint16_t *s = b + (ry0 + (uint32_t)r) * 240u + (uint32_t)x0;
                 uint16_t *d = b + (uint32_t)r * (uint32_t)w;
@@ -105,4 +178,13 @@ static void slime_ui(void)
     lcd_sync();
     sl_frames++;
     sl_frame_ms = fm1_ms - t0;
+    {   /* packed for fm1-emu's 4-word dump: frames | worst frame ms; audio worst half us | deadlines missed;
+         * the tank tick's worst us | its mean us; the goo's drops at the worst tick */
+        static uint32_t worst;
+        if (sl_frames > 30u && sl_frame_ms > worst) worst = sl_frame_ms;
+        sl_dbg[0] = (sl_frames & 0xFFFFu) | (worst << 16);
+        sl_dbg[1] = (audio_max_us & 0xFFFFu) | (felucca_dbg.late << 16);
+        sl_dbg[2] = (sl_tick_us_max & 0xFFFFu) | ((sl_tick_n ? sl_tick_us_sum / sl_tick_n : 0u) << 16);
+        sl_dbg[3] = (sl_stat.late & 0xFFFFu) | ((sl_reform_us_max / 1000u) << 16);   /* notes late (> 1 block) | the slowest reform, ms */
+    }
 }

@@ -124,12 +124,26 @@ int main(int argc, char **argv)
         s.scale = sh_scale_by_id(argv[4]); s.walls = atoi(argv[5]);
         if (!s.scale) { fprintf(stderr, "unknown scale\n"); return 2; }
         setup((uint32_t)atoi(argv[8]), argv[9], bpm);
-        sl_drum_kit("80S");
+        slime_band_sounds();
+        if (getenv("SL_BASSND")) { char e[16]; int k = 0; const char *v = getenv("SL_BASSND"); while (v[k] && v[k] != ':' && k < 15) { e[k] = v[k]; k++; } e[k] = 0; if (v[k] == ':') sl_sound_on(SL_TRK_BASS, (uint32_t)atoi(e), v + k + 1); }
+        if (getenv("SL_COMPSND")) { char e[16]; int k = 0; const char *v = getenv("SL_COMPSND"); while (v[k] && v[k] != ':' && k < 15) { e[k] = v[k]; k++; } e[k] = 0; if (v[k] == ':') sl_sound_on(SL_TRK_COMP, (uint32_t)atoi(e), v + k + 1); }
+        for (k = 0; k < 64 && (sl_busy(0) || sl_busy(1) || sl_busy(2)); k++) preview_render();   /* the presets' fade-ins */
+        slime_band_start(getenv("SL_KIT") ? sh_band_kit_by_name(getenv("SL_KIT")) : 0, (uint32_t)strtoul(argv[7], 0, 10) * 2654435761u);
         if (getenv("SL_MEL")) sl_mel_on = (uint8_t)atoi(getenv("SL_MEL"));
         if (getenv("SL_DRUMS")) sl_drums_on = (uint8_t)atoi(getenv("SL_DRUMS"));
+        if (getenv("SL_BAND")) sl_band_on = (uint8_t)atoi(getenv("SL_BAND"));
         slime_levels();
         if (getenv("SL_MLVL")) trk[SL_TRK_MEL].p[P_LEVEL] = (int16_t)atoi(getenv("SL_MLVL"));
         if (getenv("SL_DLVL")) song.g[G_DRLVL] = (int16_t)atoi(getenv("SL_DLVL"));
+        if (getenv("SL_BLVL")) trk[SL_TRK_BASS].p[P_LEVEL] = (int16_t)atoi(getenv("SL_BLVL"));
+        if (getenv("SL_CLVL")) trk[SL_TRK_COMP].p[P_LEVEL] = (int16_t)atoi(getenv("SL_CLVL"));
+        if (getenv("SL_ONLY")) {                           /* one part alone: mel, drums, bass, comp */
+            const char *o = getenv("SL_ONLY");
+            sl_mel_on = !strcmp(o, "mel"); sl_drums_on = !strcmp(o, "drums");
+            sl_band_on = !strcmp(o, "bass") || !strcmp(o, "comp");
+            if (!strcmp(o, "bass")) trk[SL_TRK_COMP].p[P_MUTE] = 1;
+            if (!strcmp(o, "comp")) trk[SL_TRK_BASS].p[P_MUTE] = 1;
+        }
         if (getenv("SL_TRIM")) trk[SL_TRK_MEL].p[P_ED_FX] = (int16_t)(trk[SL_TRK_MEL].p[P_ED_FX] + atoi(getenv("SL_TRIM")));
         if (getenv("SL_GAIN")) song.master_q12 = (uint32_t)atoi(getenv("SL_GAIN"));
         slime_start(s, strtoull(argv[7], 0, 10), 60);
@@ -137,7 +151,8 @@ int main(int argc, char **argv)
         t0 = clock();
         for (i = 0; i < frames; i += CTL) {
             float *o; int16_t pcm[CTL * 2];
-            slime_block();
+            slime_schedule(SL_AHEAD_BLOCKS);      /* the conductor, ahead; then the audio side, as on the device */
+            slime_play_block();
             o = preview_render();
             for (k = 0; k < CTL; k++) { double m = biq_run(&kh, biq_run(&ks, (o[2 * k] + o[2 * k + 1]) * 0.5)); ksum += m * m; }
             for (k = 0; k < CTL * 2; k++) { double v = o[k]; sum += v * v; if (fabs(v) > peak) peak = fabs(v); pcm[k] = (int16_t)(v * 32767.0f); }
@@ -146,10 +161,12 @@ int main(int argc, char **argv)
         fclose(f);
         {
             double secs = (double)frames / FS, cpu = (double)(clock() - t0) / CLOCKS_PER_SEC;
-            printf("lufs %.2f mlvl %d dlvl %d drum_hits %u ", -0.691 + 10.0 * log10(ksum / frames + 1e-20), trk[SL_TRK_MEL].p[P_LEVEL], song.g[G_DRLVL], sl_dstat.drum_hits);
+            printf("lufs %.2f mlvl %d dlvl %d drum_hits %u bass_notes %u comp_notes %u fills %u kit %s ", -0.691 + 10.0 * log10(ksum / frames + 1e-20),
+                   trk[SL_TRK_MEL].p[P_LEVEL], song.g[G_DRLVL], sl_stat.drums_played, sl_stat.bass_notes, sl_stat.comp_notes, sl_stat.fills,
+                   sh_band_kit_name(sl_band.kit));
             printf("bars %d hits %u notes %u per_bar %.2f late %u worst_late_ms %.2f dropped %u rms_db %.1f peak_db %.1f "
-                   "x_realtime %.0f tank_bytes %zu goo_fill %.2f\n", bars, sl_stat.hits, sl_stat.notes,
-                   (double)sl_stat.notes / bars, sl_stat.late, sl_stat.worst_late_blocks * CTL * 1000.0 / FS, sl_stat.dropped,
+                   "x_realtime %.0f tank_bytes %zu goo_fill %.2f\n", bars, sl_stat.hits, sl_stat.mel_notes,
+                   (double)sl_stat.mel_notes / bars, sl_stat.late, sl_stat.worst_late_blocks * CTL * 1000.0 / FS, sl_stat.dropped,
                    10.0 * log10(sum / (frames * 2.0) + 1e-20), 20.0 * log10(peak + 1e-10), secs / (cpu > 0 ? cpu : 1e-9),
                    sizeof sl_tank, sh_goo_fill(&sl_tank.goo));
         }

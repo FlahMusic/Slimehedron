@@ -21,7 +21,8 @@ function read(f) {
 }
 const mean = a => { const b = a.filter(Number.isFinite); return b.reduce((x, y) => x + y, 0) / b.length; };
 const at = (a, f) => a[Math.min(a.length - 1, Math.floor(a.length * f))];
-const E = read('goo_exact.txt'), L = read('goo_light.txt');
+// QUARTER=1: the FM-1 build's quarter goo (SH_GOO_DIV=4) in place of the light one
+const E = read('goo_exact.txt'), L = read(process.env.QUARTER ? 'goo_quarter.txt' : 'goo_light.txt');
 const fam = {}; for (const n of Object.keys(E.scenes)) (fam[n.replace(/\d+$/, '')] = fam[n.replace(/\d+$/, '')] || []).push(n);
 const soft = { E: [0, 0, 0, 0], L: [0, 0, 0, 0] };
 for (const [f, ns] of Object.entries(fam)) {

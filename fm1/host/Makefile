@@ -62,9 +62,14 @@ goo: tanktest tanktest_hashed tanktest_light
 .PHONY: goo
 
 # the 16 seeds through the exact goo and the light one; then: node fm1/host/check-goolight.js
-goo-stats: tanktest tanktest_light
+tanktest_quarter: $(TANKSRC) ../core/tank.h ../core/goo.h tanktest.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -DSH_GOO_DIV=4 -fsingle-precision-constant -c -o goo_quarter.o ../core/goo.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -DSH_GOO_DIV=4 -o $@ ../core/tank.c ../core/music.c ../core/melody.c goo_quarter.o tanktest.c -lm
+
+goo-stats: tanktest tanktest_light tanktest_quarter
 	./tanktest scenes-goo.txt > goo_exact.txt
 	./tanktest_light scenes-goo.txt > goo_light.txt
+	./tanktest_quarter scenes-goo.txt > goo_quarter.txt
 .PHONY: goo-stats
 
 # the normal tank drawn 2.5D on the light goo, three camera turns: checks and tankN.ppm (node check-drawtank.js: PNGs)
@@ -84,3 +89,8 @@ portaltest: $(TANKSRC) ../core/tank.h ../core/goo.h portaltest.c
 portal: portaltest
 	./portaltest
 .PHONY: portal
+
+bandtest: ../core/band.c ../core/band.h ../core/band_tables.h ../core/music.c bandtest.c
+	$(CC) $(CFLAGS) -DSH_BAND_TEST -o $@ ../core/band.c ../core/music.c bandtest.c -lm
+
+band: bandtest

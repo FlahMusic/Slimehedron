@@ -13,7 +13,9 @@
 #define CELL      (2.0 * PR)
 #define TAU       6.283185307179586
 #define DS        SH_GOO_DS /* a drop's size against the plugin's (1 but in the light goo) */
-#ifdef SH_GOO_LIGHT
+#if defined(SH_GOO_LIGHT) && SH_GOO_DIV == 4
+#define SPLASH    1         /* drops a hit throws: 5 / 4 = 1.25, rounded DOWN: 2 ended the busy studio scene fuller (0.97 against 0.91) and played 21% fewer notes */
+#elif defined(SH_GOO_LIGHT)
 #define SPLASH    3         /* drops a hit throws: the plugin's 5 for drops twice the volume, rounded up */
 #else
 #define SPLASH    5

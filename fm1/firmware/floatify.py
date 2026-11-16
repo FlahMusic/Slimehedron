@@ -25,7 +25,7 @@ CALL = re.compile(r"\b(" + "|".join(MATH) + r")(\s*\()")
 LIT = re.compile(r"(?<![\w.])((?:\d+\.\d*|\.\d+)(?:[eE][-+]?\d+)?|\d+[eE][-+]?\d+)(?![\w.])")
 
 
-SQRT = re.compile(r"\bsqrtf?(\s*\()")
+SQRT = re.compile(r"\bsqrtf?\b")   # every token, macros too (goo.c's `#define GSQRT sqrtf` slipped past a call-only match)
 PRELUDE = """#ifndef SH_FAST_SQRT
 #define SH_FAST_SQRT
 #include <stdint.h>
@@ -42,7 +42,7 @@ static inline float sh_sqrtf(float x) {   /* floatify.py: the FPU has no square 
 
 def convert_code(code):
     code = re.sub(r"\bdouble\b", "float", code)
-    code = SQRT.sub(lambda m: "sh_sqrtf" + m.group(1), code)
+    code = SQRT.sub("sh_sqrtf", code)
     code = CALL.sub(lambda m: m.group(1) + "f" + m.group(2), code)
     return LIT.sub(lambda m: m.group(1) + "f", code)
 

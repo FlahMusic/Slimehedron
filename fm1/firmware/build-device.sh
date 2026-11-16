@@ -30,8 +30,8 @@ FPU="-mcpu=r3 -mfprev1 -ffp-contract=off"
 
 # our core at -O2 (it runs every tick and every frame; the flash has room), with the device's light goo
 OBJS=""
-for f in tank music melody goo drawtank; do
-  "$TC/pi32v2/bin/clang" -target pi32v2 $FPU -O2 -ffunction-sections -std=c99 -DSH_GOO_LIGHT -DSH_MAXHITS=32 ${SLIME_CORE_FLAGS:-} \
+for f in tank music melody goo drawtank band; do
+  "$TC/pi32v2/bin/clang" -target pi32v2 $FPU -O2 -ffunction-sections -std=c99 -DSH_GOO_LIGHT -DSH_GOO_DIV=4 -DSH_MAXHITS=32 ${SLIME_CORE_FLAGS:-} \
     -I"$TC/pi32v2/include" -c "$WORK/firmware/slime/$f.c" -o "$WORK/build/slime/$f.o"
   OBJS="$OBJS build/slime/$f.o"
 done
@@ -39,6 +39,6 @@ LIB="${SLIME_LIBDIR:-$TC/pi32v2/lib/r3}"   # the r3 (FPU) build of libm / libc
 mkdir -p "$WORK/build/slime/lib"; cp "$LIB/libm.a" "$LIB/libc.a" "$LIB/libcompiler-rt.a" "$WORK/build/slime/lib/"
 # LCD_BAUD 0: the panel's SPI at 60 MHz (~44 MHz measured on an FM-1 by X0X, firmware/src/lcd.c; ST7789 <= ~62 MHz).
 # SLOOP's 4 (12 MHz) takes ~77 ms to send a whole screen; the tank redraws the whole screen every frame.
-export SLIME_CFLAGS="$FPU -DLCD_BAUD=0u -Ifirmware/slime -DSH_GOO_LIGHT -DSH_MAXHITS=32 -DSL_DEVICE=1"
+export SLIME_CFLAGS="$FPU -DLCD_BAUD=0u -Ifirmware/slime -DSH_GOO_LIGHT -DSH_GOO_DIV=4 -DSH_MAXHITS=32 -DSL_DEVICE=1"
 export SLIME_LINK="$OBJS --gc-sections build/slime/lib/libm.a build/slime/lib/libc.a build/slime/lib/libcompiler-rt.a"
 cd "$WORK" && JIELI_TOOLCHAIN="$TC" sh build.sh
