@@ -27,3 +27,10 @@ for f in tank music melody; do $CC -std=c99 -O2 -DSH_GOO_LIGHT -c -o "$OUT/$f.o"
 $CC -O1 -fwrapv -fno-strict-aliasing -fno-tree-loop-distribute-patterns -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -w -DSH_GOO_LIGHT -I"$GEN" -I"$SLOOP/firmware/src" -I"$SLOOP/firmware/host" -I"$CORE" \
   "$HERE/host/slimehost.c" "$OUT/tank.o" "$OUT/music.o" "$OUT/melody.o" "$OUT/goo_light.o" -lm -o "$OUT/slimehost"
 echo "built $OUT/slimehost"
+# the device's single-precision tank (floatify.py on copies of fm1/core and slime.c), the same bench around it
+F="$OUT/float"; rm -rf "$F"; mkdir -p "$F/core" "$F/host"
+cp "$CORE"/*.c "$CORE"/*.h "$F/core/"; cp "$HERE/slime.c" "$F/"; cp "$HERE/host/slimehost.c" "$F/host/"
+python3 "$HERE/floatify.py" "$F/core" >/dev/null; python3 "$HERE/floatify.py" "$F" >/dev/null
+for f in tank music melody goo; do $CC -std=c99 -O2 -DSH_GOO_LIGHT -c -o "$F/$f.o" "$F/core/$f.c"; done
+$CC -O1 -fwrapv -fno-strict-aliasing -fno-tree-loop-distribute-patterns -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -w -DSH_GOO_LIGHT -I"$GEN" -I"$SLOOP/firmware/src" -I"$SLOOP/firmware/host" -I"$F/core"   "$F/host/slimehost.c" "$F/tank.o" "$F/music.o" "$F/melody.o" "$F/goo.o" -lm -o "$OUT/slimehost_f"
+echo "built $OUT/slimehost_f (single precision)"

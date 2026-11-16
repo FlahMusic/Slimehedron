@@ -45,4 +45,12 @@ sub("tools/build.py", '    flags = [*CFLAGS, "-Ifirmware/hal", "-Ifirmware/src",
     '    flags = [*CFLAGS, "-Ifirmware/hal", "-Ifirmware/src", "-Ibuild/gen", *os.environ.get("SLIME_CFLAGS", "").split()]\n    for flag in')
 sub("tools/build.py", 'OUT / "fm1_cpu1.o", OUT / "felucca.o", "-o", elf)',
     'OUT / "fm1_cpu1.o", OUT / "felucca.o", *os.environ.get("SLIME_LINK", "").split(), "-o", elf)')
-print("patch_sloop: 12 changes applied")
+# The image check reads the disassembly for loads of chip-ROM addresses (0xFFC00000..). JieLi's FPU libm (r3) holds
+# integer constants in that range (__ieee754_logf: 0xffcf5c30, an arithmetic constant), and objdump without --mcpu=r3
+# cannot decode the FPU instructions around them. Those functions are the toolchain's; every other line is still checked.
+sub("tools/build.py",
+    "    for ln in dis.splitlines():     # nothing may call or load an address in the chip ROM\n        mm = LINE.match(ln)\n        if not mm:\n            continue\n",
+    "    fn = ''\n    for ln in dis.splitlines():     # nothing may call or load an address in the chip ROM\n"
+    "        mh = re.match(r'^([A-Za-z_][\\w.]*):\\s*$', ln)\n        if mh:\n            fn = mh.group(1)\n"
+    "        mm = LINE.match(ln)\n        if not mm or fn.startswith('__ieee754_'):   # slimehedron: JieLi's libm (see patch_sloop.py)\n            continue\n")
+print("patch_sloop: 13 changes applied")

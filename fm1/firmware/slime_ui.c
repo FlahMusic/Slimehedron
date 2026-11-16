@@ -20,6 +20,8 @@ float sinf(float);                          /* the toolchain's libm (SLOOP itsel
 _Static_assert(sizeof(st_view) + 2u * SL_BAND_PX * 2u + 8u <= sizeof cv_px, "the view and two bands live in SLOOP's canvas");
 static uint32_t sl_frames;
 static volatile uint32_t sl_frame_ms;       /* how long the last frame took (for fm1-emu's memory dump) */
+static volatile uint32_t sl_px;             /* pixels sent in the last frame (a whole screen is 57,600) */
+#define SL_MARGIN 8
 
 static uint16_t *sl_band(uint32_t k) { return cv_px + (k & 1u) * SL_BAND_PX; }
 static st_view *sl_view(void)
@@ -65,12 +67,40 @@ static void slime_ui(void)
     /* the camera sways slowly round the box, as the web's tumbling tank does */
     st_tumble(0.5f * sinf(t * 0.31f), 0.3f + 0.2f * sinf(t * 0.23f + 1.0f), M);
     st_view_prepare(v, &sl_tank, M, 0.0f, 0);
-    for (k = 0; k < 15u; k++) {
-        uint16_t *b = sl_band(k);           /* (the other band may still be on its way to the panel) */
-        st_draw_band(v, (int)(k * 16u), 16, b, BG);
-        for (i = 0; i < SL_BAND_PX; i++) b[i] = (uint16_t)((b[i] >> 8) | (b[i] << 8));   /* the panel reads big-endian */
-        lcd_blit(0, k * 16u, 240, 16, b);
-        slime_poll();
+    {
+        /* Only the tank's box changes; the page around it is one colour. Send the box, joined with last frame's box
+         * (so what moved out of it is painted over), and nothing else: about half the pixels of a whole screen.
+         * The panel's SPI is the limit at this frame rate (fm1-emu STRICT: on the wire ~40% of the time). */
+        static int32_t px0 = 0, py0 = 0, px1 = 239, py1 = 239;   /* last frame's box: the whole screen at first */
+        int32_t x0 = 239, x1 = 0, y0, y1, w, r, nb = 0;
+        for (k = 0; k < (uint32_t)v->n; k++) {
+            float a = v->fx[k] < v->bx[k] ? v->fx[k] : v->bx[k], c = v->fx[k] > v->bx[k] ? v->fx[k] : v->bx[k];
+            if (a < (float)x0) x0 = (int32_t)a;
+            if (c > (float)x1) x1 = (int32_t)c;
+        }
+        x0 -= SL_MARGIN; x1 += SL_MARGIN;                        /* a ball or a lit rim can stand a little proud */
+        y0 = (int32_t)v->pymin - SL_MARGIN; y1 = (int32_t)v->pymax + SL_MARGIN;
+        if (v->n < 3) { x0 = 0; x1 = 239; y0 = 0; y1 = 239; }
+        {
+            int32_t ux0 = x0 < px0 ? x0 : px0, ux1 = x1 > px1 ? x1 : px1, uy0 = y0 < py0 ? y0 : py0, uy1 = y1 > py1 ? y1 : py1;
+            px0 = x0; px1 = x1; py0 = y0; py1 = y1;
+            x0 = clamp(ux0, 0, 239); x1 = clamp(ux1, 0, 239); y0 = clamp(uy0, 0, 239); y1 = clamp(uy1, 0, 239);
+        }
+        w = x1 - x0 + 1;
+        for (k = (uint32_t)y0 / 16u; k * 16u <= (uint32_t)y1; k++) {
+            uint16_t *b = sl_band((uint32_t)nb++);   /* (the other band may still be on its way to the panel) */
+            uint32_t ry0 = k * 16u < (uint32_t)y0 ? (uint32_t)y0 - k * 16u : 0u, ry1 = k * 16u + 15u > (uint32_t)y1 ? (uint32_t)y1 - k * 16u : 15u;
+            uint32_t rows = ry1 - ry0 + 1u;
+            st_draw_band(v, (int)(k * 16u), 16, b, BG);
+            for (r = 0; r < (int32_t)rows; r++) {             /* the box's columns, packed (the panel takes one window) */
+                const uint16_t *s = b + (ry0 + (uint32_t)r) * 240u + (uint32_t)x0;
+                uint16_t *d = b + (uint32_t)r * (uint32_t)w;
+                for (i = 0; i < (uint32_t)w; i++) d[i] = (uint16_t)((s[i] >> 8) | (s[i] << 8));   /* big-endian */
+            }
+            lcd_blit((uint32_t)x0, k * 16u + ry0, (uint32_t)w, rows, b);
+            slime_poll();
+        }
+        sl_px = (uint32_t)(w * (y1 - y0 + 1));
     }
     lcd_sync();
     sl_frames++;
