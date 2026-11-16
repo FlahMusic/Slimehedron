@@ -8,6 +8,7 @@ history keeps every older one (git log -- _fm1-firmware/slimehedron-fm1.fwsc). C
   - 26 sounds level-matched by measurement, 9 sound sets; OCT is the keyboard's octave again, the key is on KNOB 4
   - the drummer plays like the site's: ghost notes, accents, jazz swing, bossa lilt, a pickup into each phrase, drift
   - fm1-emu strict, 160 s: ~24 fps, the audio interrupt 49% of its deadline at worst, 0 late notes
+
 2026-11-16  first test build, the second fix
   sha256 45b92b8eca13325ceaa4653308fdd01c8279f15af5d0a707f990fff597bea0e8
   - the chords drop exactly one hit that lands on the bass (they could drop none or several: a bug in the site's band
