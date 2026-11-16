@@ -109,7 +109,7 @@ UI_SMALL static void slime_splash(void)
 }
 
 /* the label: what just changed, in plain words, at the top of the screen */
-static char sl_label[32];
+static char sl_label[40];
 static uint32_t sl_label_until;
 static uint8_t sl_label_shown;              /* drawn last frame: its rows must be repainted once it goes */
 static void sl_say(const char *a, const char *b)
@@ -128,6 +128,93 @@ static const char *sl_scale_word(uint32_t i)
     return W[i % SL_NSCALE];
 }
 static int32_t sl_wrap(int32_t v, int32_t d, int32_t n) { return ((v + d) % n + n) % n; }
+static char *sl_num(char *b, int32_t v)     /* a signed number into b (b holds 8) */
+{
+    char t[8]; int32_t n = 0, i = 0, neg = v < 0;
+    uint32_t u = (uint32_t)(neg ? -v : v);
+    do { t[n++] = (char)('0' + u % 10u); u /= 10u; } while (u && n < 6);
+    if (neg) b[i++] = '-';
+    while (n) b[i++] = t[--n];
+    b[i] = 0;
+    return b;
+}
+static void sl_say_num(const char *a, int32_t v, const char *unit)
+{
+    char b[24]; uint32_t i = 0, j = 0; char n[8];
+    sl_num(n, v);
+    while (n[j] && i < 15u) b[i++] = n[j++];
+    for (j = 0; unit && unit[j] && i < 23u; j++) b[i++] = unit[j];
+    b[i] = 0;
+    sl_say(a, b);
+}
+
+/* THE PAGES. HOME is the tank as you play it; FX, SOUND and MIX are one button each (the FM-1's own FX, EDIT and GLO),
+ * and every page uses all seven encoders for things that belong together. FX steps through the parts, melody -> bass ->
+ * chords -> drums -> back home; HOME always comes home (and, at home, makes a new shape). The bottom row names the four
+ * knobs on every page but home, so nothing has to be remembered. */
+enum { PG_HOME, PG_FX, PG_SOUND, PG_MIX };
+static uint8_t sl_page, sl_fx_part;
+static const char *const SL_FOOT[4][4] = {
+    {"tempo", "spin", "rhythm", "key"}, {"filter", "drive", "echo", "space"},
+    {"melody", "bass", "chords", "kit"}, {"melody", "bass", "chords", "drums"},
+};
+static void sl_page_say(void)
+{
+    if (sl_page == PG_FX) sl_say("fx: ", SL_PART_NAME[sl_fx_part]);
+    else if (sl_page == PG_SOUND) sl_say("sound", 0);
+    else if (sl_page == PG_MIX) sl_say("mix", 0);
+    else sl_say("home", 0);
+}
+static void sl_page_title(void)              /* the page's name, held at the top while you are on it */
+{
+    const char *t = sl_page == PG_FX ? SL_PART_NAME[sl_fx_part] : sl_page == PG_SOUND ? "sound" : "mix";
+    uint32_t i = 0, j = 0;
+    const char *pre = sl_page == PG_FX ? "fx: " : "";
+    while (pre[j] && i < sizeof sl_label - 1u) sl_label[i++] = pre[j++];
+    for (j = 0; t[j] && i < sizeof sl_label - 1u; j++) sl_label[i++] = t[j];
+    sl_label[i] = 0;
+}
+static const char *sl_filter_word(int32_t f) { return f < -2 ? "low-pass " : f > 2 ? "high-pass " : "open"; }
+static uint32_t sl_gate_ms = 110u;          /* the melody's note length */
+
+static void sl_fx_turn(int32_t knob, int32_t d)
+{
+    sl_fx *f = &sl_fxs[sl_fx_part];
+    if (knob == 0) {
+        int32_t was = f->filt, now = clamp(was + d * 3, -64, 63);
+        if ((was > 0 && now < 0) || (was < 0 && now > 0)) now = 0;   /* crossing the middle stops at open (a detent) */
+        f->filt = (int8_t)now;                             /* (a first try snapped |f| < 3 to 0: single clicks never left it) */
+        sl_say_num(sl_filter_word(f->filt), f->filt < 0 ? -f->filt : f->filt, 0);
+        if (!f->filt) sl_say("filter open", 0);
+    } else if (knob == 1) {
+        f->drive = (uint8_t)clamp((int32_t)f->drive + d * 3, 0, 127);
+        sl_say_num(sl_fx_part == SL_P_DRUMS ? "punch " : "drive ", f->drive * 100 / 127, "%");
+    } else if (knob == 2) {
+        f->echo = (uint8_t)clamp((int32_t)f->echo + d * 3, 0, 127);
+        sl_say_num("echo ", f->echo * 100 / 127, "%");
+    } else if (knob == 3) {
+        f->space = (uint8_t)clamp((int32_t)f->space + d * 3, 0, 127);
+        sl_say_num("space ", f->space * 100 / 127, "%");
+    } else if (knob == 4) {                                /* SELECT: the character */
+        f->ctype = (uint8_t)sl_wrap(f->ctype, d, (int32_t)SL_NCHAR);
+        if (f->ctype && !f->camt) f->camt = 64;
+        sl_say("character: ", SL_CHAR[f->ctype].name);
+    } else if (knob == 5) {                                /* ALGORITHM: its amount */
+        f->camt = (uint8_t)clamp((int32_t)f->camt + d * 3, 0, 127);
+        sl_say_num(f->ctype ? SL_CHAR[f->ctype].name : "character off ", f->ctype ? f->camt * 100 / 127 : 0, "%");
+    }
+    sl_fxp[sl_fx_part] = 0xFF;                             /* (a preset no more: your own) */
+    sl_fx_apply(sl_fx_part);
+}
+static void sl_mix_turn(uint32_t part, int32_t d)
+{
+    sl_mix[part] = (int8_t)clamp(sl_mix[part] + d, SL_MIX_OFF, 12);
+    slime_levels();
+    if (sl_mix[part] <= SL_MIX_OFF) sl_say(SL_PART_NAME[part], " off");
+    else { char b[16]; uint32_t i = 0, j = 0; const char *p = SL_PART_NAME[part];
+           while (p[j] && i < 8u) b[i++] = p[j++]; b[i++] = ' '; b[i] = 0;
+           sl_say_num(b, sl_mix[part] / 2, " db"); }
+}
 
 static void slime_poll(void)                /* often: nothing a hand does waits for a frame */
 {
@@ -137,51 +224,112 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
     if (keys) {
         fm1_irq_off(); sl_key_req |= keys; fm1_irq_on();
     }
+    /* ---- buttons: the same on every page ---- */
     if (SL_PRESSED(B_PLAY)) { sl_run = (uint8_t)!sl_run; sl_say(sl_run ? "play" : "stop", 0); }
-    if (SL_PRESSED(B_HOME)) {               /* a NEW shape: the next one along, never the same walls again */
-        static const uint8_t SHAPES[7] = {6, 5, 8, 3, 7, 4, 12};
-        static uint8_t at;
-        uint8_t w = sl_walls;
-        while (SHAPES[at % 7u] == w) at++;
-        sl_walls = SHAPES[at++ % 7u];
-        sl_reform_req = 1; sl_say("new shape", 0);
+    if (SL_PRESSED(B_HOME)) {
+        if (sl_page != PG_HOME) { sl_page = PG_HOME; sl_say("home", 0); }
+        else {                                             /* at home: a NEW shape, never the same walls again */
+            static const uint8_t SHAPES[7] = {6, 5, 8, 3, 7, 4, 12};
+            static uint8_t at;
+            uint8_t w = sl_walls;
+            while (SHAPES[at % 7u] == w) at++;
+            sl_walls = SHAPES[at++ % 7u];
+            sl_reform_req = 1; sl_say("new shape", 0);
+        }
     }
+    if (SL_PRESSED(B_FX)) {                                /* FX: melody -> bass -> chords -> drums -> home */
+        if (sl_page != PG_FX) { sl_page = PG_FX; sl_fx_part = 0; }
+        else if (++sl_fx_part >= SL_NPARTS) { sl_page = PG_HOME; sl_fx_part = 0; }
+        sl_page_say();
+    }
+    if (SL_PRESSED(B_EDIT)) { sl_page = sl_page == PG_SOUND ? PG_HOME : PG_SOUND; sl_page_say(); }
+    if (SL_PRESSED(B_GLO)) { sl_page = sl_page == PG_MIX ? PG_HOME : PG_MIX; sl_page_say(); }
     if (SL_PRESSED(B_ARP)) { sl_auto = (uint8_t)!sl_auto; sl_say("auto-notes ", sl_auto ? "on" : "off"); }
     if (SL_PRESSED(B_LFO)) { sl_slime = (uint8_t)!sl_slime; sl_say("slime ", sl_slime ? "on" : "off"); }
-    if (SL_PRESSED(B_SEQ)) { sl_drums_on = (uint8_t)!sl_drums_on; sl_say("drums ", sl_drums_on ? "on" : "off"); }
-    if (SL_PRESSED(B_REC)) { sl_band_on = (uint8_t)!sl_band_on; sl_say("bass and chords ", sl_band_on ? "on" : "off"); }
-    if (SL_PRESSED(B_SCL) || (d = panel_enc(EN_K4)) != 0) {
-        if (SL_PRESSED(B_SCL)) d = 1;
-        sl_scale_req = (uint8_t)sl_wrap(sl_scale, d, (int32_t)SL_NSCALE);
-        sl_say("scale: ", sl_scale_word(sl_scale_req));
+    if (SL_PRESSED(B_SEQ)) {                               /* the band: drums, bass and chords together */
+        uint8_t on = (uint8_t)!(sl_drums_on || sl_band_on);
+        sl_drums_on = sl_band_on = on; sl_say("band ", on ? "on" : "off");
     }
-    if (SL_PRESSED(B_OCTDN) || SL_PRESSED(B_OCTUP)) {
-        int32_t nr = clamp(sl_root + (SL_PRESSED(B_OCTUP) ? 1 : -1), 48, 71);
-        sl_root_req = (int8_t)(nr - sl_root);
-        sl_say("key: ", SL_NOTE[nr % 12]);
+    if (SL_PRESSED(B_SCL)) { sl_scale_req = (uint8_t)sl_wrap(sl_scale, 1, (int32_t)SL_NSCALE); sl_say("scale: ", sl_scale_word(sl_scale_req)); }
+    if (SL_PRESSED(B_OCTDN) || SL_PRESSED(B_OCTUP)) {      /* the keyboard's octave, as on any synth */
+        sl_octave = (int8_t)clamp(sl_octave + (SL_PRESSED(B_OCTUP) ? 1 : -1), -2, 2);
+        sl_say_num("octave ", sl_octave, 0);
     }
-    if ((d = panel_enc(EN_K1)) != 0) {
-        static char b[8];
-        int32_t v = clamp(song.g[G_BPM] + d, 40, 200);
-        song.g[G_BPM] = (int16_t)v;
-        b[0] = (char)('0' + v / 100); b[1] = (char)('0' + v / 10 % 10); b[2] = (char)('0' + v % 10); b[3] = 0;
-        sl_say("tempo ", v < 100 ? b + 1 : b);
-    }
-    if ((d = panel_enc(EN_K2)) != 0) { sl_spin = (int8_t)clamp(sl_spin + d * 4, -100, 100); sl_say(sl_spin ? "spin" : "spin off", 0); }
-    if ((d = panel_enc(EN_K3)) != 0) {
-        sl_kit_req = (uint8_t)sl_wrap(sl_kit, d, sh_band_nkits());
-        sl_say("rhythm: ", sh_band_kit_name(sl_kit_req));
-    }
-    if ((d = panel_enc(EN_SELECT)) != 0) {
-        static char b[12];
-        sl_walls = (uint8_t)clamp((int32_t)sl_walls + d, 3, 12); sl_reform_req = 1;
-        b[0] = sl_walls >= 10 ? '1' : (char)('0' + sl_walls); b[1] = sl_walls >= 10 ? (char)('0' + sl_walls - 10) : 0; b[2] = 0;
-        sl_say(b, " walls");
-    }
-    if ((d = panel_enc(EN_ALGO)) != 0) { sl_space = (uint8_t)(d > 0); sl_reform_req = 1; sl_say(sl_space ? "portals" : "normal space", 0); }
-    if ((d = panel_enc(EN_PRESET)) != 0) {
-        sl_sound_req = (uint8_t)sl_wrap(sl_sound, d, (int32_t)SL_NSOUND);
-        sl_say("sound: ", SL_SOUND[sl_sound_req].name);
+    /* ---- the encoders, by page ---- */
+    if (sl_page == PG_HOME) {
+        if ((d = panel_enc(EN_K1)) != 0) { int32_t v = clamp(song.g[G_BPM] + d, 40, 200); song.g[G_BPM] = (int16_t)v; sl_say_num("tempo ", v, 0); }
+        if ((d = panel_enc(EN_K2)) != 0) { sl_spin = (int8_t)clamp(sl_spin + d * 4, -100, 100); if (sl_spin) sl_say_num("spin ", sl_spin, 0); else sl_say("spin off", 0); }
+        if ((d = panel_enc(EN_K3)) != 0) { sl_kit_req = (uint8_t)sl_wrap(sl_kit, d, sh_band_nkits()); sl_say("rhythm: ", sh_band_kit_name(sl_kit_req)); }
+        if ((d = panel_enc(EN_K4)) != 0) {
+            int32_t nr = clamp(sl_root + d, 48, 71);
+            sl_root_req = (int8_t)(nr - sl_root);
+            sl_say("key: ", SL_NOTE[nr % 12]);
+        }
+        if ((d = panel_enc(EN_SELECT)) != 0) { sl_walls = (uint8_t)clamp((int32_t)sl_walls + d, 3, 12); sl_reform_req = 1; sl_say_num("walls ", sl_walls, 0); }
+        if ((d = panel_enc(EN_ALGO)) != 0) { sl_space = (uint8_t)(d > 0); sl_reform_req = 1; sl_say(sl_space ? "portals" : "normal space", 0); }
+        if ((d = panel_enc(EN_PRESET)) != 0) {
+            uint32_t i = (uint32_t)sl_wrap(sl_snd_of[SL_P_MEL], d, (int32_t)SL_NMEL);
+            sl_snd_req[SL_P_MEL] = (uint8_t)i; sl_say("melody: ", SL_MEL_SND[i].name);
+        }
+    } else if (sl_page == PG_FX) {
+        if ((d = panel_enc(EN_K1)) != 0) sl_fx_turn(0, d);
+        if ((d = panel_enc(EN_K2)) != 0) sl_fx_turn(1, d);
+        if ((d = panel_enc(EN_K3)) != 0) sl_fx_turn(2, d);
+        if ((d = panel_enc(EN_K4)) != 0) sl_fx_turn(3, d);
+        if ((d = panel_enc(EN_SELECT)) != 0) sl_fx_turn(4, d);
+        if ((d = panel_enc(EN_ALGO)) != 0) sl_fx_turn(5, d);
+        if ((d = panel_enc(EN_PRESET)) != 0) {
+            uint32_t i = (uint32_t)sl_wrap(sl_fxp[sl_fx_part] == 0xFF ? 0 : sl_fxp[sl_fx_part], d, (int32_t)SL_NFXP);
+            sl_fx_preset(sl_fx_part, i);
+            sl_say("fx: ", SL_FXP[i].name);
+        }
+    } else if (sl_page == PG_SOUND) {
+        int32_t p;
+        for (p = 0; p < 3; p++)
+            if ((d = panel_enc((uint32_t)(EN_K1 + p))) != 0) {
+                uint32_t i = (uint32_t)sl_wrap(sl_snd_of[p], d, (int32_t)sl_snd_count((uint32_t)p));
+                sl_snd_req[p] = (uint8_t)i; sl_say(p == 0 ? "melody: " : p == 1 ? "bass: " : "chords: ", sl_snd_entry((uint32_t)p, i)->name);
+            }
+        if ((d = panel_enc(EN_K4)) != 0) {                 /* the drum kit: any of SLOOP's synthesized kits (a new rhythm brings its own) */
+            uint32_t n = DRUM_USR - DRUM_SAMPLED, cur = (uint32_t)TDRUM->p[P_E0] - DRUM_SAMPLED;
+            uint32_t i = (uint32_t)sl_wrap((int32_t)(cur < n ? cur : 0u), d, (int32_t)n);
+            TDRUM->p[P_E0] = (int16_t)(DRUM_SAMPLED + i);
+            sl_say("kit: ", DRUM_KIT_NAMES[DRUM_SAMPLED + i]);
+        }
+        if ((d = panel_enc(EN_SELECT)) != 0) {             /* the melody's note length */
+            sl_gate_ms = (uint32_t)clamp((int32_t)sl_gate_ms + d * 20, 40, 600);
+            sl_gate_blocks = sl_ms_to_block((double)sl_gate_ms);
+            sl_say_num("note length ", (int32_t)sl_gate_ms, " ms");
+        }
+        if ((d = panel_enc(EN_ALGO)) != 0) {               /* how long one chord lasts: 1, 2 or 4 bars (the site's chordBars) */
+            static const uint8_t CB[3] = {1, 2, 4};
+            int32_t at = sl_band.chord_bars >= 4 ? 2 : sl_band.chord_bars >= 2 ? 1 : 0;
+            sl_band.chord_bars = CB[clamp(at + (d > 0 ? 1 : -1), 0, 2)];
+            sl_say_num("chord every ", sl_band.chord_bars, sl_band.chord_bars == 1 ? " bar" : " bars");
+        }
+        if ((d = panel_enc(EN_PRESET)) != 0) {             /* a sound set: melody, bass and chords that suit each other */
+            static uint8_t set;
+            set = (uint8_t)sl_wrap(set, d, (int32_t)SL_NSET);
+            sl_snd_req[0] = SL_SETS[set].mel; sl_snd_req[1] = SL_SETS[set].bass; sl_snd_req[2] = SL_SETS[set].comp;
+            sl_say("sounds: ", SL_SETS[set].name);
+        }
+    } else {                                               /* MIX */
+        int32_t p;
+        for (p = 0; p < 4; p++) if ((d = panel_enc((uint32_t)(EN_K1 + p))) != 0) sl_mix_turn((uint32_t)p, d);
+        if ((d = panel_enc(EN_SELECT)) != 0) {             /* swing: the tank's grid and the band together */
+            double sw = sl_tank.s.swing + d * 0.025;
+            sl_tank.s.swing = sw < 0.0 ? 0.0 : sw > 0.5 ? 0.5 : sw;
+            sl_say_num("swing ", (int32_t)(sl_tank.s.swing * 100.0 + 0.5), "%");
+        }
+        if ((d = panel_enc(EN_ALGO)) != 0) {               /* the echo's time, in note values (SLOOP's N_DLY) */
+            static const char *const T[9] = {"1/4", "1/8", "1/16", "1/32", "1/8 triplet", "1/16 triplet", "1/8 dotted", "1/16 dotted", "1/4 dotted"};
+            song.g[G_DTIME] = (int16_t)sl_wrap(song.g[G_DTIME], d, 9);
+            sl_say("echo time ", T[song.g[G_DTIME]]);
+        }
+        if ((d = panel_enc(EN_PRESET)) != 0) {             /* the room: small .. a hall */
+            song.g[G_RSIZE] = (int16_t)clamp(song.g[G_RSIZE] + d * 4, 0, 127);
+            sl_say_num("room size ", song.g[G_RSIZE] * 100 / 127, "%");
+        }
     }
 #undef SL_PRESSED
     slime_conduct();                        /* the music, ahead of the audio clock (slime.c) */
@@ -196,8 +344,9 @@ static void slime_ui(void)
     slime_poll();
     for (k = 0; k < 27u; k++) fm1_led_key(14u + k, (int32_t)(sl_lit_until[k] - fm1_ms) > 0);
     for (k = 0; k < 14u; k++) fm1_led_key(k, (k == panel.btn[B_PLAY] && sl_run) || (k == panel.btn[B_ARP] && sl_auto) ||
-                                             (k == panel.btn[B_LFO] && sl_slime) || (k == panel.btn[B_SEQ] && sl_drums_on) ||
-                                             (k == panel.btn[B_REC] && sl_band_on));
+                                             (k == panel.btn[B_LFO] && sl_slime) || (k == panel.btn[B_SEQ] && (sl_drums_on || sl_band_on)) ||
+                                             (k == panel.btn[B_FX] && sl_page == PG_FX) || (k == panel.btn[B_EDIT] && sl_page == PG_SOUND) ||
+                                             (k == panel.btn[B_GLO] && sl_page == PG_MIX) || (k == panel.btn[B_HOME] && sl_page == PG_HOME));
     /* the camera sways slowly round the box, as the web's tumbling tank does */
     st_tumble(0.5f * sinf(t * 0.31f), 0.3f + 0.2f * sinf(t * 0.23f + 1.0f), M);
     {
@@ -224,9 +373,13 @@ static void slime_ui(void)
         y0 = (int32_t)v->pymin - SL_MARGIN; y1 = (int32_t)v->pymax + SL_MARGIN;
         if (v->n < 3 || sl_bursting() || (sl_bn && fm1_ms - sl_burst_t0 < SL_BURST_MS + 100u)) { x0 = 0; x1 = 239; y0 = 0; y1 = 239; }
         {   /* the label's rows join the box while it shows, and once more after, to paint it away */
-            uint8_t on = (int32_t)(sl_label_until - fm1_ms) > 0;
+            uint8_t on = (int32_t)(sl_label_until - fm1_ms) > 0 || sl_page != PG_HOME;   /* a page keeps its name up */
+            static uint8_t foot_shown;
+            uint8_t foot = sl_page != PG_HOME;
+            if (on && (int32_t)(sl_label_until - fm1_ms) <= 0) sl_page_title();
             if (on || sl_label_shown) { y0 = 0; x0 = 0; x1 = 239; }
-            sl_label_shown = on;
+            if (foot || foot_shown) { y1 = 239; x0 = 0; x1 = 239; }
+            sl_label_shown = on; foot_shown = foot;
         }
         {
             int32_t ux0 = x0 < px0 ? x0 : px0, ux1 = x1 > px1 ? x1 : px1, uy0 = y0 < py0 ? y0 : py0, uy1 = y1 > py1 ? y1 : py1;
@@ -240,6 +393,15 @@ static void slime_ui(void)
             uint32_t rows = ry1 - ry0 + 1u;
             st_draw_band(v, (int)(k * 16u), 16, b, BG);
             if (sl_bursting()) sl_burst_band(b, (int)(k * 16u));
+            if (k == 14u && sl_page != PG_HOME) {             /* the bottom row: the four knobs' names (cv_text needs cv_px) */
+                uint32_t q;
+                if (b != cv_px) { lcd_sync(); b = cv_px; st_draw_band(v, (int)(k * 16u), 16, b, BG); if (sl_bursting()) sl_burst_band(b, (int)(k * 16u)); nb++; }
+                cv_w = 240; cv_h = 16; cv_oy = 0;
+                for (q = 0; q < 4u; q++) {
+                    const char *n = SL_FOOT[sl_page][q];
+                    cv_text((int32_t)(30u + 60u * q) - text_w(&FONT_S, n) / 2, 0, &FONT_S, n, swap16(RGB(120, 104, 170)));
+                }
+            }
             if (k == 0u && sl_label_shown && b == cv_px) {   /* SLOOP's font into this band (cv_text draws into cv_px) */
                 cv_w = 240; cv_h = 16; cv_oy = 0;
                 cv_text(120 - text_w(&FONT_S, sl_label) / 2, 0, &FONT_S, sl_label, swap16(RGB(90, 72, 150)));   /* (the band is

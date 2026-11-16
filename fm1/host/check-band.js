@@ -48,6 +48,8 @@ ORDER.forEach((kit, k) => {
 const wslPath = '/mnt/c' + root.replace(/^[A-Za-z]:/, '').replace(/\\/g, '/') + '/fm1/host/bandtest';
 const got = execFileSync('wsl', ['-e', wslPath]).toString().trim().split('\n');
 const S = got.pop().split(' ');
+const H = got.filter(l => l[0] === 'H').map(l => l.split(' ').slice(1).map(Number));
+for (let i = got.length - 1; i >= 0; i--) if (got[i][0] === 'H') got.splice(i, 1);
 const FAIL = []; const ok = (c, m) => { console.log((c ? '  PASS  ' : '  FAIL  ') + m); if (!c) FAIL.push(m); };
 let first = -1;
 for (let i = 0; i < Math.max(want.length, got.length); i++) if (want[i] !== got[i]) { first = i; break; }
@@ -55,5 +57,16 @@ const n = c => want.filter(l => l[0] === c).length;
 ok(first < 0, `every drum hit, chord rhythm and bass figure is the web's: ${n('D')} drum hits, ${n('C')} comp bars, ${n('B')} bass figures, 11 kits` +
   (first < 0 ? '' : ` (first difference at line ${first}: web "${want[first]}", C "${got[first]}")`));
 ok(+S[1] > 1000 && +S[2] === 0, `no chord or bass note outside the scale (major, 31-EDO, pentatonic: ${S[1]} notes, ${S[2]} outside)`);
+// HUMANIZE (H lines): the site's rules, per kit over 256 bars at 100 bpm
+// H kit onbeat_max_ms drift_max_ms ghosts_per_bar ghost_bad pickups_per_bar swing8_ms kick_vel_sd hat_vel_sd simple
+const NAMES = ['pop', 'rock', 'disco', 'bossa', 'jazz', 'samba', 'conga', 'march', 'chip', 'beep', 'industrial'];
+ok(H.length === 11 && H.every(h => h[1] === 0), 'humanize: THE BEAT NEVER MOVES (every quarter note at 0 ms, all 11 kits)');
+ok(H.every(h => h[2] <= 22.0001), 'humanize: nothing drifts more than 22 ms (worst ' + Math.max(...H.map(h => h[2])).toFixed(1) + ' ms)');
+ok(H.every(h => h[4] === 0) && H.every(h => h[3] > 0), 'humanize: every kit gets ghost notes, never on the beat or the backbeat, jazz only on the "&" (' + H.map(h => NAMES[h[0]] + ' ' + h[3].toFixed(1)).join(', ') + ' a bar)');
+ok(H[1][3] > 2 * H[0][3], 'humanize: the busy kits ghost more than the simple ones (rock ' + H[1][3].toFixed(2) + ' against pop ' + H[0][3].toFixed(2) + ' a bar)');
+ok(H.every(h => h[9] ? h[5] === 0 : Math.abs(h[5] - 0.5) < 1e-9), 'humanize: a two-tap pickup into every phrase on the busy kits, none on the simple ones');
+ok(Math.abs(H[4][6] - 85.0) < 0.6, 'humanize: jazz swings its eighths, the "&" two-thirds through the beat (+' + H[4][6] + ' ms of a 150 ms 16th)');
+const both = H.filter(h => h[7] > 0 && h[8] > 5);
+ok(both.length >= 4 && both.every(h => h[7] < h[8]), 'humanize: the kick stays steadier than the hats (' + both.map(h => NAMES[h[0]] + ' ' + h[7].toFixed(1) + '/' + h[8].toFixed(1)).join(', ') + ')');
 console.log(FAIL.length ? FAIL.length + ' FAILURE(S)' : "band: the web's band, note for note");
 process.exit(FAIL.length ? 1 : 0);

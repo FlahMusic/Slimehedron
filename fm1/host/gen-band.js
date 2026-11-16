@@ -14,9 +14,12 @@ const code = [
   grab(/const FEEL_DEFAULT=\{[\s\S]*?\};/, 'FEEL_DEFAULT'),
   grab(/const TOM_FILL=\{[^}]*\};/, 'TOM_FILL'),
   grab(/const CRASH_ON_KEY=\{[^}]*\};/, 'CRASH_ON_KEY'),
-  'module.exports={KITS,KITVOICE,FEELS,FEEL_DEFAULT,TOM_FILL,CRASH_ON_KEY};'].join('\n');
+  grab(/const KITFEEL=\{[\s\S]*?\n\};/, 'KITFEEL'),
+  grab(/const KITFEEL_DEFAULT=\{[^\n]*\};/, 'KITFEEL_DEFAULT'),
+  grab(/const SIMPLE=\{[^}]*\}/, 'SIMPLE (drumSchedule)'),
+  'module.exports={KITS,KITVOICE,FEELS,FEEL_DEFAULT,TOM_FILL,CRASH_ON_KEY,KITFEEL,KITFEEL_DEFAULT,SIMPLE};'].join('\n');
 const M = {}; new Function('module', code)(M);
-const { KITS, KITVOICE, FEELS, FEEL_DEFAULT, TOM_FILL, CRASH_ON_KEY } = M.exports;
+const { KITS, KITVOICE, FEELS, FEEL_DEFAULT, TOM_FILL, CRASH_ON_KEY, KITFEEL, KITFEEL_DEFAULT, SIMPLE } = M.exports;
 
 const ORDER = ['pop', 'rock', 'disco', 'bossa', 'jazz', 'samba', 'conga', 'march', 'chip', 'beep', 'industrial'];
 // the web's voice letters -> General MIDI notes on the FM-1's synthesized kits (SLOOP drums.c LANE_NOTE has these lanes):
@@ -68,6 +71,22 @@ function feelC(f, name) {
     `   {${f2(a.block || 0)}, ${f2(a.arp || 0)}, ${f2(a.broken || 0)}}, ${f2(f.colour.seventh || 0)}, ${f2(f.colour.ninth || 0)}, ${f2(f.colour.sus || 0)}, ${f.colour.v7 ? 1 : 0},\n` +
     `   {${f.bass.w.join(',')}}, {${f.bass.density.join(',')}}, ${f2(f.bass.oct)}, ${f2(f.bass.approach)},\n   ${f.fill.every}, ${f.fill.len}},   /* ${name} */`;
 }
+// the drummer's feel per style (KITFEEL, drumSchedule's SIMPLE): humanize amounts, swing, accents per drum per step
+L.push('/* the drummer\'s feel (KITFEEL): humanize dyn / time / ghost, swung 8ths (jazz) and 16ths (bossa), ghosts on the "&"');
+L.push(' * only (jazz), ghost hats, SIMPLE kits (fewer ghosts, no pickup); accents per drum per step, in percent */');
+L.push('typedef struct { double dyn, time, ghost, sw8, sw16; uint8_t ghost_and, ghost_hat, simple; uint8_t acc[SH_NDV][16]; } sh_kitfeel;');
+L.push('static const sh_kitfeel SH_KITFEEL[SH_NKITS] = {');
+for (const k of ORDER) {
+  const kf = KITFEEL[k] || KITFEEL_DEFAULT;
+  const acc = VOICES.map(v => {
+    const a = (kf.acc || {})[v], row = [];
+    for (let st = 0; st < 16; st++) row.push(Math.round(100 * (a == null ? 1 : typeof a === 'number' ? a : (a[st] != null ? a[st] : 1))));
+    return '{' + row.join(',') + '}';
+  });
+  L.push(`  {${+kf.dyn}, ${+kf.time}, ${+kf.ghost}, ${+(kf.sw8 || 0)}, ${+(kf.sw16 || 0)}, ${kf.ghostAt === 'and' ? 1 : 0}, ` +
+    `${kf.ghostHat === false ? 0 : 1}, ${SIMPLE[k] ? 1 : 0},\n   {${acc.join(',')}}},   /* ${k}${KITFEEL[k] ? '' : ' (the default feel)'} */`);
+}
+L.push('};');
 L.push('static const sh_feel SH_FEEL[SH_NKITS] = {');
 for (const k of ORDER) L.push(feelC(FEELS[k] || FEEL_DEFAULT, k + (FEELS[k] ? '' : ' (the house feel)')));
 L.push('};\n#endif');

@@ -32,13 +32,38 @@ song() { "$B" song "$OUT/lv.wav" 32 "$1" "$2" "$3" 7 1 KALIMBA; }
 for scene in "major 6 100" "edo19all 12 120" "pentaMaj 5 80"; do
   set -- $scene
   M=$(num "$(SL_ONLY=mel song "$1" "$2" "$3")" lufs); D=$(num "$(SL_ONLY=drums song "$1" "$2" "$3")" lufs)
-  L="$(song "$1" "$2" "$3")"; A=$(num "$L" lufs); pk=$(num "$L" peak_db); dh=$(num "$L" drum_hits)
-  ok "$(t "$dh >= 430 && $dh <= 432")" "[$1] the web's pop pattern: 432 drum hits in 32 bars ($dh played; a last one may wait in the look-ahead)"
+  L="$(song "$1" "$2" "$3")"; A=$(num "$L" lufs); pk=$(num "$L" peak_db); dh=$(num "$(SL_HUMAN=0 song "$1" "$2" "$3")" drum_hits)
+  ok "$(t "$dh >= 430 && $dh <= 432")" "[$1] the web's pop pattern: 432 drum hits in 32 bars ($dh played with the humanize off; a last one may wait in the look-ahead)"
   ok "$(t "$M - $D >= 6 && $M - $D <= 11")" "[$1] drums 6..11 LU under the melody (melody $M, drums $D LUFS)"
   ok "$(t "$A >= -21.5 && $A <= -15 && $pk < -0.9")" "[$1] the whole mix $A LUFS (site -18.8, window -21..-15), peak $pk dBFS"
 done
 M=$(num "$(SL_ONLY=mel song major 6 100)" lufs); D=$(num "$(SL_ONLY=drums SL_DLVL=100 song major 6 100)" lufs)
 ok "$(t "$M - $D < 6")" "the mix check can tell: drums at SLOOP's stock level are only $(awk "BEGIN{print $M - $D}") LU under"
+
+# 5. every sound the panel offers is a real preset of its engine (a misspelt one quietly became the engine's first
+#    preset: AFRO KEYS on the wrong engine played FAT BASS, 2026-11-16), and each part's sounds are level-matched:
+#    within 1.5 dB of the part's default, measured alone
+L="$("$B" soundcheck)"; ok "$(t "$(num "$L" bad) == 0")" "every panel sound exists in its engine ($L)"
+lu1() { num "$("$B" song "$OUT/lv.wav" 24 major 6 100 7 1 KALIMBA)" lufs; }
+for pv in "mel MELI 10" "bass BASSI 8" "comp COMPI 8"; do
+  set -- $pv; ref=$(SL_ONLY=$1 lu1); worst=0; i=0
+  while [ $i -lt $3 ]; do
+    v=$(env SL_ONLY=$1 "SL_$2=$i" "$B" song "$OUT/lv.wav" 24 major 6 100 7 1 KALIMBA | tr ' ' '\n' | awk 'p{print;exit} $0=="lufs"{p=1}')
+    worst=$(awk "BEGIN{d=$v-($ref); if(d<0)d=-d; print (d>$worst)?d:$worst}"); i=$((i+1))
+  done
+  ok "$(t "$worst <= 1.5")" "[$1] all $3 sounds within 1.5 dB of the default (worst $worst dB)"
+done
+
+# 6. every fx preset on every part keeps the part in use: within 6 dB of the part's own sound (telephone at first took
+#    the drums 12.7 dB down, 2026-11-16)
+for pp in "0 mel" "1 bass" "2 comp" "3 drums"; do
+  set -- $pp; ref=$(num "$(SL_ONLY=$2 SL_FXP=$1:0 "$B" song "$OUT/lv.wav" 16 major 6 100 7 1 KALIMBA)" lufs); worst=0; i=1
+  while [ $i -lt 14 ]; do
+    v=$(num "$(SL_ONLY=$2 SL_FXP=$1:$i "$B" song "$OUT/lv.wav" 16 major 6 100 7 1 KALIMBA)" lufs)
+    worst=$(awk "BEGIN{d=$v-($ref); if(d<0)d=-d; print (d>$worst)?d:$worst}"); i=$((i+1))
+  done
+  ok "$(t "$worst <= 6")" "[$2] all 13 fx presets within 6 dB of its own sound (worst $worst dB)"
+done
 
 for p in "edo31 1 KALIMBA" "edo19all 1 GLOCKEN" "edo24 2 SOFT KEYS" "major 0 SUB BASS"; do
   set -- $p; sc=$1; e=$2; shift 2

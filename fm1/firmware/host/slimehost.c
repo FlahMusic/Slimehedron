@@ -11,6 +11,8 @@
 #include <time.h>
 #define __attribute__(x)
 #include "preview.c"
+static FILE *sl_hlog;                       /* SL_HLOG=FILE: the harmony and every note (auto-check.sh) */
+#define SL_LOG(...) do { if (sl_hlog) fprintf(sl_hlog, __VA_ARGS__); } while (0)
 #include "../slime.c"
 
 static void wav_head(FILE *f, uint32_t frames)
@@ -88,6 +90,15 @@ int main(int argc, char **argv)
         }
         return 0;
     }
+    if (argc >= 2 && !strcmp(argv[1], "soundcheck")) {   /* every sound the panel offers exists in its engine: no silent fallback */
+        uint32_t p, i, bad = 0, n = 0;
+        preview_init();
+        for (p = 0; p < 3u; p++) for (i = 0; i < sl_snd_count(p); i++) { const sl_snd *s = sl_snd_entry(p, i); n++;
+            if (sl_preset_named(s->eng, s->name) < 0) { printf("missing %s on engine %u\n", s->name, s->eng); bad++; } }
+        for (i = 0; i < SL_NSET; i++) if (SL_SETS[i].mel >= SL_NMEL || SL_SETS[i].bass >= SL_NBASS || SL_SETS[i].comp >= SL_NCOMP) { printf("set %s out of range\n", SL_SETS[i].name); bad++; }
+        printf("sounds %u bad %u\n", n, bad);
+        return bad ? 1 : 0;
+    }
     if (argc >= 5 && !strcmp(argv[1], "pitch")) {
         const sh_scale *sc = sh_scale_by_id(argv[2]);
         static float mono[FS];
@@ -127,8 +138,15 @@ int main(int argc, char **argv)
         slime_band_sounds();
         if (getenv("SL_BASSND")) { char e[16]; int k = 0; const char *v = getenv("SL_BASSND"); while (v[k] && v[k] != ':' && k < 15) { e[k] = v[k]; k++; } e[k] = 0; if (v[k] == ':') sl_sound_on(SL_TRK_BASS, (uint32_t)atoi(e), v + k + 1); }
         if (getenv("SL_COMPSND")) { char e[16]; int k = 0; const char *v = getenv("SL_COMPSND"); while (v[k] && v[k] != ':' && k < 15) { e[k] = v[k]; k++; } e[k] = 0; if (v[k] == ':') sl_sound_on(SL_TRK_COMP, (uint32_t)atoi(e), v + k + 1); }
+        if (getenv("SL_MELI")) sl_part_sound(SL_P_MEL, (uint32_t)atoi(getenv("SL_MELI")));    /* a part's sound by its index: the trims */
+        if (getenv("SL_BASSI")) sl_part_sound(SL_P_BASS, (uint32_t)atoi(getenv("SL_BASSI")));
+        if (getenv("SL_COMPI")) sl_part_sound(SL_P_COMP, (uint32_t)atoi(getenv("SL_COMPI")));
         for (k = 0; k < 64 && (sl_busy(0) || sl_busy(1) || sl_busy(2)); k++) preview_render();   /* the presets' fade-ins */
         slime_band_start(getenv("SL_KIT") ? sh_band_kit_by_name(getenv("SL_KIT")) : 0, (uint32_t)strtoul(argv[7], 0, 10) * 2654435761u);
+        if (getenv("SL_FXP")) { int p = atoi(getenv("SL_FXP")), i = atoi(strchr(getenv("SL_FXP"), ':') + 1); sl_fx_preset((uint32_t)p, (uint32_t)i); }   /* PART:PRESET */
+        if (getenv("SL_HUMAN")) sl_band.human = atoi(getenv("SL_HUMAN"));
+        if (getenv("SL_JOURNEY")) sl_band.journey = sl_journey_bars((double)bpm);   /* the slime on: the key journey */
+        if (getenv("SL_HLOG")) sl_hlog = fopen(getenv("SL_HLOG"), "w");
         if (getenv("SL_MEL")) sl_mel_on = (uint8_t)atoi(getenv("SL_MEL"));
         if (getenv("SL_DRUMS")) sl_drums_on = (uint8_t)atoi(getenv("SL_DRUMS"));
         if (getenv("SL_BAND")) sl_band_on = (uint8_t)atoi(getenv("SL_BAND"));

@@ -29,14 +29,32 @@ BACK TO THE OFFICIAL FIRMWARE
   firmware.
 
 PLAYING IT
+Four pages. The top line says where you are and what you just changed; the bottom line names the four knobs.
+
+BUTTONS (the same on every page)
   keys        play their note now (in the scale) and throw a ball into the tank
-  PLAY        everything runs / stands still          HOME    a new shape (on the next downbeat)
-  ARP         auto-notes on / off                     SEQ     drums on / off
-  LFO         the slime on / off (key journey, the tank fills, bursts and reforms)
-  REC         bass and chords on / off                SCL     next scale
-  OCT- / OCT+ the key down / up a semitone
-  SELECT      walls (3..12)                           ALGORITHM  normal space / portals
-  PRESETS     the melody's sound                      MASTER  volume
-  KNOB 1 tempo   KNOB 2 spin   KNOB 3 rhythm (pop rock disco bossa jazz samba conga march chip beep industrial)
-  KNOB 4 scale (major minor pentatonic minor-pentatonic dorian mixolydian 19-note 31-note)
-The LEDs show what is on; a key lights when the melody plays its note.
+  PLAY        everything runs / stands still
+  HOME        back to the home page; on the home page: a new shape (on the next downbeat)
+  FX          the fx page: press again for the next part, melody > bass > chords > drums > home
+  EDIT        the sound page            GLO     the mix page        (press again: home)
+  ARP         auto-notes on / off       LFO     the slime on / off (key journey, the tank fills, bursts, reforms)
+  SEQ         the band on / off (drums, bass and chords)
+  SCL         next scale                OCT- / OCT+   the keyboard's octave
+  MASTER      volume
+
+KNOBS                    KNOB 1     KNOB 2           KNOB 3     KNOB 4     SELECT        ALGORITHM     PRESETS
+  HOME                   tempo      spin             rhythm     key        walls 3..12   space         melody sound
+  FX (one part)          filter     drive (drums:    echo       space      character     amount        fx preset
+                                    punch)
+  SOUND (EDIT)           melody     bass             chords     drum kit   note length   chord length  sound set
+  MIX (GLO)              melody     bass             chords     drums      swing         echo time     room size
+
+  filter: left is low-pass, right is high-pass, the middle is open (it stops there on the way through)
+  character: chorus, phaser, flanger, crush, warm, fuzz, fold; amount turns its depth and its mix together
+  fx presets: sound (the sound's own), dry, room, hall, dub echo, slapback, wide, tape, phase, jet, lofi, telephone,
+              underwater, crunch
+  sound sets: slime, glass, wood, chip, music box, fm, harp, retro, thumb
+  rhythms: pop rock disco bossa jazz samba conga march chip beep industrial, each with its own fills and feel
+  scales: major minor pentatonic minor-pentatonic dorian mixolydian 19-note 31-note
+  mix: each part from its measured level, down to off
+The LEDs show what is on and which page you are on; a key lights when the melody plays its note.

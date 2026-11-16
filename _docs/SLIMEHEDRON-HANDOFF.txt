@@ -364,6 +364,12 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
     FM-1 FIRMWARE FOLDER: _fm1-firmware/ at the repo root (not published: underscore). slimehedron-fm1.fwsc (always the
       newest; build-device.sh writes it), INSTALL-ON-FM1.bat (double-click: serves SLOOP's installer with it on localhost),
       HOW-TO.txt, VERSIONS.txt (sha256 per build). No public installer page takes an arbitrary .fwsc; each firmware ships its own.
+    FM-1 CONTROLS + FX + HUMANIZED DRUMS (2026-11-16, later). Four pages (HOME / FX per part / SOUND / MIX), every
+      encoder used, buttons as printed (OCT = octave again), page name on top, knob names at the bottom. FX per part:
+      filter, drive (drums: punch), echo, space, character + amount, 14 presets (SLOOP's own chain, CoralFlower's list).
+      26 sounds level-matched by measurement, 9 sound sets. The site's drummer feel ported (ghosts, accents, swing, drift,
+      pickups; check-band 7 humanize checks). auto-check.sh proves the slime's chords and key journey end to end.
+      fm1-emu strict 160 s: ~24 fps, audio 49%, 0 late notes. Details: the fm1 spec. HOW-TO.txt has the control map.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

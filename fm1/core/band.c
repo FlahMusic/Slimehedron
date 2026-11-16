@@ -32,6 +32,8 @@ void sh_band_init(sh_band *b, int kit, uint32_t salt) {
   b->kit = (kit % SH_NKITS + SH_NKITS) % SH_NKITS; b->salt = salt;
   b->prog = (int)(salt % 4u);                     /* the web: progIdx starts anywhere, not always on the first */
   b->bass_block = -1; b->journey = 0; b->hum = salt ^ 0x51EDu;
+  b->chord_bars = 2; b->chord_i = 0;                       /* S.chordBars: how long one chord lasts (1, 2 or 4) */
+  b->human = 1; b->step_ms = 150.0; b->bpm = 100.0; b->swmod = 0.6; b->last_ghost = -9; b->hr = salt ^ 0xA5A5F00Du;
 }
 void sh_band_set_kit(sh_band *b, int kit) { b->kit = (kit % SH_NKITS + SH_NKITS) % SH_NKITS; b->bass_block = -1; }
 
@@ -105,15 +107,57 @@ static int harm_drone(const sh_scale *sc) { return sc->n > 12; }
 
 static void push_c(sh_band_bar *o, int step, double cents, double a, int len) {
   if (o->nc >= SH_BAND_MAXC || step > 15) return;
+  o->comp[o->nc].nudge = 0.0;
   int v = (int)(a * 127.0 + 0.5); if (v < 1) v = 1; if (v > 127) v = 127;
   o->comp[o->nc].step = (uint8_t)step; o->comp[o->nc].cents = cents; o->comp[o->nc].vel = (uint8_t)v; o->comp[o->nc].len = (uint8_t)len;
   o->nc++;
 }
-static void push_d(sh_band_bar *o, int step, int note, double a) {
+static void push_dk(sh_band_bar *o, int step, int note, double a, int kind, double nudge) {
   if (o->nd >= SH_BAND_MAXD) return;
+  if (a > 1.9) a = 1.9;                                      /* dHit's clamp */
   int v = (int)(a * 96.0 + 0.5); if (v < 1) v = 1; if (v > 127) v = 127;
-  o->drum[o->nd].step = (uint8_t)step; o->drum[o->nd].note = (uint8_t)note; o->drum[o->nd].vel = (uint8_t)v; o->nd++;
+  o->drum[o->nd].step = (uint8_t)step; o->drum[o->nd].note = (uint8_t)note; o->drum[o->nd].vel = (uint8_t)v;
+  o->drum[o->nd].kind = (uint8_t)kind; o->drum[o->nd].nudge = nudge; o->nd++;
 }
+static void push_d(sh_band_bar *o, int step, int note, double a) { push_dk(o, step, note, a, 0, 0.0); }
+
+/* ---- HUMANIZE: the site's (index.html: HUMAN, humanBeat, humanVoice, KITFEEL, accFor, genreShift, the ghost block,
+ * the Human groove). Its rule: THE BEAT NEVER MOVES (every quarter note on the grid; nothing drifts more than a
+ * quarter of a step or 22 ms). The random draws are the drummer's own, not the site's Math.random. */
+static double hr_next(sh_band *b) { mb32 m = mb_seed(b->hr); double x = mb_next(&m); b->hr = m.a; return x; }
+static int h_group(int v) { return v == 0 ? 0 : (v == 1 || v == 4) ? 1 : (v == 2 || v == 3 || v == 8) ? 2 : 3; }   /* K, s / r, hats, the rest */
+static void human_beat(sh_band *b, int bar_start) {          /* humanBeat: once a beat, every part takes a small step */
+  for (int g = 0; g < 4; g++) { double d = b->drift[g] * 0.6 + (hr_next(b) - 0.5) * 0.012; b->drift[g] = d < -0.009 ? -0.009 : d > 0.009 ? 0.009 : d; }
+  if (bar_start) { double s = b->swell * 0.5 + (hr_next(b) - 0.5) * 0.1; b->swell = s < -0.08 ? -0.08 : s > 0.08 ? 0.08 : s; }
+}
+/* humanVoice: a velocity factor, and a time offset (ms) that is 0 on the beat */
+static double human_voice(sh_band *b, int v, int s, double *ms) {
+  const sh_kitfeel *kf = &SH_KITFEEL[b->kit];
+  int g = h_group(v);
+  double velVar = g == 2 ? 0.22 : g == 0 ? 0.05 : g == 3 ? 0.18 : 0.12, bias = g == 0 ? 0.004 : g == 1 ? -0.003 : 0.0;
+  double wob = g == 2 ? 0.005 : g == 0 ? 0.0012 : g == 3 ? 0.004 : 0.002, dk = kf->dyn / 0.4, tk = kf->time / 0.3;
+  double vv = ((hr_next(b) * 2.0 - 1.0) * velVar + b->swell) * dk; vv = vv < -0.45 ? -0.45 : vv > 0.45 ? 0.45 : vv;
+  double ts = 100.0 / (b->bpm > 60.0 ? b->bpm : 60.0); if (ts > 1.5) ts = 1.5;
+  double t = (bias + (hr_next(b) * 2.0 - 1.0) * wob + b->drift[g]) * tk * ts;
+  double cap = 0.25 * b->step_ms / 1000.0; if (cap > 0.022) cap = 0.022;
+  *ms = (s % 4 == 0) ? 0.0 : 1000.0 * (t < -cap ? -cap : t > cap ? cap : t);
+  return 1.0 + vv;
+}
+/* accFor: what the style leans on, and a drummer's hand on the hats (the beat 1, the "&" 0.8, the 16ths 0.62) */
+static double acc_for(int kit, int v, int s) {
+  double m = SH_KITFEEL[kit].acc[v][s] / 100.0;
+  if (v == 2 || v == 3 || v == 8) m *= (s % 4 == 0) ? 1.0 : (s % 2 == 0) ? 0.8 : 0.62;
+  return m;
+}
+/* genreShift (ms): jazz's swung 8ths (the "&" two-thirds of the way through the beat), bossa's lilt on the 16ths */
+static double genre_shift(const sh_band *b, int s) {
+  const sh_kitfeel *kf = &SH_KITFEEL[b->kit];
+  if (kf->sw8 > 0 && s % 4 == 2) return kf->sw8 * 0.667 * b->step_ms;
+  if (kf->sw16 > 0 && s % 2 == 1) return kf->sw16 * 0.333 * b->step_ms;
+  return 0.0;
+}
+/* the Human groove (the site's default feel): a 2.5% nudge on the off-16ths, breathing with swmod */
+static double groove_off(const sh_band *b, int s) { return (s % 2 == 1) ? 0.025 * b->swmod * b->step_ms : 0.0; }
 
 /* advanceHarmony's auto chords: the genre's own progression, one chord per 2 bars (S.chordBars), never the same chord
  * twice in a row, a new progression every 16 bars; the key journey (slime on) moves the key where a chord ends and
@@ -129,10 +173,11 @@ static void advance_harmony(sh_band *b, const sh_scale *sc, sh_band_bar *o) {
   if (b->hold > 0) { b->hold--; }
   else {
     int idx, cur = b->bar == 0 ? f->progs[b->prog][0] : b->next, nx, guard = 0;
-    idx = (int)((b->bar / 2u + 1u) % 4u);
+    idx = (b->chord_i + 1) % 4;                           /* (counted in chords, not bars: the site's _chordIdx) */
+    b->chord_i++;
     nx = f->progs[b->prog][idx];
     while (((nx % n) + n) % n == ((cur % n) + n) % n && ++guard < 4) nx = f->progs[b->prog][(idx + guard) % 4];
-    b->chord = ((cur % n) + n) % n; b->next = ((nx % n) + n) % n; b->hold = 1;
+    b->chord = ((cur % n) + n) % n; b->next = ((nx % n) + n) % n; b->hold = (b->chord_bars > 0 ? b->chord_bars : 2) - 1;
   }
   if (harm_drone(sc)) { b->chord = 0; b->next = 0; }   /* a whole tuning stays on its home (the drone) */
   b->last_chord_bar = b->hold == 0;
@@ -182,22 +227,56 @@ static void drums(sh_band *b, sh_band_bar *o) {
       int anchor = v == lo && (s == 0 || s == 8);
       if (in_fill && !anchor) continue;            /* the fill owns this space */
       b->hum = b->hum * 1664525u + 1013904223u;
-      double hum = 1.0 + ((double)(b->hum >> 8) / 16777216.0 * 2.0 - 1.0) * 0.08;
-      double a = anchor ? (s == 0 ? 1.25 : 1.12) : (s == 0 ? 1.25 : 1.0) * hum;
-      if (v == 2 || v == 3 || v == 8) a *= 0.8;     /* hats and ride sit under the backbeat */
-      push_d(o, s, SH_DV_NOTE[v], a);
+      double hum = 1.0 + ((double)(b->hum >> 8) / 16777216.0 * 2.0 - 1.0) * 0.08 * (b->human ? SH_KITFEEL[k].dyn / 0.4 : 1.0);
+      double a = anchor ? (s == 0 ? 1.25 : 1.12) : (s == 0 ? 1.25 : 1.0) * hum, nudge = 0.0;
+      if (b->human) {
+        a *= acc_for(k, v, s);
+        nudge = groove_off(b, s) + genre_shift(b, s);
+        if (!anchor) { double hm; a *= human_voice(b, v, s, &hm); nudge += hm; }   /* anchors stay locked (dHit solid) */
+      } else if (v == 2 || v == 3 || v == 8) a *= 0.8;
+      push_dk(o, s, SH_DV_NOTE[v], a, 0, nudge);
     }
     if (in_fill) {                                 /* genFill */
       mb32 r = mb_seed(b->salt ^ (b->bar * 97u) ^ ((uint32_t)s * 7919u));
       double frac = (double)(s - from) / (double)(f->fill_len > 1 ? f->fill_len - 1 : 1), q;
       if (mb_next(&r) < 0.5 + 0.45 * frac) {
         q = mb_next(&r);
-        if (SH_TOM_FILL[k]) push_d(o, s, frac >= 1.0 ? SH_GM_LT : (q < 0.3 ? SH_DV_NOTE[mid] : (frac < 0.5 ? SH_GM_HT : SH_GM_LT)), 0.55 + 0.45 * frac);
-        else push_d(o, s, SH_DV_NOTE[q < 0.6 ? mid : (q < 0.85 ? hi : lo)], 0.5 + 0.5 * frac);
+        int fv = SH_TOM_FILL[k] ? -1 : (q < 0.6 ? mid : (q < 0.85 ? hi : lo));
+        int fnote = SH_TOM_FILL[k] ? (frac >= 1.0 ? SH_GM_LT : (q < 0.3 ? SH_DV_NOTE[mid] : (frac < 0.5 ? SH_GM_HT : SH_GM_LT))) : SH_DV_NOTE[fv];
+        double fa = SH_TOM_FILL[k] ? 0.55 + 0.45 * frac : 0.5 + 0.5 * frac, fn = 0.0;
+        if (b->human) { double hm; fa *= human_voice(b, fv < 0 ? 7 : fv, s, &hm); fn = groove_off(b, s) + genre_shift(b, s) + hm; }
+        push_dk(o, s, fnote, fa, 0, fn);
       }
     }
   }
   if (b->key_crash) { b->key_crash = 0; if (SH_CRASH_ON_KEY[k]) push_d(o, 0, SH_GM_CRASH, 0.95); }
+  if (!b->human) return;
+  /* GHOST NOTES (the site's ghost block): quiet snare taps (14..28%) off the beat and off the backbeat, never twice in a
+   * row, never in a fill, jazz only on the "&"; a soft off-beat hat between the loud hits. SIMPLE kits get fewer. And
+   * the pickup: the busy kits' two snare taps into the next phrase (bar 4, the last two 16ths). */
+  const sh_kitfeel *kf = &SH_KITFEEL[k];
+  int simple = kf->simple, hi_is_hat = SH_DV_NOTE[hi] == 42;
+  for (int s = 0; s < 16; s++) {
+    int in_fill = o->fill && s >= from, on_beat = s % 4 == 0, back = s == 4 || s == 12;
+    int where = kf->ghost_and ? (s % 4 == 2) : 1, mid_on = (int)((SH_KIT_STEPS[k][mid] >> (16 * pb + s)) & 1ull);
+    if (s % 4 == 0) human_beat(b, s == 0);
+    if (!on_beat && !back && where && !in_fill && !mid_on && b->last_ghost != s - 1 &&
+        hr_next(b) < kf->ghost * (simple ? 0.28 : 0.55)) {
+      double hm, a = (0.14 + hr_next(b) * 0.14) * human_voice(b, mid, s, &hm);
+      push_dk(o, s, SH_DV_NOTE[mid], a, 1, groove_off(b, s) + genre_shift(b, s) + hm);
+      b->last_ghost = s;
+    }
+    int hat_on = (int)((SH_KIT_STEPS[k][2] >> (16 * pb + s)) & 1ull);
+    if (hi_is_hat && kf->ghost_hat && s % 2 == 1 && !in_fill && !hat_on && hr_next(b) < kf->ghost * (simple ? 0.4 : 0.63)) {
+      double hm, a = (0.11 + hr_next(b) * 0.09) * human_voice(b, 2, s, &hm);
+      push_dk(o, s, 42, a, 1, groove_off(b, s) + genre_shift(b, s) + hm);
+    }
+    if (!simple && pb == 3 && s >= 14) {
+      double hm, a = (0.45 + (s - 14) * 0.18) * human_voice(b, mid, s, &hm);
+      push_dk(o, s, SH_DV_NOTE[mid], a, 2, groove_off(b, s) + genre_shift(b, s) + hm);
+    }
+  }
+  b->last_ghost -= 16;                                     /* (the next bar's 1 is not "right after" this bar's 16th) */
 }
 
 /* the bass player: the block's figure, each note held to the next, a stepwise lead-in into the next chord */
@@ -234,7 +313,9 @@ static void bass(sh_band *b, const sh_scale *sc, sh_band_bar *o) {
     if (o->nb < SH_BAND_MAXB) {
       int v = (s == 0 || s == 8) ? 112 : 96;
       o->bass[o->nb].step = (uint8_t)s; o->bass[o->nb].len = (uint8_t)(strcmp(SH_KIT_NAME[b->kit], "industrial") ? g : 16);
-      o->bass[o->nb].cents = c; o->bass[o->nb].vel = (uint8_t)v; o->nb++;
+      o->bass[o->nb].cents = c; o->bass[o->nb].vel = (uint8_t)v;
+      o->bass[o->nb].nudge = b->human ? ((s == 0 || s == 8) ? 0.0 : 12.0) + genre_shift(b, s) : 0.0;   /* bassNote: +12 ms off the anchors */
+      o->nb++;
     }
   }
 }
@@ -287,6 +368,8 @@ void sh_band_next_bar(sh_band *b, const sh_scale *sc, sh_band_bar *o) {
   bass(b, sc, o);
   for (int i = 0; i < 16; i++) if (b->bass_tok[i]) bass_steps |= 1u << i;   /* bandPlan: the comp dodges the bass FIGURE */
   comp(b, sc, o, bass_steps);
+  if (b->human)                                            /* bandComp: "the chords swing with the drums" */
+    for (int i = 0; i < o->nc; i++) { int s = o->comp[i].step; o->comp[i].nudge = (s % 2 == 1 ? 0.025 * b->step_ms : 0.0) + genre_shift(b, s); }
   b->bar++;
 }
 

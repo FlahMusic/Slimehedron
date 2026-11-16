@@ -260,3 +260,40 @@ installed with `_fm1-firmware/INSTALL-ON-FM1.bat` (SLOOP's own installer page, o
   some at 60 MHz); saving (nothing to save yet); the old P25Q80 flash with this build; MIDI in and out.
 - Left out: curved space and the solids on screen (in fm1/core, not wired); the chord follower and pane chords; the
   site's groove micro-timing and humanize knobs; song save; the 6 other synth sounds per part.
+
+## Controls, the FX page, the humanized drummer (2026-11-16, later)
+Flah: a usability pass; an fx page per part (bass / melody / drums), the standard fx the FM-1 firmwares use, simple
+but powerful, merged dials, no wasted knobs; plenty of presets; the drums humanized like the site; test the slime.
+- Research, from source: SLOOP gives every part a DJ filter, DIST, chorus / delay / reverb sends and an INSERT (soft,
+  hard, fold, fuzz, crush, phaser, flanger, chorus: three values and a mix); its drum track a filter, an insert and
+  delay / reverb sends but no DIST. CoralFlower lists filter, drive, chorus, phaser, delay, reverb. So the FX page is
+  that chain: K1 FILTER (one bipolar knob), K2 DRIVE (drums: PUNCH, the kick ducking the band, since drums have no
+  DIST), K3 ECHO, K4 SPACE, SELECT CHARACTER (the insert), ALGORITHM AMOUNT (depth + mix + intensity merged: a crush
+  loses bits and rate together), PRESETS one of 14 fx presets. Echo time and room size are global (MIX page).
+- Pages: HOME (tempo, spin, rhythm, key; shape, space, melody sound), FX (cycles the 4 parts), SOUND = EDIT (the 4
+  parts' sounds, note length, chord length 1/2/4 bars, 9 sound sets), MIX = GLO (4 part levels down to off, swing,
+  echo time, room size). Buttons kept to their printed meaning: OCT is the keyboard's octave (it had been the key),
+  SEQ the band, ARP auto-notes, LFO the slime; REC, ENV and SAVE are left unmapped rather than misused. A page keeps
+  its name at the top; the bottom line names its four knobs. All pages driven in fm1-emu strict, each label checked.
+  Found there: the filter's centre detent snapped |f| < 3 to open, so single clicks never left it (fixed: it stops
+  only when crossing the middle).
+- Sounds: 10 melody, 8 bass, 8 chord presets, each trimmed to its part's default by measurement (all within 1.5 dB,
+  check-host). Pads (GLASS PAD -40, WARM PAD -42, JAZZ ORGAN -39 LUFS against RHODES -26) never open on short stabs:
+  left out. Found: AFRO KEYS listed on the wrong engine silently played that engine's first preset (FAT BASS):
+  `slimehost soundcheck` now fails on any name its engine lacks. SOFT KEYS needed -21 half-dB (the limiter squeezes it).
+- FX presets: every one on every part within 6 dB of the part's own sound (check-host); telephone first took the
+  drums 12.7 dB down, then 6.2: eased to 20 / 30 / 40.
+- The drummer (fm1/core/band.c, tables generated from the site's KITFEEL and SIMPLE): humanBeat's drift, humanVoice's
+  velocity and timing (the beat locked, nothing past 22 ms), accFor's accents, genreShift (jazz's swung 8ths, bossa's
+  lilt), the Human groove's breath, ghost snares and hats (fewer on SIMPLE kits, jazz only on the "&"), the pickup
+  into each phrase. The site's pattern and fills are still matched note for note (ghosts are tagged and left out of
+  that comparison). check-band.js adds 7 humanize checks over 256 bars per kit; sabotaged 2 ways (beat unlocked, no
+  cap). Early hits need a lead: everything the conductor queues sounds 30 ms after its grid time (hands: at once).
+  Jazz's and bossa's drums re-trimmed after it (the feel softened them: 14.7 and 11.1 LU under -> 10.8, 10.2).
+- The slime, end to end (fm1/firmware/auto-check.sh, 168 bars, pop / rock / jazz): chords last exactly 2 bars from the
+  rhythm's own progressions; the key moves at bars 40 / 80 / 120 / 160 (90 s), a fifth each, in 52..64; a crash on
+  each move for pop and rock, none for jazz; every melody, bass and chord note in the key it sounds in (0 of ~3,000
+  outside). Sabotaged 2 ways. Found on the way: the harmony log was written before the key moved (a log bug, not music).
+- Sweep: every fm1 host suite green (solids, curved space, melody 6000 notes, the tank against the plugin, the goos,
+  drawing, portals, band, levels, auto, check-host). fm1-emu strict 160 s: ~24 fps, audio 49% of its deadline at worst,
+  0 late notes. Not checked by a machine: how any of it sounds; the real panel; MIDI.
