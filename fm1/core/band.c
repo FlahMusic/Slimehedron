@@ -62,14 +62,10 @@ static uint32_t gen_comp(const sh_feel *f, mb32 *r, uint32_t avoid) {
     for (int i = 0; i < f->seed_n[s]; i++) hits |= 1u << f->seeds[s][i];
     if (__builtin_popcount(hits) > 2 && mb_next(r) < f->dodge) {   /* thin out where the bass is busy (never the 1) */
       uint32_t clash = hits & avoid & ~1u; int nc = __builtin_popcount(clash);
-      /* the web writes s.filter(k=>k!==clash[(rng()*clash.length)|0]): the draw is INSIDE the filter, a new one for
-       * every hit of the seed (in order), each hit dropped if it equals the clash its own draw picked. Kept as is. */
-      if (nc) {
-        uint8_t cl[16]; int ncl = 0; uint32_t keep = 0;
-        for (int i = 0; i < 16; i++) if ((clash >> i) & 1u) cl[ncl++] = (uint8_t)i;
-        for (int i = 0; i < 16; i++) if ((hits >> i) & 1u) { int pick = (int)(mb_next(r) * ncl); if (i != cl[pick]) keep |= 1u << i; }
-        hits = keep;
-      }
+      /* drop ONE of the hits that land on the bass (never the 1). The site had the draw inside s.filter(...), a new one
+       * per hit, so it could drop none or several; fixed in both on 2026-11-16 (a foundational bug: the same line in the
+       * site's genComp and here, check-band.js keeps them equal) */
+      if (nc) { int pick = (int)(mb_next(r) * nc); for (int i = 0; i < 16; i++) if ((clash >> i) & 1u) { if (!pick--) { hits &= ~(1u << i); break; } } }
     }
     if (mb_next(r) < 0.35 && pick_onsets(f->w, 1, r, avoid, f->dodge, on) == 1) hits |= 1u << on[0];   /* one ornament */
     return hits;

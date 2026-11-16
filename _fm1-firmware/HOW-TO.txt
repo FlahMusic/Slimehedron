@@ -1,19 +1,21 @@
-SLIMEHEDRON FOR THE M-VAVE FM-1 (test build, 2026-11-16)
+SLIMEHEDRON FOR THE M-VAVE FM-1 (test build)
 
-The file: fm1/firmware/release/slimehedron-fm1.fwsc
-Built on SLOOP 2.8.5, the first SLOOP that saves and updates on the newer FM-1s (UC25HQ80 flash, sold from late 2026).
-Tested in fm1-emu (strict mode, the newer flash). NOT yet run on a real FM-1.
+This folder: the firmware (slimehedron-fm1.fwsc, always the newest build), INSTALL-ON-FM1.bat, VERSIONS.txt (which
+build is which). Built on SLOOP 2.8.5, the first SLOOP that saves and updates on the newer FM-1s (UC25HQ80 flash, sold
+from late 2026). Tested in fm1-emu (strict mode, the newer flash). NOT yet run on a real FM-1.
 
 BEFORE YOU INSTALL
-- Use a data USB cable (not a charge-only one), Chrome or Edge, and close other apps that use MIDI.
+- Use a data USB cable (not a charge-only one), plugged straight into the pc (no hub). Chrome or Edge.
+- Close other apps that use MIDI. Keep the FM-1 charged; don't let the pc sleep; don't unplug while it writes.
 - The official firmware's own sounds cannot be backed up by anyone. Anything made on it stays on it until you go back.
 
 INSTALL
-1. In the Claude Code prompt, type:
-     ! wsl -e bash -lc 'sh "/mnt/c/flah plugins/plinky/fm1/firmware/install-site.sh"'
-2. Open http://localhost:8766/webapp/installer/ in Chrome or Edge.
-3. The page says SLOOP: that is SLOOP's installer, which is what installs it. Follow it; let it back up if it offers.
-4. When it is done, the FM-1 restarts and shows "slimehedron", then the tank.
+1. Double-click INSTALL-ON-FM1.bat (in this folder). A black window opens and stays open: leave it.
+2. Your browser opens http://localhost:8766/webapp/installer/ (if not, open it in Chrome or Edge yourself).
+3. The page says SLOOP: that is SLOOP's installer, which is what installs this file. Follow it; let it back up.
+4. When it is done, the FM-1 restarts and shows "slimehedron", then the tank. Close the black window.
+(A firmware file can't be installed from a plain web page you open from disk: Web MIDI needs a local server, which
+ is what the .bat starts. No public installer page takes an arbitrary .fwsc file; each firmware ships its own page.)
 
 IF IT DOES NOT START
 - Hold OCT- (alone) while switching the FM-1 on: SLOOP's USB rescue. Then install again from the page.

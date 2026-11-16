@@ -77,6 +77,28 @@ for(const k of KITS){
 
 }
 
+// ---- 4b. THE REAL CALL SITE HANDS THE BAND THE RUNNING BAR ----
+// Section 4 called __bandPlan(bar) with bars 0..239 itself, and passed, while drumSchedule handed it the bar inside the
+// 4-bar drum loop (0..3): on the site the bass figure never changed and the chord rhythm repeated every 4 bars. Found
+// porting the band to the FM-1 (2026-11-16). This drives the REAL drumSchedule at bar 21 and bar 37 and records what
+// reaches bandPlan, and checks the bass the drums actually play is the next block's figure.
+{const r=await p.evaluate(()=>{
+   const seen=[];const _bp=window.bandPlan;
+   window.bandPlan=function(barI,kit){seen.push(barI);return _bp.apply(this,arguments);};
+   if(typeof bandOn!=='undefined'&&!bandOn)document.getElementById('bandBtn').click();
+   const out={};
+   for(const g of [21,37]){
+     seen.length=0;
+     drumStep=16*g;drumTime=AC.currentTime+0.05;   // a bar line, deep into the song
+     try{drumSchedule();}catch(e){}
+     out[g]=seen.slice();
+   }
+   window.bandPlan=_bp;
+   return out;});
+ ok(r[21].length>0&&r[21].every(x=>x===21),'drumSchedule hands the band the running bar (bar 21 -> '+[...new Set(r[21])].join(',')+')');
+ ok(r[37].length>0&&r[37].every(x=>x===37),'  ...and at bar 37 too, so the bass block moves on (bar 37 -> '+[...new Set(r[37])].join(',')+')');
+}
+
 // ---- 5. THE INTERLOCK, measured fairly ----
 // An earlier version of this compared against a uniform baseline and failed everything, which was
 // the TEST being wrong: chord hits and bass notes both cluster on strong beats, so they collide

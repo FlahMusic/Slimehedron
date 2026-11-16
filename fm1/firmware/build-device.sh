@@ -42,4 +42,4 @@ mkdir -p "$WORK/build/slime/lib"; cp "$LIB/libm.a" "$LIB/libc.a" "$LIB/libcompil
 export SLIME_CFLAGS="$FPU -DLCD_BAUD=0u -Ifirmware/slime -DSH_GOO_LIGHT -DSH_GOO_DIV=4 -DSH_MAXHITS=32 -DSL_DEVICE=1"
 export SLIME_LINK="$OBJS --gc-sections build/slime/lib/libm.a build/slime/lib/libc.a build/slime/lib/libcompiler-rt.a"
 cd "$WORK" && JIELI_TOOLCHAIN="$TC" sh build.sh
-mkdir -p "$HERE/release" && cp "$WORK/build/felucca.fwsc" "$HERE/release/slimehedron-fm1.fwsc" && echo "package -> fm1/firmware/release/slimehedron-fm1.fwsc"
+OUTDIR="$(cd "$HERE/../.." && pwd)/_fm1-firmware"; mkdir -p "$OUTDIR" && cp "$WORK/build/felucca.fwsc" "$OUTDIR/slimehedron-fm1.fwsc" && echo "package -> _fm1-firmware/slimehedron-fm1.fwsc"

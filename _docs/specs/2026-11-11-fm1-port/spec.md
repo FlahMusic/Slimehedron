@@ -224,8 +224,8 @@ fx and params; do the dB testing yourself from the site's levels; nobody listens
 
 ## The usable test build (2026-11-16): FPU, the band, the conductor, the look
 Flah: "fix the chip float shit", import the auto-play with the fills per rhythm, research the top firmwares (CoralFlower,
-the Serum clone), studio only, a usable build to test tonight. The file: `fm1/firmware/release/slimehedron-fm1.fwsc`,
-installed with `fm1/firmware/install-site.sh` (SLOOP's own installer page, on localhost). `fm1/firmware/INSTALL.txt`.
+the Serum clone), studio only, a usable build to test tonight. The file: `_fm1-firmware/slimehedron-fm1.fwsc`,
+installed with `_fm1-firmware/INSTALL-ON-FM1.bat` (SLOOP's own installer page, on localhost). `_fm1-firmware/HOW-TO.txt`.
 - FPU: the whole image is built `-mcpu=r3 -mfprev1 -ffp-contract=off` (JieLi's SDK and X0X do); the tank is a
   single-precision copy made at build time (`floatify.py`: double -> float, literals get `f`, libm -> its float twins,
   sqrt -> a bit-trick + 2 Newton steps, worst error 5e-7, since the FPU has none and libm's loop was 46% of the time).
@@ -237,8 +237,8 @@ installed with `fm1/firmware/install-site.sh` (SLOOP's own installer page, on lo
   beside the C: 9,752 drum hits, 704 chord rhythms, 44 bass figures identical (sabotaged: red). Found on the way, in the
   SITE: drumSchedule passes bandPlan the bar inside the 4-bar loop (barI 0..3), so the site's bass figure never changes
   in a session and its chord rhythm repeats every 4 bars, against its own comment ("mix it up every 16 bars"). The
-  device follows the comment (the global bar). Not fixed on the site: a decision for Flah.
-  Also kept as the site has it: genComp's s.filter(k=>k!==clash[(rng()*clash.length)|0]) draws once per hit.
+  device follows the comment (the global bar). Fixed on the site too, 2026-11-16 (sw v168, dev-band 4b).
+  genComp's s.filter(k=>k!==clash[(rng()*clash.length)|0]) drew once per hit (none or several dropped): fixed in both.
 - Sounds (all synthesized, SLOOP's engines): melody KALIMBA (8 to pick), bass MONO BASS, chords RHODES; each rhythm on
   the SLOOP kit closest to the site's KITTONE style (pop 909, rock 80S, disco DISCO, bossa / samba LATIN, conga AFRO,
   jazz JAZZ, march VINTAGE, chip CHIP, beep ARCADE, industrial INDUSTR). Picked by name and style, not by ear.

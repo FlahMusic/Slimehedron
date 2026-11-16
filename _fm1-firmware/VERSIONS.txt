@@ -1,0 +1,16 @@
+Slimehedron for the FM-1: which build is which. slimehedron-fm1.fwsc in this folder is always the newest; the git
+history keeps every older one (git log -- _fm1-firmware/slimehedron-fm1.fwsc). Check a file: its sha256 below.
+
+2026-11-16  first test build, the second fix
+  sha256 45b92b8eca13325ceaa4653308fdd01c8279f15af5d0a707f990fff597bea0e8
+  - the chords drop exactly one hit that lands on the bass (they could drop none or several: a bug in the site's band
+    logic that the port had copied faithfully; fixed in the site and here together)
+  - (the site's other band bug, the bass stuck on its first 4 bars, never reached the FM-1: it was in the site's
+    scheduler, which the FM-1 does not use; the FM-1 always counted the running bar)
+  - everything from the first build below
+
+2026-11-16  first test build
+  sha256 37f2b9536372b66c020d34b3e7578f429185c56d2787069e7fb096a93a8eedd6
+  - the tank (2.5D, chord-coloured slime, bursts on reform), the site's band (11 rhythms with fills, bass, chords,
+    key journey), the chip's FPU, the conductor; fm1-emu strict: ~25 fps, no audio dropouts over 160 s
+  - never run on a real FM-1 before Flah's test

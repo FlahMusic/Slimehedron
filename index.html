@@ -4267,7 +4267,9 @@ function genComp(feel,rng,avoid){
     // a player thins out where the bass is already busy — but only in the genres that do that.
     if(avoid&&s.length>2&&rng()<dodge){
       const clash=s.filter(k=>avoid.has(k)&&k!==0);  // never drop the downbeat, that is the anchor
-      if(clash.length)s=s.filter(k=>k!==clash[(rng()*clash.length)|0]);
+      // ONE draw, ONE hit dropped. The draw used to sit inside the filter, a new pick per hit, so it dropped none or
+      // several (found porting the band to the FM-1, 2026-11-16; fm1/core/band.c has the same fix, check-band.js)
+      if(clash.length){const drop=clash[(rng()*clash.length)|0];s=s.filter(k=>k!==drop);}
     }
     if(rng()<0.35){const extra=pickOnsets(feel.w,1,rng,avoid,dodge)[0];   // ...with one ornament on top
       if(extra!=null&&s.indexOf(extra)<0)s.push(extra);}
@@ -4719,7 +4721,10 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
     if(HUMAN_KIT!==drumKit)loadHuman();          // a new kit brings its own feel
     if(inBar%4===0)humanBeat(inBar===0);
     const gr=(_sSig==='16')?activeGroove():null; // the active FEEL (micro-timing + velocity), only on the 16th grid
-    if(inBar===0){advanceHarmony(barI);bandBar(drumTime,barI);} // brain first, ALWAYS; the band only renders what it chose
+    // gBar (the running bar), not barI (the bar inside the 4-bar drum loop): handed barI, bandPlan only ever saw bars
+    // 0..3, so the bass figure (one per 16-bar block) never changed in a session and the chord rhythm repeated every
+    // 4 bars (found porting the band to the FM-1, 2026-11-16; dev-band 4b drives the real drumSchedule for it)
+    if(inBar===0){advanceHarmony(gBar);bandBar(drumTime,gBar);} // brain first, ALWAYS; the band only renders what it chose
     if(bandOn){
       if(drumKit==='industrial'&&_sSig==='16'){ // CONTINUOUS DRONE bass: one held note per bar, each ringing a FULL bar so the low end never drops out
         const barDur=bar*_sDur();
@@ -4728,7 +4733,7 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
         // THE BASS. Generated per 16-bar block from the kit's own feel (see FEELS) in the same
         // degree tokens as before, so the key journey still works untouched. KITBASS stays as the
         // fallback for odd meters and anything without a feel row.
-        const gen=(_sSig==='16')?bandPlan(barI,drumKit).bass:null;
+        const gen=(_sSig==='16')?bandPlan(gBar,drumKit).bass:null;
         const set=(_sSig==='16')?(KITBASS[drumKit]||BASSGROOVES):null;
         const bp=gen||(set?set[(_bassGroove+barI)%set.length]:BASSPAT[_sSig]);
         let tok=bp?bp[inBar]:(inBar%8===0?'R':(inBar%4===0?'F':null));

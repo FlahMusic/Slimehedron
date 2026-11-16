@@ -351,9 +351,19 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
       all 11 pass). A conductor runs the tank and band 45 ms ahead of the audio (the tank in the interrupt had missed 2,975
       deadlines in 160 s). Quarter goo (stats match the plugin's). Chord-coloured slime, a burst on every reform, labels.
       Final 160 s STRICT: ~25 fps on average (worst frame 241 ms, when the goo is busiest), the audio interrupt's worst half 49% of its deadline, 1 deadline missed, 3 notes later than one block (0.73 ms), the tank tick 4.8 ms mean / 15 ms worst.
-      SITE BUG FOUND (not fixed, Flah decides): drumSchedule hands bandPlan the bar inside the 4-bar loop, so the site's
-      bass figure never changes in a session and the chord rhythm repeats every 4 bars (its comment says every 16).
+      SITE BUG FOUND, then FIXED the same day (Flah: "fix the main site"): see BAND BAR FIX below.
       Research: _docs/research/2026-11-14-fm1-firmware-base.md (Shrub, CoralFlower, X0X, No Man's Sky FM).
+    BAND BAR FIX (2026-11-16, sw v168). Flah: fix the site; a foundational bug goes to every version, a hardware one stays
+      in its own. (1) The site's drumSchedule handed advanceHarmony / bandBar / bandPlan the bar INSIDE the 4-bar drum loop
+      (barI 0..3), so the bass figure (one per 16-bar block) never changed in a session and the chord rhythm repeated every
+      4 bars. Now the running bar (gBar), as the fills already used. Site only: the FM-1 never had it (its own scheduler),
+      the plugin has no band. dev-band 4b drives the real drumSchedule at bars 21 and 37 (sabotaged: red, '21 -> 1').
+      (2) genComp's 'drop one hit on the bass' drew a new pick per hit inside s.filter, dropping none or several: fixed in
+      the site AND fm1/core/band.c together (check-band.js keeps them equal). Green: dev-band, chordtest, harmony, harmony2,
+      world, drums, bassmix, chordbed, melody; the FM-1's check-host, levels, check-band, 60 s fm1-emu strict.
+    FM-1 FIRMWARE FOLDER: _fm1-firmware/ at the repo root (not published: underscore). slimehedron-fm1.fwsc (always the
+      newest; build-device.sh writes it), INSTALL-ON-FM1.bat (double-click: serves SLOOP's installer with it on localhost),
+      HOW-TO.txt, VERSIONS.txt (sha256 per build). No public installer page takes an arbitrary .fwsc; each firmware ships its own.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto
