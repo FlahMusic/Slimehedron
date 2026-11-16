@@ -221,3 +221,42 @@ fx and params; do the dB testing yourself from the site's levels; nobody listens
 - NOT CHECKED: anything on the real FM-1 (nothing flashed); saving, the updater and the rescue with our build; the old
   P25Q80 flash with our build; knobs and buttons other than three note keys; LEDs; the worst case (full goo, 12 balls);
   how it sounds.
+
+## The usable test build (2026-11-16): FPU, the band, the conductor, the look
+Flah: "fix the chip float shit", import the auto-play with the fills per rhythm, research the top firmwares (CoralFlower,
+the Serum clone), studio only, a usable build to test tonight. The file: `fm1/firmware/release/slimehedron-fm1.fwsc`,
+installed with `fm1/firmware/install-site.sh` (SLOOP's own installer page, on localhost). `fm1/firmware/INSTALL.txt`.
+- FPU: the whole image is built `-mcpu=r3 -mfprev1 -ffp-contract=off` (JieLi's SDK and X0X do); the tank is a
+  single-precision copy made at build time (`floatify.py`: double -> float, literals get `f`, libm -> its float twins,
+  sqrt -> a bit-trick + 2 Newton steps, worst error 5e-7, since the FPU has none and libm's loop was 46% of the time).
+  The float tank plays like the double one (7.29 against 7.48 notes a bar over 10 seeds, within one SD). The panel's
+  SPI at 60 MHz (X0X's measured setting); only the tank's box is resent. fm1-emu STRICT: 3.5 -> ~37 fps, empty tank.
+- The band (`fm1/core/band.c`, tables generated from index.html by `fm1/host/gen-band.js`): the 11 rhythms, the fill
+  windows (genFill), the bass (genBass, voice-led, lead-ins), the keyboard player (genComp, block / arp / broken, the
+  bar-4 lick, the push), the genre's chord changes, the key journey. `node fm1/host/check-band.js` runs the site's own JS
+  beside the C: 9,752 drum hits, 704 chord rhythms, 44 bass figures identical (sabotaged: red). Found on the way, in the
+  SITE: drumSchedule passes bandPlan the bar inside the 4-bar loop (barI 0..3), so the site's bass figure never changes
+  in a session and its chord rhythm repeats every 4 bars, against its own comment ("mix it up every 16 bars"). The
+  device follows the comment (the global bar). Not fixed on the site: a decision for Flah.
+  Also kept as the site has it: genComp's s.filter(k=>k!==clash[(rng()*clash.length)|0]) draws once per hit.
+- Sounds (all synthesized, SLOOP's engines): melody KALIMBA (8 to pick), bass MONO BASS, chords RHODES; each rhythm on
+  the SLOOP kit closest to the site's KITTONE style (pop 909, rock 80S, disco DISCO, bossa / samba LATIN, conga AFRO,
+  jazz JAZZ, march VINTAGE, chip CHIP, beep ARCADE, industrial INDUSTR). Picked by name and style, not by ear.
+- Levels by the site's rules (`fm1/firmware/levels.sh`, K-weighted as dev-mix.js): all 11 rhythms pass; the mix
+  -18.5..-19.2 LUFS (site -18.8); per-rhythm trims as KIT_DB (jazz's drums were 16.4 LU under). Sabotaged 3 ways.
+- THE CONDUCTOR. With the tank ticking in the audio interrupt, a 160 s STRICT run (the goo filling) measured a 17.8 ms
+  worst half against a 5.8 ms deadline and 2,975 missed deadlines: clicks. The tank and the band now run 45 ms ahead in
+  the main loop (between every band of the screen) and queue each note's block; the interrupt only plays what is due;
+  a hand's key still sounds at once from the interrupt. The host bench gives the same notes as before (290/295/293).
+- The quarter goo (`SH_GOO_DIV=4`: 400 drops at 4^(1/3) the size, one drop a splash) passes every statistic against the
+  plugin's exact goo (fill within 0.033, 8.02 against 7.97 notes a bar, the slowdown, the softening); 56 KB.
+- Look: balls 1.35x (legible at 240 px); the slime takes the chord's colour on the walls' wheel; the wheel turns with
+  the key; a reform BURSTS (the old slime and balls fly out and fade over 0.6 s); labels in plain words for every change.
+- Panel (INSTALL.txt): all 13 controls pressed in one STRICT run, each label and effect seen in its frame
+  (OCT+ / OCT- are OCTUP / OCTDN in fm1-emu's scripts: a first run used the wrong name and looked broken).
+- Final 160 s STRICT worst case on this build: ~25 fps on average (worst frame 241 ms, when the goo is busiest), the audio interrupt's worst half 49% of its deadline, 1 deadline missed, 3 notes later than one block (0.73 ms), the tank tick 4.8 ms mean / 15 ms worst.
+- NOT CHECKED BY A MACHINE: anything on a real FM-1 (nothing flashed); how it sounds (no one listened; the levels are
+  measured, the timbres picked by name); tearing on the real panel (fm1-emu does not model the panel's refresh; X0X saw
+  some at 60 MHz); saving (nothing to save yet); the old P25Q80 flash with this build; MIDI in and out.
+- Left out: curved space and the solids on screen (in fm1/core, not wired); the chord follower and pane chords; the
+  site's groove micro-timing and humanize knobs; song save; the 6 other synth sounds per part.

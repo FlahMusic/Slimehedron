@@ -344,6 +344,16 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
       33. Emulator: fm1/firmware/emu-tank.png, audio interrupt 20.2%, no half missed. OPEN: the screen looks like ~3-4
       fps (software float): next is the chip's float unit + a single-precision tank. Bass, chords, the other kits, key/
       scale and FX pages, curved space and solids on screen: not done. Nothing flashed.
+    FM-1: A USABLE TEST BUILD (2026-11-16). fm1/firmware/release/slimehedron-fm1.fwsc; install: fm1/firmware/INSTALL.txt
+      (install-site.sh serves SLOOP's own installer on localhost). The chip's FPU (single precision only; libm's sqrt is
+      software, so ours is a bit-trick); 60 MHz panel SPI (X0X's setting). The site's band note for note (check-band.js:
+      11 rhythms with their fills, bass, keyboard player, chord changes, key journey); levels by dev-mix's rules (levels.sh,
+      all 11 pass). A conductor runs the tank and band 45 ms ahead of the audio (the tank in the interrupt had missed 2,975
+      deadlines in 160 s). Quarter goo (stats match the plugin's). Chord-coloured slime, a burst on every reform, labels.
+      Final 160 s STRICT: ~25 fps on average (worst frame 241 ms, when the goo is busiest), the audio interrupt's worst half 49% of its deadline, 1 deadline missed, 3 notes later than one block (0.73 ms), the tank tick 4.8 ms mean / 15 ms worst.
+      SITE BUG FOUND (not fixed, Flah decides): drumSchedule hands bandPlan the bar inside the 4-bar loop, so the site's
+      bass figure never changes in a session and the chord rhythm repeats every 4 bars (its comment says every 16).
+      Research: _docs/research/2026-11-14-fm1-firmware-base.md (Shrub, CoralFlower, X0X, No Man's Sky FM).
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

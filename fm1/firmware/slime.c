@@ -395,6 +395,7 @@ static uint32_t sl_bars_shape, sl_seed = 7;
 static volatile uint32_t sl_reforms;
 
 static uint32_t sl_reform_us_max;
+static void sl_on_reform(void);          /* slime_ui.c: the burst */
 static void sl_start_shape(void)
 {
 #ifdef SL_DEVICE
@@ -404,6 +405,7 @@ static void sl_start_shape(void)
     s.walls = sl_walls; s.space = sl_space ? SH_SPACE_PORTAL : SH_SPACE_NORMAL; s.spin = (double)sl_spin;
     s.scale = sh_scale_by_id(SL_SCALES[sl_scale % SL_NSCALE]);
     s.auto_notes = sl_auto;
+    sl_on_reform();
     slime_start(s, sl_seed++, sl_root);
     sl_bars_shape = 0;
     sl_reforms++;

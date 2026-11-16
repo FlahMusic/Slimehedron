@@ -17,7 +17,7 @@
  * The main loop never writes the tank: it leaves requests (slime.c) for the audio interrupt, which owns it. It READS
  * the tank while the interrupt may be moving it, so a frame can show a ball a tick ahead of a wall: seen, never stored. */
 #include "drawtank.h"
-float sinf(float);                          /* the toolchain's libm (SLOOP itself links none) */
+float sinf(float), floorf(float);           /* the toolchain's libm (SLOOP itself links none) */
 
 #define SL_BAND_PX (240u * 16u)
 _Static_assert(sizeof(st_view) + 2u * SL_BAND_PX * 2u + 8u <= sizeof cv_px, "the view and two bands live in SLOOP's canvas");
@@ -30,6 +30,70 @@ static volatile uint32_t sl_dbg[4];
 #define SL_MARGIN 8
 
 static uint16_t *sl_strip(uint32_t k) { return cv_px + (k & 1u) * SL_BAND_PX; }
+
+/* colour, here (SLOOP has its own mix565, so fm1/core/paint.h stays out of the unity build) */
+static uint16_t sl_hsv565(float h, float s, float v)
+{
+    float r, g, b, f, p, q, t;
+    int i;
+    h -= floorf(h); h *= 6.0f; i = (int)h; f = h - (float)i;
+    p = v * (1.0f - s); q = v * (1.0f - s * f); t = v * (1.0f - s * (1.0f - f));
+    switch (i % 6) { case 0: r = v; g = t; b = p; break; case 1: r = q; g = v; b = p; break; case 2: r = p; g = v; b = t; break;
+                     case 3: r = p; g = q; b = v; break; case 4: r = t; g = p; b = v; break; default: r = v; g = p; b = q; }
+    return (uint16_t)(((int)(r * 31.0f + 0.5f) << 11) | ((int)(g * 63.0f + 0.5f) << 5) | (int)(b * 31.0f + 0.5f));
+}
+static uint16_t sl_blend(uint16_t a, uint16_t b, float t)   /* a toward b by t */
+{
+    int ar = a >> 11, ag = (a >> 5) & 63, ab = a & 31, br = b >> 11, bg = (b >> 5) & 63, bb = b & 31;
+    return (uint16_t)(((int)((float)ar + (float)(br - ar) * t) << 11) | ((int)((float)ag + (float)(bg - ag) * t) << 5) | (int)((float)ab + (float)(bb - ab) * t));
+}
+
+/* THE BURST (the site: a full tank bursts and reforms as a new shape). At a reform the old slime and balls fly out
+ * from the middle and fade over 0.6 s while the new shape starts playing. Drawn over the bands, screen space. */
+#define SL_BURST_MS 600u
+#define SL_BURST_N (SH_GOO_MAXD + SH_BALLCAP)
+static struct { int16_t x, y, vx, vy; uint8_t r; uint16_t c; } sl_bp[SL_BURST_N];
+static int sl_bn;
+static uint32_t sl_burst_t0;
+static void sl_on_reform(void)              /* (slime.c's sl_start_shape calls it; the view still shows the old tank) */
+{
+    const st_view *v = (const st_view *)((((uintptr_t)(cv_px + 2u * SL_BAND_PX)) + 7u) & ~(uintptr_t)7u);
+    int i;
+    sl_bn = 0;
+    for (i = 0; i < v->nd + v->nb && sl_bn < SL_BURST_N; i++) {
+        int ball = i >= v->nd, k = ball ? i - v->nd : i;
+        float x = ball ? v->x[k] : v->dx[k], y = ball ? v->y[k] : v->dy[k], r = ball ? v->r[k] : v->dr[k];
+        float dx = x - 120.0f, dy = y - 120.0f, d = sqrtf(dx * dx + dy * dy) + 1.0f, sp = 140.0f + (float)((i * 37) % 120);   /* px a second */
+        sl_bp[sl_bn].x = (int16_t)x; sl_bp[sl_bn].y = (int16_t)y;
+        sl_bp[sl_bn].vx = (int16_t)(dx / d * sp); sl_bp[sl_bn].vy = (int16_t)(dy / d * sp - 40.0f);
+        sl_bp[sl_bn].r = (uint8_t)(r < 1.0f ? 1 : r > 12.0f ? 12 : r);
+        sl_bp[sl_bn].c = ball ? v->bc[k] : v->goo;
+        sl_bn++;
+    }
+    sl_burst_t0 = fm1_ms;
+}
+static int sl_bursting(void) { return sl_bn > 0 && fm1_ms - sl_burst_t0 < SL_BURST_MS; }
+static void sl_burst_band(uint16_t *b, int y0)   /* the flying drops on rows y0..y0+15 of a native-order band */
+{
+    float t = (float)(fm1_ms - sl_burst_t0) * 0.001f, a = 1.0f - t / (SL_BURST_MS * 0.001f);
+    int i;
+    if (a <= 0.0f) return;
+    for (i = 0; i < sl_bn; i++) {
+        float cx = (float)sl_bp[i].x + (float)sl_bp[i].vx * t, cy = (float)sl_bp[i].y + (float)sl_bp[i].vy * t + 160.0f * t * t;
+        float r = (float)sl_bp[i].r * (0.6f + 0.6f * a);
+        int ya = (int)(cy - r), yb = (int)(cy + r), y;
+        if (yb < y0 || ya > y0 + 15) continue;
+        for (y = ya < y0 ? y0 : ya; y <= yb && y <= y0 + 15; y++) {
+            float dy = (float)y + 0.5f - cy, hw = r * r - dy * dy;
+            int xa, xb, x;
+            if (hw <= 0.0f) continue;
+            hw = sqrtf(hw); xa = (int)(cx - hw); xb = (int)(cx + hw);
+            if (xa < 0) xa = 0;
+            if (xb > 239) xb = 239;
+            for (x = xa; x <= xb; x++) b[(y - y0) * 240 + x] = sl_blend(b[(y - y0) * 240 + x], sl_bp[i].c, 0.85f * a);
+        }
+    }
+}
 static st_view *sl_view(void)
 {
     uintptr_t p = (uintptr_t)(cv_px + 2u * SL_BAND_PX);
@@ -74,7 +138,14 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
         fm1_irq_off(); sl_key_req |= keys; fm1_irq_on();
     }
     if (SL_PRESSED(B_PLAY)) { sl_run = (uint8_t)!sl_run; sl_say(sl_run ? "play" : "stop", 0); }
-    if (SL_PRESSED(B_HOME)) { sl_reform_req = 1; sl_say("new shape", 0); }
+    if (SL_PRESSED(B_HOME)) {               /* a NEW shape: the next one along, never the same walls again */
+        static const uint8_t SHAPES[7] = {6, 5, 8, 3, 7, 4, 12};
+        static uint8_t at;
+        uint8_t w = sl_walls;
+        while (SHAPES[at % 7u] == w) at++;
+        sl_walls = SHAPES[at++ % 7u];
+        sl_reform_req = 1; sl_say("new shape", 0);
+    }
     if (SL_PRESSED(B_ARP)) { sl_auto = (uint8_t)!sl_auto; sl_say("auto-notes ", sl_auto ? "on" : "off"); }
     if (SL_PRESSED(B_LFO)) { sl_slime = (uint8_t)!sl_slime; sl_say("slime ", sl_slime ? "on" : "off"); }
     if (SL_PRESSED(B_SEQ)) { sl_drums_on = (uint8_t)!sl_drums_on; sl_say("drums ", sl_drums_on ? "on" : "off"); }
@@ -129,7 +200,15 @@ static void slime_ui(void)
                                              (k == panel.btn[B_REC] && sl_band_on));
     /* the camera sways slowly round the box, as the web's tumbling tank does */
     st_tumble(0.5f * sinf(t * 0.31f), 0.3f + 0.2f * sinf(t * 0.23f + 1.0f), M);
-    st_view_prepare(v, &sl_tank, M, 0.0f, 0);
+    {
+        /* the walls' colour wheel turns with the key (the key journey shows), and the slime takes the colour of the chord
+         * the band is on: its root wall's hue, deeper, so it reads as colour, not a grey mass ("not colorblind": Flah) */
+        float hue0 = (float)(sl_root % 12) / 12.0f;
+        int td = sl_tank.s.scale ? sl_tank.s.scale->n * sl_tank.s.octs : 7;
+        st_view_prepare(v, &sl_tank, M, hue0, 0);
+        v->goo = sl_hsv565(hue0 + (td > 0 ? (float)sl_band.chord / (float)td : 0.0f), 0.62f, 0.86f);
+        for (k = 0; k < (uint32_t)v->nb; k++) { v->r[k] *= 1.35f; v->sr[k] *= 1.3f; }   /* notes that read on 240 px */
+    }
     {
         /* Only the tank's box changes; the page around it is one colour. Send the box, joined with last frame's box
          * (so what moved out of it is painted over), and nothing else: about half the pixels of a whole screen.
@@ -143,7 +222,7 @@ static void slime_ui(void)
         }
         x0 -= SL_MARGIN; x1 += SL_MARGIN;                        /* a ball or a lit rim can stand a little proud */
         y0 = (int32_t)v->pymin - SL_MARGIN; y1 = (int32_t)v->pymax + SL_MARGIN;
-        if (v->n < 3) { x0 = 0; x1 = 239; y0 = 0; y1 = 239; }
+        if (v->n < 3 || sl_bursting() || (sl_bn && fm1_ms - sl_burst_t0 < SL_BURST_MS + 100u)) { x0 = 0; x1 = 239; y0 = 0; y1 = 239; }
         {   /* the label's rows join the box while it shows, and once more after, to paint it away */
             uint8_t on = (int32_t)(sl_label_until - fm1_ms) > 0;
             if (on || sl_label_shown) { y0 = 0; x0 = 0; x1 = 239; }
@@ -160,6 +239,7 @@ static void slime_ui(void)
             uint32_t ry0 = k * 16u < (uint32_t)y0 ? (uint32_t)y0 - k * 16u : 0u, ry1 = k * 16u + 15u > (uint32_t)y1 ? (uint32_t)y1 - k * 16u : 15u;
             uint32_t rows = ry1 - ry0 + 1u;
             st_draw_band(v, (int)(k * 16u), 16, b, BG);
+            if (sl_bursting()) sl_burst_band(b, (int)(k * 16u));
             if (k == 0u && sl_label_shown && b == cv_px) {   /* SLOOP's font into this band (cv_text draws into cv_px) */
                 cv_w = 240; cv_h = 16; cv_oy = 0;
                 cv_text(120 - text_w(&FONT_S, sl_label) / 2, 0, &FONT_S, sl_label, swap16(RGB(90, 72, 150)));   /* (the band is

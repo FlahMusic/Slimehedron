@@ -51,10 +51,33 @@ Read from its source, cloned to WSL (~/fm1w/sloop-fm1):
 - FM-1-transporter (kurogedelic): recovery for a unit that no longer starts. The Firmware Hub rescue tool says it
   works on the new flash and tells you to take a full flash backup first.
 
-## Not known (measure, do not assume)
-- RAM and flash sizes are not published by anyone; the brief's "511 KB / 1 MiB" came from fm1_open's linker script.
-- Whether pi32v2 has hardware float. The tank is double on the host; its cost on the device is unmeasured.
-- The tank's time per tick and a frame's time on the device: fm1-emu STRICT, once the device build exists.
+## Answered since (2026-11-16, from source and measurement)
+- **Float: single precision in hardware, double in software.** `-mcpu=r3 -mfprev1` (JieLi's SDK flags) turns float
+  maths into FPU instructions; doubles stay compiler-rt calls. X0X (charlesvestal/fm1-x0x, tools/build.py) builds its
+  whole firmware this way and ships on hardware; fm1-emu decodes the FPU (docs/isa-notes.md, 1,464 probe cases).
+- **The FPU has no square root**: JieLi's r3 libm `sqrtf` is a software loop; it was 46% of our busy time in fm1-emu's
+  profile. X0X writes its own (`fm_sqrtf`, firmware/src/dsp/fastmath.h); so do we (floatify.py).
+- **The panel's SPI runs at 60 MHz** (`LCD_BAUD 0`, ~44 MHz effective measured on an FM-1: X0X firmware/src/lcd.c,
+  which also says Felucca's 12 MHz took 23 ms for a 240x72 strip and tore). ST7789 is rated to ~62 MHz.
+- RAM layout from app.ld: a 96 KiB RAM region, a 336 KB pool, 31.75 KB of low SRAM, a 15.7 KB no-init region.
+
+## The top firmwares, read for quality (2026-11-16)
+- **Shrub** (Xfer Records / Steve Duda, free beta 2026-11-13, not open source): a stripped-down Serum: two wavetable
+  oscillators + sub, a Serum 2 filter, OTT / reverb / delay, Serum 1 patches. Duda: no poly filters, all voices share one
+  stereo filter driven by the newest voice; quality is "reduced" from the plugin. Takeaway for us: on this chip even Xfer
+  shares one filter across voices, so a shared-bus design is the norm, not a corner cut. (synthanatomy.com, 2026-11)
+- **CoralFlower** (FicusFicusov, GPL-3.0, after ChoralRoot and Felucca): one key -> a chord + a bass line, ~60 sounds
+  from a VA and an FM engine (Melodee's), six effects in a user order, Departure Mono font. Same shape of instrument as
+  ours (chords and bass follow the player); its chord and voicing rules are not documented, so nothing copied.
+- **No Man's Sky FM** (hericdk, GPL-3.0, on SLOOP 2.7.1): the only other 3D firmware; its own README says the 3D flight
+  "can still lose frames" and its flash is "nearly full" (it moved samples to lower rates). Takeaway: 3D on this chip
+  needs the FPU, the fast SPI and partial redraw; we have all three.
+- **X0X** (charlesvestal): the reference for speed: FPU on, 60 MHz SPI, the DSP at -O2, its own fast maths, the second
+  core hardened against units that misread.
+
+## Still not known
+- How it sounds and feels on a real FM-1 (nothing flashed). fm1-emu STRICT models cycles, flash-cache misses and the
+  LCD's clock, but not the analog output or the panel's own refresh (tearing).
 
 ## Sources
 - https://github.com/isod89/sloop-fm1 (README, BUILDING.md, DUALCORE.md, RAM.md, firmware/src at bac9c05)
@@ -63,3 +86,8 @@ Read from its source, cloned to WSL (~/fm1w/sloop-fm1):
 - https://github.com/jvitkauskas/m-bootloader ; https://thefirmwarehub.com/tools/rescue/
 - https://github.com/isod89/clipper-fm1 ; https://github.com/juanjiant-bit/JIANT
 - https://pianoandsynth.com/m-vave-fm-1-custom-firmware-collection/
+- https://github.com/charlesvestal/fm1-x0x (tools/build.py, firmware/src/lcd.c, firmware/src/dsp/fastmath.h at 512c0da)
+- https://github.com/FicusFicusov/CoralFlower (README at 46790b9)
+- https://github.com/hericdk/nomanskyFM (README at 8ba4833)
+- https://synthanatomy.com/2026/11/xfer-records-shrub-serum-for-m-vave-fm-1-before-gta-6.html
+- https://github.com/joakimeriksson/fm1-emu docs/isa-notes.md ("The FPU and the community firmwares")
