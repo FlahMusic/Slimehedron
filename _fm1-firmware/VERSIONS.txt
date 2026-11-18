@@ -1,6 +1,17 @@
 Slimehedron for the FM-1: which build is which. slimehedron-fm1.fwsc in this folder is always the newest; the git
 history keeps every older one (git log -- _fm1-firmware/slimehedron-fm1.fwsc). Check a file: its sha256 below.
 
+2026-11-18  every button does something: loop, songs, notes, double taps; the site's drum bus
+  sha256 4e09c2384d17342ba9f95d298359001cda5a6d2af77f1d441d9802bb22ef6a41
+  - REC records a loop of what you play (count-in on the beat, closes at the bar, overdub, x2 clears); it moves
+    with the key and the scale
+  - SAVE keeps 3 songs (sounds, fx, mix, notes, the loop...); the session saves itself when stopped and comes back
+    at power-on; ENV is a notes page (attack, decay, sustain, release, glide, 5 note shapes)
+  - double taps: PLAY from the top, LFO pins the key, SEQ drums alone, SCL the scale before; OCT- + OCT+ middle
+  - the drums go through the site's drum bus (glue, body, presence dip), each kit's glue within 1 dB of the site's
+  - fm1-emu strict, a whole 2-minute session with every control: 0 late notes, audio 66% of its deadline at worst,
+    ~22 fps; the session came back after a power cycle (loop and all)
+
 2026-11-18  the site's drums, FM sounds, speaker rails
   sha256 b135f9beaf7161462473ca18c7a61fbc085c5da1c9bc93c9a6e42685e1d7ebee
   - every rhythm plays the site's own drum kit, rebuilt on the chip's drum synth: each kick ends on the site's pitch

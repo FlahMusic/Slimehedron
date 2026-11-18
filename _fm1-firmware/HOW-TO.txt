@@ -29,23 +29,33 @@ BACK TO THE OFFICIAL FIRMWARE
   firmware.
 
 PLAYING IT
-Four pages. The top line says where you are and what you just changed; the bottom line names the four knobs.
+Five pages. The top line says where you are and what you just changed; the bottom line names the four knobs.
 
-BUTTONS (the same on every page)
+BUTTONS (the same on every page; "x2" = a double tap, two presses quickly)
   keys        play their note now (in the scale) and throw a ball into the tank
-  PLAY        everything runs / stands still
+  PLAY        everything runs / stands still          x2  from the top (bar 1)
   HOME        back to the home page; on the home page: a new shape (on the next downbeat)
   FX          the fx page: press again for the next part, melody > bass > chords > drums > home
+  ENV         the notes page (attack, decay...): press again for the next part, melody > bass > chords > home
   EDIT        the sound page            GLO     the mix page        (press again: home)
-  ARP         auto-notes on / off       LFO     the slime on / off (key journey, the tank fills, bursts, reforms)
-  SEQ         the band on / off (drums, bass and chords)
-  SCL         next scale                OCT- / OCT+   the keyboard's octave
+  ARP         auto-notes on / off
+  LFO         the slime on / off (key journey, the tank fills, bursts, reforms)     x2  pin the key (it stops moving)
+  SEQ         the band on / off (drums, bass and chords)                            x2  the drums alone / the band back
+  SCL         next scale                                                            x2  the scale before
+  OCT- / OCT+ the keyboard's octave (both together: back to the middle)
+  REC         record a loop: it counts you in (clicks, "rec in 4 3 2 1"), you play, REC again and the loop closes at
+              the end of its bar (1, 2, 4 or 8 bars). On a playing loop, REC = overdub (play more into it), REC again
+              to stop. The loop is your notes, kept in the key: it moves with the key and the scale. x2  clear the loop
+  SAVE        save the song (stop first: writing the flash would cut the sound)     x2  load the song back
+              hold SAVE + turn PRESETS: pick the song, 1 to 3
+              The session also keeps itself: stopped for 3 s, it is written, and it comes back when you switch on
   MASTER      volume
 
 KNOBS                    KNOB 1     KNOB 2           KNOB 3     KNOB 4     SELECT        ALGORITHM     PRESETS
   HOME                   tempo      spin             rhythm     key        walls 3..12   space         melody sound
   FX (one part)          filter     drive (drums:    echo       space      character     amount        fx preset
                                     punch)
+  NOTES (ENV, one part)  attack     decay            sustain    release    which part    glide         note shape
   SOUND (EDIT)           melody     bass             chords     drum kit   note length   chord length  sound set
   MIX (GLO)              melody     bass             chords     drums      swing         echo time     room size
 
@@ -53,12 +63,17 @@ KNOBS                    KNOB 1     KNOB 2           KNOB 3     KNOB 4     SELEC
   character: chorus, phaser, flanger, crush, warm, fuzz, fold; amount turns its depth and its mix together
   fx presets: sound (the sound's own), dry, room, hall, dub echo, slapback, wide, tape, phase, jet, lofi, telephone,
               underwater, crunch
+  note shapes: the sound's own, pluck, keys, soft, pad, stab (a new sound brings its own back; an FM sound always
+              keeps its own: its operators are its envelope)
   sound sets: slime, glass, wood, chip, music box, fm, harp, retro, thumb, dx (the 6-operator FM sounds below)
   FM sounds (SH, on the 6-operator engine): tine (electric piano, melody or chords), bell, harp, FM bass. Written
               from Yamaha's own FM 101 recipes and Chowning's bell, not copied from any synth's factory bank
-  knobs: a slow turn moves one step (fine tuning), a fast turn sweeps (SLOOP's acceleration; off in SLOOP's menu)
+  knobs: a slow turn moves one step (fine tuning), a fast turn sweeps (SLOOP's acceleration)
+  drums: through the site's own drum bus: a light glue compressor, a little body, and the presence dip that keeps
+              them under the melody where ears are most sensitive (each kit's glue measured against the site's)
   speakers: SLOOP's limiter holds every peak at -5.2 dBFS whatever the knobs do (tested with all of them maxed)
   rhythms: pop rock disco bossa jazz samba conga march chip beep industrial, each with its own fills and feel
   scales: major minor pentatonic minor-pentatonic dorian mixolydian 19-note 31-note
   mix: each part from its measured level, down to off
-The LEDs show what is on and which page you are on; a key lights when the melody plays its note.
+The LEDs show what is on and which page you are on; a key lights when the melody plays its note; REC blinks for
+the count-in and the take, blinks fast while overdubbing, and stays lit while the loop plays.

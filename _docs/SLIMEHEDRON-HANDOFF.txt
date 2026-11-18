@@ -378,6 +378,12 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
       Rails: all knobs maxed on all parts -> peaks -5.21 dBFS, <= -16.4 LUFS, no build-up (sabotaged: limiter, runaway
       echo). SLOOP's echo loop gain tops out at 0.84 and the reverb's at 0.92 (fx.c), so neither can run away. The dx set
       costs screen time (~16 fps), never audio. One deadline miss at boot in every run, before any sound (not the FM).
+    FM-1 EVERY BUTTON + LOOP + SONGS + DRUM BUS (2026-11-18, later). ENV = notes page, REC = a loop of the hand's
+      notes (count-in, bar-aligned, overdub, follows the key), SAVE = 3 songs + a self-saving session (only when
+      stopped: a flash erase cuts the sound), double taps (PLAY top, LFO key pin, SEQ drums alone, SCL back, REC clear,
+      SAVE load). The site's drum bus (glue + body + presence dip) on the FM-1, each kit's glue within 1 dB of the
+      site's (measured in the browser). session.sh: a 2-minute STRICT session with every control + a power cycle:
+      0 late notes, 66% worst half, ~22 fps, the session (loop too) came back. Shrub is closed source: guide only.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

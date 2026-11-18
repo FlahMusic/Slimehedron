@@ -100,3 +100,15 @@ Our FM patches are written from documented technique, never copied banks (DX7 RO
   Six "Complex Systems" (BASS 2's ratio-1.01 modulator, HARP 1).
 - J. Chowning, "The Synthesis of Complex Audio Spectra by Means of Frequency Modulation", JAES 21(7), 1973 (bells, 1:1.4).
 - Knob acceleration: SLOOP 2.7 ui_input.c accel(), after JIANT FM by juanjiant-bit (github.com/juanjiant-bit/JIANT, GPL-3.0).
+
+## Shrub (2026-11-18)
+
+- Xfer's SHRUB (shrub.audio, guide 1.0 for firmware 1.13): (c) 2026 Xfer Inc., all rights reserved; no source, no repo
+  (searched GitHub and the press: synthtopia.com 2026-11-15, musicradar.com, matrixsynth.com). Its binary is not read.
+- From its guide: two wavetable oscillators with up to 8 unison voices each, one shared paraphonic filter, a 7-slot fx
+  rack (hyper/dimension, distortion, flanger, phaser, chorus, delay, compressor as single band or 3-band OTT, reverb,
+  EQ, filter), a CPU governor stealing voices smoothly, 1% steps on a slow turn and big jumps on a flick, REC from the
+  next bar with a 4-click count-in, auto-save a couple of seconds after editing stops, a ~3 ms fade on preset load.
+- The site's own drum glue, measured in the browser (drumComp.reduction, 4 bars at 120 bpm, each kit alone):
+  the most reduction pop 1.8, rock 4.2, disco 2.5, bossa 1.3, jazz 0.1, samba 1.9, conga 0.5, march 2.0, chip 0.9,
+  beep 0.2, industrial 3.1 dB; bus peaks -9.3 -6.2 -7.5 -10.1 -15.6 -9.3 -13.6 -9.1 -13.1 -15.7 -6.8 dBFS.

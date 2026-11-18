@@ -52,6 +52,12 @@ static biq k_shelf(void)
              2 * ((A - 1) - (A + 1) * c) / a0, ((A + 1) - (A - 1) * c - q) / a0, 0, 0, 0, 0};
     return f;
 }
+static biq bandpass(double f0, double q)   /* RBJ band-pass, 0 dB at the centre (WebAudio's 'bandpass') */
+{
+    double w = 2.0 * 3.14159265358979 * f0 / FS, al = sin(w) / (2.0 * q), a0 = 1.0 + al;
+    biq b = {al / a0, 0.0, -al / a0, -2.0 * cos(w) / a0, (1.0 - al) / a0, 0, 0, 0, 0};
+    return b;
+}
 static biq k_hp(void)
 {
     double w = 2.0 * M_PI * 38.13 / FS, c = cos(w), al = sin(w) / (2.0 * 0.5), a0 = 1 + al;
@@ -76,6 +82,27 @@ static double pitch_hz(const float *x, int n)
     if (!best) return 0;
     d = (ac[best - 1] - ac[best + 1]) / (2.0 * (ac[best - 1] - 2.0 * ac[best] + ac[best + 1]));
     return FS / (best + d);
+}
+
+
+/* SL_LOOPTEST=1 (song): a hand records a loop (slime.c sl_loop_*). REC at the 7th sixteenth of bar 3, five notes in
+ * the take at their own times, REC again late in the take's second bar: a 2-bar loop. The log (SL_HLOG) has the hands
+ * (H block cents), the loop closing (L bars bar_blocks notes) and what plays back (N block track note fine).
+ * SL_LOOPTEST=2: the same, and REC once more on the playing loop for one more note (an overdub) */
+static void loop_script(int mode)
+{
+    static int phase, k;
+    static uint32_t B, bb;
+    static const double AT[5] = {0.1, 0.37, 0.55, 1.25, 1.8}, C[5] = {0, 400, 700, 1200, 200};
+    uint32_t now = sl_clock;
+    if (phase == 0 && sl_stat.bars >= 3 && sl_step % 16u == 6u) { sl_loop_press(); phase = 1; }
+    else if (phase == 1 && sl_loop_state == SL_LOOP_REC) { B = sl_db[(sl_db_n - 1u) & 3u].block; bb = sl_db[(sl_db_n - 1u) & 3u].bar_blocks; phase = 2; }
+    else if (phase == 2) {
+        if (k < 5 && (int32_t)(now - (B + (uint32_t)(AT[k] * bb))) >= 0) { sl_hand(C[k], 100); k++; }
+        if ((int32_t)(now - (B + (uint32_t)(1.9 * bb))) >= 0) { sl_loop_press(); phase = 3; }
+    } else if (phase == 3 && mode == 2 && (int32_t)(now - (B + 5u * bb)) >= 0) { sl_loop_press(); phase = 4; }   /* dub on */
+    else if (phase == 4 && (int32_t)(now - (B + (uint32_t)(5.3 * bb))) >= 0) { sl_hand(900, 90); phase = 5; }
+    else if (phase == 5 && (int32_t)(now - (B + (uint32_t)(5.6 * bb))) >= 0) { sl_loop_press(); phase = 6; }   /* dub off */
 }
 
 int main(int argc, char **argv)
@@ -130,7 +157,7 @@ int main(int argc, char **argv)
         uint32_t i, k;
         preview_init(); preview_render();
         sl_drum_kit(argv[2]); song.g[G_DRLVL] = 100;
-        if (getenv("SL_DRY")) { song.g[G_DRREV] = 0; song.g[G_DRDLY] = 0; }   /* the hit alone, no room */
+        if (getenv("SL_DRY")) { song.g[G_DRREV] = 0; song.g[G_DRDLY] = 0; sl_drum_bus_on = 0; }   /* the hit alone, no room */
         drum_on((uint32_t)atoi(argv[3]), 110);
         for (i = 0; i < FS; i += CTL) { float *o = preview_render(); for (k = 0; k < CTL && i + k < FS; k++) buf[i + k] = o[2 * k] + o[2 * k + 1]; }
         fwrite(buf, sizeof buf, 1, stdout);
@@ -167,7 +194,7 @@ int main(int argc, char **argv)
         uint32_t frames = (uint32_t)((double)bars * 240.0 / bpm * FS) / CTL * CTL, i, k;
         sh_tank_settings s = sh_tank_defaults();
         FILE *f = fopen(argv[2], "wb");
-        double sum = 0, peak = 0, ksum = 0; clock_t t0; biq ks = k_shelf(), kh = k_hp();
+        double sum = 0, peak = 0, ksum = 0, psum = 0; clock_t t0; biq ks = k_shelf(), kh = k_hp(), p1 = bandpass(3960.0, 1.41), p2 = bandpass(3960.0, 1.41);
         if (!f) { perror(argv[2]); return 2; }
         s.scale = sh_scale_by_id(argv[4]); s.walls = atoi(argv[5]);
         if (!s.scale) { fprintf(stderr, "unknown scale\n"); return 2; }
@@ -210,15 +237,18 @@ int main(int argc, char **argv)
         }
         if (getenv("SL_TRIM")) trk[SL_TRK_MEL].p[P_ED_FX] = (int16_t)(trk[SL_TRK_MEL].p[P_ED_FX] + atoi(getenv("SL_TRIM")));
         if (getenv("SL_GAIN")) song.master_q12 = (uint32_t)atoi(getenv("SL_GAIN"));
+        if (getenv("SL_DRUMBUS")) sl_drum_bus_on = (uint8_t)atoi(getenv("SL_DRUMBUS"));   /* 0: the drums without the site's bus */
+        if (getenv("SL_GLUEMEAS")) sl_glue_scale = 1e6f;   /* the glue out of reach: the bus's own peak */
         slime_start(s, strtoull(argv[7], 0, 10), 60);
         wav_head(f, frames);
         t0 = clock();
         for (i = 0; i < frames; i += CTL) {
             float *o; int16_t pcm[CTL * 2];
+            if (getenv("SL_LOOPTEST")) loop_script(atoi(getenv("SL_LOOPTEST")));
             slime_schedule(SL_AHEAD_BLOCKS);      /* the conductor, ahead; then the audio side, as on the device */
             slime_play_block();
             o = preview_render();
-            for (k = 0; k < CTL; k++) { double m = biq_run(&kh, biq_run(&ks, (o[2 * k] + o[2 * k + 1]) * 0.5)); ksum += m * m; }
+            for (k = 0; k < CTL; k++) { double m = biq_run(&kh, biq_run(&ks, (o[2 * k] + o[2 * k + 1]) * 0.5)), q = biq_run(&p2, biq_run(&p1, (o[2 * k] + o[2 * k + 1]) * 0.5)); ksum += m * m; psum += q * q; }
             for (k = 0; k < CTL * 2; k++) { double v = o[k]; sum += v * v; if (fabs(v) > peak) peak = fabs(v); pcm[k] = (int16_t)(v * 32767.0f); }
             fwrite(pcm, sizeof pcm, 1, f);
         }
@@ -233,6 +263,7 @@ int main(int argc, char **argv)
                    (double)sl_stat.mel_notes / bars, sl_stat.late, sl_stat.worst_late_blocks * CTL * 1000.0 / FS, sl_stat.dropped,
                    10.0 * log10(sum / (frames * 2.0) + 1e-20), 20.0 * log10(peak + 1e-10), secs / (cpu > 0 ? cpu : 1e-9),
                    sizeof sl_tank, sh_goo_fill(&sl_tank.goo));
+            printf("glue_peak_db %.2f glue_worst_db %.2f pres_db %.2f\n", 20.0 * log10(sl_glue_peak / 32767.0 + 1e-12), sl_glue_worst, 10.0 * log10(psum / frames + 1e-20));
         }
         return 0;
     }

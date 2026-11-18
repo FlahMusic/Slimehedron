@@ -110,6 +110,44 @@ for cf in 6:-64 6:63 7:-64 7:63; do
 done
 r=$(stress SL_STRESS=6:0 SL_MELI=10 SL_BASSI=8 SL_COMPI=8); ok "${r%% *}" "[all at max, fuzz, the FM sounds] ${r#* }"
 
+# 10. the loop (REC, slime.c sl_loop_*): a hand's phrase recorded after the count-in comes back on every pass at its own
+#     time (within 3 blocks, 2.2 ms) and pitch, nothing else plays; an overdubbed note joins it; the count-in clicks only
+#     the beats still ahead (REC on the 7th sixteenth: two); the loop follows the key journey (its notes move with the key)
+L="$OUT/loop.log"
+SL_MEL=0 SL_LOOPTEST=1 SL_HLOG="$L" "$B" song "$OUT/lt.wav" 16 major 6 100 7 1 KALIMBA >/dev/null
+r=$(python3 "$HERE/host/loopcheck.py" "$L" 38.4 100); ok "${r%% *}" "[loop] ${r#* }"
+ok "$(t "$(grep -c '^C ' "$L") == 2")" "[loop] the count-in clicks the beats still ahead: $(grep -c '^C ' "$L") clicks (want 2)"
+SL_MEL=0 SL_LOOPTEST=2 SL_HLOG="$L" "$B" song "$OUT/lt.wav" 16 major 6 100 7 1 KALIMBA >/dev/null
+r=$(python3 "$HERE/host/loopcheck.py" "$L" 38.4 100 dub); ok "${r%% *}" "[loop, overdub] ${r#* }"
+SL_JOURNEY=1 SL_MEL=0 SL_LOOPTEST=1 SL_HLOG="$L" "$B" song "$OUT/lt.wav" 64 major 6 100 7 1 KALIMBA >/dev/null
+r=$(python3 - "$L" <<'EOF'
+import sys
+root, notes, moved = 60, {}, 0
+for ln in open(sys.argv[1]):
+    w = ln.split()
+    if w[0] == "B": root = int(w[3]); moved |= w[4] == "1"
+    elif w[0] == "N" and w[2] == "0": notes.setdefault(root, set()).add(int(w[3]) - root)
+rel = [sorted(v) for v in notes.values()]
+ok = moved and len(notes) >= 2 and all(r == rel[0] for r in rel)
+print(("1" if ok else "0") + f" keys {sorted(notes)}: the phrase above each key {rel}")
+EOF
+)
+ok "${r%% *}" "[loop, key journey] ${r#* }"
+
+# 11. the drum bus (slime.c sl_drum_bus, the site's initDrums): every kit's glue takes off what the site's does on its
+#     loudest hit (within 1 dB of the browser's measurement), the presence dip takes 5..10 dB out of 2.8-5.6 kHz, and
+#     the drums sit at least 6 dB under the melody there (the site's dev-mix 6b)
+SITE_GR="pop:1.8 rock:4.2 disco:2.5 bossa:1.3 jazz:0.1 samba:1.9 conga:0.5 march:2.0 chip:0.9 beep:0.2 industrial:3.1"
+mp=$(num "$(SL_ONLY=mel "$B" song "$OUT/g.wav" 16 major 6 100 7 1 KALIMBA)" pres_db)
+for kg in $SITE_GR; do
+  k=${kg%%:*}; want=${kg##*:}
+  L1="$(SL_KIT=$k SL_ONLY=drums "$B" song "$OUT/g.wav" 16 major 6 100 7 1 KALIMBA)"
+  p0=$(num "$(SL_KIT=$k SL_ONLY=drums SL_DRUMBUS=0 "$B" song "$OUT/g.wav" 16 major 6 100 7 1 KALIMBA)" pres_db)
+  gr=$(num "$L1" glue_worst_db); p1=$(num "$L1" pres_db)
+  ok "$(t "($gr + $want) <= 1 && ($gr + $want) >= -1 && $p0 - $p1 >= 5 && $p0 - $p1 <= 10 && $mp - $p1 >= 6")" \
+     "[$k drum bus] glue $gr dB (site -$want), presence $(awk "BEGIN{printf \"%.1f\", $p0 - $p1}") dB down, $(awk "BEGIN{printf \"%.1f\", $mp - $p1}") dB under the melody"
+done
+
 # 8. our FM patches (slime_fm6.py) play in key: the note's own fundamental is its strongest partial, low, middle and high
 #    (at Chowning's full index the bell's 0.4x difference tone was: out of key), and every degree sounds within 6 cents
 #    of its wall (the tine's and the bass's detuned pairs beat around the note on purpose, as Yamaha's recipes do)

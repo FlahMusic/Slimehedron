@@ -15,7 +15,10 @@ GOT="$(git -C "$SLOOP" rev-parse --short=7 HEAD)"
 OUT="${OUT:-$HOME/fm1w/out}"; HW="$OUT/sloop-host"
 mkdir -p "$OUT"; rm -rf "$HW"; mkdir -p "$HW"
 (cd "$SLOOP" && tar cf - --exclude=.git --exclude=./build --exclude=./assets/samples-cc0 .) | (cd "$HW" && tar xf -)
-python3 "$HERE/patch_sloop.py" "$HW" >/dev/null && python3 "$HERE/patch_kits.py" "$HW/tools" >/dev/null
+# (two lines, not "a && b": under set -e a failure on the left of && does not stop the script, and a broken
+#  patch_sloop.py once let the bench build quietly against an unpatched SLOOP, 2026-11-18)
+python3 "$HERE/patch_sloop.py" "$HW" >/dev/null
+python3 "$HERE/patch_kits.py" "$HW/tools" >/dev/null
 GEN="$HW/build/gen"; mkdir -p "$GEN"
 for p in tables:felucca_tables samples:felucca_samples drumkits:felucca_drumkits fm6_patches:felucca_fm6; do
   (cd "$HW" && python3 "tools/gen_${p%%:*}.py" "$GEN/${p##*:}.h" >/dev/null)

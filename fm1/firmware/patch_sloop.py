@@ -69,4 +69,21 @@ sub("firmware/src/eng_fm6.c", '    {"NYLON PICK", {0, 0, 0, 0, 0, 0, 0, 7}, {0, 
     '    {"SH BASS", {0, 0, 0, 0, 0, 0, 0, 9}, {0, 0, 127, 0}, 0, 1, FX(0, 0, 0, 10)},\n'
     '    {"SH HARP", {0, 0, 0, 0, 0, 0, 0, 10}, {0, 0, 127, 0}, 0, 0, FX(0, 10, 20, 40)},\n'
     '    {"SH BELL", {0, 0, 0, 0, 0, 0, 0, 11}, {0, 0, 127, 0}, 0, 0, FX(0, 10, 25, 60)},\n')
-print("patch_sloop: 16 changes applied")
+# SLOOP's own autosave of its working project would write the flash behind our back (it never knows we are playing:
+# its transport stays stopped); Slimehedron keeps its own session (slime_ui.c, SAVE)
+sub("firmware/src/main.c", "        autosave_tick();                                /* the working project into flash, when quiet */",
+    "        /* slimehedron: SLOOP's autosave_tick() is not called (slime_ui.c sl_session_tick keeps ours) */")
+# The drum bus (slime.c sl_drum_bus: the site's glue, body and presence dip) on the drum track's block, left / right
+# and the two sends, after its filter: the drum track always takes its buffered path for it
+NL = chr(10)
+sub("firmware/src/fx.c", "static void slime_hook(uint32_t n);                      /* slimehedron: slime.c */",
+    "static void slime_hook(uint32_t n);                      /* slimehedron: slime.c */" + NL +
+    "static void sl_drum_bus(int32_t *l, int32_t *r, int32_t *v, int32_t *d, uint32_t n);   /* slimehedron: slime.c */" + NL +
+    "static uint8_t sl_drum_bus_on;")
+sub("firmware/src/fx.c", "    if (flt || (n <= CTL && (TDRUM->p[P_ITYPE] | TDRUM->ins_run))) {   /* .. or its INSERT: left, right, the sends */",
+    "    if (flt || (n <= CTL && (TDRUM->p[P_ITYPE] | TDRUM->ins_run | sl_drum_bus_on))) {   /* .. or its INSERT, or the drum bus */")
+sub("firmware/src/fx.c", "            tflt_run(f, &fc, dd, n, 3);" + NL + "        }" + NL + "        for (i = 0; i < n; i++) {" + NL + "            mx->l[i] += dl[i];",
+    "            tflt_run(f, &fc, dd, n, 3);" + NL + "        }" + NL + "        if (sl_drum_bus_on)" + NL +
+    "            sl_drum_bus(dl, dr, dv, dd, n);   /* slimehedron */" + NL +
+    "        for (i = 0; i < n; i++) {" + NL + "            mx->l[i] += dl[i];")
+print("patch_sloop: 20 changes applied")

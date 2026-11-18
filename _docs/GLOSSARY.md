@@ -53,6 +53,11 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
   A **soft kit** (bossa, jazz) sits further under.
 - **Room**: the reverb (`makeRoomIR`): a 1.3 s room whose top dies first, 16 ms pre-delay. **Stage**: where a note sounds
   left to right, the side of its wall (up to +-0.4, low notes centred, the low end mono).
+- **Drum bus**: the drums' glue compressor, low-mid body and presence dip (the site's `initDrums`; on the FM-1
+  `sl_drum_bus`, each kit's glue measured against the site's).
+- **Loop** (FM-1): REC's take of a hand's notes, kept as places in the bar and cents above the key, so it follows the
+  key journey. Not a recording of audio (the FM-1 has 1 MB of flash). Not a **Seed**.
+- **Song / session** (FM-1): SAVE's three songs in flash; the session is written by itself when stopped.
 - **Triangle mixer**: `#triMix` (melody / drums / band). **Mixer**: studio's per-part volume/mute/solo (`MIX`).
 - **Beat lock**: balls are steered so their hits land on the grid (`beatLock`, `b.tq`).
 - **Auto adjuster**: gives each shape its own pace with auto-notes on (`AUTO`, `autoRoom`): a notes-a-bar aim from its

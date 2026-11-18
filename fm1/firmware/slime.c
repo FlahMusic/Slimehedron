@@ -17,6 +17,7 @@
 #include "tank.h"
 #include "band.h"
 double sin(double), floor(double);         /* libm (the toolchain's on the device; floatify makes them sinf, floorf) */
+float sinf(float), cosf(float), powf(float, float), log10f(float), expf(float);   /* (the drum bus: single precision already) */
 
 #ifndef SL_LOG
 #define SL_LOG(...) ((void)0)    /* the host bench logs the harmony and the melody (auto-check.sh) */
@@ -25,6 +26,7 @@ double sin(double), floor(double);         /* libm (the toolchain's on the devic
 #define SL_TRK_BASS 1u
 #define SL_TRK_COMP 2u
 #define SL_TRK_DRUM 0xFFu        /* a queued drum hit (drum_on), not a synth track */
+#define SL_TRK_CLICK 0xFEu       /* the count-in's click (SLOOP's metronome voice: to the speakers, never into the loop) */
 #define SL_NQ 64u                /* notes waiting for their moment, and notes waiting for their note-off */
 /* THE CONDUCTOR (2026-11-16). The tank and the band are simulated AHEAD of the audio clock, in the main loop, and queue
  * every note with its exact block; the audio interrupt only fires what is due. With the tank ticking inside the audio
@@ -240,6 +242,114 @@ static int sl_journey_bars(double bpm)
 }
 
 /* one band sixteenth: plan the bar on its 1, then play what falls on this step */
+/* THE LOOP (REC). The site's record button counts you in on the beat and starts the take on a bar's first beat; the
+ * FM-1 cannot keep audio (1 MB of flash), so its take is the NOTES a hand plays: each one's place in the bar (1/1536)
+ * and its pitch as cents above the key, so the loop follows the key journey and snaps into a new scale. A hand is never
+ * quantized: the notes keep their own timing. REC: count-in, take, REC again closes it at the end of its bar (1, 2, 4
+ * or 8 bars; 8 closes by itself); on a playing loop REC records more into it (overdub) until pressed again. */
+#define SL_LOOP_MAX 128u
+#define SL_LOOP_RES 1536u       /* a bar in 1536ths: 1.6 ms at 100 bpm (a hand keeps its own timing) */
+typedef struct { uint16_t pos; int16_t cents; uint8_t vel, pad; } sl_lev;
+static sl_lev sl_loop_ev[SL_LOOP_MAX];
+static volatile uint16_t sl_loop_n;
+static volatile uint8_t sl_loop_bars;       /* the loop's length in bars (0: none yet) */
+enum { SL_LOOP_OFF, SL_LOOP_ARMED, SL_LOOP_REC, SL_LOOP_PLAY };
+static volatile uint8_t sl_loop_state, sl_loop_dub;
+static volatile uint8_t sl_loop_countin;    /* the count-in's beats still to come (4 3 2 1, for the screen) */
+static uint8_t sl_loop_count, sl_loop_stop, sl_loop_rec_bars, sl_loop_at;   /* downbeats to the take; its length once asked; bars taken; the loop's bar now */
+static uint32_t sl_bar_block, sl_bar_blocks;    /* this bar's downbeat as it will sound (block), a bar's length (blocks) */
+/* each downbeat as it will SOUND and what the loop does from it: the hand (audio interrupt) reads the newest one that
+ * has begun, so a key pressed in the count-in is not taken and one pressed in the take lands in its own bar */
+typedef struct { uint32_t block, bar_blocks; uint16_t base; uint8_t rec, pad; } sl_dbeat;
+static sl_dbeat sl_db[4];
+static volatile uint32_t sl_db_n;
+static double sl_snap(double cents)          /* the nearest degree of the tank's scale (a loop kept through a new scale) */
+{
+    const sh_scale *sc = sl_tank.s.scale;
+    double oct = floor(cents / 1200.0), in = cents - oct * 1200.0, best = 0, bd = 1e9;
+    int d;
+    for (d = 0; sc && d <= sc->n; d++) {
+        double c = d == sc->n ? 1200.0 : (double)sc->cents[d], a = c > in ? c - in : in - c;
+        if (a < bd) { bd = a; best = c; }
+    }
+    return sc ? oct * 1200.0 + best : cents;
+}
+static void sl_loop_hand(double cents, int vel)   /* the audio interrupt: a hand's note, cents above the key */
+{
+    uint32_t i, now = sl_clock, nb = sl_db_n, len, p;
+    const sl_dbeat *b = 0;
+    for (i = 0; i < 4u && i < nb; i++) {
+        const sl_dbeat *c = &sl_db[(nb - 1u - i) & 3u];
+        if ((int32_t)(now - c->block) >= 0) { b = c; break; }
+    }
+    if (!b || !(b->rec || (sl_loop_dub && sl_loop_state == SL_LOOP_PLAY && sl_loop_bars)) || sl_loop_n >= SL_LOOP_MAX) return;
+    len = (sl_loop_bars ? sl_loop_bars : 8u) * SL_LOOP_RES;
+    p = b->base + (now - b->block) * SL_LOOP_RES / (b->bar_blocks ? b->bar_blocks : 1u);
+    sl_loop_ev[sl_loop_n].pos = (uint16_t)(p % len);
+    sl_loop_ev[sl_loop_n].cents = (int16_t)(cents < -32000 ? -32000 : cents > 32000 ? 32000 : cents);
+    sl_loop_ev[sl_loop_n].vel = (uint8_t)vel;
+    sl_loop_n++;
+}
+static void sl_hand(double cents, int vel)   /* a hand's note (cents above the key): now, and into the loop if it records */
+{
+    sl_play_now(SL_TRK_MEL, sl_root, cents, vel, sl_gate_blocks ? sl_gate_blocks : 151u);
+    sl_loop_hand(cents, vel);
+    SL_LOG("H %u %.0f\n", sl_clock, cents);
+}
+static void sl_loop_press(void)              /* REC (main loop, as the conductor) */
+{
+    if (sl_loop_state == SL_LOOP_OFF) {
+        uint32_t rem = (16u - sl_step % 16u) % 16u;        /* sixteenths to the next downbeat, as the conductor stands */
+        sl_loop_count = (uint8_t)(rem < 8u ? 2u : 1u);     /* (the site: under two beats away, take the bar after) */
+        sl_loop_state = SL_LOOP_ARMED;
+    } else if (sl_loop_state == SL_LOOP_ARMED) {
+        sl_loop_state = SL_LOOP_OFF; sl_loop_countin = 0;  /* changed my mind */
+    } else if (sl_loop_state == SL_LOOP_REC) {
+        uint32_t had = sl_loop_rec_bars + 1u;              /* the bar it is in counts */
+        sl_loop_stop = (uint8_t)(had <= 1u ? 1u : had <= 2u ? 2u : had <= 4u ? 4u : 8u);
+    } else sl_loop_dub = (uint8_t)!sl_loop_dub;
+}
+static void sl_loop_clear(void)
+{
+    sl_loop_state = SL_LOOP_OFF; sl_loop_dub = 0; sl_loop_bars = 0; sl_loop_stop = 0; sl_loop_countin = 0; sl_loop_n = 0;
+}
+static void sl_loop_downbeat(void)           /* the conductor, on each bar's first sixteenth */
+{
+    sl_dbeat d;
+    sl_bar_blocks = sl_ms_to_block(240000.0 / (double)song.g[G_BPM]);
+    sl_bar_block = sl_at(0.0);
+    if (sl_loop_state == SL_LOOP_ARMED) {
+        if (sl_loop_count && --sl_loop_count == 0) { sl_loop_state = SL_LOOP_REC; sl_loop_rec_bars = 0; sl_loop_n = 0; sl_loop_bars = 0; sl_loop_countin = 0; }
+    } else if (sl_loop_state == SL_LOOP_REC) {
+        sl_loop_rec_bars++;
+        if (sl_loop_rec_bars >= 8u || (sl_loop_stop && sl_loop_rec_bars >= sl_loop_stop)) {
+            if (!sl_loop_n) sl_loop_state = SL_LOOP_OFF;   /* nothing played: nothing to loop */
+            else { sl_loop_bars = sl_loop_rec_bars; sl_loop_state = SL_LOOP_PLAY; sl_loop_at = 0; SL_LOG("L %u %u %u\n", sl_loop_bars, sl_bar_blocks, sl_loop_n); }
+            sl_loop_stop = 0;
+        }
+    } else if (sl_loop_state == SL_LOOP_PLAY && sl_loop_bars) sl_loop_at = (uint8_t)((sl_loop_at + 1u) % sl_loop_bars);
+    d.block = sl_bar_block; d.bar_blocks = sl_bar_blocks; d.rec = sl_loop_state == SL_LOOP_REC; d.pad = 0;
+    d.base = (uint16_t)((sl_loop_state == SL_LOOP_REC ? sl_loop_rec_bars : sl_loop_at) * SL_LOOP_RES);
+    SL_LOCK(); sl_db[sl_db_n & 3u] = d; sl_db_n = sl_db_n + 1u; SL_UNLOCK();
+}
+static void sl_loop_step(uint32_t s)         /* the conductor, each sixteenth: the count-in's clicks, the loop's notes */
+{
+    if (sl_loop_state == SL_LOOP_ARMED && sl_loop_count == 1u && s % 4u == 0u) {
+        sl_ev e = {0};                                     /* a click to the speakers on each beat still ahead */
+        sl_loop_countin = (uint8_t)((16u - s) / 4u);
+        e.trk = SL_TRK_CLICK; e.note = (uint8_t)(sl_loop_countin == 1u); e.at = sl_at(0.0);
+        sl_queue(e);
+    }
+    if (sl_loop_state == SL_LOOP_PLAY && sl_loop_bars) {
+        uint32_t i, a = sl_loop_at * SL_LOOP_RES + s * (SL_LOOP_RES / 16u), b = a + SL_LOOP_RES / 16u;
+        for (i = 0; i < sl_loop_n; i++)
+            if (sl_loop_ev[i].pos >= a && sl_loop_ev[i].pos < b)
+                sl_play_at(SL_TRK_MEL, sl_root, sl_snap((double)sl_loop_ev[i].cents), sl_loop_ev[i].vel,
+                           sl_bar_block + (sl_loop_ev[i].pos - sl_loop_at * SL_LOOP_RES) * sl_bar_blocks / SL_LOOP_RES,
+                           sl_gate_blocks ? sl_gate_blocks : 151u);
+    }
+}
+
 static void sl_band_step(double step_ms)
 {
     uint32_t s = sl_step % 16u;
@@ -262,7 +372,9 @@ static void sl_band_step(double step_ms)
             sl_root = nr;
         }
         SL_LOG("B %u %d %d %d %d\n", sl_band.bar - 1u, sl_bar.chord, sl_root, sl_bar.key_moved, sl_band.kit);   /* (the key this bar plays in) */
+        sl_loop_downbeat();
     }
+    sl_loop_step(s);
     if (sl_drums_on)
         for (i = 0; i < sl_bar.nd; i++)
             if (sl_bar.drum[i].step == s) {
@@ -349,13 +461,14 @@ static void slime_play_block(void)
             sl_off_q[i].on = 0;
         }
     for (i = 0; i < SL_NQ; i++)
-        if (sl_on_q[i].on && (int32_t)(sl_clock - sl_on_q[i].at) >= 0 && (sl_on_q[i].trk == SL_TRK_DRUM || !sl_busy(sl_on_q[i].trk))) {
+        if (sl_on_q[i].on && (int32_t)(sl_clock - sl_on_q[i].at) >= 0 && (sl_on_q[i].trk >= SL_TRK_CLICK || !sl_busy(sl_on_q[i].trk))) {
             sl_ev e = sl_on_q[i], off;
             int32_t late = (int32_t)(sl_clock - e.at);
             if (late > 1) {     /* (one block, 0.73 ms, is the clock's own grain) */
                 sl_stat.late++; if (late > sl_stat.worst_late_blocks) sl_stat.worst_late_blocks = late; }
             sl_on_q[i].on = 0;
             if (e.trk == SL_TRK_DRUM) { drum_on(e.note, e.vel); sl_stat.drums_played++; SL_LOG("D %u %u\n", sl_clock, e.note); continue; }
+            if (e.trk == SL_TRK_CLICK) { click_on(e.note); SL_LOG("C %u %u\n", sl_clock, e.note); continue; }
             sl_note_on(e.trk, e.note, e.vel, e.fine);
             SL_LOG("N %u %u %u %d\n", sl_clock, e.trk, e.note, e.fine);
             off = e; off.at = sl_clock + e.hold;
@@ -376,11 +489,101 @@ static void slime_play_block(void)
  * aimed at ~8.5 LU under (bossa, jazz, the soft kits: ~10), and the bass in fader steps (~0.45 dB each).
  * Order: pop rock disco bossa jazz samba conga march chip beep industrial. Measured 2026-11-16: at 28 for all, jazz's
  * drums sat 16.4 under (barely there), march / chip 11.3, industrial 7.1; jazz's sparse bass 10.6 (the rule: <= 10). */
-static const uint8_t SL_KIT_DRLVL[11] = {28, 28, 26, 29, 92, 31, 31, 38, 39, 28, 24};   /* (2026-11-16, humanize on: jazz's feel took its drums to 14.7 under, bossa's to 11.1) */
+static const uint8_t SL_KIT_DRLVL[11] = {28, 28, 26, 28, 92, 31, 31, 38, 39, 28, 24};   /* (2026-11-16, humanize on: jazz's feel took its drums to 14.7 under, bossa's to 11.1;
+                                             * 2026-11-18, the drum bus: bossa 29 -> 28, 8.8 LU under, the soft kits' rule is 9) */
 static const int8_t SL_KIT_BASS[11] = {0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0};
 static int8_t sl_mix[4];                    /* the MIX page: each part against its measured level, in fader steps (~0.5 dB);
                                              * SL_MIX_OFF and below: that part off */
 #define SL_MIX_OFF (-40)
+/* THE DRUM BUS, as the site's (index.html initDrums): every kit through a light glue compressor (threshold -16 dB,
+ * 3.2:1, knee 8 dB, attack 4 ms, release 120 ms), a touch of body (+2.2 dB at 180 Hz, Q 0.7) and the presence dip
+ * (-8.5 dB at 3.8 kHz, Q 0.8: the drums under the melody where the ear is most sensitive, the site's research item 6).
+ * The site's threshold sits a fixed distance under each kit's own peak on its bus (measured 2026-11-18 in the browser:
+ * pop's bus peaks at -9.3 dBFS, so -16 is 6.7 dB under it; its compressor then takes 1.8 dB off the loudest hit, 0.2 dB
+ * at the median). Here each kit's threshold is that same distance under the kit's own peak on this bus (SL_GLUE_THR:
+ * measured with slimehost glue), and it follows the drums' fader, so the glue does the same work at any level.
+ * SLOOP's fx.c mix_drums calls it on the drum track's block (patch_sloop.py), left / right and the two sends. */
+typedef struct { float b0, b1, b2, a1, a2, z1[2], z2[2]; } sl_biq;
+static sl_biq sl_dbody, sl_dpres;
+static float sl_glue_gr;                     /* the gain reduction now (dB, <= 0) */
+static uint8_t sl_drum_bus_on = 1, sl_bus_init;
+static float sl_glue_peak, sl_glue_worst;    /* (slimehost: the bus's peak in, the deepest reduction) */
+static float sl_glue_scale = 1.0f;          /* (slimehost SL_GLUEMEAS: the threshold out of reach, to measure the peaks) */
+/* the threshold at G_DRLVL 100 (mix units; 32767 = 0 dBFS), by kit (pop rock disco bossa jazz samba conga march chip beep
+ * industrial): each kit's own peak on this bus at G_DRLVL 100 (slimehost SL_GLUEMEAS: +2.5 +1.9 +4.6 +4.0 -2.8 +4.8 -0.7
+ * +3.4 +2.8 -0.2 +2.8 dBFS), less the site's distance from its peak to -16 (-16 less the site's bus peaks: -9.3 -6.2
+ * -7.5 -10.1 -15.6 -9.3 -13.6 -9.1 -13.1 -15.7 -6.8 dBFS, measured in the browser 2026-11-18) */
+static const float SL_GLUE_THR[11] = {20111, 13196, 21011, 26178, 22565, 26178, 27200, 21774, 32504, 30827, 15665};
+/* (conga by that rule, 23011, took 1.5 dB off its loudest hit against the site's 0.5: its peak here is a different hit;
+ *  raised 1.45 dB, 3.2:1 takes 0.69 dB a dB over, to the site's reduction) */
+static void sl_peq(sl_biq *q, float f0, float gain_db, float Q)   /* RBJ cookbook peaking EQ */
+{
+    float A = powf(10.0f, gain_db / 40.0f), w = 2.0f * 3.14159265f * f0 / (float)FS, al = sinf(w) / (2.0f * Q), c = cosf(w), a0 = 1.0f + al / A;
+    q->b0 = (1.0f + al * A) / a0; q->b1 = -2.0f * c / a0; q->b2 = (1.0f - al * A) / a0; q->a1 = -2.0f * c / a0; q->a2 = (1.0f - al / A) / a0;
+    q->z1[0] = q->z1[1] = q->z2[0] = q->z2[1] = 0.0f;
+}
+static float sl_biq_run(sl_biq *q, int ch, float x)   /* transposed direct form II */
+{
+    float y = q->b0 * x + q->z1[ch];
+    q->z1[ch] = q->b1 * x - q->a1 * y + q->z2[ch];
+    q->z2[ch] = q->b2 * x - q->a2 * y;
+    return y;
+}
+/* dB in and out without libm in the audio path (libm's powf / log10f live in flash: on core 1, in fm1-emu STRICT, the
+ * bus with them took the audio interrupt's worst half from 60% to 73% of its deadline). log2 from the float's exponent
+ * and a quadratic on its mantissa (within 0.03 dB), 2^x from the exponent and a cubic (within 0.05 dB) */
+static float sl_log2(float x)
+{
+    union { float f; uint32_t u; } a;
+    float m;
+    int e;
+    a.f = x; e = (int)((a.u >> 23) & 255u) - 128; a.u = (a.u & 0x7FFFFFu) | 0x3F800000u; m = a.f;   /* (the quadratic is 1 + log2 m) */
+    return (float)e + (-0.34484843f * m + 2.02466578f) * m - 0.67487759f;
+}
+static float sl_exp2(float x)
+{
+    union { float f; uint32_t u; } a;
+    int i = (int)(x < 0.0f ? x - 1.0f : x);
+    float f = x - (float)i;
+    if (i < -126) return 0.0f;
+    a.u = (uint32_t)(i + 127) << 23;
+    return a.f * (1.0f + f * (0.69314718f + f * (0.24022651f + f * 0.05550411f)));
+}
+#define SL_DB2G(db) sl_exp2((db) * 0.16609640f)   /* 10^(dB/20) */
+static void sl_drum_bus(int32_t *l, int32_t *r, int32_t *v, int32_t *d, uint32_t n)
+{
+    static uint32_t cn;
+    static float ca, cr;                         /* the attack and release steps for a block of n (computed once) */
+    static const float GK = 8.0f, GS = 1.0f / 3.2f - 1.0f;   /* the knee (dB), the slope over it (3.2:1) */
+    float pk = 0.0f, over, want, g0, g1, step;
+    uint32_t i;
+    if (!sl_bus_init) { sl_bus_init = 1; sl_peq(&sl_dbody, 180.0f, 2.2f, 0.7f); sl_peq(&sl_dpres, 3800.0f, -8.5f, 0.8f); }
+    if (n != cn) { cn = n; ca = 1.0f - expf(-(float)n / (FS * 0.004f)); cr = 1.0f - expf(-(float)n / (FS * 0.120f)); }
+    for (i = 0; i < n; i++) {
+        float a = (float)(l[i] < 0 ? -l[i] : l[i]), b = (float)(r[i] < 0 ? -r[i] : r[i]);
+        if (a > pk) pk = a;
+        if (b > pk) pk = b;
+    }
+    if (pk > sl_glue_peak) sl_glue_peak = pk;
+    {   /* the static curve on this block's peak (a soft knee), then the attack / release on the reduction */
+        float thr = SL_GLUE_THR[sl_band.kit % 11] * sl_glue_scale * (float)song.g[G_DRLVL] / 100.0f;
+        over = pk > 1.0f && thr > 1.0f ? 6.02059991f * sl_log2(pk / thr) : -99.0f;
+        want = 2.0f * over < -GK ? 0.0f : 2.0f * over > GK ? GS * over : GS * (over + GK / 2.0f) * (over + GK / 2.0f) / (2.0f * GK);
+        g0 = SL_DB2G(sl_glue_gr);
+        sl_glue_gr += (want - sl_glue_gr) * (want < sl_glue_gr ? ca : cr);
+        if (sl_glue_gr < sl_glue_worst) sl_glue_worst = sl_glue_gr;
+        g1 = SL_DB2G(sl_glue_gr);
+        step = (g1 - g0) / (float)(n ? n : 1u);
+    }
+    for (i = 0; i < n; i++) {
+        float g = g0 + step * (float)(i + 1u);
+        l[i] = (int32_t)(sl_biq_run(&sl_dpres, 0, sl_biq_run(&sl_dbody, 0, (float)l[i])) * g);
+        r[i] = (int32_t)(sl_biq_run(&sl_dpres, 1, sl_biq_run(&sl_dbody, 1, (float)r[i])) * g);
+        v[i] = (int32_t)((float)v[i] * g);
+        d[i] = (int32_t)((float)d[i] * g);
+    }
+}
+
 static void slime_levels(void)
 {
     int k = sl_band.kit % 11, p;
@@ -567,6 +770,15 @@ static volatile uint8_t sl_kit_req = 0xFF, sl_scale_req = 0xFF;
 static volatile int8_t sl_root_req;         /* the key moved by hand: semitones */
 static volatile int8_t sl_octave;           /* OCT- / OCT+: the keyboard's octave, -2..2 */
 static volatile uint8_t sl_walls = 6, sl_space, sl_kit, sl_scale, sl_slime = 1, sl_auto = 1;
+static volatile uint8_t sl_pinned;          /* the key held where it is (the site's key pin): the slime stays, the journey stops */
+/* NOTES (the ENV page): a part's own envelope over its sound's (attack, decay, sustain, release, glide); 0: the sound's */
+static uint8_t sl_env_on[3], sl_env_v[3][5];
+static void sl_env_put(uint32_t part)
+{
+    static const uint8_t P[5] = {P_ATK, P_DEC, P_SUS, P_REL, P_GLIDE};
+    uint32_t i;
+    for (i = 0; i < 5u; i++) trk[part % 3u].p[P[i]] = sl_env_v[part % 3u][i];
+}
 static volatile int8_t sl_spin;
 static volatile uint32_t sl_lit_until[27];  /* key LEDs: fm1_ms until which key k glows (the melody rang its note) */
 static volatile uint32_t sl_beat_ms;        /* the band's last downbeat */
@@ -605,7 +817,7 @@ static void sl_key(uint32_t k)
         double c = d == sc->n ? 1200.0 : (double)sc->cents[d], a = c > in ? c - in : in - c;
         if (a < bd) { bd = a; best = c; }
     }
-    sl_play_now(SL_TRK_MEL, sl_root, oct * 1200.0 + best, 100, sl_gate_blocks ? sl_gate_blocks : 151u);
+    sl_hand(oct * 1200.0 + best, 100);
     sl_ball_req++;
     sl_lit_until[k] = fm1_ms + 140u;
 }
@@ -621,7 +833,7 @@ static void slime_hook(uint32_t n)
         slime_levels();
     }
     for (k = 0; k < 3u; k++)                               /* a part's new sound, once SLOOP's last fade is done */
-        if (sl_snd_req[k] != 0xFFu && !sl_busy(k)) { sl_part_sound(k, sl_snd_req[k]); sl_snd_req[k] = 0xFF; }
+        if (sl_snd_req[k] != 0xFFu && !sl_busy(k)) { sl_part_sound(k, sl_snd_req[k]); sl_snd_req[k] = 0xFF; if (sl_env_on[k]) sl_env_put(k); }
     keys = sl_key_req;
     if (keys) {
         sl_key_req &= ~keys;                               /* (we are the interrupt: the main loop only ORs bits in, irq off) */
@@ -667,7 +879,7 @@ static void slime_conduct(void)
     }
     if (sl_reform_req) { sl_reform_req = 0; sl_reform_at_bar = 1; }
     while (sl_ball_req) { sl_ball_req--; sh_tank_add_ball(&sl_tank); }
-    sl_band.journey = sl_slime ? sl_journey_bars((double)song.g[G_BPM]) : 0;
+    sl_band.journey = sl_slime && !sl_pinned ? sl_journey_bars((double)song.g[G_BPM]) : 0;
     sl_tank.s.spin = (double)sl_spin;
     sl_tank.s.auto_notes = sl_auto;
     if (!sl_run) return;

@@ -320,3 +320,40 @@ but powerful, merged dials, no wasted knobs; plenty of presets; the drums humani
 - **Device** (fm1-emu strict 160 s): default ~24 fps, audio 55% worst, 0 late notes; dx set (three FM6 parts) ~16 fps,
   60%, 0 late notes. SLOOP already splits voices onto core 1 (units_split). Not checked by a machine: how the FM
   sounds and the kits sound; the knob feel on the real panel.
+
+## Every button, the loop, songs, the drum bus (2026-11-18, later)
+
+- **Controls.** The three dead buttons now work: ENV (a NOTES page: attack, decay, sustain, release, glide per part; 6
+  note shapes; FM6 sounds keep their own), REC (the loop), SAVE (songs). Double taps (300 ms; a button with a second
+  job waits 300 ms for its first, PLAY acts at once): PLAY from the top, LFO pins the key (journey off, slime on: the
+  site's key lock), SEQ drums alone (the site's separate drums and band buttons), SCL the scale before, REC clears,
+  SAVE loads. OCT- + OCT+ together: octave 0. Hold SAVE + PRESETS: song 1..3.
+- **Loop** (slime.c `sl_loop_*`). The site's record button, minus audio (1 MB of flash): count-in clicks on the beats
+  still ahead (SLOOP's metronome voice, never in the loop; under two beats away, the bar after, as the site), the take
+  starts on a downbeat, REC closes it at the end of its bar, rounded to 1/2/4/8 (8 closes itself). Notes keep their
+  own time (1/1536 of a bar, 1.6 ms at 100 bpm) against the downbeat as it sounds (a ring of 4 downbeats the audio
+  interrupt reads), pitch as cents above the key, snapped into the scale at playback. check-host 10: 28/28 replays
+  within 2.2 ms and in tune, overdub 31/31, 2 count-in clicks, the phrase identical above both keys of a journey.
+  Sabotaged 3 ways (place in the bar dropped: 18/28; deaf to the key; a click every sixteenth: 10).
+- **Songs** (slime_ui.c). SLOOP's storage objects PROJECT0..2 (songs) and 3 (the session). A flash erase silences the
+  audio (felucca.c), so SAVE says "stop, then save" while running (SLOOP: STOP BEFORE SAVE), and the session is
+  written only when stopped, quiet, 3 s after the last press; read at power-on ("welcome back"). SLOOP's own
+  autosave_tick is no longer called (it would write its project behind ours).
+- **Drum bus** (slime.c `sl_drum_bus`, patch_sloop: fx.c mix_drums). The site's initDrums chain: glue (-16 dB, 3.2:1,
+  knee 8, 4 / 120 ms), +2.2 dB at 180 Hz, -8.5 dB at 3.8 kHz. The site's glue measured in the browser per kit
+  (drumComp.reduction: 0.1..4.2 dB at most, medians <= 1 dB); here each threshold is the site's distance under the
+  kit's own peak (conga calibrated to the site's reduction). check-host 11: every kit within 1 dB of the site's
+  reduction, the dip 5..10 dB out of 2.8-5.6 kHz, drums >= 6 dB under the melody there (dev-mix 6b). Bossa 29 -> 28
+  (8.8 LU under with the bus; soft kits want 9). libm in the bus (powf/log10f in flash, on core 1) took the interrupt's
+  worst half 60% -> 73% in STRICT: replaced by inline log2/exp2 (0.03 / 0.05 dB).
+- **session.sh**: a 2-minute session in fm1-emu STRICT (host/session.py: every button and encoder, the double taps, a
+  loop and an overdub, songs saved and loaded), a captioned screen per step, the audio as a WAV, then a power cycle on
+  the same flash. Result: 0 late notes, worst half 66%, ~22 fps; after the cycle the loop was back (state PLAY, 10
+  notes). The emulator's capture peaks at -11.2 dBFS whatever MASTER says (the bench's limiter sits at -5.2): its
+  level, not the mix's. Not checked by a machine: how it sounds; the double taps' feel on the real buttons.
+- **Shrub** (Xfer, shrub.audio): closed (c) Xfer, all rights reserved, no repository; nothing read but its guide. What
+  carries over is already here or now added: fine/flick knobs (SLOOP accel), a compressor in the chain (the drum
+  bus), REC that starts on the next bar with a count-in, autosave a few seconds after editing, quick preset fades
+  (SLOOP's own).
+- **Build trap found**: build-host.sh ran `patch_sloop.py && patch_kits.py` under `set -e`; a failure on the left of
+  `&&` does not stop sh, and a broken patch_sloop.py let the bench build against unpatched SLOOP. Two lines now.
