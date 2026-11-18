@@ -20,6 +20,24 @@ static void p3(const float M[9], double x, double y, double z, float *sx, float 
   *sx = MID + wx * f * ST_K; *sy = MID + wy * f * ST_K; *s = f * ST_K;
 }
 
+/* a polygon's edges (the horizontal ones never cross a row centre: left out) */
+static void poly_make(st_poly *p, const float *x, const float *y, int n, uint16_t col, float alpha) {
+  p->n = 0; p->ylo = 1e9f; p->yhi = -1e9f; p->col = col; p->k = (uint8_t)k32(alpha);
+  for (int i = 0; i < n && p->n < ST_PMAX; i++) { int j = (i + 1) % n; float x0 = x[i], y0 = y[i], x1 = x[j], y1 = y[j];
+    if (y0 == y1) continue;
+    if (y0 > y1) { float q = x0; x0 = x1; x1 = q; q = y0; y0 = y1; y1 = q; }
+    st_edge *e = &p->e[p->n++]; e->y0 = y0; e->y1 = y1; e->x0 = x0; e->sl = (x1 - x0) / (y1 - y0);
+    if (y0 < p->ylo) p->ylo = y0;
+    if (y1 > p->yhi) p->yhi = y1; }
+}
+/* a line w px wide, its constants for seg_row */
+static void seg_make(st_seg *s, float ax, float ay, float bx, float by, float w, uint16_t col, float alpha) {
+  float dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, wi = w - 1.0f; if (L2 < 1e-6f) L2 = 1e-6f;
+  s->ax = ax; s->ay = ay; s->dx = dx; s->dy = dy; s->iL2 = 1.0f / L2; s->idy = (dy > 1e-3f || dy < -1e-3f) ? 1.0f / dy : 0.0f;
+  s->ylo = (ay < by ? ay : by) - w; s->yhi = (ay < by ? by : ay) + w;
+  s->w = w; s->w2 = w * w; s->wi2 = wi > 0.0f ? wi * wi : -1.0f; s->alpha = alpha; s->col = col; s->k = (uint8_t)k32(alpha);
+}
+
 void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0, const float *ballHue) {
   int td = t->s.scale->n * t->s.octs; float s;
   v->n = t->n; v->pymin = 1e9f; v->pymax = -1e9f;
@@ -69,39 +87,88 @@ void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0,
   }
   v->goo = pastel(0.42f, 0.42f, 0.86f);    /* mint, a shade darker than the page (look question 6) */
   v->pane = pastel(0.72f, 0.17f, 0.99f);   /* the lilac back glass */
+  /* once a frame: the polygons' edges and the lines' constants (st_seg, st_poly) */
+  poly_make(&v->back, v->bx, v->by, v->n, v->pane, 0.25f);
+  v->nside = 0;
+  for (int i = 0; i < v->n; i++) { int j = (i + 1) % v->n;
+    float qx[4] = { v->fx[i], v->fx[j], v->bx[j], v->bx[i] }, qy[4] = { v->fy[i], v->fy[j], v->by[j], v->by[i] };
+    if (v->open[i]) { v->side[i].n = 0; v->side[i].ylo = 1e9f; v->side[i].yhi = -1e9f; continue; }
+    poly_make(&v->side[i], qx, qy, 4, v->wc[i], 0.16f + 0.3f * v->lit[i]); }
+  v->nside = v->n;
+  for (int h = 0; h < 2; h++) {   /* a hole: its rim (the outline grown 1.3 px), then its inside (shrunk 1.3 px) */
+    v->hole[h][0].n = v->hole[h][1].n = 0; v->hole[h][0].ylo = v->hole[h][1].ylo = 1e9f; v->hole[h][0].yhi = v->hole[h][1].yhi = -1e9f;
+    if (!v->hn[h]) continue;
+    float cx = 0, cy = 0, rs = 0, ox[ST_HOLE], oy[ST_HOLE], ix[ST_HOLE], iy[ST_HOLE];
+    for (int k = 0; k < ST_HOLE; k++) { cx += v->hx[h][k]; cy += v->hy[h][k]; }
+    cx /= ST_HOLE; cy /= ST_HOLE;
+    for (int k = 0; k < ST_HOLE; k++) rs += sqrtf((v->hx[h][k] - cx) * (v->hx[h][k] - cx) + (v->hy[h][k] - cy) * (v->hy[h][k] - cy));
+    rs = rs / ST_HOLE; if (rs < 2.0f) rs = 2.0f;
+    for (int k = 0; k < ST_HOLE; k++) { float go = 1.0f + 1.3f / rs, gi = 1.0f - 1.3f / rs;
+      ox[k] = cx + (v->hx[h][k] - cx) * go; oy[k] = cy + (v->hy[h][k] - cy) * go;
+      ix[k] = cx + (v->hx[h][k] - cx) * gi; iy[k] = cy + (v->hy[h][k] - cy) * gi; }
+    poly_make(&v->hole[h][0], ox, oy, ST_HOLE, v->hrim[h], 0.9f);
+    poly_make(&v->hole[h][1], ix, iy, ST_HOLE, v->hdeep[h], 0.85f);
+  }
+  v->nunder = v->nover = 0;
+  for (int i = 0; i < v->n; i++) seg_make(&v->under[v->nunder++], v->fx[i], v->fy[i], v->bx[i], v->by[i], 1.0f, 0xFFFF, 0.55f);   /* rails */
+  for (int i = 0; i < v->n; i++) { int j = (i + 1) % v->n; if (v->open[i]) continue;
+    seg_make(&v->under[v->nunder++], v->bx[i], v->by[i], v->bx[j], v->by[j], 1.1f, v->wc[i], 0.7f);                       /* back edges */
+    seg_make(&v->over[v->nover++], v->fx[i], v->fy[i], v->fx[j], v->fy[j], 1.4f, v->wc[i], 0.9f); }                         /* the front rim */
 }
 
-/* a disc's pixels on one row: the body (the rest of the arguments) paints each pixel px (ddx: its offset from the centre) */
+/* a polygon's inside on row yc, columns xlo..xhi, even-odd */
+static void poly_row(const st_poly *p, float yc, uint16_t *row, int xlo, int xhi) {
+  if (yc < p->ylo || yc >= p->yhi) return;
+  float xs[ST_PMAX]; int nx = 0;
+  for (int i = 0; i < p->n; i++) { const st_edge *e = &p->e[i]; if (yc >= e->y0 && yc < e->y1) xs[nx++] = e->x0 + (yc - e->y0) * e->sl; }
+  for (int a = 1; a < nx; a++) { float kk = xs[a]; int b = a - 1; while (b >= 0 && xs[b] > kk) { xs[b + 1] = xs[b]; b--; } xs[b + 1] = kk; }
+  for (int a = 0; a + 1 < nx; a += 2) { int x0 = (int)ceilf(xs[a] - 0.5f), x1 = (int)floorf(xs[a + 1] - 0.5f);
+    x0 = x0 < xlo ? xlo : x0; x1 = x1 > xhi ? xhi : x1;
+    for (int px = x0; px <= x1; px++) row[px] = blend565(row[px], p->col, p->k); }
+}
+/* the pixels on row yc within w of a line, columns xlo..xhi, the last pixel feathered (paint.h's paint_seg_row, its
+ * constants from st_seg) */
+static void seg_row(const st_seg *s, float yc, uint16_t *row, int xlo, int xhi) {
+  if (yc < s->ylo || yc > s->yhi) return;
+  float tl = 0.0f, th = 1.0f;
+  if (s->idy != 0.0f) { float t0 = (yc - s->w - s->ay) * s->idy, t1 = (yc + s->w - s->ay) * s->idy; if (t0 > t1) { float q = t0; t0 = t1; t1 = q; }
+    tl = t0 > 0.0f ? t0 : 0.0f; th = t1 < 1.0f ? t1 : 1.0f; if (tl > th) return; }
+  float xa = s->ax + s->dx * tl, xb = s->ax + s->dx * th, lo = xa < xb ? xa : xb, hi = xa < xb ? xb : xa;
+  int x0 = (int)(lo - s->w), x1 = (int)(hi + s->w) + 1;
+  x0 = x0 < xlo ? xlo : x0; x1 = x1 > xhi ? xhi : x1;
+  for (int px = x0; px <= x1; px++) { float cx = px + 0.5f, t = ((cx - s->ax) * s->dx + (yc - s->ay) * s->dy) * s->iL2; t = t < 0 ? 0 : t > 1 ? 1 : t;
+    float qx = s->ax + s->dx * t - cx, qy = s->ay + s->dy * t - yc, d2 = qx * qx + qy * qy;
+    if (d2 < s->w2) row[px] = blend565(row[px], s->col, d2 < s->wi2 ? s->k : k32(s->alpha * (s->w - sqrtf(d2)))); }
+}
+
+/* a disc's pixels on one row, columns xlo..xhi: the body paints each pixel px (ddx: its offset from the centre) */
 #define DISC_ROW(cx, cy, rad, yc, ...) do { float dy_ = (yc) - (cy), R_ = (rad); if (dy_ * dy_ < R_ * R_) { \
     float hw_ = sqrtf(R_ * R_ - dy_ * dy_); int x0_ = (int)ceilf((cx) - hw_ - 0.5f), x1_ = (int)floorf((cx) + hw_ - 0.5f); \
-    x0_ = x0_ < 0 ? 0 : x0_; x1_ = x1_ >= SH_SCREEN ? SH_SCREEN - 1 : x1_; \
+    x0_ = x0_ < xlo ? xlo : x0_; x1_ = x1_ > xhi ? xhi : x1_; \
     for (int px = x0_; px <= x1_; px++) { float ddx = px + 0.5f - (cx); (void)ddx; __VA_ARGS__ } } } while (0)
 
-void st_draw_band(const st_view *v, int y0, int rows, uint16_t *buf, uint16_t bg) {
-  static int dl[SH_GOO_MAXD]; int nd = 0;   /* the drops that reach this band */
-  for (int k = 0; k < v->nd; k++) if (v->dy[k] + v->dr[k] >= (float)y0 && v->dy[k] - v->dr[k] <= (float)(y0 + rows)) dl[nd++] = k;
+void st_draw_band(const st_view *v, int y0, int rows, uint16_t *buf, uint16_t bg, int xlo, int xhi) {
+  static int dl[SH_GOO_MAXD]; int nd = 0;   /* the drops that reach this band (and these columns) */
+  if (xlo < 0) xlo = 0;
+  if (xhi > SH_SCREEN - 1) xhi = SH_SCREEN - 1;
+  for (int k = 0; k < v->nd; k++) if (v->dy[k] + v->dr[k] >= (float)y0 && v->dy[k] - v->dr[k] <= (float)(y0 + rows) &&
+                                      v->dx[k] + v->dr[k] >= (float)xlo && v->dx[k] - v->dr[k] <= (float)(xhi + 1)) dl[nd++] = k;
   const uint16_t shade = rgb565(0.24f, 0.14f, 0.43f), white = 0xFFFF;
   for (int r = 0; r < rows; r++) {
     uint16_t *row = buf + r * SH_SCREEN; float yc = (float)(y0 + r) + 0.5f;
-    for (int x = 0; x < SH_SCREEN; x++) row[x] = bg;
+    for (int x = xlo; x <= xhi; x++) row[x] = bg;
     if (yc < v->pymin - 3 || yc > v->pymax + 3) continue;   /* nothing of the box on this row */
-    paint_poly_row(v->bx, v->by, v->n, yc, row, v->pane, 0.25f);                                  /* the back pane */
+    poly_row(&v->back, yc, row, xlo, xhi);                                                               /* the back pane */
     for (int i = 0; i < v->nb; i++) DISC_ROW(v->sx[i], v->sy[i], v->sr[i], yc, row[px] = blend565(row[px], shade, 5u););
-    for (int i = 0; i < v->n; i++) { int j = (i + 1) % v->n; if (v->open[i] || yc < v->wy0[i] || yc > v->wy1[i]) continue;   /* the side walls, glass */
-      float qx[4] = { v->fx[i], v->fx[j], v->bx[j], v->bx[i] }, qy[4] = { v->fy[i], v->fy[j], v->by[j], v->by[i] };
-      paint_poly_row(qx, qy, 4, yc, row, v->wc[i], 0.16f + 0.3f * v->lit[i]); }
-    for (int i = 0; i < v->n; i++) paint_seg_row(v->fx[i], v->fy[i], v->bx[i], v->by[i], 1.0f, yc, row, white, 0.55f);   /* rails */
-    for (int i = 0; i < v->n; i++) { int j = (i + 1) % v->n; if (!v->open[i]) paint_seg_row(v->bx[i], v->by[i], v->bx[j], v->by[j], 1.1f, yc, row, v->wc[i], 0.7f); }
-    for (int h = 0; h < 2; h++) if (v->hn[h] && yc >= v->hy0[h] && yc <= v->hy1[h]) {              /* the wormholes, on the walls */
-      paint_poly_row(v->hx[h], v->hy[h], v->hn[h], yc, row, v->hdeep[h], 0.85f);
-      for (int k = 0; k < v->hn[h]; k++) { int j = (k + 1) % v->hn[h]; paint_seg_row(v->hx[h][k], v->hy[h][k], v->hx[h][j], v->hy[h][j], 1.2f, yc, row, v->hrim[h], 0.9f); } }
+    for (int i = 0; i < v->nside; i++) poly_row(&v->side[i], yc, row, xlo, xhi);                         /* the side walls, glass */
+    for (int i = 0; i < v->nunder; i++) seg_row(&v->under[i], yc, row, xlo, xhi);                        /* rails, back edges */
+    for (int h = 0; h < 2; h++) if (v->hn[h]) { poly_row(&v->hole[h][0], yc, row, xlo, xhi); poly_row(&v->hole[h][1], yc, row, xlo, xhi); }   /* wormholes */
     for (int q = 0; q < nd; q++) { int k = dl[q]; uint32_t ka = v->dpool[k] ? 29u : 19u;           /* the goo, then its spray */
       DISC_ROW(v->dx[k], v->dy[k], v->dr[k], yc, row[px] = blend565(row[px], v->goo, ka);); }
     for (int o = 0; o < v->nb; o++) { int i = v->order[o]; float R = v->r[i]; uint32_t kz = k32(1.0f - 0.3f * v->z[i]);   /* balls, far first */
       float il = 0.55f / (R * R * 1.6f), hy = (yc - v->y[i]) + R * 0.4f, hy2 = hy * hy;
       DISC_ROW(v->x[i], v->y[i], R, yc, { float hx = ddx + R * 0.35f, l = 0.55f - (hx * hx + hy2) * il;
         row[px] = blend565(row[px], l > 0 ? blend565(v->bc[i], white, k32(l)) : v->bc[i], kz); }); }
-    for (int i = 0; i < v->n; i++) { int j = (i + 1) % v->n; if (!v->open[i])                      /* the front rim on top */
-      paint_seg_row(v->fx[i], v->fy[i], v->fx[j], v->fy[j], 1.4f, yc, row, v->wc[i], 0.9f); }
+    for (int i = 0; i < v->nover; i++) seg_row(&v->over[i], yc, row, xlo, xhi);                          /* the front rim on top */
   }
 }

@@ -32,15 +32,19 @@ PLAYING IT
 At power-on the slime guy drops in with a little jingle (any button skips it), then the tank waits: nothing plays
 until PLAY (it blinks; the screen says "press play"). Set it up first if you like: sounds, tempo, walls, portals, the
 fx. A new shape shows at once while stopped; the keys play their notes too.
-Five pages. The top line says where you are and what you just changed; the bottom line names the four knobs.
+Seven pages. The top line says where you are and what you just changed; the bottom line names the four knobs.
 
 BUTTONS (the same on every page; "x2" = a double tap, two presses quickly)
-  keys        play their note now (in the scale) and throw a ball into the tank
+  keys        play their note now (in the scale) and throw a ball into the tank; what you play steers the band's chord
+              (the chord of your last notes, held while you play; a progression you entered keeps its own).
+              In the 19- and 31-note scales each key is the next step of the tuning (every microtone under a finger)
   PLAY        everything runs / stands still          x2  from the top (bar 1)
   HOME        back to the home page; on the home page: a new shape (on the next downbeat)
   FX          the fx page: press again for the next part, melody > bass > chords > drums > home
   ENV         the notes page (attack, decay...): press again for the next part, melody > bass > chords > home
-  EDIT        the sound page            GLO     the mix page        (press again: home)
+  EDIT        the sound page                                                        x2  CHORDS (your progression)
+  GLO         the mix page                                                          x2  DRUMS (your pattern)
+              (either again: home)
   ARP         auto-notes on / off
   LFO         the slime on / off (key journey, the tank fills, bursts, reforms)     x2  pin the key (it stops moving)
   SEQ         the band on / off (drums, bass and chords)                            x2  the drums alone / the band back
@@ -61,6 +65,19 @@ KNOBS                    KNOB 1     KNOB 2           KNOB 3     KNOB 4     SELEC
   NOTES (ENV, one part)  attack     decay            sustain    release    which part    glide         note shape
   SOUND (EDIT)           melody     bass             chords     drum kit   note length   chord length  sound set
   MIX (GLO)              melody     bass             chords     drums      swing         delay time    reverb size
+  CHORDS (EDIT x2)       root       chord type       bars       how many   which chord   all up/down   famous ones
+  DRUMS (GLO x2)         lane       fill             shift      mine/its   lane          feel          from rhythm/clear
+
+  CHORDS: up to 8 chords that the band plays in a loop instead of its own (how many = 0 gives it back to the slime).
+              A key sets the chord picked to its note and moves on to the next: play the roots to enter a progression.
+              Chord types: major, min, 7, maj7, min7, dim, aug, sus2, sus4, 6, min6, min7b5, dim7, 9, maj9, min9, 7sus4,
+              add9. PRESETS deals the site's 20 famous progressions (ii-V-I, autumn leaves, royal road, lofi loop...)
+              in your key
+  DRUMS: your own pattern, played by the rhythm's drummer (its accents and feel; no fills). The 16 white keys are the
+              16 steps (press to switch one on or off), a black key picks the lane: kick, snare, hat, open hat, rim,
+              conga, tom, ride. The key lights show the lane, the step playing blinks. Fill: the lane on every 16th, 8th,
+              3rd, beat or half bar, or empty. Shift moves the lane a 16th. PRESETS: right copies the rhythm's own bar
+              to start from, left clears it. Feel: the drummer's, or exact
 
   filter: left is low-pass, right is high-pass, the middle is open (it stops there on the way through)
   character: chorus, phaser, flanger, crush, warm, fuzz, fold; amount turns its depth and its mix together
@@ -82,5 +99,13 @@ KNOBS                    KNOB 1     KNOB 2           KNOB 3     KNOB 4     SELEC
   rhythms: pop rock disco bossa jazz samba conga march chip beep industrial, each with its own fills and feel
   scales: major minor pentatonic minor-pentatonic dorian mixolydian 19-note 31-note
   mix: each part from its measured level, down to off
+MIDI (the jack in, USB in and out)
+  in:  any channel plays like the keys (in the scale, a ball, the loop, the chords); channel 10 plays the drum kit.
+       CC 1 / 74 the melody's filter, CC 7 its level, CC 73 / 75 / 72 its attack / decay / release, CC 120 / 123
+       stop everything. A MIDI clock sets the tempo; START plays from the top, STOP stops, CONTINUE plays
+  out (USB): the melody on channel 1, bass 2, chords 3, drums 10 (GM notes), your keys too, the clock and START /
+       STOP (not while a clock comes in). Notes that came in are not sent back out. In the 19- and 31-note scales
+       each note goes out with its own pitch bend (+-2 semitones, as GM): the melody round channels 11-16, the
+       chords round 4-9, the bass on 2. Set those channels to one sound on the synth that receives them
 The LEDs show what is on and which page you are on; a key lights when the melody plays its note; REC blinks for
 the count-in and the take, blinks fast while overdubbing, and stays lit while the loop plays.

@@ -172,5 +172,15 @@ done
 w=$(SL_NOFINE=1 "$B" pitch edo31 1 KALIMBA | tail -1 | awk '{print $2}')
 ok "$(t "$w > 40 || $w < -40")" "the pitch check can tell: without the fine pitch 31-EDO is $w cents out"
 
+# 12. a hand steers the chords (the site's noteManual / manualRoot): F A C on every beat of bars 4..11 -> the band on IV
+#     for bars 5..12, the auto chords after; over a progression (ii-V-I) the hand only jams: the progression keeps going
+SL_HANDTEST=1 SL_HLOG="$OUT/hand.log" "$B" song "$OUT/hand.wav" 20 major 6 100 7 1 KALIMBA > /dev/null
+set -- $(awk '$1=="B"{b=$2; c=$3; if (b>=5 && b<=12) {n++; if (c==3) iv++} if (b>=14 && c!=3) after++} END{print n+0, iv+0, after+0}' "$OUT/hand.log")
+ok "$(t "$1 == 8 && $2 == 8 && $3 > 0")" "[hand] F A C played: the band on IV for $2 of $1 bars, then moves on ($3 bars off IV after)"
+SL_HANDTEST=2 SL_HLOG="$OUT/hand2.log" "$B" song "$OUT/hand2.wav" 20 major 6 100 7 1 KALIMBA > /dev/null
+seq2=$(awk '$1=="B" && $2>=4 && $2<=11 {printf "%s", $3}' "$OUT/hand2.log")
+case "140014001400" in *"$seq2"*) r=$([ ${#seq2} = 8 ] && echo 1 || echo 0) ;; *) r=0 ;; esac
+ok "$r" "[hand over a progression] ii V I I, a chord a bar, whatever the hand plays (degrees $seq2)"
+
 echo
 [ "$FAILS" = 0 ] && echo "fm1 bridge: clean" || { echo "$FAILS FAILURE(S)"; exit 1; }

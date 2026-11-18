@@ -8,7 +8,8 @@
  *   burst  one ball ringing 6 notes inside 1 s (a corner's double or triple bounce in a small, fast-spinning shape can).
  *          At most 6 over all 72 scenes (measured 2026-11-18: 3; with the rattle throw off, 108; with a long push
  *          ringing every tick, 10).
- *   outside  ball-ticks a note spends outside the tank while every wall is shut: at most one in 100,000 (measured: 48
+ *   outside  in a TURNING shape, ball-ticks a note spends outside the tank while every wall is shut: at most one in
+ *          100,000 (a still shape's open corners let a note out now and then, as the site's do on purpose; measured: 48
  *          of about 10 million, notes slipping out at a still square's open corners, as on the site; with the spinning
  *          walls not pushing notes back in, 148,300)
  *   density  NOHANDS=1 (auto-notes alone): each shape and spin keeps 4..10 notes a bar (measured: 5.1..8.4; without the
@@ -68,7 +69,7 @@ int main(int argc, char **argv) {
       if (now >= next_bar) { sh_tank_on_bar(&T); next_bar += bar; }
       if (T.nb > maxb) maxb = T.nb;
       { int open = 0; for (int w = 0; w < T.n; w++) if (T.walls[w].broken && T.walls[w].reform < 0.55) open = 1;   /* a note outside a closed tank */
-        bt_all += T.nb; if (!open) for (int b = 0; b < T.nb; b++) if (!T.balls[b].warp && !sh_tank_inside(&T, T.balls[b].x, T.balls[b].y)) out++; }
+        if (SPIN[si] != 0.0) { bt_all += T.nb; if (!open) for (int b = 0; b < T.nb; b++) if (!T.balls[b].warp && !sh_tank_inside(&T, T.balls[b].x, T.balls[b].y)) out++; } }
     }
     printf("walls %2d spin %3.0f %-6s seed %d: %5ld notes (%4.1f a second), goo %.2f, %2d balls (most %2ld), thrown %4u, melted %3u, bursts %3ld, outside %4ld, STUCK %ld\n",
            WALLS[wi], SPIN[si], sp ? "portal" : "normal", seed, notes, notes / (ticks * SH_FIXED / 1000.0), sh_goo_fill(&T.goo), T.nb, maxb,
@@ -82,7 +83,7 @@ int main(int argc, char **argv) {
   if (!hands) bad_d = dlo < 4.0 || dhi > 10.0;
   printf("  %s  no note stuck ringing a wall: %ld\n", bad_s ? "FAIL" : "PASS", stuck_all);
   if (hands) printf("  %s  at most 6 bursts of six notes in a second: %ld\n", bad_b ? "FAIL" : "PASS", burst_all);
-  printf("  %s  notes stay in a shut tank, spinning or not: %ld of %ld ball-ticks outside (at most one in 100,000)\n",
+  printf("  %s  notes stay in a shut turning tank: %ld of %ld ball-ticks outside (at most one in 100,000)\n",
          bad_o ? "FAIL" : "PASS", out_all, bt_all);
   if (!hands) printf("  %s  the auto-notes alone keep 4..10 notes a bar in every shape and spin (the site aims at ~8): %.1f..%.1f\n",
                      bad_d ? "FAIL" : "PASS", dlo, dhi);

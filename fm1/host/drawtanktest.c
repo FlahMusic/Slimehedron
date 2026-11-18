@@ -40,9 +40,9 @@ int main(int argc, char **argv) {
     float M[9]; st_tumble(turns[f][0], turns[f][1], M);
     clock_t c0 = clock(); int reps = 40;
     for (int k = 0; k < reps; k++) { st_view_prepare(&V, &T, M, 0.0f, bh);
-      for (int y = 0; y < SH_SCREEN; y += SH_BAND) { st_draw_band(&V, y, SH_BAND, BAND, bg); memcpy(FRAME + y * SH_SCREEN, BAND, sizeof BAND); } }
+      for (int y = 0; y < SH_SCREEN; y += SH_BAND) { st_draw_band(&V, y, SH_BAND, BAND, bg, 0, SH_SCREEN - 1); memcpy(FRAME + y * SH_SCREEN, BAND, sizeof BAND); } }
     double ms = 1000.0 * (clock() - c0) / CLOCKS_PER_SEC / reps;
-    st_draw_band(&V, 0, SH_SCREEN, WHOLE, bg);
+    st_draw_band(&V, 0, SH_SCREEN, WHOLE, bg, 0, SH_SCREEN - 1);
     char m[200];
     snprintf(m, sizeof m, "turn %d: drawn in 16-row bands, the frame is the same as drawn whole (%.3f ms a frame on this pc)", f, ms);
     ok(!memcmp(FRAME, WHOLE, sizeof FRAME), m);
@@ -92,10 +92,10 @@ int main(int argc, char **argv) {
     long i = 0; for (; i < 600; i++) sh_tank_tick(&T, i * SH_FIXED, 80.0, 1);
     for (; ; i++) { double b = i * SH_FIXED / 60000.0 * 80.0; if (b - floor(b) > 0.7) break; sh_tank_tick(&T, i * SH_FIXED, 80.0, 1); }   /* at rest */
     float M[9]; st_tumble(0.5f, 0.3f, M); st_view_prepare(&V, &T, M, 0.0f, bh);
-    st_draw_band(&V, 0, SH_SCREEN, WHOLE, bg);
+    st_draw_band(&V, 0, SH_SCREEN, WHOLE, bg, 0, SH_SCREEN - 1);
     int hn[2] = { V.hn[0], V.hn[1] }; float cx[2] = { 0, 0 }, cy[2] = { 0, 0 };
     for (int h = 0; h < 2; h++) { for (int k = 0; k < V.hn[h]; k++) { cx[h] += V.hx[h][k]; cy[h] += V.hy[h][k]; } if (V.hn[h]) { cx[h] /= V.hn[h]; cy[h] /= V.hn[h]; } }
-    V.hn[0] = V.hn[1] = 0; st_draw_band(&V, 0, SH_SCREEN, FRAME, bg); V.hn[0] = hn[0]; V.hn[1] = hn[1];
+    V.hn[0] = V.hn[1] = 0; st_draw_band(&V, 0, SH_SCREEN, FRAME, bg, 0, SH_SCREEN - 1); V.hn[0] = hn[0]; V.hn[1] = hn[1];
     snprintf(m, sizeof m, "portal: two wormholes are drawn (%d, %d points)", hn[0], hn[1]); ok(hn[0] && hn[1], m);
     float diff[2] = { 0, 0 };
     for (int h = 0; h < 2; h++) { int px = (int)cx[h], py = (int)cy[h]; if (px < 0 || py < 0 || px >= SH_SCREEN || py >= SH_SCREEN) continue;

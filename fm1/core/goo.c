@@ -247,19 +247,19 @@ static void wake(sh_goo *g, const sh_ball *balls, int nb) {
   }
 }
 
-static void pair(sh_goo *g, int i, int j) {
-  sh_drop p = g->d[i], q = g->d[j];
-  greal dx = q.x - p.x, dy = q.y - p.y, dz = (q.z - p.z) * SH_TBOXD;
-  greal d2 = dx * dx + dy * dy + dz * dz, min = p.r + q.r;
+static void pair(sh_goo *g, int i, int j) {   /* (in place: copying both drops for every pair looked at was the cost; the
+                                               * sums are the same, in the same order) */
+  sh_drop *p = &g->d[i], *q = &g->d[j];
+  greal dx = q->x - p->x, dy = q->y - p->y, dz = (q->z - p->z) * SH_TBOXD;
+  greal d2 = dx * dx + dy * dy + dz * dz, min = p->r + q->r;
   if (d2 < min * min && d2 > 1e-8) {
     greal d = GSQRT(d2), push = (min - d) / 2.0;
     dx /= d; dy /= d; dz /= d;
-    p.x -= dx * push; p.y -= dy * push; p.z -= dz * push / SH_TBOXD;
-    q.x += dx * push; q.y += dy * push; q.z += dz * push / SH_TBOXD;
-    greal rvx = (p.vx - q.vx) * 0.25, rvy = (p.vy - q.vy) * 0.25, rvz = (p.vz - q.vz) * 0.25;
-    p.vx -= rvx; p.vy -= rvy; p.vz -= rvz;
-    q.vx += rvx; q.vy += rvy; q.vz += rvz;
-    g->d[i] = p; g->d[j] = q;
+    p->x -= dx * push; p->y -= dy * push; p->z -= dz * push / SH_TBOXD;
+    q->x += dx * push; q->y += dy * push; q->z += dz * push / SH_TBOXD;
+    greal rvx = (p->vx - q->vx) * 0.25, rvy = (p->vy - q->vy) * 0.25, rvz = (p->vz - q->vz) * 0.25;
+    p->vx -= rvx; p->vy -= rvy; p->vz -= rvz;
+    q->vx += rvx; q->vy += rvy; q->vz += rvz;
   }
 }
 
@@ -347,6 +347,13 @@ static void step3d(sh_goo *g, double now_ms, double bpm, const sh_wall *walls, i
   greal h0 = (greal)g->heart[0], h1 = (greal)g->heart[1], h2 = (greal)g->heart[2], kick = (greal)g->kick, core = (greal)g->core;
   const greal axis[3] = { (greal)g->axis[0], (greal)g->axis[1], (greal)g->axis[2] };
   greal t = (greal)(now_ms * 0.001), envg = (greal)env;
+#ifdef SH_GOO_LIGHT   /* the device: the shimmer's three clocks taken round once a tick (a sine of a big angle takes libm's slow
+                      * reduction: 6% of the chip in fm1-emu STRICT after 3 minutes, 2026-11-18) */
+  greal t13 = (greal)fmod(now_ms * 0.0013, TAU), t11 = (greal)fmod(now_ms * 0.0011, TAU), t09 = (greal)fmod(now_ms * 0.0009, TAU);
+  (void)t;
+#else
+  greal t13 = t * 1.3, t11 = t * 1.1, t09 = t * 0.9;
+#endif
   for (int i = 0; i < g->n; i++) {
     sh_drop *p = &g->d[i];
     p->age++;
@@ -365,9 +372,9 @@ static void step3d(sh_goo *g, double now_ms, double bpm, const sh_wall *walls, i
         p->vy += ka * (0.045 * sy - 0.024 * (ry - sy) + 0.01 * ry);
         p->vz += ka * (0.045 * sz - 0.024 * (rz - sz) + 0.01 * rz);
       }
-      p->vx += 0.035 * GSIN(t * 1.3 + p->y * 0.035);   /* a slow shimmer: never a perfect ball */
-      p->vy += 0.035 * GSIN(t * 1.1 + p->z * SH_TBOXD * 0.035);
-      p->vz += 0.035 * GSIN(t * 0.9 + p->x * 0.035);
+      p->vx += 0.035 * GSIN(t13 + p->y * 0.035);   /* a slow shimmer: never a perfect ball */
+      p->vy += 0.035 * GSIN(t11 + p->z * SH_TBOXD * 0.035);
+      p->vz += 0.035 * GSIN(t09 + p->x * 0.035);
       p->vy += GRAV * 0.1;                            /* nearly afloat, like wax in warm oil */
       p->vx *= 0.88; p->vy *= 0.88; p->vz *= 0.88;
     } else {
@@ -378,7 +385,9 @@ static void step3d(sh_goo *g, double now_ms, double bpm, const sh_wall *walls, i
   }
   wake(g, balls, nb);
   relax(g);
+#if !(defined(SH_GOO_LIGHT) && SH_GOO_DIV == 16)   /* the FM-1's hundred big drops settle in one pass (check-goolight GOO=goo_16.txt) */
   relax(g);
+#endif
   for (int i = 0; i < g->n; i++) contain(&g->d[i], walls, nw);
   build_density(g);
 }

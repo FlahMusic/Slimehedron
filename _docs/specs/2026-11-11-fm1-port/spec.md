@@ -376,3 +376,12 @@ Done means (all measured, all met):
 - Power-on: boot-check.sh (splash at 1.5 s, gone by 4.5 s, jingle peak, silence until PLAY, music after; sabotaged by
   auto-play and by no splash). session.sh still passes with PLAY pressed after setting up stopped.
 - Why "space" lagged: SLOOP's reverb runs whatever its send (fx.c fx_buses), so the cost was the portals' drawing.
+
+## FPS II, MIDI, CHORDS / DRUMS, microtones (2026-11-18, later still)
+
+Done means (measured): fm1-emu strict worst 5 s window >= 30 fps for the default tank (52.2), a cube with portals and
+spin on the FX page (42.5), a whole session with every control (31.8); not met for the everything-maxed stress with
+three FM6 parts (15.5, from 9.3; the FM6 voices take ~48% of core 0). midi-check.sh 16/16 (sabotaged: echo guard,
+bends, clock follow). harmtest.c (sabotaged x4), check-host 12 (hand, hand over a progression), boot-check, session.sh,
+stucktest (one goo relax a tick on the device; "outside" counts turning shapes). SLOOP's keyboard_block no longer runs
+(it doubled every key). Microtonal keys measured in the emulator's audio: 38.5 / 38.8 cents a step in 31-EDO.

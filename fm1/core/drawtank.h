@@ -14,7 +14,16 @@
 #define ST_CAM  1000.0f    /* the web's camera distance (the back of the box shows at ~74% size) */
 #define ST_HOLE 14         /* points round a wormhole's rim (20 cost a quarter of a frame in fm1-emu; 14 still reads round at 240 px) */
 
+/* Everything a row needs is worked out once a frame (2026-11-18: the per-row divisions were a fifth of a frame on the
+ * chip): a line's slope, its inverse length, the rows it can touch; a polygon's edges with their slopes. */
+typedef struct { float ax, ay, dx, dy, iL2, idy, ylo, yhi, w, w2, wi2, alpha; uint16_t col; uint8_t k; } st_seg;
+typedef struct { float y0, y1, x0, sl; } st_edge;                            /* y0 < y1; x at y0; dx per row */
+#define ST_PMAX (SH_MAXWALLS > ST_HOLE ? SH_MAXWALLS : ST_HOLE)
+typedef struct { st_edge e[ST_PMAX]; int n; float ylo, yhi; uint16_t col; uint8_t k; } st_poly;
+
 typedef struct {
+  st_poly back, side[SH_MAXWALLS], hole[2][2]; int nside;                    /* the back pane; the walls; each hole's rim, inside */
+  st_seg under[2 * SH_MAXWALLS], over[SH_MAXWALLS]; int nunder, nover;       /* rails and back edges; the front rim on top */
   float fx[SH_MAXWALLS], fy[SH_MAXWALLS], bx[SH_MAXWALLS], by[SH_MAXWALLS];   /* each corner at the front and the back */
   float wy0[SH_MAXWALLS], wy1[SH_MAXWALLS];                                 /* each side wall's rows (a row past them skips it) */
   uint16_t wc[SH_MAXWALLS]; float lit[SH_MAXWALLS]; uint8_t open[SH_MAXWALLS]; int n;
@@ -30,6 +39,7 @@ typedef struct {
  * hue0: a turn of the colour wheel; ballHue: nb hues (0..1), or NULL for a hue by ball. */
 void st_tumble(float a, float b, float M[9]);
 void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0, const float *ballHue);
-void st_draw_band(const st_view *v, int y0, int rows, uint16_t *buf, uint16_t bg);
+/* rows y0.. of the band into buf (240 wide); only columns xlo..xhi are painted (the rest is left as it was) */
+void st_draw_band(const st_view *v, int y0, int rows, uint16_t *buf, uint16_t bg, int xlo, int xhi);
 
 #endif

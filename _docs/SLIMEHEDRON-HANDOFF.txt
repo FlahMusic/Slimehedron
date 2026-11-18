@@ -406,6 +406,33 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
       - fm1-emu strict, cube + portals + spin, slime off, 3 min: old ~15 fps avg, worst frame 667 ms, tick 7.0 ms mean;
         new ~50 fps, worst 5 s window 40.5 fps, worst frame 62 ms, tick 1.9 ms, 0 late. session.sh: 0 late, worst 5 s
         window 27 fps (busy pages + tempo 168), worst half 71%. sl_dbg[3] now: late | worst 5 s fps x10 | last.
+    FM-1 FPS II + MIDI + CHORDS / DRUMS + MICROTONES (2026-11-18, later still). Flah: 30+ fps everywhere, 60 if it can;
+      MIDI tests; keys steering the chords; entering a progression and drum steps; microtones on the device.
+      - FPS: drawtank precomputes every line's and polygon's constants once a frame (st_seg / st_poly), draws only the
+        columns sent, wormhole rims are two polygons; the label / knob-name rows are sent only when they change (the FX
+        page was a whole screen a frame); pixels packed two a word. Beat lock's spin walk rotates incrementally (one
+        sin/cos a ball, guard only: plugin parity exact). Big angles kept within a turn (the spin, the goo shimmer,
+        the groove and camera clocks): libm's slow reduction was 6% of the chip after 3 minutes. Goo pair() in place.
+        Core 1 can't take drawing: one mailbox the audio waits on, an 8 ms timeout that retires core 1 for good.
+        sl_prof (frames, poll, prep, draw, pack, sync, px) is read from FM1_DUMPRAM (cmp/ramvar.py in ~/fm1w).
+      - A FOUNDATIONAL BUG: SLOOP's keyboard_block kept playing every key again, raw and chromatic, on the selected
+        track and to MIDI (C# in C major sounded C# and C). Not called now (patch_sloop 22). midi-check.sh found it.
+      - MIDI (slime.c): in (jack + USB, before SLOOP reads it): notes as a hand's, ch 10 the kit, CC 1/74/7/73/75/72,
+        120/123 panic, clock -> tempo (2 beats), START / CONTINUE / STOP. Out (USB): melody 1, bass 2, chords 3,
+        drums 10, keys, clock + START / STOP (not when a clock comes in), never an echo; microtonal scales: a bend per
+        note, melody round 11-16, chords round 4-9 (GM +-2). midi-check.sh: 16 checks.
+      - The hand steers the chord (band.c hand_deg = the site's manualRoot; slime.c sl_hand_deg, 1.6 s); a progression
+        (CHORDS page: EDIT x2; the site's CHORD_MODE + FAMOUS dice) owns it; a drum pattern (DRUMS: GLO x2: white keys
+        = steps, black keys = lanes) played by the drummer. harmtest.c (make harm; sabotaged x4), check-host 12.
+      - Microtones: in the 19/31-note scales each key is the next step. midi-check run 3 measures the emulator's audio:
+        38.5 and 38.8 cents a key (31-EDO 38.7) with the melody dry (its chorus smears an FFT).
+      - Songs are SLM2 (+ progression, pattern); an SLM1 song or session is not read.
+      - The device's goo relaxes once a tick (DIV 16; check-goolight still passes). stucktest's "outside" counts turning
+        shapes only (a still shape's open corners let notes out, as the site's do on purpose).
+      - fm1-emu strict, final build (ad2efc2f): default 2 min worst 5 s 52.2 fps; cube + portals + spin on the FX page
+        42.5; session.sh worst 31.8 (was 27), 0 late; the stress (dx set: 3 FM6 parts, 12 spinning walls, portals,
+        top tempo, FX page, full goo) 15.5 (was 9.3): the FM6 voices are ~48% of core 0, the rest is the 12-wall
+        drawing and the full goo. Not reached: 30 fps in that stress case.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

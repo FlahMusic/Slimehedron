@@ -373,6 +373,20 @@ static double hit_ticks(const sh_tank *t, const sh_ball *b) {
   double prev[SH_MAXWALLS];
   for (int k = 0; k < m; k++) prev[k] = room_at(q[k], x0, y0, b, w, 0.0);
   const double DT = 4.0;
+  if (t->s.guard) {   /* the device: the same walk, the turn stepped by one rotation (a sine and a cosine a ball, not one a
+                       * wall a step: fm1-emu STRICT, 12 turning walls, 6.3 ms a tick before, 2026-11-18) */
+    double c1 = cos(-w * DT), s1 = sin(-w * DT), ca = 1.0, sa = 0.0;
+    for (double tt = DT; tt <= fmin2(best, 320.0); tt += DT) {
+      double nca = ca * c1 - sa * s1; sa = ca * s1 + sa * c1; ca = nca;
+      double x = x0 + b->vx * tt, y = y0 + b->vy * tt, rx = x * ca - y * sa, ry = x * sa + y * ca;
+      for (int k = 0; k < m; k++) {
+        double r = q[k][2] - (q[k][0] * rx + q[k][1] * ry);
+        if (prev[k] > 0.0 && r <= 0.0) { double hit = tt - DT * r / (r - prev[k]); if (hit < best) best = hit; }
+        prev[k] = r;
+      }
+    }
+    return best;
+  }
   for (double tt = DT; tt <= fmin2(best, 320.0); tt += DT) {
     for (int k = 0; k < m; k++) {
       double r = room_at(q[k], x0, y0, b, w, tt);
@@ -644,7 +658,10 @@ int sh_tank_tick(sh_tank *t, double now_ms, double bpm, int playing) {
   double ti = tick_interval(t, t->tick_count);
   if (now - t->last_tick >= ti) { t->last_tick = now - t->last_tick > ti * 3.0 ? now : t->last_tick + ti; t->tick_count++; }
   /* base spin: the same walls, turned; a struck one keeps its flash */
-  if (t->s.spin != 0.0) { double d = t->s.spin * 0.0003; t->rot += d; rebuild(t, 1); t->rot_v = d; if (t->s.guard) spin_contain(t, d, now); }
+  if (t->s.spin != 0.0) { double d = t->s.spin * 0.0003; t->rot += d;
+    if (t->s.guard && (t->rot > PI || t->rot < -PI)) t->rot -= TAU * floor((t->rot + PI) / TAU);   /* the device: one turn (a sine of a
+                                                         * big angle takes libm's slow reduction; the plugin's keeps counting) */
+    rebuild(t, 1); t->rot_v = d; if (t->s.guard) spin_contain(t, d, now); }
   else t->rot_v = 0.0;
   if (t->s.auto_notes) auto_notes(t, now);
   if (t->s.guard) t->a_bticks += (uint32_t)auto_count(t);

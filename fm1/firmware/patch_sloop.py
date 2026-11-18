@@ -91,4 +91,10 @@ sub("firmware/src/fx.c", "            tflt_run(f, &fc, dd, n, 3);" + NL + "     
 sub("firmware/src/main.c", "    fm1_delay_ms(900);                                  /* (the logo stays a moment) */" + NL +
     "    lcd_fill(0, 0, 240, 240, C_BLACK);" + NL,
     "    /* slimehedron: no wait and no black screen here: the splash runs in the main loop (slime_ui.c) */" + NL)
-print("patch_sloop: 21 changes applied")
+# The keys are ours (slime.c sl_key: the note snapped into the scale, a ball, the loop, the chords). SLOOP's own keyboard
+# kept running inside its sequencer and played every key AGAIN, raw and chromatic, on the selected track and out over
+# MIDI: C# in C major sounded C# and C together, and a 31-EDO key's microtone was buried under a semitone (found
+# 2026-11-18 by midi-check.sh: each key went out twice, once on channel 1 unbent)
+sub("firmware/src/seq.c", "    keyboard_block();" + NL + "    drum_audition_poll();",
+    "    /* slimehedron: keyboard_block() not called: the keys are slime.c's */" + NL + "    drum_audition_poll();")
+print("patch_sloop: 22 changes applied")

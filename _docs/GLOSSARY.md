@@ -60,6 +60,10 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 - **Wall guard** (FM-1, `s.guard`): the device tank's extra rules so no note sticks to a wall: the site's spinContain,
   a rattle thrown back to the middle, a crawling note melted, the auto adjuster's room. Off, the tank is the plugin's.
 - **Splash** (FM-1): the slime guy and his jingle at power-on; then the tank waits for PLAY.
+- **Chord follower by hand** (FM-1 `hand_deg`, the site's manualRoot): the chord of the notes a hand played in the last
+  1.6 s holds while it plays. A **progression** (CHORDS page, the site's CHORD_MODE) owns the harmony over it.
+- **Pattern** (FM-1 DRUMS page): a person's 16-step drum pattern, played by the rhythm's drummer, no fills. Not the
+  rhythm's own 4-bar pattern.
 - **Song / session** (FM-1): SAVE's three songs in flash; the session is written by itself when stopped.
 - **Triangle mixer**: `#triMix` (melody / drums / band). **Mixer**: studio's per-part volume/mute/solo (`MIX`).
 - **Beat lock**: balls are steered so their hits land on the grid (`beatLock`, `b.tq`).

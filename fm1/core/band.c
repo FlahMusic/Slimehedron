@@ -34,6 +34,7 @@ void sh_band_init(sh_band *b, int kit, uint32_t salt) {
   b->bass_block = -1; b->journey = 0; b->hum = salt ^ 0x51EDu;
   b->chord_bars = 2; b->chord_i = 0;                       /* S.chordBars: how long one chord lasts (1, 2 or 4) */
   b->human = 1; b->step_ms = 150.0; b->bpm = 100.0; b->swmod = 0.6; b->last_ghost = -9; b->hr = salt ^ 0xA5A5F00Du;
+  b->hand_deg = -1; b->cm_cur = b->cm_next = -1;
 }
 void sh_band_set_kit(sh_band *b, int kit) { b->kit = (kit % SH_NKITS + SH_NKITS) % SH_NKITS; b->bass_block = -1; }
 
@@ -105,6 +106,93 @@ static int deg_near(const sh_scale *sc, double target) {
  * 'triad' does for pentatonics and the like) */
 static int harm_drone(const sh_scale *sc) { return sc->n > 12; }
 
+/* ---- THE HARMONY'S OTHER OWNERS and A PERSON'S DRUM PATTERN (2026-11-18; see band.h) ---- */
+const uint8_t SH_PLANE_V[SH_PLANES] = {0, 1, 2, 3, 4, 6, 7, 8};
+const char *const SH_PLANE_NAME[SH_PLANES] = {"kick", "snare", "hat", "open hat", "rim", "conga", "tom", "ride"};
+/* the site's CQUAL, in its CQUAL_ORDER */
+/* (min, not m: the FM-1's font has capitals only, and AM7 would read as A major 7) */
+const char *const SH_CQ_NAME[SH_NCQ] = {"", "min", "7", "maj7", "min7", "dim", "aug", "sus2", "sus4", "6", "min6", "min7b5", "dim7", "9", "maj9", "min9", "7sus4", "add9"};
+const uint8_t SH_CQ_IV[SH_NCQ][5] = {
+  {0, 4, 7, 255, 255}, {0, 3, 7, 255, 255}, {0, 4, 7, 10, 255}, {0, 4, 7, 11, 255}, {0, 3, 7, 10, 255}, {0, 3, 6, 255, 255},
+  {0, 4, 8, 255, 255}, {0, 2, 7, 255, 255}, {0, 5, 7, 255, 255}, {0, 4, 7, 9, 255}, {0, 3, 7, 9, 255}, {0, 3, 6, 10, 255},
+  {0, 3, 6, 9, 255}, {0, 4, 7, 10, 14}, {0, 4, 7, 11, 14}, {0, 3, 7, 10, 14}, {0, 5, 7, 10, 255}, {0, 4, 7, 14, 255},
+};
+enum { CQ_MAJ, CQ_MIN, CQ_7, CQ_MAJ7, CQ_M7, CQ_DIM, CQ_AUG, CQ_SUS2, CQ_SUS4, CQ_6, CQ_M6, CQ_M7B5, CQ_DIM7, CQ_9, CQ_MAJ9, CQ_M9, CQ_7SUS4, CQ_ADD9 };
+/* the site's FAMOUS (its dice pool: "jazzy + cool-pop only"), word for word */
+const sh_famous SH_FAMOUS[SH_NFAMOUS] = {
+  {"ii-V-I", 4, {1, 4, 0, 0}, {CQ_M7, CQ_7, CQ_MAJ7, CQ_MAJ7}},
+  {"I-vi-ii-V", 4, {0, 5, 1, 4}, {CQ_MAJ7, CQ_M7, CQ_M7, CQ_7}},
+  {"iii-vi-ii-V", 4, {2, 5, 1, 4}, {CQ_M7, CQ_M7, CQ_M7, CQ_7}},
+  {"autumn leaves", 8, {1, 4, 0, 3, 6, 2, 5, 5}, {CQ_M7, CQ_7, CQ_MAJ7, CQ_MAJ7, CQ_M7B5, CQ_7, CQ_MIN, CQ_MIN}},
+  {"minor ii-V-i", 4, {1, 4, 0, 0}, {CQ_M7B5, CQ_7, CQ_MIN, CQ_MIN}},
+  {"montgomery-ward", 4, {0, 3, 1, 4}, {CQ_MAJ7, CQ_MAJ7, CQ_M7, CQ_7}},
+  {"coltrane-ish", 4, {0, 5, 3, 1}, {CQ_MAJ7, CQ_7, CQ_MAJ7, CQ_7}},
+  {"royal road", 4, {3, 4, 2, 5}, {CQ_MAJ7, CQ_7, CQ_M7, CQ_M7}},
+  {"50s ballad", 4, {0, 5, 1, 4}, {CQ_MAJ7, CQ_M7, CQ_M7, CQ_7}},
+  {"neo-soul I-IV", 4, {0, 3, 0, 3}, {CQ_MAJ9, CQ_MAJ9, CQ_MAJ9, CQ_MAJ9}},
+  {"backdoor ii-V", 4, {1, 4, 3, 0}, {CQ_M7, CQ_7, CQ_M7, CQ_MAJ7}},
+  {"andalusian", 4, {0, 6, 5, 4}, {CQ_MIN, CQ_MAJ, CQ_MAJ7, CQ_7}},
+  {"epic minor", 4, {0, 3, 5, 4}, {CQ_MIN, CQ_M7, CQ_MAJ7, CQ_7}},
+  {"lofi loop", 4, {0, 2, 5, 4}, {CQ_MAJ7, CQ_M7, CQ_M7, CQ_7SUS4}},
+  {"kiss from a rose", 4, {5, 3, 0, 4}, {CQ_MIN, CQ_MAJ7, CQ_MAJ7, CQ_7}},
+  {"turnaround", 4, {0, 5, 1, 4}, {CQ_MAJ7, CQ_7, CQ_M7, CQ_7}},
+  {"bossa cool", 4, {0, 1, 4, 0}, {CQ_MAJ7, CQ_M7, CQ_7, CQ_MAJ7}},
+  {"dorian vamp", 4, {0, 3, 0, 3}, {CQ_M7, CQ_7, CQ_M7, CQ_7}},
+  {"jazz blues", 4, {0, 3, 0, 4}, {CQ_7, CQ_7, CQ_7, CQ_7}},
+  {"sus-pop dream", 4, {0, 4, 5, 3}, {CQ_ADD9, CQ_7SUS4, CQ_M7, CQ_MAJ7}},
+};
+static const uint8_t MAJSTEP[7] = {0, 2, 4, 5, 7, 9, 11};
+/* cmRandomProg's transposition: the steps of the major scale on the key; a minor key's tonic and IV lean minor */
+void sh_band_cm_famous(sh_band *b, int which, int minor_key, int bars) {
+  const sh_famous *f = &SH_FAMOUS[((which % SH_NFAMOUS) + SH_NFAMOUS) % SH_NFAMOUS];
+  b->cm_n = f->n; b->cm_i = 0; b->cm_left = 0; b->cm_cur = b->cm_next = -1;
+  for (int i = 0; i < f->n; i++) {
+    int q = f->qual[i], st = f->step[i];
+    if (minor_key) { if (st == 0 && (q == CQ_MAJ || q == CQ_MAJ7)) q = q == CQ_MAJ7 ? CQ_M7 : CQ_MIN; if (st == 3 && q == CQ_MAJ) q = CQ_MIN; }
+    b->cm_root[i] = (int8_t)MAJSTEP[st % 7]; b->cm_qual[i] = (uint8_t)q; b->cm_bars[i] = (uint8_t)(bars < 1 ? 1 : bars);
+  }
+}
+/* pcToNearestDeg: the scale degree nearest a pitch class (semitones over the key) */
+static int deg_of_semis(const sh_scale *sc, int semis) {
+  int want = ((semis % 12) + 12) % 12, best = 0; double bd = 1e9;
+  for (int i = 0; i < sc->n; i++) { double c = sc->cents[i] / 100.0, d = fabs(c - want); if (12.0 - d < d) d = 12.0 - d; if (d < bd) { bd = d; best = i; } }
+  return best;
+}
+int sh_band_cq_for(const sh_scale *sc, int semis) {   /* stacked thirds on the scale: which triad sits on this root */
+  int d = -1;
+  for (int i = 0; i < sc->n; i++) if ((int)lround(sc->cents[i] / 100.0) % 12 == ((semis % 12) + 12) % 12 && fabs(sc->cents[i] - lround(sc->cents[i] / 100.0) * 100.0) < 1.0) d = i;
+  if (d < 0 || sc->n != 7) return CQ_MAJ;
+  int t = ((int)lround((sh_cents_for_degree(sc, d + 2) - sh_cents_for_degree(sc, d)) / 100.0));
+  int f = ((int)lround((sh_cents_for_degree(sc, d + 4) - sh_cents_for_degree(sc, d)) / 100.0));
+  return f == 6 ? CQ_DIM : f == 8 ? CQ_AUG : t == 3 ? CQ_MIN : CQ_MAJ;
+}
+/* manualRoot: fit a major or minor triad to the pitch classes played; the root must be one of them (unless one note was
+ * played over and over), the root itself and the latest note each get a vote; then the nearest scale degree */
+int sh_band_hand_root(const sh_scale *sc, const uint8_t *pcs, int n) {
+  int set[12] = {0}, single = 1, last, best_pc, r, t;
+  double bs = -1;
+  if (n <= 0) return -1;
+  for (int i = 0; i < n; i++) { set[pcs[i] % 12] = 1; if (pcs[i] % 12 != pcs[0] % 12) single = 0; }
+  last = pcs[n - 1] % 12; best_pc = last;
+  for (r = 0; r < 12; r++) {
+    if (!single && !set[r]) continue;
+    for (t = 3; t <= 4; t++) {
+      double s = set[r] + set[(r + t) % 12] + set[(r + 7) % 12];
+      if (set[r]) s += 0.7;
+      if (r == last) s += 0.3;
+      if (s > bs) { bs = s; best_pc = r; }
+    }
+  }
+  return deg_of_semis(sc, best_pc);
+}
+/* the progression's chord i as cents over the key: its exact tones (cmChordCents) */
+static int cm_tones(const sh_band *b, int i, double *out) {
+  int n = 0;
+  for (int k = 0; k < 5 && SH_CQ_IV[b->cm_qual[i] % SH_NCQ][k] != 255; k++) out[n++] = (double)(((b->cm_root[i] % 12) + 12) % 12 + SH_CQ_IV[b->cm_qual[i] % SH_NCQ][k]) * 100.0;
+  return n;
+}
+static double cm_root_cents(const sh_band *b, int i) { return (double)(((b->cm_root[i] % 12) + 12) % 12) * 100.0; }
+
 static void push_c(sh_band_bar *o, int step, double cents, double a, int len) {
   if (o->nc >= SH_BAND_MAXC || step > 15) return;
   o->comp[o->nc].nudge = 0.0;
@@ -166,6 +254,23 @@ static void advance_harmony(sh_band *b, const sh_scale *sc, sh_band_bar *o) {
   const sh_feel *f = &SH_FEEL[b->kit];
   int n = sc->n > 0 ? sc->n : 7;
   o->key_moved = 0;
+  if (b->cm_n > 0) {                                     /* CHORD_MODE: the progression owns the harmony (no key journey) */
+    if (b->cm_n > SH_CM_MAX) b->cm_n = SH_CM_MAX;
+    if (b->cm_left <= 0) { int i = b->cm_i % b->cm_n; b->cm_cur = i; b->cm_left = b->cm_bars[i] ? b->cm_bars[i] : 1; b->cm_i = (i + 1) % b->cm_n; }
+    b->cm_left--;
+    b->cm_next = b->cm_i % b->cm_n;
+    b->last_chord_bar = b->cm_left <= 0;
+    b->chord = deg_of_semis(sc, b->cm_root[b->cm_cur]); b->next = deg_of_semis(sc, b->cm_root[b->cm_next]);
+    o->chord = b->chord; o->next = b->next;
+    return;
+  }
+  b->cm_cur = b->cm_next = -1;
+  if (b->hand_deg >= 0) {                                /* manualRoot: a hand playing holds ITS chord, no lag, no journey */
+    b->chord = b->next = ((b->hand_deg % n) + n) % n;
+    b->last_chord_bar = b->hold == 0;
+    o->chord = b->chord; o->next = b->next;
+    return;
+  }
   if (b->journey > 0 && ++b->since_key >= (uint32_t)b->journey && b->hold <= 0) {
     b->since_key = 0; o->key_moved = 1; b->next = 0; b->key_crash = 1;
   }
@@ -189,6 +294,17 @@ static int chord_cents(sh_band *b, const sh_scale *sc, double *out) {
   const sh_feel *f = &SH_FEEL[b->kit];
   int n = sc->n, rd = b->chord, deg[4], nd = 3;
   mb32 r = mb_seed(b->salt ^ (b->bar * 2246822519u) ^ 0x7777u);
+  if (b->cm_cur >= 0) {                            /* a progression's chord: its exact tones (cmChordCents), voice-led */
+    double c[5]; int m = cm_tones(b, b->cm_cur, c);
+    for (int i = 0; i < m; i++) {
+      double best = c[i], bd = 1e9;
+      if (b->npadv > i) for (int o = -1; o <= 1; o++) { double c2 = c[i] + 1200.0 * o; double dd = fabs(c2 - b->padv[i]); if (dd < bd) { bd = dd; best = c2; } }
+      out[i] = best;
+    }
+    for (int i = 0; i < m; i++) b->padv[i] = out[i];
+    b->npadv = m;
+    return m;
+  }
   if (harm_drone(sc)) { deg[0] = rd; deg[1] = rd + deg_near(sc, 700.0); nd = 2; }
   else {
     deg[0] = rd; deg[1] = rd + 2; deg[2] = rd + 4;
@@ -214,8 +330,34 @@ static int chord_cents(sh_band *b, const sh_scale *sc, double *out) {
   return nd;
 }
 
+/* a person's pattern, played by the same drummer: the style's accents and timing, every bar the same, no fills, no
+ * ghost notes (what was entered is what plays); the crash where the key moved stays */
+static void drums_pattern(sh_band *b, sh_band_bar *o) {
+  int k = b->kit;
+  o->fill = 0;
+  for (int s = 0; s < 16; s++) {
+    if (b->human && s % 4 == 0) human_beat(b, s == 0);
+    for (int L = 0; L < SH_PLANES; L++) {
+      if (!((b->pat[L] >> s) & 1u)) continue;
+      int v = SH_PLANE_V[L];
+      b->hum = b->hum * 1664525u + 1013904223u;
+      double hum = 1.0 + ((double)(b->hum >> 8) / 16777216.0 * 2.0 - 1.0) * 0.08 * (b->human ? SH_KITFEEL[k].dyn / 0.4 : 1.0);
+      double a = (s == 0 ? 1.25 : 1.0) * hum, nudge = 0.0;
+      if (b->human) {
+        double acc = acc_for(k, v, s);
+        a *= acc > 0.0 ? acc : 1.0;
+        nudge = groove_off(b, s) + genre_shift(b, s);
+        if (s % 4 != 0) { double hm; a *= human_voice(b, v, s, &hm); nudge += hm; }
+      } else if (v == 2 || v == 3 || v == 8) a *= 0.8;
+      push_dk(o, s, SH_DV_NOTE[v], a, 0, nudge);
+    }
+  }
+  if (b->key_crash) { b->key_crash = 0; if (SH_CRASH_ON_KEY[k]) push_d(o, 0, SH_GM_CRASH, 0.95); }
+}
+
 /* the drummer: the kit's 4-bar pattern, the fill window at a phrase end (genFill), the crash where the key moved */
 static void drums(sh_band *b, sh_band_bar *o) {
+  if (b->pat_on) { drums_pattern(b, o); return; }
   const sh_feel *f = &SH_FEEL[b->kit];
   int k = b->kit, pb = (int)(b->bar % 4u), from = 16 - f->fill_len;
   int lo = SH_KIT_LMH[k][0], mid = SH_KIT_LMH[k][1], hi = SH_KIT_LMH[k][2];
@@ -304,6 +446,12 @@ static void bass(sh_band *b, const sh_scale *sc, sh_band_bar *o) {
     else if (tok[s] == 'O') oct = 1;
     else if (tok[s] == 'A') deg = drone ? b->chord : b->next + n - 1;
     double c = cents_deg(sc, deg) + 1200.0 * oct;
+    if (b->cm_cur >= 0) {                         /* a progression's chord: its own root, third and fifth; a half step under the next */
+      const uint8_t *iv = SH_CQ_IV[b->cm_qual[b->cm_cur] % SH_NCQ];
+      double r0 = cm_root_cents(b, b->cm_cur);
+      c = tok[s] == 'F' ? r0 + iv[2] * 100.0 : tok[s] == 'T' ? r0 + iv[1] * 100.0 : tok[s] == 'A' ? cm_root_cents(b, b->cm_next) - 100.0 : r0;
+      c += 1200.0 * oct;
+    }
     if (b->has_last_bass && tok[s] != 'O') {      /* the smallest step from the last note, within a 6th below to a 5th above */
       double best = c, bd = 1e9;
       for (int k2 = -1; k2 <= 1; k2++) { double cc = c + 1200.0 * k2; if (cc < -800 || cc > 700) continue; double dd = fabs(cc - b->last_bass); if (dd < bd) { bd = dd; best = cc; } }
@@ -323,21 +471,22 @@ static void bass(sh_band *b, const sh_scale *sc, sh_band_bar *o) {
 /* bandComp: the keyboard player */
 static void comp(sh_band *b, const sh_scale *sc, sh_band_bar *o, uint32_t bass_steps) {
   const sh_feel *f = &SH_FEEL[b->kit];
-  double tones[4]; int nt = chord_cents(b, sc, tones), len = f->ring ? 4 : 2;
+  double tones[5]; int nt = chord_cents(b, sc, tones), len = f->ring ? 4 : 2;
+  double nxc = b->cm_cur >= 0 ? cm_root_cents(b, b->cm_next) : (double)sh_cents_for_degree(sc, b->next);   /* the next chord's root */
   mb32 r = mb_seed(b->salt ^ (b->bar * 40503u) ^ kit_hash(b->kit));
   if (b->bar % 4u == 3u) {                        /* bar 4: the lead-in lick, the hand-off into the next phrase */
-    double s[4]; int pos[6] = {0, 2, 4, 6, 9, 12};
+    double s[5]; int pos[6] = {0, 2, 4, 6, 9, 12};
     memcpy(s, tones, sizeof s);
     for (int a = 1; a < nt; a++) for (int c = a; c > 0 && s[c - 1] > s[c]; c--) { double t = s[c]; s[c] = s[c - 1]; s[c - 1] = t; }
     double run[6] = {s[0], s[1 % nt], s[2 % nt], s[nt - 1] + 1200.0, s[2 % nt], s[1 % nt]};
     for (int i = 0; i < 6; i++) push_c(o, pos[i], run[i], 0.55 + mb_next(&r) * 0.25, 2);
-    push_c(o, 15, (double)sh_cents_for_degree(sc, b->next), 0.7, 2);
+    push_c(o, 15, nxc, 0.7, 2);
     return;
   }
   mb32 rc = mb_seed(b->salt ^ (b->bar * 2654435761u) ^ kit_hash(b->kit));
   uint32_t hits = gen_comp(f, &rc, bass_steps);
   int inv = nt ? (int)(b->bar % (uint32_t)nt) : 0;   /* rotate the voicing: a new top note each bar */
-  double v[4]; for (int i = 0; i < nt; i++) v[i] = i + inv < nt ? tones[i + inv] : tones[i + inv - nt] + 1200.0;
+  double v[5]; for (int i = 0; i < nt; i++) v[i] = i + inv < nt ? tones[i + inv] : tones[i + inv - nt] + 1200.0;
   double x = mb_next(&r), tot = f->artic[0] + f->artic[1] + f->artic[2], pick = x * (tot > 0 ? tot : 1);
   int mode = pick < f->artic[0] ? 0 : pick < f->artic[0] + f->artic[1] ? 1 : 2;   /* block, arp, broken */
   if (mode == 1) {
@@ -357,7 +506,7 @@ static void comp(sh_band *b, const sh_scale *sc, sh_band_bar *o, uint32_t bass_s
     for (int s = 0; s < 16; s++) if ((hits >> s) & 1u) { double a = 0.45 + mb_next(&r) * 0.3; for (int t = 0; t < nt; t++) push_c(o, s, v[t], a, len); }
   }
   if (mb_next(&r) < f->push && b->next != b->chord && !((hits >> 14) & 1u))   /* the push: the next chord early, on the & of 4 */
-    push_c(o, 14, (double)sh_cents_for_degree(sc, b->next), 0.5, 2);
+    push_c(o, 14, nxc, 0.5, 2);
 }
 
 void sh_band_next_bar(sh_band *b, const sh_scale *sc, sh_band_bar *o) {
@@ -382,3 +531,8 @@ void sh_band_test_bass(int kit, uint32_t salt, uint32_t block, uint8_t *tok) {
   mb32 r = mb_seed(salt ^ (block * 40503u) ^ kit_hash(kit)); gen_bass(&SH_FEEL[kit], &r, tok);
 }
 #endif
+
+/* the rhythm's own first bar as a person's pattern (DRUMS, PRESETS): a place to start from */
+void sh_band_pat_from_kit(sh_band *b) {
+  for (int L = 0; L < SH_PLANES; L++) b->pat[L] = (uint16_t)(SH_KIT_STEPS[b->kit][SH_PLANE_V[L]] & 0xFFFFu);
+}

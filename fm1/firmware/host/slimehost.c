@@ -105,6 +105,19 @@ static void loop_script(int mode)
     else if (phase == 5 && (int32_t)(now - (B + (uint32_t)(5.6 * bb))) >= 0) { sl_loop_press(); phase = 6; }   /* dub off */
 }
 
+/* SL_HANDTEST=1 (song): a hand plays F A C (IV in C major) on every beat of bars 4..11, then stops: the band must take IV
+/* (the chord F A C on every beat) while the hand plays (slime.c sl_hand_deg, band.c hand_deg) and move on after. SL_HANDTEST=2: the same over a
+ * progression (ii-V-I): the progression keeps the harmony */
+static void hand_script(int mode)
+{
+    static uint32_t last_step = 0xFFFFFFFFu;
+    static const double C[3] = {500, 900, 0};
+    if (mode == 2 && sl_stat.bars == 0 && sl_band.cm_n == 0) sh_band_cm_famous(&sl_band, 0, 0, 1);
+    if (sl_step == last_step) return;
+    last_step = sl_step;
+    if (sl_stat.bars >= 4 && sl_stat.bars < 12 && sl_step % 4u == 1u) { sl_hand(C[0], 100); sl_hand(C[1], 96); sl_hand(C[2], 92); }   /* a chord, strummed */
+}
+
 int main(int argc, char **argv)
 {
     if (argc >= 2 && !strcmp(argv[1], "presets")) {
@@ -246,6 +259,7 @@ int main(int argc, char **argv)
         for (i = 0; i < frames; i += CTL) {
             float *o; int16_t pcm[CTL * 2];
             if (getenv("SL_LOOPTEST")) loop_script(atoi(getenv("SL_LOOPTEST")));
+            if (getenv("SL_HANDTEST")) hand_script(atoi(getenv("SL_HANDTEST")));
             slime_schedule(SL_AHEAD_BLOCKS);      /* the conductor, ahead; then the audio side, as on the device */
             slime_play_block();
             o = preview_render();

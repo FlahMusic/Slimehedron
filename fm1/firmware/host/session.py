@@ -88,6 +88,18 @@ mark(t + 40, "both octave buttons: 0"); t += 1200
 press(t, "REC"); mark(t + 300, "overdub on"); t += 900
 note(t, 16); note(t + 700, 18); t += 1600
 press(t, "REC"); mark(t + 300, "overdub off"); t += 3000
+# 8b. CHORDS (EDIT x2): a famous progression, a chord changed by a key; DRUMS (GLO x2): from the rhythm, a hat lane on 8ths
+press(t, "EDIT", 60); press(t + 150, "EDIT", 60); mark(t + 150, "chords page"); t += 900
+turn(t, 6, 1); mark(t, "chords: I-vi-ii-V"); t += 1500
+turn(t, 0, 2); mark(t, "chord 3 picked"); t += 900
+note(t, 12); mark(t, "a key: chord 3 is F"); t += 1500
+press(t, "EDIT", 60); press(t + 150, "EDIT", 60); mark(t + 150, "home: the progression plays"); t += 4500
+press(t, "GLO", 60); press(t + 150, "GLO", 60); mark(t + 150, "drums page"); t += 900
+turn(t, 6, 1); mark(t, "drums: from the rhythm"); t += 1200
+turn(t, 2, 2); mark(t, "lane: hat"); t += 900
+turn(t, 3, 2); mark(t, "fill: hat on 8ths"); t += 1200
+note(t, 2); mark(t, "a step off (key 2)"); t += 1500
+press(t, "GLO", 60); press(t + 150, "GLO", 60); mark(t + 150, "home: my pattern plays"); t += 4500
 # 9. auto-notes off and on, a new shape
 press(t, "ARP"); mark(t, "auto-notes off"); t += 4000
 press(t, "ARP"); mark(t, "auto-notes on"); t += 1500

@@ -115,3 +115,11 @@ stuck: stucktest
 	./stucktest 1
 	NOHANDS=1 ./stucktest 1
 .PHONY: stuck
+
+# the band's other harmony owners (a hand, a progression) and a person's drum pattern: `make harm` must PASS
+harmtest: ../core/band.c ../core/band.h ../core/band_tables.h ../core/music.c harmtest.c
+	$(CC) $(CFLAGS) -o $@ ../core/band.c ../core/music.c harmtest.c -lm
+
+harm: harmtest
+	./harmtest
+.PHONY: harm
