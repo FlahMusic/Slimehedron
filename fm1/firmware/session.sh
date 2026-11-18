@@ -32,7 +32,7 @@ def dump(log):
     return [int(x, 16) for x in d.groups()] if d else [0, 0, 0, 0]
 w = dump(o + "/run.log")
 print(f"frames {w[0] & 0xFFFF}, worst frame {w[0] >> 16} ms; audio worst half {w[1] & 0xFFFF} us of 5805, deadlines missed {w[1] >> 16}; "
-      f"notes late {w[3] & 0xFFFF}")
+      f"notes late {w[3] & 0xFF}; fps over 5 s windows: worst {((w[3] >> 8) & 0xFFF) / 10}, last {(w[3] >> 20) / 10}")
 for ln in open(o + "/run.log"):
     if ln.startswith("flash:") or "fault" in ln or "halt" in ln: print(ln.strip())
 # the audio: a WAV to listen to, its loudness (BS.1770 K-weighting, gated) and its peaks

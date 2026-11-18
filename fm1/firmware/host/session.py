@@ -24,8 +24,12 @@ def note(t, n, hold=160):
     ev.append(f"{t}:n{n}"); ev.append(f"{t + hold}:n{n}^")
 
 
-t = 2500
-# 1. the sound: SOUND page, the "wood" set, home
+# 0. power-on: the splash (the slime drops in, the jingle, the name, the fade), then it waits for PLAY
+for ms, what in ((620, "splash: he drops in"), (1500, "splash: the name"), (3300, "splash: the fade"), (4300, "stopped: press play")):
+    marks.append((ms, what))
+t = 4600
+note(t, 7); note(t + 400, 11); mark(t + 400, "keys play while stopped"); t += 1400
+# 1. the sound: SOUND page, the "wood" set, home (set up before PLAY)
 press(t, "EDIT"); mark(t, "sound page"); t += 700
 turn(t, 6, 2); mark(t, "sound set: wood"); t += 1200
 turn(t, 0, 3); mark(t, "note length +60 ms"); t += 1200
@@ -36,7 +40,8 @@ turn(t, 2, 10); mark(t, "tempo 110"); t += 1200
 turn(t, 3, 3); mark(t, "spin"); t += 1200
 turn(t, 4, 2); mark(t, "rhythm: disco"); t += 1200
 turn(t, 5, -3); mark(t, "key down 3"); t += 1200
-turn(t, 0, 1); mark(t, "walls"); t += 1500
+turn(t, 0, 1); mark(t, "walls (stopped: at once)"); t += 1500
+press(t, "PLAY"); mark(t, "play"); t += 2500
 # 3. FX page: the melody's hall, the bass's filter, the chords' chorus, the drums' punch
 press(t, "FX"); mark(t, "fx: melody"); t += 700
 turn(t, 6, 3); mark(t, "fx preset: hall"); t += 1200
@@ -58,7 +63,7 @@ press(t, "ENV"); press(t + 500, "ENV"); mark(t + 500, "back home"); t += 1400
 press(t, "GLO"); mark(t, "mix page"); t += 700
 turn(t, 3, 4); mark(t, "bass +2 dB"); t += 1200
 turn(t, 0, 2); mark(t, "swing"); t += 1200
-turn(t, 6, 3); mark(t, "room size"); t += 1200
+turn(t, 6, 3); mark(t, "reverb size"); t += 1200
 press(t, "GLO"); t += 900
 # 6. REC: a loop. Count-in, then a phrase over two bars (110 bpm: a bar is 2.18 s), REC to close it
 press(t, "REC"); mark(t + 300, "rec: count-in")

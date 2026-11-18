@@ -40,6 +40,10 @@ typedef struct {
   int vel_rand; int vel_fix, vel_min, vel_max;
   int auto_notes;
   int space;                      /* SH_SPACE_NORMAL, or SH_SPACE_PORTAL: two wormholes glide round the walls */
+  int worm_hold;                  /* portal space: the beats a wormhole rests on its wall before it moves (the web: 1) */
+  int guard;                      /* the FM-1's wall guard (0: the plugin's tank, number for number): a turning wall pushes
+                                   * the notes it sweeps back in (the web's spinContain), a note rattling in a corner is
+                                   * thrown back toward the middle, and a note that has come to rest melts into the goo */
 } sh_tank_settings;
 #define SH_SPACE_NORMAL 0
 #define SH_SPACE_PORTAL 1
@@ -53,6 +57,7 @@ typedef struct {
   int pane, wall;                 /* a front/back pane chime; which wall (-1 for a pane) */
   double at_ms, sound_ms;         /* when the ball hit; when the note sounds (the next grid line if held) */
   double grid_ms, hit_grid_ms;    /* how far the note, and the hit, are from the nearest grid line */
+  uint32_t ball;                  /* the ball that rang it (its id; 0: none) */
 } sh_hit;
 
 typedef struct sh_wall {
@@ -70,9 +75,14 @@ typedef struct sh_ball {
   /* in a wormhole (portal space): which hole it went into, when, for how long, and the frame it is carried across in */
   int warp, wa; double wt0, wdur, wc[3], wn[3], wt1[3], wv[3], wspd;
   double spit;                    /* when it last came out of one (the draw swells it back), or -inf */
+  uint32_t id;                    /* its own number, from 1 */
+  double rat[4]; uint32_t rat_n;  /* the guard: its last four wall hits (ms), to hear a rattle */
+  uint32_t still;                 /* the guard: ticks it has crawled (under a fifth of the tempo's speed) */
+  int sw_wall; double sw_t;       /* the guard: the turning wall last pushing it, when (a push that goes on is one note) */
+  uint8_t autob;                  /* an auto-notes ball (the room melts these, never a hand's) */
 } sh_ball;
 
-/* a wormhole (portal space): it rests mid-wall and glides to a neighbouring wall on every beat */
+/* a wormhole (portal space): it rests mid-wall and glides to a neighbouring wall every s.worm_hold beats (the web: 1) */
 typedef struct {
   double x, y, z, n[3], t1[3];    /* where it is (box-local, from the middle), its wall's inward normal, along the wall */
   double rad, want, cents;        /* how open it is, how open it is going to be (px), its wall's note */
@@ -97,6 +107,11 @@ typedef struct {
   int aim_deg;
   double phi;                     /* the view's slow lean: the balls fall toward its "down" as the goo grows heavy */
   int worm_on, worm_key; int64_t worm_beat; double worm_open; sh_worm worm[2];   /* portal space */
+  uint32_t next_id;               /* the next ball's id */
+  uint32_t thrown, melted;        /* the guard's work: rattles thrown back to the middle, notes melted at rest */
+  /* THE ROOM (the guard, the web's auto adjuster): how many auto-notes balls this shape needs for about 8 notes a bar,
+   * measured over the last 8 bars; over the room the oldest auto ball melts into the goo */
+  int room; uint32_t a_hits, a_bticks, r_hits[8], r_bticks[8], r_n;
   sh_goo goo;
 } sh_tank;
 

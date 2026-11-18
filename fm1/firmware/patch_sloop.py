@@ -86,4 +86,9 @@ sub("firmware/src/fx.c", "            tflt_run(f, &fc, dd, n, 3);" + NL + "     
     "            tflt_run(f, &fc, dd, n, 3);" + NL + "        }" + NL + "        if (sl_drum_bus_on)" + NL +
     "            sl_drum_bus(dl, dr, dv, dd, n);   /* slimehedron */" + NL +
     "        for (i = 0; i < n; i++) {" + NL + "            mx->l[i] += dl[i];")
-print("patch_sloop: 20 changes applied")
+# The boot: SLOOP holds its logo 900 ms, then clears to black. Ours is the splash (slime_ui.c), animated in the main loop
+# with the sound running (its jingle), so the page's colour stays up and the main loop starts at once (2026-11-18)
+sub("firmware/src/main.c", "    fm1_delay_ms(900);                                  /* (the logo stays a moment) */" + NL +
+    "    lcd_fill(0, 0, 240, 240, C_BLACK);" + NL,
+    "    /* slimehedron: no wait and no black screen here: the splash runs in the main loop (slime_ui.c) */" + NL)
+print("patch_sloop: 21 changes applied")

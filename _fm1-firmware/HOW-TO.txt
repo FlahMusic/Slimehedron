@@ -13,7 +13,7 @@ INSTALL
 1. Double-click INSTALL-ON-FM1.bat (in this folder). A black window opens and stays open: leave it.
 2. Your browser opens http://localhost:8766/webapp/installer/ (if not, open it in Chrome or Edge yourself).
 3. The page says SLOOP: that is SLOOP's installer, which is what installs this file. Follow it; let it back up.
-4. When it is done, the FM-1 restarts and shows "slimehedron", then the tank. Close the black window.
+4. When it is done, the FM-1 restarts: the slime drops in with his jingle, then the tank. Close the black window.
 (A firmware file can't be installed from a plain web page you open from disk: Web MIDI needs a local server, which
  is what the .bat starts. No public installer page takes an arbitrary .fwsc file; each firmware ships its own page.)
 
@@ -29,6 +29,9 @@ BACK TO THE OFFICIAL FIRMWARE
   firmware.
 
 PLAYING IT
+At power-on the slime guy drops in with a little jingle (any button skips it), then the tank waits: nothing plays
+until PLAY (it blinks; the screen says "press play"). Set it up first if you like: sounds, tempo, walls, portals, the
+fx. A new shape shows at once while stopped; the keys play their notes too.
 Five pages. The top line says where you are and what you just changed; the bottom line names the four knobs.
 
 BUTTONS (the same on every page; "x2" = a double tap, two presses quickly)
@@ -52,16 +55,16 @@ BUTTONS (the same on every page; "x2" = a double tap, two presses quickly)
   MASTER      volume
 
 KNOBS                    KNOB 1     KNOB 2           KNOB 3     KNOB 4     SELECT        ALGORITHM     PRESETS
-  HOME                   tempo      spin             rhythm     key        walls 3..12   space         melody sound
-  FX (one part)          filter     drive (drums:    echo       space      character     amount        fx preset
+  HOME                   tempo      spin             rhythm     key        walls 3..12   portals       melody sound
+  FX (one part)          filter     drive (drums:    delay      reverb     character     amount        fx preset
                                     punch)
   NOTES (ENV, one part)  attack     decay            sustain    release    which part    glide         note shape
   SOUND (EDIT)           melody     bass             chords     drum kit   note length   chord length  sound set
-  MIX (GLO)              melody     bass             chords     drums      swing         echo time     room size
+  MIX (GLO)              melody     bass             chords     drums      swing         delay time    reverb size
 
   filter: left is low-pass, right is high-pass, the middle is open (it stops there on the way through)
   character: chorus, phaser, flanger, crush, warm, fuzz, fold; amount turns its depth and its mix together
-  fx presets: sound (the sound's own), dry, room, hall, dub echo, slapback, wide, tape, phase, jet, lofi, telephone,
+  fx presets: sound (the sound's own), dry, room, hall, dub delay, slapback, wide, tape, phase, jet, lofi, telephone,
               underwater, crunch
   note shapes: the sound's own, pluck, keys, soft, pad, stab (a new sound brings its own back; an FM sound always
               keeps its own: its operators are its envelope)
@@ -71,6 +74,10 @@ KNOBS                    KNOB 1     KNOB 2           KNOB 3     KNOB 4     SELEC
   knobs: a slow turn moves one step (fine tuning), a fast turn sweeps (SLOOP's acceleration)
   drums: through the site's own drum bus: a light glue compressor, a little body, and the presence dip that keeps
               them under the melody where ears are most sensitive (each kit's glue measured against the site's)
+  portals: two wormholes on the walls; a note that rolls into one comes out of the other. Each rests two bars on its
+              wall, then slides to the next
+  notes: none ever sticks to a wall. One rattling in a corner is thrown back to the middle, one that sinks still in a
+              full slime melts into it, and the melody keeps about 8 notes a bar whatever the shape (the site's own rule)
   speakers: SLOOP's limiter holds every peak at -5.2 dBFS whatever the knobs do (tested with all of them maxed)
   rhythms: pop rock disco bossa jazz samba conga march chip beep industrial, each with its own fills and feel
   scales: major minor pentatonic minor-pentatonic dorian mixolydian 19-note 31-note

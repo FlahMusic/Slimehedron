@@ -94,3 +94,24 @@ bandtest: ../core/band.c ../core/band.h ../core/band_tables.h ../core/music.c ba
 	$(CC) $(CFLAGS) -DSH_BAND_TEST -o $@ ../core/band.c ../core/music.c bandtest.c -lm
 
 band: bandtest
+
+# the FM-1's goo since 2026-11-18 (SH_GOO_DIV=16: a hundred drops, the same volume) and the wall guard
+tanktest_16: $(TANKSRC) ../core/tank.h ../core/goo.h tanktest.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -fsingle-precision-constant -c -o goo_16.o ../core/goo.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -o $@ ../core/tank.c ../core/music.c ../core/melody.c goo_16.o tanktest.c -lm
+
+goo16: tanktest tanktest_16
+	./tanktest scenes-goo.txt > goo_exact.txt
+	./tanktest_16 scenes-goo.txt > goo_16.txt
+	GOO=goo_16.txt node check-goolight.js
+.PHONY: goo16
+
+# no note stuck ringing a wall: every shape, spin and space, the goo full (stucktest.c); `make stuck` must PASS
+stucktest: $(TANKSRC) ../core/tank.h ../core/goo.h stucktest.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -fsingle-precision-constant -c -o goo_16.o ../core/goo.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -o $@ ../core/tank.c ../core/music.c ../core/melody.c goo_16.o stucktest.c -lm
+
+stuck: stucktest
+	./stucktest 1
+	NOHANDS=1 ./stucktest 1
+.PHONY: stuck

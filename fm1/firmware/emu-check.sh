@@ -27,7 +27,7 @@ out, ms = sys.argv[1], int(sys.argv[2])
 log = open(out + "/emu.log").read()
 d = re.search(r"dump 0x[0-9a-f]+: ([0-9a-f]+) ([0-9a-f]+) ([0-9a-f]+) ([0-9a-f]+)", log)
 w = [int(x, 16) for x in d.groups()] if d else [0, 0, 0, 0]
-frames, fms, amax, late, tmax, tmean, nlate, reform = w[0] & 0xFFFF, w[0] >> 16, w[1] & 0xFFFF, w[1] >> 16, w[2] & 0xFFFF, w[2] >> 16, w[3] & 0xFFFF, w[3] >> 16
+frames, fms, amax, late, tmax, tmean, nlate, fmin, flast = w[0] & 0xFFFF, w[0] >> 16, w[1] & 0xFFFF, w[1] >> 16, w[2] & 0xFFFF, w[2] >> 16, w[3] & 0xFF, (w[3] >> 8) & 0xFFF, w[3] >> 20
 lcd = re.search(r"LCD: on the wire (\d+)%", log); isr = re.search(r"(\d+)% of instructions in ISRs", log)
 peaks = []
 if os.path.exists(out + "/rec/audio.raw"):
@@ -36,7 +36,7 @@ if os.path.exists(out + "/rec/audio.raw"):
 print(f"frames {frames} in {ms} ms (~{frames / max(0.1, ms / 1000 - 1.3):.0f} fps after the ~1.3 s boot); worst frame {fms} ms")
 print(f"audio interrupt worst half {amax} us of 5805 ({100 * amax / 5805:.0f}%), deadlines missed {late}")
 print(f"tank tick: worst {tmax} us, mean {tmean} us; 60 ticks a second = {60 * tmean / 10000:.1f}% of the core at the mean")
-print(f"notes later than one block: {nlate}; the slowest reform {reform} ms")
+print(f"notes later than one block: {nlate}; frame rate over 5 s windows after the splash: worst {fmin / 10:.1f} fps, last {flast / 10:.1f} fps")
 print(f"LCD on the wire {lcd.group(1) if lcd else '?'}%, ISR share (last 40 ms) {isr.group(1) if isr else '?'}%")
 print("audio peak per 0.5 s:", peaks)
 try:

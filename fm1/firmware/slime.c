@@ -668,7 +668,7 @@ static const struct { const char *name; sl_fx fx; } SL_FXP[SL_NFXP] = {   /* fil
     {"dry", {0, 0, 0, 0, 0, 0}},
     {"room", {0, 0, 0, 40, 0, 0}},
     {"hall", {0, 0, 10, 85, 0, 0}},
-    {"dub echo", {-18, 0, 70, 30, 0, 0}},
+    {"dub delay", {-18, 0, 70, 30, 0, 0}},
     {"slapback", {0, 10, 45, 15, 0, 0}},
     {"wide", {0, 0, 15, 35, 1, 80}},
     {"tape", {-10, 20, 20, 25, 1, 30}},
@@ -763,7 +763,8 @@ static void slime_hook(uint32_t n) { (void)n; }   /* the host bench schedules an
 #define SL_NSCALE 8u
 static const char *const SL_SCALES[SL_NSCALE] = {"major", "minor", "pentaMaj", "pentaMin", "dorian", "mixolydian", "edo19all", "edo31"};
 static volatile uint32_t sl_key_req;        /* note keys pressed (bit k = key k, F3 up) */
-static volatile uint8_t sl_run = 1;         /* PLAY: everything moves */
+static volatile uint8_t sl_run;             /* PLAY: everything moves. Off at power-on: nothing plays until PLAY, so a person
+                                             * can set it up first (Flah 2026-11-18); keys still play their notes */
 static volatile uint8_t sl_reform_req;      /* a new shape (at the next downbeat) */
 static volatile uint8_t sl_snd_req[3] = {0xFF, 0xFF, 0xFF};   /* a part's new sound (an index into its list) */
 static volatile uint8_t sl_kit_req = 0xFF, sl_scale_req = 0xFF;
@@ -797,6 +798,9 @@ static void sl_start_shape(void)
     s.walls = sl_walls; s.space = sl_space ? SH_SPACE_PORTAL : SH_SPACE_NORMAL; s.spin = (double)sl_spin;
     s.scale = sh_scale_by_id(SL_SCALES[sl_scale % SL_NSCALE]);
     s.auto_notes = sl_auto;
+    s.guard = 1;                                           /* no note stuck ringing a wall (stucktest.c), the web's room */
+    s.worm_hold = 8;                                       /* a wormhole rests two bars before it moves ("they dont stay
+                                                            * long enough before moving so they dont rly get used": Flah) */
     sl_on_reform();
     slime_start(s, sl_seed++, sl_root);
     sl_bars_shape = 0;
@@ -821,6 +825,44 @@ static void sl_key(uint32_t k)
     sl_ball_req++;
     sl_lit_until[k] = fm1_ms + 140u;
 }
+/* THE BOOT JINGLE, under the splash (slime_ui.c). Flah: "a cool sound playing kinda like when u start a gamecube or
+ * gameboy color". Our own, neither console's: the slime lands (a low bloop and its octave on the bass), four notes
+ * climb a C major 9 on the melody's sound, and the chord rings out under two high sparkles. ms: after the splash
+ * starts (the slime lands at 420). On the band's own sounds, so it is in the mix and under the limiter like any note. */
+typedef struct { uint16_t ms; uint8_t trk, note, vel; uint16_t hold; } sl_jn;
+static const sl_jn SL_JINGLE[] = {
+    {420, SL_TRK_BASS, 36, 112, 150}, {540, SL_TRK_BASS, 48, 96, 240},
+    {600, SL_TRK_MEL, 76, 92, 220}, {690, SL_TRK_MEL, 79, 94, 220}, {780, SL_TRK_MEL, 83, 96, 220}, {870, SL_TRK_MEL, 86, 98, 300},
+    {1000, SL_TRK_COMP, 60, 80, 1500}, {1000, SL_TRK_COMP, 64, 80, 1500}, {1000, SL_TRK_COMP, 67, 80, 1500},
+    {1000, SL_TRK_COMP, 71, 80, 1500}, {1000, SL_TRK_COMP, 74, 80, 1500}, {1000, SL_TRK_BASS, 36, 100, 1400},
+    {1010, SL_TRK_MEL, 88, 96, 700}, {1190, SL_TRK_MEL, 91, 88, 1000},
+};
+#define SL_NJINGLE (sizeof SL_JINGLE / sizeof SL_JINGLE[0])
+static volatile uint32_t sl_boot_ms;        /* when the splash started (fm1_ms; 0: not yet): the main loop sets it */
+static uint8_t sl_jn_at;
+static void sl_jingle(void)                 /* the audio interrupt: each note when its moment has come */
+{
+    while (sl_boot_ms && sl_jn_at < SL_NJINGLE) {
+        const sl_jn *j = &SL_JINGLE[sl_jn_at];
+        sl_ev off = {0};
+        if (fm1_ms - sl_boot_ms < j->ms || sl_busy(j->trk)) return;   /* (its sound still loading: a moment later) */
+        sl_note_on(j->trk, j->note, j->vel, 0);
+        off.trk = j->trk; off.note = j->note; off.at = sl_clock + sl_ms_to_block((double)j->hold);
+        sl_push_off(off);
+        sl_jn_at++;
+    }
+}
+/* stopped: no notes fall due, but a key's note and the jingle's still end on time */
+static void sl_offs_block(void)
+{
+    uint32_t i;
+    for (i = 0; i < SL_NQ; i++)
+        if (sl_off_q[i].on && (int32_t)(sl_clock - sl_off_q[i].at) >= 0) {
+            trk_note_off(&trk[sl_off_q[i].trk % NPART], sl_off_q[i].note);
+            sl_off_q[i].on = 0;
+        }
+    sl_clock++;
+}
 /* THE AUDIO INTERRUPT'S PART (SLOOP's mixer calls it before each block it mixes): sounds chosen, keys, what is due */
 static void slime_hook(uint32_t n)
 {
@@ -840,6 +882,7 @@ static void slime_hook(uint32_t n)
         for (k = 0; k < 27u; k++)
             if ((keys >> k) & 1u) sl_key(k);
     }
+    sl_jingle();
     if (!sl_run) {                                         /* stopped: what rings is let go, everything stands still */
         if (sl_was_run)
             for (k = 0; k < SL_NQ; k++) {
@@ -847,7 +890,8 @@ static void slime_hook(uint32_t n)
                 sl_off_q[k].on = sl_on_q[k].on = 0;
             }
         sl_was_run = 0;
-        sl_clock += n / CTL;
+        for (k = 0; k < n; k += CTL)                       /* (before 2026-11-18 a key's note-off waited for PLAY: it hung) */
+            sl_offs_block();
         return;
     }
     sl_was_run = 1;
@@ -882,7 +926,10 @@ static void slime_conduct(void)
     sl_band.journey = sl_slime && !sl_pinned ? sl_journey_bars((double)song.g[G_BPM]) : 0;
     sl_tank.s.spin = (double)sl_spin;
     sl_tank.s.auto_notes = sl_auto;
-    if (!sl_run) return;
+    if (!sl_run) {                                         /* stopped: a new shape (walls, portals, scale) shows at once */
+        if (sl_reform_at_bar && sl_reform_fn) { sl_reform_at_bar = 0; sl_reform_fn(); }
+        return;
+    }
     bars0 = sl_stat.bars;
     slime_schedule(SL_AHEAD_BLOCKS);
     if (sl_stat.bars != bars0) { sl_bars_shape += sl_stat.bars - bars0; sl_beat_ms = fm1_ms; }

@@ -31,8 +31,10 @@ typedef float greal;
 #define SH_GOO_DS     1.2599210498948732   /* 2^(1/3) */
 #elif SH_GOO_DIV == 4
 #define SH_GOO_DS     1.5874010519681994   /* 4^(1/3) */
+#elif SH_GOO_DIV == 16
+#define SH_GOO_DS     2.5198420997897464   /* 16^(1/3): the FM-1 since 2026-11-18 (a hundred drops: "the goo lags") */
 #else
-#error "SH_GOO_DIV: 2 or 4"
+#error "SH_GOO_DIV: 2, 4 or 16"
 #endif
 #define SH_GOO_MAXCAP (1600 / SH_GOO_DIV)
 #else
@@ -73,6 +75,7 @@ typedef struct {
   double dens[SH_GOO_GD_MAX];
 #endif
   int dens_n;
+  double credit;                    /* SH_GOO_DIV 16: the share of a drop each hit has earned (5 / 16 a hit) */
 } sh_goo;
 
 /* An empty tank: area = the shape's area (px^2), room = the shortest way from the middle to a wall. */

@@ -197,6 +197,7 @@ int main(int argc, char **argv)
         double sum = 0, peak = 0, ksum = 0, psum = 0; clock_t t0; biq ks = k_shelf(), kh = k_hp(), p1 = bandpass(3960.0, 1.41), p2 = bandpass(3960.0, 1.41);
         if (!f) { perror(argv[2]); return 2; }
         s.scale = sh_scale_by_id(argv[4]); s.walls = atoi(argv[5]);
+        s.guard = getenv("SL_GUARD") ? atoi(getenv("SL_GUARD")) : 1; s.worm_hold = 8;   /* the tank as the device runs it (slime.c sl_start_shape) */
         if (!s.scale) { fprintf(stderr, "unknown scale\n"); return 2; }
         setup((uint32_t)atoi(argv[8]), argv[9], bpm);
         slime_band_sounds();

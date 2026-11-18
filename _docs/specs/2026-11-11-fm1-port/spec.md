@@ -357,3 +357,22 @@ but powerful, merged dials, no wasted knobs; plenty of presets; the drums humani
   (SLOOP's own).
 - **Build trap found**: build-host.sh ran `patch_sloop.py && patch_kits.py` under `set -e`; a failure on the left of
   `&&` does not stop sh, and a broken patch_sloop.py let the bench build against unpatched SLOOP. Two lines now.
+
+## Clean-up pass (2026-11-18, latest): speed, stuck notes, portals, splash
+
+Flah: portals move too soon to use; lag when adding "space"; fps drops ("the goo in the middle"); a cube's melody
+"freaking out" (notes stuck in a corner ringing non-stop); call reverb reverb and delay delay; a slime guy splash with
+a console-style jingle; nothing plays until PLAY.
+
+Done means (all measured, all met):
+- No stuck note: `make -C fm1/host stuck`, 72 scenes (walls 3..12, spin 0/30/100, both spaces, slime off, goo full,
+  a hand every 3 s, 120 bars): 0 balls with 12 notes in 2 s (guard off: 15,087); at most 6 bursts of 6 in 1 s (3);
+  at most 1 in 100,000 ball-ticks outside a shut tank (48 of 16 M; without spinContain 148,300); auto-notes alone
+  4..10 notes a bar in every shape and spin (5.1..8.4; without the room 15.7). Each layer sabotaged red.
+- Portals rest 2 bars (portaltest 7: 4 moves in 32 beats, 8 beats apart; still 92% of the time).
+- The goo on the chip: DIV 16 passes check-goolight (GOO=goo_16.txt) like DIV 4 did. Plugin parity (check-tank) exact.
+- Frame rate, fm1-emu strict, cube + portals + spin 3 min: old ~15 fps average, slowest frame 667 ms; new ~50 fps,
+  worst 5 s window 40.5 fps, slowest frame 62 ms, 0 late notes.
+- Power-on: boot-check.sh (splash at 1.5 s, gone by 4.5 s, jingle peak, silence until PLAY, music after; sabotaged by
+  auto-play and by no splash). session.sh still passes with PLAY pressed after setting up stopped.
+- Why "space" lagged: SLOOP's reverb runs whatever its send (fx.c fx_buses), so the cost was the portals' drawing.

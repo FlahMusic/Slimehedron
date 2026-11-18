@@ -8,13 +8,14 @@
 #define FRAC_PI_2 1.5707963267948966
 
 static double rnd(sh_tank *t) { return sh_rng_f(&t->rng); }
+static void room_bar(sh_tank *t);
 static double rnd_cb(void *ctx) { return sh_rng_f((sh_rng *)ctx); }
 static double fmin2(double a, double b) { return a < b ? a : b; }
 static double fmax2(double a, double b) { return a > b ? a : b; }
 static double fclamp(double x, double lo, double hi) { return x < lo ? lo : x > hi ? hi : x; }
 
 sh_tank_settings sh_tank_defaults(void) {
-  sh_tank_settings s = { 6, sh_scale_by_id("major"), 2, 0.0625, 0.15, 1, 0.0, 0.12, 1, 100, 12, 94, 1, SH_SPACE_NORMAL };
+  sh_tank_settings s = { 6, sh_scale_by_id("major"), 2, 0.0625, 0.15, 1, 0.0, 0.12, 1, 100, 12, 94, 1, SH_SPACE_NORMAL, 1, 0 };
   return s;
 }
 
@@ -88,7 +89,9 @@ void sh_tank_init(sh_tank *t, sh_tank_settings s, uint64_t seed) {
   t->bpm = 80.0; t->playing = 1; t->now = 0.0; t->last_tick = 0.0; t->tick_count = 0;
   t->broken_n = 0; t->wall_bars = 0; t->last_break = -INFINITY; t->home_root_deg = 0;
   sh_melody_init(&t->melody); t->has_mel_next = 0; t->mel_next = 0.0; t->mel_step_n = 0; t->aim_deg = -1;
-  t->phi = 0.0;
+  t->phi = 0.0; t->next_id = 1; t->thrown = t->melted = 0;
+  t->room = 7; t->a_hits = t->a_bticks = t->r_n = 0;
+  if (t->s.worm_hold < 1) t->s.worm_hold = 1;
   t->worm_on = 0; t->worm_key = -1; t->worm_beat = 0; t->worm_open = 0.0;
   for (int i = 0; i < 2; i++) { sh_worm *P = &t->worm[i]; P->rad = P->want = P->suck = P->spit = P->pre = 0.0; P->wall = -1; P->from = P->at = 0; P->dir = 1; P->za = P->zb = 0.0; P->x = P->y = P->z = 0.0; }
   rebuild(t, 0);
@@ -120,6 +123,7 @@ int sh_tank_add_ball_at(sh_tank *t, double x, double y, double z, double vx, dou
   sh_ball *b = &t->balls[t->nb++];
   b->x = x; b->y = y; b->z = z; b->vx = vx; b->vy = vy; b->vz = vz; b->tq = 1.0; b->tg = 0.0; b->bl = 0;
   b->last_hit = -INFINITY; b->last_pane = -INFINITY; b->pane_n = 0; b->visc = 0.0; b->warp = 0; b->spit = -INFINITY;
+  b->id = t->next_id++; b->rat_n = 0; b->still = 0; b->sw_wall = -1; b->sw_t = -INFINITY; b->autob = 0;
   return 1;
 }
 
@@ -168,6 +172,7 @@ static void repair_wall(sh_tank *t) {
 
 void sh_tank_on_bar(sh_tank *t) {
   t->wall_bars++;
+  if (t->s.guard) room_bar(t);
   if (t->wall_bars % 8 == 0) break_wall(t);
   if (t->wall_bars % 24 == 0) repair_wall(t);
 }
@@ -178,7 +183,7 @@ static double vel_for_hit(sh_tank *t) {
 }
 
 /* the level, and whether quantize holds the note for the next grid line */
-static void trigger(sh_tank *t, double cents, double imp, double goo, int pane, int wall, double now) {
+static void trigger(sh_tank *t, double cents, double imp, double goo, int pane, int wall, double now, uint32_t ball) {
   double vel = round(vel_for_hit(t) * (1.0 - goo * 0.3));
   if (pane) vel = fmax2(round(vel * 0.62), 1.0);
   double ti = tick_interval(t, t->tick_count), prev = t->last_tick, next = t->last_tick + ti;
@@ -190,6 +195,7 @@ static void trigger(sh_tank *t, double cents, double imp, double goo, int pane, 
     h->at_ms = now; h->sound_ms = sound;
     h->grid_ms = fmin2(fabs(sound - prev), fabs(next - sound));
     h->hit_grid_ms = fmin2(fabs(now - prev), fabs(next - now));
+    h->ball = ball;
   }
 }
 
@@ -217,7 +223,7 @@ static void hit_pane(sh_tank *t, sh_ball *b, int back, double now) {
   int rd = t->home_root_deg; double c;
   if (back) c = cents_for_degree(t, rd);
   else { b->pane_n++; c = cents_for_degree(t, rd + (b->pane_n % 2 == 1 ? 2 : 4)) + 1200.0; }
-  trigger(t, c, 0.35, 0.0, 1, -1, now);
+  trigger(t, c, 0.35, 0.0, 1, -1, now, b->id);
   sh_goo_splash(&t->goo, b->x, b->y, back ? 0.97 : 0.03, 0.0, -1.0, &t->rng);
 }
 
@@ -228,7 +234,8 @@ static void hit_pane(sh_tank *t, sh_ball *b, int back, double now) {
  * ringing the wall it comes out of. Near a hole a ball heading for its wall bends toward it. The goo stays put. */
 #define WORM_MAX fmin2(84.0, SH_TBOXD * 0.24)   /* a hole's full radius, px: about one wall hit in eight goes through */
 static double smooth01(double x) { x = fclamp(x, 0.0, 1.0); return x * x * (3 - 2 * x); }
-static double worm_glide(double b) { double f = b - floor(b), k = fmin2(1.0, f / 0.6); return k * k * (3 - 2 * k); }
+/* b in rests (worm_hold beats each): the glide takes the first 0.6 of a beat, eased, then it rests the rest */
+static double worm_glide(double b, int hold) { double f = b - floor(b), k = fmin2(1.0, f * (double)hold / 0.6); return k * k * (3 - 2 * k); }
 static double worm_dur(const sh_tank *t) { return fmax2(240.0, fmin2(520.0, 30000.0 / t->bpm)); }   /* half a beat */
 static int worm_next(sh_tank *t, sh_worm *P, int other) {
   int n = t->n; if (n < 2) return P->at;
@@ -262,13 +269,13 @@ static void worm_tick(sh_tank *t, double now) {
   int on = t->s.space == SH_SPACE_PORTAL; t->worm_on = on;
   t->worm_open += ((on ? 1.0 : 0.0) - t->worm_open) * 0.06; if (!on && t->worm_open < 0.01) t->worm_open = 0.0;
   if (!on && t->worm_open == 0.0) { for (int i = 0; i < 2; i++) { t->worm[i].rad = 0.0; t->worm[i].suck *= 0.9; t->worm[i].spit *= 0.9; } return; }
-  double b = now / 60000.0 * t->bpm; int64_t fb = (int64_t)floor(b); int n = t->n;
+  double b = now / 60000.0 * t->bpm / (double)t->s.worm_hold; int64_t fb = (int64_t)floor(b); int n = t->n;
   if (t->worm_key != n) { t->worm_key = n; t->worm_beat = fb;   /* a new shape: the two holes start on opposite sides */
     for (int i = 0; i < 2; i++) { sh_worm *P = &t->worm[i]; P->from = P->at = i == 0 ? 0 : (n / 2 < n - 1 ? n / 2 : n - 1); P->dir = i ? -1 : 1; P->za = P->zb = (i ? -0.12 : 0.12) * SH_TBOXD; } }
   if (fb != t->worm_beat) { int64_t d = fb - t->worm_beat; int steps = (int)(d < 0 ? -d : d); if (steps > 4) steps = 4; t->worm_beat = fb;
     for (int s = 0; s < steps; s++) for (int i = 0; i < 2; i++) { sh_worm *P = &t->worm[i];   /* a new beat: each sets off for a neighbour */
       P->from = P->at; P->za = P->zb; P->at = worm_next(t, P, t->worm[1 - i].at); P->zb = (rnd(t) * 2 - 1) * 0.26 * SH_TBOXD; } }
-  double k = worm_glide(b);
+  double k = worm_glide(b, t->s.worm_hold);
   for (int i = 0; i < 2; i++) { if (on) worm_place(t, &t->worm[i], k); else t->worm[i].want = 0.0; }
   sh_worm *A = &t->worm[0], *B = &t->worm[1];   /* the two never overlap: on the same wall they make room */
   double dx = A->x - B->x, dy = A->y - B->y, dz = A->z - B->z, d = sqrt(dx * dx + dy * dy + dz * dz);
@@ -314,7 +321,7 @@ static int worm_exit(sh_tank *t, sh_ball *b, int force, double now) {
   b->warp = 0; b->spit = now; b->last_hit = now;
   Q->spit = 1.0;
   if (Q->wall >= 0) t->walls[Q->wall].flash = 1.0;
-  if (!isnan(Q->cents)) trigger(t, Q->cents, 0.85, 0.0, 0, Q->wall, now);   /* it rings the wall it comes out of */
+  if (!isnan(Q->cents)) trigger(t, Q->cents, 0.85, 0.0, 0, Q->wall, now, b->id);   /* it rings the wall it comes out of */
   sh_goo_splash(&t->goo, b->x, b->y, b->z, Q->n[0], Q->n[1], &t->rng);
   return 1;
 }
@@ -422,7 +429,35 @@ static void auto_melody_note(sh_tank *t, int strong) {
   double r0 = SH_TR * 0.14 * rnd(t);
   if (t->nb >= SH_MAXBALLS) return;   /* full: skip this note, the open walls let old ones go */
   double vz = 0.003 + rnd(t) * 0.004;
-  sh_tank_add_ball_at(t, SH_TCX + cos(ang) * r0, SH_TCY + sin(ang) * r0, 0.02, cos(ang) * sp, sin(ang) * sp, vz);
+  if (sh_tank_add_ball_at(t, SH_TCX + cos(ang) * r0, SH_TCY + sin(ang) * r0, 0.02, cos(ang) * sp, sin(ang) * sp, vz)) t->balls[t->nb - 1].autob = 1;
+}
+
+/* the room (the guard): the auto balls in the tank; the oldest melts into the goo, quietly */
+static int auto_count(const sh_tank *t) { int k = 0; for (int i = 0; i < t->nb; i++) if (t->balls[i].autob && !t->balls[i].warp) k++; return k; }
+static void melt_oldest_auto(sh_tank *t) {
+  for (int i = 0; i < t->nb; i++) {
+    const sh_ball *b = &t->balls[i];
+    if (!b->autob || b->warp) continue;
+    sh_goo_splash(&t->goo, b->x, b->y, b->z, 0.0, -1.0, &t->rng);
+    for (int k = i + 1; k < t->nb; k++) t->balls[k - 1] = t->balls[k];
+    t->nb--; t->melted++;
+    return;
+  }
+}
+/* once a bar: each auto ball's notes a bar in THIS shape at THIS tempo, over the last 8 bars, and the room that makes
+ * the web's aim of about 8 notes a bar (more in a big shape, fewer in a small one: autoAim) */
+static void room_bar(sh_tank *t) {
+  t->r_hits[t->r_n % 8u] = t->a_hits; t->r_bticks[t->r_n % 8u] = t->a_bticks; t->r_n++;
+  t->a_hits = t->a_bticks = 0;
+  if (t->r_n < 4u || t->r_n % 4u) return;
+  uint32_t m = t->r_n < 8u ? t->r_n : 8u; double h = 0.0, bt = 0.0;
+  for (uint32_t i = 0; i < m; i++) { h += t->r_hits[i]; bt += t->r_bticks[i]; }
+  double bar_ticks = 240000.0 / fmax2(t->bpm, 1.0) / SH_FIXED, ball_bars = bt / bar_ticks;
+  if (ball_bars < 1.0 || h <= 0.0) return;
+  double area = 0.0; for (int i = 0; i < t->n; i++) { int j = (i + 1) % t->n; area += t->vx[i] * t->vy[j] - t->vx[j] * t->vy[i]; }
+  double hex = 1.5 * sqrt(3.0) * SH_TR * SH_TR, aim = 8.0 * fclamp(cbrt(fabs(area) * 0.5 / hex), 0.75, 1.25);
+  int room = (int)(aim / (h / ball_bars) + 0.5);
+  t->room = room < 1 ? 1 : room > 7 ? 7 : room;
 }
 
 /* the slime's auto-notes: one roll a beat, a strong beat every other one, only while the air is fairly clear */
@@ -431,11 +466,63 @@ static void auto_notes(sh_tank *t, double now) {
   double next = (t->has_mel_next && now - t->mel_next <= beat * 4.0) ? t->mel_next : now;   /* (re)start without a burst */
   while (now >= next) {
     int strong = t->mel_step_n % 2 == 0;
-    if (t->nb < 7) { double roll = rnd(t); if (roll < (strong ? 0.6 : 0.22)) auto_melody_note(t, strong); }
+    if (t->s.guard) { int a = auto_count(t); if (a > t->room) melt_oldest_auto(t); else if (a < t->room && t->nb < 7) { double roll = rnd(t); if (roll < (strong ? 0.6 : 0.22)) auto_melody_note(t, strong); } }
+    else if (t->nb < 7) { double roll = rnd(t); if (roll < (strong ? 0.6 : 0.22)) auto_melody_note(t, strong); }
     t->mel_step_n++;
     next += beat;
   }
   t->has_mel_next = 1; t->mel_next = next;
+}
+
+/* THE GUARD (s.guard, the FM-1): does this wall hit ring? Two that don't: a note that has slowed to a crawl (under a
+ * fifth of the tempo's speed: it sank in a full goo, nothing to strike with), and a rattle (a third wall hit inside
+ * 250 ms, or a fourth inside 600 ms, at 100 bpm: wedged in a corner), which instead throws the note back toward the
+ * middle at the tempo's speed, so it floats off the wall instead of ringing it sixteen times a second (stucktest.c).
+ * sp_in: its speed before the hit. */
+static int guard_silent(sh_tank *t, sh_ball *b, double sp_in, double now) {
+  double ts = ball_speed(t), win = 100.0 / fmax2(t->bpm, 40.0);
+  b->rat[b->rat_n % 4u] = now; b->rat_n++;
+  if ((b->rat_n >= 4u && now - b->rat[b->rat_n % 4u] < 600.0 * win) || (b->rat_n >= 3u && now - b->rat[(b->rat_n + 1u) % 4u] < 250.0 * win)) {
+    double a = atan2(SH_TCY - b->y, SH_TCX - b->x) + (rnd(t) - 0.5) * 0.8;
+    b->vx = cos(a) * ts; b->vy = sin(a) * ts; b->rat_n = 0; b->still = 0; t->thrown++;
+    return 1;
+  }
+  return sp_in < 0.2 * ts;
+}
+
+/* the web's spinContain: after the shape turns by w (radians), a wall that swept into a note pushes it back inside and
+ * throws it with the speed that part of the wall moves at; a note a corner swept past is brought back in */
+static void spin_contain(sh_tank *t, double w, double now) {
+  double ts = ball_speed(t); int open = 0;
+  for (int i = 0; i < t->n; i++) if (t->walls[i].broken && t->walls[i].reform < 0.55) open = 1;
+  for (int bi = 0; bi < t->nb; bi++) {
+    sh_ball *b = &t->balls[bi];
+    if (b->warp) continue;
+    for (int wi = 0; wi < t->n; wi++) {
+      const sh_wall *e = &t->walls[wi];
+      if (e->broken && e->reform < 0.55) continue;
+      double dist = (b->x - e->ax) * e->nx + (b->y - e->ay) * e->ny;
+      if (dist >= SH_BR) continue;
+      double ex = e->bx - e->ax, ey = e->by - e->ay, l2 = ex * ex + ey * ey; if (l2 == 0.0) l2 = 1.0;
+      double tt = ((b->x - e->ax) * ex + (b->y - e->ay) * ey) / l2;
+      if (tt < -0.15 || tt > 1.15) continue;
+      double cx = b->x - dist * e->nx - SH_TCX, cy = b->y - dist * e->ny - SH_TCY, ux = -w * cy, uy = w * cx;
+      double vn = (b->vx - ux) * e->nx + (b->vy - uy) * e->ny, sp_in = sqrt(b->vx * b->vx + b->vy * b->vy);
+      b->x += (SH_BR - dist) * e->nx; b->y += (SH_BR - dist) * e->ny;
+      int pushing = b->sw_wall == wi && now - b->sw_t < 300.0;   /* the same wall still pushing it: one long push, one note */
+      b->sw_wall = wi; b->sw_t = now;
+      if (vn < 0.0) {
+        b->vx -= 2.0 * vn * e->nx; b->vy -= 2.0 * vn * e->ny; t->walls[wi].flash = 1.0;
+        if (!pushing && !guard_silent(t, b, sp_in, now) && now - b->last_hit > 60.0) {
+          b->last_hit = now; if (b->autob) t->a_hits++;
+          trigger(t, e->cents, fmin2(fabs(vn) / (ts == 0.0 ? 1.0 : ts), 1.0), 0.0, 0, wi, now, b->id);
+          sh_goo_splash(&t->goo, b->x, b->y, b->z, e->nx, e->ny, &t->rng);
+        }
+      }
+    }
+    if (!open && !sh_tank_inside(t, b->x, b->y))
+      for (int i = 0; i < 8 && !sh_tank_inside(t, b->x, b->y); i++) { b->x = SH_TCX + (b->x - SH_TCX) * 0.9; b->y = SH_TCY + (b->y - SH_TCY) * 0.9; }
+  }
 }
 
 static void step(sh_tank *t, double now) {
@@ -477,11 +564,13 @@ static void step(sh_tank *t, double now) {
           sh_worm *W = worm_at(t, wi, b.x - SH_TCX - dist * e.nx, b.y - SH_TCY - dist * e.ny, (b.z - 0.5) * SH_TBOXD);
           if (W) { worm_enter(t, &b, W, b.vx, b.vy, b.vz * SH_TBOXD, now); hit_wall = 1; break; } }
         if (vn < 0.0) {
+          double sp_in = t->s.guard ? sqrt(b.vx * b.vx + b.vy * b.vy) : 0.0;
           hit_wall = 1;
           b.vx -= 2.0 * vn * e.nx; b.vy -= 2.0 * vn * e.ny;
           jitter(t, &b);
           b.x += (SH_BR - dist) * e.nx; b.y += (SH_BR - dist) * e.ny;
           t->walls[wi].flash = 1.0;
+          if (t->s.guard && guard_silent(t, &b, sp_in, now)) continue;
           if (now - b.last_hit > 60.0) {
             b.last_hit = now;
             /* a goo-slathered hit rings softer and rounder */
@@ -491,7 +580,8 @@ static void step(sh_tank *t, double now) {
             if (under && b.visc == 0.0) b.visc = 0.80 + rnd(t) * 0.12;
             double goo = under ? fmin2((0.35 + 0.65 * depth) * ((1.0 - b.visc) / 0.2), 1.0) : 0.0;
             double imp = fmin2(fabs(vn) / (ts == 0.0 ? 1.0 : ts), 1.0) * (1.0 - goo * 0.45);
-            trigger(t, e.cents, imp, goo, 0, wi, now);
+            trigger(t, e.cents, imp, goo, 0, wi, now, b.id);
+            if (b.autob) t->a_hits++;
             sh_goo_splash(&t->goo, b.x, b.y, b.z, e.nx, e.ny, &t->rng);   /* the note's drops join the pool */
           }
         }
@@ -530,6 +620,15 @@ static void step(sh_tank *t, double now) {
       b.vx *= drag; b.vy *= drag;
       if (b.vz != 0.0) b.vz *= drag;
     }
+    if (t->s.guard) {   /* a note that has crawled for 1.5 s has come to rest: it melts into the goo, room for a new one */
+      if (sqrt(b.vx * b.vx + b.vy * b.vy) < 0.2 * ts) b.still++; else b.still = 0;
+      if (b.still > 90u) {
+        sh_goo_splash(&t->goo, b.x, b.y, b.z, 0.0, -1.0, &t->rng);
+        for (int i = bi + 1; i < t->nb; i++) t->balls[i - 1] = t->balls[i];
+        t->nb--; t->melted++;
+        continue;
+      }
+    }
     t->balls[bi] = b;
   }
 }
@@ -545,9 +644,10 @@ int sh_tank_tick(sh_tank *t, double now_ms, double bpm, int playing) {
   double ti = tick_interval(t, t->tick_count);
   if (now - t->last_tick >= ti) { t->last_tick = now - t->last_tick > ti * 3.0 ? now : t->last_tick + ti; t->tick_count++; }
   /* base spin: the same walls, turned; a struck one keeps its flash */
-  if (t->s.spin != 0.0) { double d = t->s.spin * 0.0003; t->rot += d; rebuild(t, 1); t->rot_v = d; }
+  if (t->s.spin != 0.0) { double d = t->s.spin * 0.0003; t->rot += d; rebuild(t, 1); t->rot_v = d; if (t->s.guard) spin_contain(t, d, now); }
   else t->rot_v = 0.0;
   if (t->s.auto_notes) auto_notes(t, now);
+  if (t->s.guard) t->a_bticks += (uint32_t)auto_count(t);
   worm_tick(t, now);
   step(t, now);
   sh_goo_step(&t->goo, now, t->bpm, t->walls, t->n, t->balls, t->nb, &t->rng);

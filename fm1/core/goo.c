@@ -15,8 +15,11 @@
 #define DS        SH_GOO_DS /* a drop's size against the plugin's (1 but in the light goo) */
 #if defined(SH_GOO_LIGHT) && SH_GOO_DIV == 4
 #define SPLASH    1         /* drops a hit throws: 5 / 4 = 1.25, rounded DOWN: 2 ended the busy studio scene fuller (0.97 against 0.91) and played 21% fewer notes */
+#elif defined(SH_GOO_LIGHT) && SH_GOO_DIV == 16
+#define SPLASH    2         /* the drop a hit has earned (5 / 16 of one a hit, kept in g->credit) and one of spray */
+#define CREDIT    1
 #elif defined(SH_GOO_LIGHT)
-#define SPLASH    3         /* drops a hit throws: the plugin's 5 for drops twice the volume, rounded up */
+#define SPLASH    3        /* drops a hit throws: the plugin's 5 for drops twice the volume, rounded up */
 #else
 #define SPLASH    5
 #endif
@@ -111,7 +114,7 @@ void sh_goo_init(sh_goo *g, double area, double room) {
 #ifndef SH_GOO_HASHED
   for (int i = 0; i < SH_GOO_GD_MAX; i++) g->dens[i] = 0.0;
 #endif
-  g->dens_n = 0;
+  g->dens_n = 0; g->credit = 0.0;
 }
 
 double sh_goo_fill(const sh_goo *g) { return g->measured_fill; }
@@ -123,8 +126,16 @@ void sh_goo_splash(sh_goo *g, double x, double y, double z, double inx, double i
   double al = g->fill_beats / 4.0 / (FILL_BARS * 1.13); if (al > 1.0) al = 1.0;
   double allowance = al * (double)g->cap;
   double kf = floor(allowance - (double)feed); kf = kf < 0.0 ? 0.0 : kf > SPLASH ? SPLASH : kf;
-  int keep = (int)kf;
-  for (int i = 0; i < SPLASH; i++) {
+  int keep = (int)kf, throw_n = SPLASH;
+#ifdef CREDIT
+  {   /* a whole drop every 3.2 hits (the plugin's five drops a hit, by volume), and always a fleck of spray to see */
+    int earned;
+    g->credit += 5.0 / 16.0; earned = (int)g->credit; g->credit -= (double)earned;
+    if (keep > earned) keep = earned;
+    throw_n = keep + 1;
+  }
+#endif
+  for (int i = 0; i < throw_n; i++) {
     if (i >= keep && (double)g->n >= (double)g->cap * 1.15) break;   /* spray that only fades is capped too */
     if (g->n == g->max) break;
     double sp = 1.4 + sh_rng_f(rng) * 2.6;

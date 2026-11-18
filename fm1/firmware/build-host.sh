@@ -26,12 +26,12 @@ done
 CC="${CC:-cc}"
 CORE="$HERE/../core"
 # the tank with the device's light goo (float, a quarter of the drops): what the FM-1 will run
-$CC -std=c99 -O2 -DSH_GOO_LIGHT -DSH_GOO_DIV=4 -fsingle-precision-constant -c -o "$OUT/goo_light.o" "$CORE/goo.c"
-for f in tank music melody band; do $CC -std=c99 -O2 -DSH_GOO_LIGHT -DSH_GOO_DIV=4 -c -o "$OUT/$f.o" "$CORE/$f.c"; done
+$CC -std=c99 -O2 -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -fsingle-precision-constant -c -o "$OUT/goo_light.o" "$CORE/goo.c"
+for f in tank music melody band; do $CC -std=c99 -O2 -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -c -o "$OUT/$f.o" "$CORE/$f.c"; done
 # SLOOP's sources as SLOOP builds them for its own host tests (-fwrapv -fno-strict-aliasing, warnings off).
 # gcc must not turn SLOOP's own memset loop (libc.c) back into a call to memset, or it calls itself for ever
 # (SLOOP's preview test says "the GCC build of this adapter does not finish on Linux": this is why).
-SFLAGS="-O1 -fwrapv -fno-strict-aliasing -fno-tree-loop-distribute-patterns -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -w -DSH_GOO_LIGHT -DSH_GOO_DIV=4"
+SFLAGS="-O1 -fwrapv -fno-strict-aliasing -fno-tree-loop-distribute-patterns -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=0 -w -DSH_GOO_LIGHT -DSH_GOO_DIV=16"
 $CC $SFLAGS -I"$GEN" -I"$HW/firmware/src" -I"$HW/firmware/host" -I"$CORE" \
   "$HERE/host/slimehost.c" "$OUT/tank.o" "$OUT/music.o" "$OUT/melody.o" "$OUT/band.o" "$OUT/goo_light.o" -lm -o "$OUT/slimehost"
 echo "built $OUT/slimehost"
@@ -39,7 +39,7 @@ echo "built $OUT/slimehost"
 F="$OUT/float"; rm -rf "$F"; mkdir -p "$F/core" "$F/host"
 cp "$CORE"/*.c "$CORE"/*.h "$F/core/"; cp "$HERE/slime.c" "$F/"; cp "$HERE/host/slimehost.c" "$F/host/"
 python3 "$HERE/floatify.py" "$F/core" >/dev/null; python3 "$HERE/floatify.py" "$F" >/dev/null
-for f in tank music melody goo band; do $CC -std=c99 -O2 -DSH_GOO_LIGHT -DSH_GOO_DIV=4 -c -o "$F/$f.o" "$F/core/$f.c"; done
+for f in tank music melody goo band; do $CC -std=c99 -O2 -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -c -o "$F/$f.o" "$F/core/$f.c"; done
 $CC $SFLAGS -I"$GEN" -I"$HW/firmware/src" -I"$HW/firmware/host" -I"$F/core" \
   "$F/host/slimehost.c" "$F/tank.o" "$F/music.o" "$F/melody.o" "$F/goo.o" "$F/band.o" -lm -o "$OUT/slimehost_f"
 echo "built $OUT/slimehost_f (single precision)"

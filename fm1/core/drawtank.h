@@ -12,15 +12,16 @@
 
 #define ST_K    0.30f      /* web px to FM-1 px: the web's 720 px tank, R 300, drawn ~90 px from the middle */
 #define ST_CAM  1000.0f    /* the web's camera distance (the back of the box shows at ~74% size) */
-#define ST_HOLE 20         /* points round a wormhole's rim */
+#define ST_HOLE 14         /* points round a wormhole's rim (20 cost a quarter of a frame in fm1-emu; 14 still reads round at 240 px) */
 
 typedef struct {
   float fx[SH_MAXWALLS], fy[SH_MAXWALLS], bx[SH_MAXWALLS], by[SH_MAXWALLS];   /* each corner at the front and the back */
+  float wy0[SH_MAXWALLS], wy1[SH_MAXWALLS];                                 /* each side wall's rows (a row past them skips it) */
   uint16_t wc[SH_MAXWALLS]; float lit[SH_MAXWALLS]; uint8_t open[SH_MAXWALLS]; int n;
   float x[SH_BALLCAP], y[SH_BALLCAP], r[SH_BALLCAP], z[SH_BALLCAP], sx[SH_BALLCAP], sy[SH_BALLCAP], sr[SH_BALLCAP];
   uint16_t bc[SH_BALLCAP]; int order[SH_BALLCAP], nb;                         /* balls, drawn back to front */
   float dx[SH_GOO_MAXD], dy[SH_GOO_MAXD], dr[SH_GOO_MAXD]; uint8_t dpool[SH_GOO_MAXD]; int nd;
-  float hx[2][ST_HOLE], hy[2][ST_HOLE]; int hn[2]; uint16_t hrim[2], hdeep[2];   /* the wormholes, on their walls */
+  float hx[2][ST_HOLE], hy[2][ST_HOLE], hy0[2], hy1[2]; int hn[2]; uint16_t hrim[2], hdeep[2];   /* the wormholes, on their walls */
   uint16_t goo, pane;
   float pymin, pymax;      /* the box's rows on screen */
 } st_view;

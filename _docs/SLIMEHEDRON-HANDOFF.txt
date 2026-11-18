@@ -384,6 +384,28 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
       SAVE load). The site's drum bus (glue + body + presence dip) on the FM-1, each kit's glue within 1 dB of the
       site's (measured in the browser). session.sh: a 2-minute STRICT session with every control + a power cycle:
       0 late notes, 66% worst half, ~22 fps, the session (loop too) came back. Shrub is closed source: guide only.
+    FM-1 CLEAN-UP: SPEED, STUCK NOTES, PORTALS, SPLASH (2026-11-18, latest). Flah: portals move too soon, lag with
+      "space", fps drops, a cube's melody "freaking out" (notes stuck in a corner ringing non-stop), reverb/delay names,
+      a slime guy splash with a jingle, nothing plays until PLAY.
+      - Goo for the chip: SH_GOO_DIV 16 (100 drops, same volume; credit splash 5/16 a hit). check-goolight GOO=goo_16.txt
+        passes every statistic (fill, notes a bar, slowing, softer deep notes). Host goo 3.5x faster; tank 28 KB.
+      - Drawing: integer RGB565 blend (blend565), seg rows walk only the rail's piece near the row and sqrt only on the
+        feathered edge, side walls / wormholes skipped on rows they miss, 14-point holes.
+      - The wall guard (tank.c, s.guard; 0 keeps the plugin's tank number for number: check-tank still exact): the
+        site's spinContain (FM-1 never had it: 148,300 ball-ticks outside a shut spinning tank without it), a rattle
+        (3rd hit in 250 ms or 4th in 600 ms) is thrown back to the middle silently, a long push by a turning wall is one
+        note, a ball crawling 1.5 s melts, and the web's auto adjuster room (~8 notes a bar). stucktest.c (make stuck):
+        guard off 15,087 stuck; on 0 stuck, 3 bursts, 48 outside of 16 M, 5.1..8.4 notes a bar. Each layer sabotaged red.
+      - Portals rest 2 bars (s.worm_hold 8; portaltest 7). The reverb runs whatever its send, so "space" lag was portals.
+      - Names: delay, reverb, delay time, reverb size, dub delay, "portals on/off".
+      - Power-on: slime_ui.c draws the slime guy (seafoam, glasses, drips, blink, glint) and SLIMEHEDRON (FONT_L as a
+        mask), slime.c SL_JINGLE (our own: bloop, C maj9 climb, chord), fades into the tank; any press skips. sl_run starts
+        0 ("press play", PLAY blinks); keys play stopped (their note-offs were never sent while stopped: fixed); a new
+        shape shows at once while stopped; the session is read after the splash. patch_sloop 21: no 900 ms black boot.
+        boot-check.sh (splash, jingle, silence till PLAY, music after; sabotaged: auto-play, no splash).
+      - fm1-emu strict, cube + portals + spin, slime off, 3 min: old ~15 fps avg, worst frame 667 ms, tick 7.0 ms mean;
+        new ~50 fps, worst 5 s window 40.5 fps, worst frame 62 ms, tick 1.9 ms, 0 late. session.sh: 0 late, worst 5 s
+        window 27 fps (busy pages + tempo 168), worst half 71%. sl_dbg[3] now: late | worst 5 s fps x10 | last.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

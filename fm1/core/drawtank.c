@@ -34,11 +34,17 @@ void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0,
     v->wc[i] = pastel(hue0 + (td > 0 ? (float)e->deg / (float)td : 0), 0.38f + 0.3f * v->lit[i], 0.97f);
     v->open[i] = e->broken && !(e->reform > 0);                          /* an open gap is not drawn */
   }
+  for (int i = 0; i < t->n; i++) { int j = (i + 1) % t->n; float a = v->fy[i], b = v->fy[j], c = v->by[i], d = v->by[j];
+    float lo = a < b ? a : b, hi = a < b ? b : a; lo = c < lo ? c : lo; lo = d < lo ? d : lo; hi = c > hi ? c : hi; hi = d > hi ? d : hi;
+    v->wy0[i] = lo - 1.0f; v->wy1[i] = hi + 1.0f; }
   for (int h = 0; h < 2; h++) {   /* a wormhole: a disc in its wall's plane, across the wall and front to back */
     const sh_worm *P = &t->worm[h]; v->hn[h] = 0;
     if (!t->worm_on || P->rad < SH_BR) continue;
     for (int k = 0; k < ST_HOLE; k++) { float a = 6.2831853f * (float)k / ST_HOLE, c = cosf(a) * (float)P->rad, sn = sinf(a) * (float)P->rad;
       p3(M, SH_TCX + P->x + P->t1[0] * c, SH_TCY + P->y + P->t1[1] * c, (P->z + sn) / SH_TBOXD + 0.5, &v->hx[h][k], &v->hy[h][k], &s); }
+    v->hy0[h] = 1e9f; v->hy1[h] = -1e9f;
+    for (int k = 0; k < ST_HOLE; k++) { if (v->hy[h][k] < v->hy0[h]) v->hy0[h] = v->hy[h][k]; if (v->hy[h][k] > v->hy1[h]) v->hy1[h] = v->hy[h][k]; }
+    v->hy0[h] -= 2.0f; v->hy1[h] += 2.0f;
     v->hn[h] = ST_HOLE; }
   v->hrim[0] = rgb565(255 / 255.0f, 156 / 255.0f, 207 / 255.0f); v->hdeep[0] = rgb565(122 / 255.0f, 69 / 255.0f, 200 / 255.0f);   /* the web's WORMC */
   v->hrim[1] = rgb565(134 / 255.0f, 232 / 255.0f, 214 / 255.0f); v->hdeep[1] = rgb565(47 / 255.0f, 116 / 255.0f, 196 / 255.0f);
@@ -80,21 +86,21 @@ void st_draw_band(const st_view *v, int y0, int rows, uint16_t *buf, uint16_t bg
     for (int x = 0; x < SH_SCREEN; x++) row[x] = bg;
     if (yc < v->pymin - 3 || yc > v->pymax + 3) continue;   /* nothing of the box on this row */
     paint_poly_row(v->bx, v->by, v->n, yc, row, v->pane, 0.25f);                                  /* the back pane */
-    for (int i = 0; i < v->nb; i++) DISC_ROW(v->sx[i], v->sy[i], v->sr[i], yc, row[px] = mix565(row[px], shade, 0.15f););
-    for (int i = 0; i < v->n; i++) { int j = (i + 1) % v->n; if (v->open[i]) continue;            /* the side walls, glass */
+    for (int i = 0; i < v->nb; i++) DISC_ROW(v->sx[i], v->sy[i], v->sr[i], yc, row[px] = blend565(row[px], shade, 5u););
+    for (int i = 0; i < v->n; i++) { int j = (i + 1) % v->n; if (v->open[i] || yc < v->wy0[i] || yc > v->wy1[i]) continue;   /* the side walls, glass */
       float qx[4] = { v->fx[i], v->fx[j], v->bx[j], v->bx[i] }, qy[4] = { v->fy[i], v->fy[j], v->by[j], v->by[i] };
       paint_poly_row(qx, qy, 4, yc, row, v->wc[i], 0.16f + 0.3f * v->lit[i]); }
     for (int i = 0; i < v->n; i++) paint_seg_row(v->fx[i], v->fy[i], v->bx[i], v->by[i], 1.0f, yc, row, white, 0.55f);   /* rails */
     for (int i = 0; i < v->n; i++) { int j = (i + 1) % v->n; if (!v->open[i]) paint_seg_row(v->bx[i], v->by[i], v->bx[j], v->by[j], 1.1f, yc, row, v->wc[i], 0.7f); }
-    for (int h = 0; h < 2; h++) if (v->hn[h]) {                                                       /* the wormholes, on the walls */
+    for (int h = 0; h < 2; h++) if (v->hn[h] && yc >= v->hy0[h] && yc <= v->hy1[h]) {              /* the wormholes, on the walls */
       paint_poly_row(v->hx[h], v->hy[h], v->hn[h], yc, row, v->hdeep[h], 0.85f);
       for (int k = 0; k < v->hn[h]; k++) { int j = (k + 1) % v->hn[h]; paint_seg_row(v->hx[h][k], v->hy[h][k], v->hx[h][j], v->hy[h][j], 1.2f, yc, row, v->hrim[h], 0.9f); } }
-    for (int q = 0; q < nd; q++) { int k = dl[q];                                                  /* the goo, then its spray */
-      DISC_ROW(v->dx[k], v->dy[k], v->dr[k], yc, row[px] = v->dpool[k] ? mix565(row[px], v->goo, 0.92f) : mix565(row[px], v->goo, 0.6f);); }
-    for (int o = 0; o < v->nb; o++) { int i = v->order[o]; float R = v->r[i], hz = 1.0f - 0.3f * v->z[i];   /* balls, far first */
-      DISC_ROW(v->x[i], v->y[i], R, yc, { float hx = ddx + R * 0.35f, hy = (yc - v->y[i]) + R * 0.4f;
-        float l = 1.0f - (hx * hx + hy * hy) / (R * R * 1.6f);
-        row[px] = mix565(row[px], mix565(v->bc[i], white, l > 0 ? l * 0.55f : 0), hz); }); }
+    for (int q = 0; q < nd; q++) { int k = dl[q]; uint32_t ka = v->dpool[k] ? 29u : 19u;           /* the goo, then its spray */
+      DISC_ROW(v->dx[k], v->dy[k], v->dr[k], yc, row[px] = blend565(row[px], v->goo, ka);); }
+    for (int o = 0; o < v->nb; o++) { int i = v->order[o]; float R = v->r[i]; uint32_t kz = k32(1.0f - 0.3f * v->z[i]);   /* balls, far first */
+      float il = 0.55f / (R * R * 1.6f), hy = (yc - v->y[i]) + R * 0.4f, hy2 = hy * hy;
+      DISC_ROW(v->x[i], v->y[i], R, yc, { float hx = ddx + R * 0.35f, l = 0.55f - (hx * hx + hy2) * il;
+        row[px] = blend565(row[px], l > 0 ? blend565(v->bc[i], white, k32(l)) : v->bc[i], kz); }); }
     for (int i = 0; i < v->n; i++) { int j = (i + 1) % v->n; if (!v->open[i])                      /* the front rim on top */
       paint_seg_row(v->fx[i], v->fy[i], v->fx[j], v->fy[j], 1.4f, yc, row, v->wc[i], 0.9f); }
   }

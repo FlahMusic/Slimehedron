@@ -95,6 +95,16 @@ int main(void) {
     snprintf(m, sizeof m, "   over 8 beats each visits more than one wall (%d, %d)", v0, v1); ok(v0 >= 2 && v1 >= 2, m);
     snprintf(m, sizeof m, "   gliding, not jumping (largest move in one tick %.1f px)", maxStep); ok(maxStep < rmax * 0.6, m);
     snprintf(m, sizeof m, "   and a hole shrinks to slip round a corner (down to %.0f of %.0f px where it changes wall)", cornerMin, rmax); ok(cornerMin < rmax * 0.35, m); }
+  /* ---- 7: the FM-1's holes rest two bars (s.worm_hold 8: Flah 2026-11-18, "they dont stay long enough before moving") */
+  { sh_tank_settings s = portal(); s.worm_hold = 8; sh_tank_init(&T, s, 5); sh_tank_start(&T, 0); tick = 0;
+    for (int i = 0; i < 60; i++) step1(bpm);
+    int moves = 0, pw = T.worm[0].wall; double last = -1, gap = 1e9, still = 0, total = 0, px = T.worm[0].x, py = T.worm[0].y;
+    for (int i = 0; i < 32 * 60; i++) { step1(bpm); const sh_worm *P = &T.worm[0];
+      double b = tick * SH_FIXED / 60000.0 * bpm, d = hypot(P->x - px, P->y - py);
+      if (P->wall != pw) { if (last >= 0 && b - last < gap) gap = b - last; last = b; moves++; pw = P->wall; }
+      total += 1; if (d < 1e-6) still += 1; px = P->x; py = P->y; }
+    snprintf(m, sizeof m, "7  worm_hold 8: over 32 beats a hole changes wall %d times, at least %.1f beats apart", moves, gap); ok(moves >= 3 && moves <= 4 && gap > 7.5, m);
+    snprintf(m, sizeof m, "   and stands still %.0f%% of the time (the glide is the first 0.6 of a beat in 8)", 100 * still / total); ok(still / total > 0.85, m); }
   /* ---- 6: busy */
   { sh_tank_settings s = portal(); s.chaos = 0.12; sh_tank_init(&T, s, 9); sh_tank_start(&T, 0); tick = 0;
     for (int i = 0; i < 8; i++) sh_tank_add_ball(&T);

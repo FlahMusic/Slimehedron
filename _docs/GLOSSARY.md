@@ -57,6 +57,9 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
   `sl_drum_bus`, each kit's glue measured against the site's).
 - **Loop** (FM-1): REC's take of a hand's notes, kept as places in the bar and cents above the key, so it follows the
   key journey. Not a recording of audio (the FM-1 has 1 MB of flash). Not a **Seed**.
+- **Wall guard** (FM-1, `s.guard`): the device tank's extra rules so no note sticks to a wall: the site's spinContain,
+  a rattle thrown back to the middle, a crawling note melted, the auto adjuster's room. Off, the tank is the plugin's.
+- **Splash** (FM-1): the slime guy and his jingle at power-on; then the tank waits for PLAY.
 - **Song / session** (FM-1): SAVE's three songs in flash; the session is written by itself when stopped.
 - **Triangle mixer**: `#triMix` (melody / drums / band). **Mixer**: studio's per-part volume/mute/solo (`MIX`).
 - **Beat lock**: balls are steered so their hits land on the grid (`beatLock`, `b.tq`).

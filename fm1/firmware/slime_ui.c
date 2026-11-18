@@ -100,12 +100,130 @@ static st_view *sl_view(void)
     return (st_view *)((p + 7u) & ~(uintptr_t)7u);
 }
 
-UI_SMALL static void slime_splash(void)
+#define SL_PAGE_BG 0xF7BFu                  /* the page's pale lilac (the tank's page, the splash's) */
+UI_SMALL static void slime_splash(void)     /* power-on, before the sound starts: the page's colour, the slime drops in next */
 {
-    lcd_fill(0, 0, 240, 240, RGB(246, 244, 255));
-    cv_begin(240, 20, RGB(246, 244, 255));
-    cv_text(120 - text_w(&FONT_S, "slimehedron") / 2, 0, &FONT_S, "slimehedron", RGB(120, 96, 190));
-    cv_blit(0, 110);
+    lcd_fill(0, 0, 240, 240, SL_PAGE_BG);
+}
+
+/* THE SPLASH (Flah 2026-11-18: "a characteristic little seafoam green slime guy with glasses as the initial boot splash
+ * screen, with a cool sound playing kinda like when u start a gamecube or gameboy color type shit. and say Slimehedron,
+ * then fade into the main mode"). Drawn here, pixel by pixel, no picture stored: the slime drops in, lands with a squash
+ * and a wobble (the jingle's bloop: slime.c SL_JINGLE), a glint crosses his glasses, the name comes up under him, he
+ * blinks, and it all fades into the tank. Any button or key skips to the fade. */
+#define SL_SPLASH_MS 3300u                  /* from the drop to the end of the fade */
+#define SL_FADE_MS 500u
+static uint32_t sl_splash_t0;               /* fm1_ms when it began (0: not yet) */
+static uint8_t sl_splash_done, sl_skip;
+static uint32_t sl_skip_at;
+static uint8_t sl_title[32][240] __attribute__((section(".pool")));   /* the name's coverage, 0..15 (FONT_L, drawn once) */
+static int sl_splashing(void) { return !sl_splash_done; }
+static float sl_ease(float x) { x = x < 0.0f ? 0.0f : x > 1.0f ? 1.0f : x; return x * x * (3.0f - 2.0f * x); }
+static uint16_t sl_bl(uint16_t a, uint16_t b, uint32_t k)   /* a toward b by k / 32 (fm1/core/paint.h blend565) */
+{
+    uint32_t A = (a | ((uint32_t)a << 16)) & 0x07E0F81Fu, B = (b | ((uint32_t)b << 16)) & 0x07E0F81Fu;
+    uint32_t r = ((B * k + A * (32u - k)) >> 5) & 0x07E0F81Fu;
+    return (uint16_t)(r | (r >> 16));
+}
+static uint32_t sl_k(float t) { int k = (int)(t * 32.0f + 0.5f); return (uint32_t)(k < 0 ? 0 : k > 32 ? 32 : k); }
+/* this frame's pose: where he is, how squashed, what shows */
+typedef struct { float cx, cy, W, H, glint, title, blink, alpha, shadow; } sl_pose;
+static sl_pose sl_splash_pose(uint32_t ms)
+{
+    sl_pose p;
+    const float ground = 150.0f, W0 = 56.0f, H0 = 50.0f, t = (float)ms;
+    float s = 0.0f, up = 0.0f;
+    if (t < 420.0f) { float q = t / 420.0f; up = 190.0f * (1.0f - q * q); s = -0.12f * q; }   /* falling, a touch stretched */
+    else { float u = (t - 420.0f) / 1000.0f; s = 0.30f * expf(-u * 7.5f) * cosf(u * 31.0f); }   /* landed: squash, wobble */
+    p.W = W0 * (1.0f + s); p.H = H0 * (1.0f - s);
+    p.cx = 120.0f; p.cy = ground - p.H * 0.92f - up;
+    p.shadow = 1.0f - (up / 190.0f);
+    p.glint = t > 900.0f && t < 1400.0f ? (t - 900.0f) / 500.0f : -1.0f;
+    p.title = sl_ease((t - 950.0f) / 450.0f);
+    p.blink = t > 2050.0f && t < 2190.0f ? 1.0f : 0.0f;
+    p.alpha = 1.0f - sl_ease((t - (float)(SL_SPLASH_MS - SL_FADE_MS)) / (float)SL_FADE_MS);
+    return p;
+}
+static void sl_title_render(void)           /* the name in SLOOP's large capitals, as coverage */
+{
+    static const char *const NAME = "SLIMEHEDRON";
+    int32_t w = text_w(&FONT_L, NAME), x, y;
+    cv_begin(240, 32, 0);
+    cv_oy = 0;
+    cv_text(120 - w / 2, 0, &FONT_L, NAME, 0xFFFFu);
+    for (y = 0; y < 32; y++)
+        for (x = 0; x < 240; x++) sl_title[y][x] = (uint8_t)(((swap16(cv_px[y * 240 + x]) >> 5) & 63u) >> 2);
+}
+/* one native-order band (rows y0..y0+15) of the splash, over what is there by p.alpha (1: all splash) */
+static void sl_splash_band(uint16_t *b, int y0, const sl_pose *p)
+{
+    static const uint16_t BODY = 0x8F38u, RIM = 0x4E31u, LINE = 0x2BEDu, LENS = 0x3970u, PINK = 0xFD18u, GLOW = 0xBF7Du, SHADE = 0xC5DBu;
+    uint32_t ka = sl_k(p->alpha), kt = sl_k(p->title), ks = (uint32_t)(4.0f + 10.0f * p->shadow);
+    float iW = 1.0f / p->W, iH = 1.0f / p->H, sx = p->W / 56.0f, sy = p->H / 50.0f;
+    float ex = 20.0f * sx, ey = p->cy - 4.0f * sy, lr = 14.5f * (sx + sy) * 0.5f;    /* the eyes (lenses): off the middle, radius */
+    float iSh = 1.0f / (p->W * (0.6f + 0.5f * p->shadow)), i1x = 1.0f / (7.0f * sx), i1y = 1.0f / (8.0f * sy), i2x = 1.0f / (5.0f * sx), i2y = 1.0f / (6.0f * sy);
+    float bx0 = p->cx - p->W * 1.05f, bx1 = p->cx + p->W * 1.05f, by0 = p->cy - p->H * 1.05f, by1 = p->cy + p->H * 1.25f;   /* his box */
+    int r, x;
+    if (!ka) return;
+    for (r = 0; r < 16; r++) {
+        int y = y0 + r;
+        float yc = (float)y + 0.5f, dy = (yc - p->cy) * iH, gy = yc - 92.0f, sy2 = (yc - 153.0f) * (1.0f / 6.0f), dy2 = dy * dy;
+        float rry = dy < 0.0f ? dy2 : dy2 * dy2, d1y = (yc - (p->cy + 0.86f * p->H)) * i1y, d2y = (yc - (p->cy + 0.92f * p->H)) * i2y;
+        int inrow = yc > by0 && yc < by1, glowrow = gy * gy < 95.0f * 95.0f, shrow = sy2 * sy2 < 1.0f;
+        uint16_t *row = b + r * 240;
+        for (x = 0; x < 240; x++) {
+            float xc = (float)x + 0.5f, rr = 2.0f;
+            uint16_t c = SL_PAGE_BG;
+            if (glowrow) { float gx = xc - 120.0f, g2 = (gx * gx + gy * gy) * (1.0f / (95.0f * 95.0f)); if (g2 < 1.0f) c = sl_bl(c, GLOW, (uint32_t)(7.0f * (1.0f - g2))); }   /* a soft mint glow */
+            if (shrow) { float sx2 = (xc - p->cx) * iSh; if (sx2 * sx2 + sy2 * sy2 < 1.0f) c = sl_bl(c, SHADE, ks); }   /* his shadow (smaller while he is in the air) */
+            if (inrow && xc > bx0 && xc < bx1) {
+                float dx = (xc - p->cx) * iW;
+                rr = dx * dx + rry;                                                              /* a dome on a soft flat bottom */
+                if (rr > 0.75f) {   /* two drips hanging off his base */
+                    float d1x = (xc - (p->cx - 0.62f * p->W)) * i1x, d2x = (xc - (p->cx + 0.48f * p->W)) * i2x;
+                    float q1 = d1x * d1x + d1y * d1y, q2 = d2x * d2x + d2y * d2y;
+                    if (q1 < 1.0f && 0.75f + 0.25f * q1 < rr) rr = 0.75f + 0.25f * q1;
+                    if (q2 < 1.0f && 0.75f + 0.25f * q2 < rr) rr = 0.75f + 0.25f * q2;
+                }
+            }
+            if (rr < 1.0f) {
+                float dx = (xc - p->cx) * iW;
+                float hx = dx + 0.42f, hy = dy + 0.52f, h = hx * hx * 2.2f + hy * hy * 3.0f;
+                c = BODY;
+                if (rr > 0.80f) c = sl_bl(BODY, RIM, sl_k((rr - 0.80f) * 3.2f));                 /* rounder toward the rim */
+                if (rr > 0.93f) c = sl_bl(c, LINE, sl_k((rr - 0.93f) * 11.0f));                  /* a soft outline */
+                if (h < 0.10f) c = sl_bl(c, 0xFFFFu, sl_k(0.75f * (1.0f - h / 0.10f)));          /* the shine, top left */
+                {   /* the face: glasses, eyes, a smile, rosy cheeks */
+                    float lx = xc - (p->cx - ex), rx = xc - (p->cx + ex), ly = yc - ey;
+                    float dl = lx * lx + ly * ly, dr2 = rx * rx + ly * ly, d = dl < dr2 ? dl : dr2, ox = dl < dr2 ? lx : rx;
+                    float L2 = lr * lr, Li = (lr - 3.0f) * (lr - 3.0f);
+                    float cx1 = xc - (p->cx - 0.56f * p->W), cx2 = xc - (p->cx + 0.56f * p->W), cyy = (yc - (p->cy + 0.26f * p->H)) / 4.0f;
+                    if ((cx1 * cx1) / 49.0f + cyy * cyy < 1.0f || (cx2 * cx2) / 49.0f + cyy * cyy < 1.0f) c = sl_bl(c, PINK, 14u);
+                    if (d < Li) {                                                                /* inside a lens */
+                        float px2 = ox - 1.0f * sx, py2 = ly - 2.0f * sy;
+                        c = sl_bl(c, 0xFFFFu, 12u);
+                        if (p->blink > 0.0f) { if (py2 > -1.2f && py2 < 1.2f && px2 > -5.0f && px2 < 5.0f) c = LENS; }
+                        else if (px2 * px2 + py2 * py2 < 22.0f) c = (px2 + 1.6f) * (px2 + 1.6f) + (py2 + 1.8f) * (py2 + 1.8f) < 2.4f ? 0xFFFFu : 0x18C3u;
+                        if (p->glint >= 0.0f) { float g = (ox + ly) / (2.0f * lr) + 1.0f - p->glint * 2.4f; if (g > -0.10f && g < 0.10f) c = sl_bl(c, 0xFFFFu, 24u); }
+                    } else if (d < L2) c = LENS;                                                 /* the rims */
+                    if (yc > ey - 2.6f && yc < ey + 0.6f && xc > p->cx - ex + lr - 1.0f && xc < p->cx + ex - lr + 1.0f) c = LENS;   /* the bridge */
+                    {   /* the arms, back to his sides */
+                        float ax = xc < p->cx ? (p->cx - ex - lr) - xc : xc - (p->cx + ex + lr);
+                        if (ax > -1.0f && ax < 9.0f * sx && yc > ey - 2.4f - ax * 0.15f && yc < ey + 0.2f - ax * 0.15f && rr < 0.95f) c = LENS;
+                    }
+                    {   /* the smile: the bottom of a ring */
+                        float mx = xc - p->cx, my = yc - (p->cy + 6.0f * sy), m = mx * mx + my * my, R1 = 9.0f * sx;
+                        if (my > 2.0f && m < (R1 + 1.2f) * (R1 + 1.2f) && m > (R1 - 1.2f) * (R1 - 1.2f)) c = LENS;
+                    }
+                }
+            }
+            if (kt && y >= 172 && y < 204) {                                                     /* the name, rising in */
+                int ty = y - 172 + (int)(8.0f * (1.0f - p->title));
+                if (ty >= 0 && ty < 32 && sl_title[ty][x]) c = sl_bl(c, 0x7AF5u, (uint32_t)sl_title[ty][x] * 2u * kt / 32u);
+            }
+            row[x] = ka >= 32u ? c : sl_bl(row[x], c, ka);
+        }
+    }
 }
 
 /* the label: what just changed, in plain words, at the top of the screen */
@@ -155,7 +273,7 @@ static void sl_say_num(const char *a, int32_t v, const char *unit)
 enum { PG_HOME, PG_FX, PG_SOUND, PG_MIX, PG_ENV };
 static uint8_t sl_page, sl_fx_part;
 static const char *const SL_FOOT[5][4] = {
-    {"tempo", "spin", "rhythm", "key"}, {"filter", "drive", "echo", "space"},
+    {"tempo", "spin", "rhythm", "key"}, {"filter", "drive", "delay", "reverb"},
     {"melody", "bass", "chords", "kit"}, {"melody", "bass", "chords", "drums"},
     {"attack", "decay", "sustain", "release"},
 };
@@ -170,7 +288,7 @@ static void sl_page_say(void)
 }
 static void sl_page_title(void)              /* the page's name, held at the top while you are on it */
 {
-    const char *t = sl_page == PG_FX ? SL_PART_NAME[sl_fx_part] : sl_page == PG_ENV ? SL_PART_NAME[sl_env_part] : sl_page == PG_SOUND ? "sound" : "mix";
+    const char *t = sl_page == PG_FX ? SL_PART_NAME[sl_fx_part] : sl_page == PG_ENV ? SL_PART_NAME[sl_env_part] : sl_page == PG_SOUND ? "sound" : sl_page == PG_MIX ? "mix" : "press play";   /* (home: only while stopped) */
     uint32_t i = 0, j = 0;
     const char *pre = sl_page == PG_FX ? "fx: " : sl_page == PG_ENV ? "notes: " : "";
     while (pre[j] && i < sizeof sl_label - 1u) sl_label[i++] = pre[j++];
@@ -194,10 +312,10 @@ static void sl_fx_turn(int32_t knob, int32_t d)
         sl_say_num(sl_fx_part == SL_P_DRUMS ? "punch " : "drive ", f->drive * 100 / 127, "%");
     } else if (knob == 2) {
         f->echo = (uint8_t)clamp((int32_t)f->echo + d, 0, 127);
-        sl_say_num("echo ", f->echo * 100 / 127, "%");
+        sl_say_num("delay ", f->echo * 100 / 127, "%");
     } else if (knob == 3) {
         f->space = (uint8_t)clamp((int32_t)f->space + d, 0, 127);
-        sl_say_num("space ", f->space * 100 / 127, "%");
+        sl_say_num("reverb ", f->space * 100 / 127, "%");
     } else if (knob == 4) {                                /* SELECT: the character */
         f->ctype = (uint8_t)sl_wrap(f->ctype, d, (int32_t)SL_NCHAR);
         if (f->ctype && !f->camt) f->camt = 64;
@@ -326,6 +444,7 @@ UI_SMALL static void sl_song_put(const sl_song *g)   /* (requests, as a hand's: 
     fm1_irq_on();
 }
 static uint32_t sl_changed_ms, sl_auto_hash;   /* the last hand on the panel; what the session in flash holds */
+static uint8_t sl_restored;                    /* the session has been read back (after the splash): only then is one written */
 UI_SMALL static int sl_song_write(uint32_t obj)
 {
     sl_song_take(&sl_sbuf);
@@ -342,7 +461,7 @@ UI_SMALL static int sl_song_read(uint32_t obj)
 UI_SMALL static void sl_session_tick(void)   /* main loop: the session into flash, stopped and quiet, 3 s after a change */
 {
     static uint32_t checked;
-    if (sl_run || !flash_ok || fm1_ms - sl_changed_ms < 3000u || fm1_ms - checked < 1000u) return;
+    if (sl_run || !flash_ok || !sl_restored || fm1_ms - sl_changed_ms < 3000u || fm1_ms - checked < 1000u) return;
     checked = fm1_ms;
     sl_song_take(&sl_sbuf);
     if (sl_sbuf.sum == sl_auto_hash || !audio_quiet()) return;
@@ -376,6 +495,7 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
         fm1_irq_off(); sl_key_req |= keys; fm1_irq_on();
     }
     if (pressed) sl_changed_ms = fm1_ms;
+    if ((pressed || keys) && sl_splash_t0 && !sl_splash_done && !sl_skip) { sl_skip = 1; sl_skip_at = fm1_ms; }   /* a hand: on to the fade */
     /* ---- buttons: the same on every page ---- */
     {   /* PLAY: at once; a double tap: from the top (the band's bar 1, the loop's bar 1) */
         static uint32_t last;
@@ -477,7 +597,7 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
             sl_say("key: ", SL_NOTE[nr % 12]);
         }
         if ((d = panel_enc(EN_SELECT)) != 0) { sl_walls = (uint8_t)clamp((int32_t)sl_walls + d, 3, 12); sl_reform_req = 1; sl_say_num("walls ", sl_walls, 0); }
-        if ((d = panel_enc(EN_ALGO)) != 0) { sl_space = (uint8_t)(d > 0); sl_reform_req = 1; sl_say(sl_space ? "portals" : "normal space", 0); }
+        if ((d = panel_enc(EN_ALGO)) != 0) { sl_space = (uint8_t)(d > 0); sl_reform_req = 1; sl_say(sl_space ? "portals on" : "portals off", 0); }
         if ((d = panel_enc(EN_PRESET)) != 0) {
             uint32_t i = (uint32_t)sl_wrap(sl_snd_of[SL_P_MEL], d, (int32_t)SL_NMEL);
             sl_snd_req[SL_P_MEL] = (uint8_t)i; sl_env_on[SL_P_MEL] = 0; sl_say("melody: ", SL_MEL_SND[i].name);
@@ -549,21 +669,21 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
         if ((d = panel_enc(EN_ALGO)) != 0) {               /* the echo's time, in note values (SLOOP's N_DLY) */
             static const char *const T[9] = {"1/4", "1/8", "1/16", "1/32", "1/8 triplet", "1/16 triplet", "1/8 dotted", "1/16 dotted", "1/4 dotted"};
             song.g[G_DTIME] = (int16_t)sl_wrap(song.g[G_DTIME], d, 9);
-            sl_say("echo time ", T[song.g[G_DTIME]]);
+            sl_say("delay time ", T[song.g[G_DTIME]]);
         }
         if ((d = panel_enc(EN_PRESET)) != 0) {             /* the room: small .. a hall */
             song.g[G_RSIZE] = (int16_t)clamp(song.g[G_RSIZE] + accel(EN_PRESET, d, 32) * 4, 0, 127);
-            sl_say_num("room size ", song.g[G_RSIZE] * 100 / 127, "%");
+            sl_say_num("reverb size ", song.g[G_RSIZE] * 100 / 127, "%");
         }
     }
 #undef SL_PRESSED
     fm6_poll();                             /* FM6: a part's patch loads when its preset asks (SLOOP calls this from its own
                                              * ui_input, which this firmware does not run: without it no FM patch ever loaded) */
     slime_conduct();                        /* the music, ahead of the audio clock (slime.c) */
-    {   /* the session as it was left (power-on), once the music has started; the loop's news on the screen */
-        static uint8_t restored, last_state, last_count;
-        if (!restored && sl_conducting) {
-            restored = 1;
+    {   /* the session as it was left (power-on), once the splash is over; the loop's news on the screen */
+        static uint8_t last_state, last_count;
+        if (!sl_restored && sl_conducting && !sl_splashing()) {
+            sl_restored = 1;
             if (sl_song_read(SL_OBJ_SESSION)) { sl_auto_hash = sl_sbuf.sum; sl_say("welcome back", 0); }
         }
         if (sl_loop_countin != last_count) { last_count = sl_loop_countin; if (last_count) sl_say_num("rec in ", last_count, 0); }
@@ -583,9 +703,20 @@ static void slime_ui(void)
     st_view *v = sl_view();
     float M[9], t = (float)fm1_ms * 0.001f;
     uint32_t k, i, t0 = fm1_ms;
+    static uint8_t ever_played;
+    sl_pose sp = {0};
+    int splash = 0;
     slime_poll();
+    if (!sl_splash_t0) { sl_title_render(); sl_splash_t0 = fm1_ms; sl_boot_ms = fm1_ms; }   /* the first frame: the splash begins */
+    if (!sl_splash_done) {
+        uint32_t ms = fm1_ms - sl_splash_t0;
+        if (sl_skip) { uint32_t f = SL_SPLASH_MS - SL_FADE_MS + (fm1_ms - sl_skip_at); if (f > ms) ms = f; }
+        if (ms >= SL_SPLASH_MS) sl_splash_done = 1; else { sp = sl_splash_pose(ms); splash = 1; }
+    }
+    if (sl_run) ever_played = 1;
     for (k = 0; k < 27u; k++) fm1_led_key(14u + k, (int32_t)(sl_lit_until[k] - fm1_ms) > 0);
-    for (k = 0; k < 14u; k++) fm1_led_key(k, (k == panel.btn[B_PLAY] && sl_run) || (k == panel.btn[B_ARP] && sl_auto) ||
+    /* PLAY blinks until it is first pressed: nothing plays until then */
+    for (k = 0; k < 14u; k++) fm1_led_key(k, (k == panel.btn[B_PLAY] && (sl_run || (!ever_played && !splash && ((fm1_ms >> 9) & 1u)))) || (k == panel.btn[B_ARP] && sl_auto) ||
                                              (k == panel.btn[B_LFO] && sl_slime) || (k == panel.btn[B_SEQ] && (sl_drums_on || sl_band_on)) ||
                                              (k == panel.btn[B_FX] && sl_page == PG_FX) || (k == panel.btn[B_EDIT] && sl_page == PG_SOUND) ||
                                              (k == panel.btn[B_GLO] && sl_page == PG_MIX) || (k == panel.btn[B_HOME] && sl_page == PG_HOME) ||
@@ -617,11 +748,12 @@ static void slime_ui(void)
         }
         x0 -= SL_MARGIN; x1 += SL_MARGIN;                        /* a ball or a lit rim can stand a little proud */
         y0 = (int32_t)v->pymin - SL_MARGIN; y1 = (int32_t)v->pymax + SL_MARGIN;
-        if (v->n < 3 || sl_bursting() || (sl_bn && fm1_ms - sl_burst_t0 < SL_BURST_MS + 100u)) { x0 = 0; x1 = 239; y0 = 0; y1 = 239; }
+        if (v->n < 3 || splash || sl_bursting() || (sl_bn && fm1_ms - sl_burst_t0 < SL_BURST_MS + 100u)) { x0 = 0; x1 = 239; y0 = 0; y1 = 239; }
         {   /* the label's rows join the box while it shows, and once more after, to paint it away */
-            uint8_t on = (int32_t)(sl_label_until - fm1_ms) > 0 || sl_page != PG_HOME;   /* a page keeps its name up */
+            uint8_t on = !splash && ((int32_t)(sl_label_until - fm1_ms) > 0 || sl_page != PG_HOME || !sl_run);   /* a page keeps its name up;
+                                                                                  * stopped at home: "press play" */
             static uint8_t foot_shown;
-            uint8_t foot = sl_page != PG_HOME;
+            uint8_t foot = sl_page != PG_HOME && !splash;
             if (on && (int32_t)(sl_label_until - fm1_ms) <= 0) sl_page_title();
             if (on || sl_label_shown) { y0 = 0; x0 = 0; x1 = 239; }
             if (foot || foot_shown) { y1 = 239; x0 = 0; x1 = 239; }
@@ -637,9 +769,10 @@ static void slime_ui(void)
             uint16_t *b = sl_strip((uint32_t)nb++);   /* (the other band may still be on its way to the panel) */
             uint32_t ry0 = k * 16u < (uint32_t)y0 ? (uint32_t)y0 - k * 16u : 0u, ry1 = k * 16u + 15u > (uint32_t)y1 ? (uint32_t)y1 - k * 16u : 15u;
             uint32_t rows = ry1 - ry0 + 1u;
-            st_draw_band(v, (int)(k * 16u), 16, b, BG);
-            if (sl_bursting()) sl_burst_band(b, (int)(k * 16u));
-            if (k == 14u && sl_page != PG_HOME) {             /* the bottom row: the four knobs' names (cv_text needs cv_px) */
+            if (!splash || sp.alpha < 1.0f) st_draw_band(v, (int)(k * 16u), 16, b, BG);   /* (the splash alone covers it all) */
+            if (splash) sl_splash_band(b, (int)(k * 16u), &sp);
+            else if (sl_bursting()) sl_burst_band(b, (int)(k * 16u));
+            if (k == 14u && sl_page != PG_HOME && !splash) {  /* the bottom row: the four knobs' names (cv_text needs cv_px) */
                 uint32_t q;
                 if (b != cv_px) { lcd_sync(); b = cv_px; st_draw_band(v, (int)(k * 16u), 16, b, BG); if (sl_bursting()) sl_burst_band(b, (int)(k * 16u)); nb++; }
                 cv_w = 240; cv_h = 16; cv_oy = 0;
@@ -673,6 +806,16 @@ static void slime_ui(void)
         sl_dbg[0] = (sl_frames & 0xFFFFu) | (worst << 16);
         sl_dbg[1] = (audio_max_us & 0xFFFFu) | (felucca_dbg.late << 16);
         sl_dbg[2] = (sl_tick_us_max & 0xFFFFu) | ((sl_tick_n ? sl_tick_us_sum / sl_tick_n : 0u) << 16);
-        sl_dbg[3] = (sl_stat.late & 0xFFFFu) | ((sl_reform_us_max / 1000u) << 16);   /* notes late (> 1 block) | the slowest reform, ms */
+        {   /* the frame rate over each 5 s after the splash: the worst window, and the last one (x10) */
+            static uint32_t win_t, win_f, fps_min = 0xFFFu, fps_last;
+            if (splash || !win_t) { win_t = fm1_ms; win_f = sl_frames; }
+            else if (fm1_ms - win_t >= 5000u) {
+                fps_last = (sl_frames - win_f) * 10000u / (fm1_ms - win_t);
+                if (fps_last < fps_min) fps_min = fps_last;
+                win_t = fm1_ms; win_f = sl_frames;
+            }
+            /* notes late (> 1 block, to 255) | the worst 5 s window's fps x10 | the last one's (2026-11-18: was the reform's ms) */
+            sl_dbg[3] = (sl_stat.late > 255u ? 255u : sl_stat.late) | ((fps_min & 0xFFFu) << 8) | ((fps_last & 0xFFFu) << 20);
+        }
     }
 }
