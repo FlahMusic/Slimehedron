@@ -96,8 +96,28 @@ int main(int argc, char **argv)
         for (p = 0; p < 3u; p++) for (i = 0; i < sl_snd_count(p); i++) { const sl_snd *s = sl_snd_entry(p, i); n++;
             if (sl_preset_named(s->eng, s->name) < 0) { printf("missing %s on engine %u\n", s->name, s->eng); bad++; } }
         for (i = 0; i < SL_NSET; i++) if (SL_SETS[i].mel >= SL_NMEL || SL_SETS[i].bass >= SL_NBASS || SL_SETS[i].comp >= SL_NCOMP) { printf("set %s out of range\n", SL_SETS[i].name); bad++; }
+        for (i = 0; i < 11u; i++) {                       /* each rhythm's kit is one of SLOOP's synthesized kits */
+            uint32_t k, j;
+            n++;
+            for (k = DRUM_SAMPLED; k < DRUM_USR; k++) {
+                for (j = 0; SL_KIT_SOUND[i][j] && DRUM_KIT_NAMES[k][j] == SL_KIT_SOUND[i][j]; j++) {}
+                if (!SL_KIT_SOUND[i][j] && !DRUM_KIT_NAMES[k][j]) break;
+            }
+            if (k == DRUM_USR) { printf("missing kit %s\n", SL_KIT_SOUND[i]); bad++; }
+        }
         printf("sounds %u bad %u\n", n, bad);
         return bad ? 1 : 0;
+    }
+    if (argc >= 4 && !strcmp(argv[1], "hit")) {         /* hit KIT NOTE: one drum hit, 1 s, mono float32 on stdout */
+        static float buf[FS];
+        uint32_t i, k;
+        preview_init(); preview_render();
+        sl_drum_kit(argv[2]); song.g[G_DRLVL] = 100;
+        if (getenv("SL_DRY")) { song.g[G_DRREV] = 0; song.g[G_DRDLY] = 0; }   /* the hit alone, no room */
+        drum_on((uint32_t)atoi(argv[3]), 110);
+        for (i = 0; i < FS; i += CTL) { float *o = preview_render(); for (k = 0; k < CTL && i + k < FS; k++) buf[i + k] = o[2 * k] + o[2 * k + 1]; }
+        fwrite(buf, sizeof buf, 1, stdout);
+        return 0;
     }
     if (argc >= 5 && !strcmp(argv[1], "pitch")) {
         const sh_scale *sc = sh_scale_by_id(argv[2]);

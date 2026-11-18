@@ -65,6 +65,25 @@ for pp in "0 mel" "1 bass" "2 comp" "3 drums"; do
   ok "$(t "$worst <= 6")" "[$2] all 13 fx presets within 6 dB of its own sound (worst $worst dB)"
 done
 
+# 7. the site's own kits (gen-kits.js): every rhythm's kick, rendered dry on SLOOP's drum synth, ends on the site's pitch
+#    (KITTONE ke, within 20%) and dies when the site's does (-60 dB within 70..110% of kd: the meter smooths the tail)
+for kit in "SH POP" "SH ROCK" "SH DISCO" "SH BOSSA" "SH JAZZ" "SH SAMBA" "SH CONGA" "SH MARCH" "SH CHIP" "SH BEEP" "SH INDUS"; do
+  SL_DRY=1 "$B" hit "$kit" 36 > "$OUT/hit.raw"
+  r=$(python3 - "$OUT/hit.raw" "$kit" "$HERE/slime_kits_expect.json" <<'EOF'
+import json, sys
+import numpy as np
+x = np.fromfile(sys.argv[1], np.float32); fs = 44100; want = json.load(open(sys.argv[3]))[sys.argv[2]]
+e = np.abs(x); pk = e.max(); i0 = int(e.argmax()); env = np.convolve(e, np.ones(220) / 220, "same")
+t60 = 1000 * (next((i for i in range(i0, len(env)) if env[i] < pk * 0.001), len(env)) - i0) / fs
+a, b = i0 + int(0.4 * want["kd"] / 1000 * fs), i0 + int(0.8 * want["kd"] / 1000 * fs)   # inside the kick, after its dive
+seg = x[a:b]; z = np.where(np.diff(np.signbit(seg)))[0]; f = (len(z) / 2) / ((b - a) / fs)
+okp = abs(f - want["ke"]) <= 0.2 * want["ke"]; okd = 0.7 * want["kd"] <= t60 <= 1.1 * want["kd"]
+print(("1" if okp and okd else "0") + f" ends at {f:.0f} Hz (site {want['ke']}), -60 dB at {t60:.0f} ms (site {want['kd']})")
+EOF
+)
+  ok "${r%% *}" "[$kit] the site's kick: ${r#* }"
+done
+
 for p in "edo31 1 KALIMBA" "edo19all 1 GLOCKEN" "edo24 2 SOFT KEYS" "major 0 SUB BASS"; do
   set -- $p; sc=$1; e=$2; shift 2
   w=$("$B" pitch "$sc" "$e" "$*" | tail -1 | awk '{print $2}')

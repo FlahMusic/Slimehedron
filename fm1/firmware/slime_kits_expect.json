@@ -1,0 +1,46 @@
+{
+ "SH POP": {
+  "ke": 48,
+  "kd": 340
+ },
+ "SH ROCK": {
+  "ke": 44,
+  "kd": 500
+ },
+ "SH DISCO": {
+  "ke": 42,
+  "kd": 300
+ },
+ "SH BOSSA": {
+  "ke": 56,
+  "kd": 240
+ },
+ "SH JAZZ": {
+  "ke": 50,
+  "kd": 280
+ },
+ "SH SAMBA": {
+  "ke": 50,
+  "kd": 220
+ },
+ "SH CONGA": {
+  "ke": 45,
+  "kd": 300
+ },
+ "SH MARCH": {
+  "ke": 55,
+  "kd": 200
+ },
+ "SH CHIP": {
+  "ke": 75,
+  "kd": 140
+ },
+ "SH BEEP": {
+  "ke": 62,
+  "kd": 180
+ },
+ "SH INDUS": {
+  "ke": 34,
+  "kd": 600
+ }
+}

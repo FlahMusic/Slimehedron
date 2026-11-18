@@ -77,7 +77,9 @@ static void sl_drum_kit(const char *name)
 }
 /* each of the site's rhythms on the FM-1 kit closest to its character (the site's KITTONE style: 909 / acoustic /
  * brush / 808 / chip / stick), in band_tables.h order: pop rock disco bossa jazz samba conga march chip beep industrial */
-static const char *const SL_KIT_SOUND[11] = {"909", "80S", "DISCO", "LATIN", "JAZZ", "LATIN", "AFRO", "VINTAGE", "CHIP", "ARCADE", "INDUSTR"};
+static const char *const SL_KIT_SOUND[11] = {"SH POP", "SH ROCK", "SH DISCO", "SH BOSSA", "SH JAZZ", "SH SAMBA", "SH CONGA", "SH MARCH", "SH CHIP", "SH BEEP", "SH INDUS"};
+/* (each rhythm plays the site's OWN kit: KITTONE rebuilt in SLOOP's drum synth, fm1/host/gen-kits.js; SLOOP's kits by
+ * name before, 2026-11-16) */
 
 static void slime_levels(void);
 

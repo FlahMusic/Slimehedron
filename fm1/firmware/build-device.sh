@@ -20,6 +20,7 @@ GOT="$(git -C "$SLOOP" rev-parse --short=7 HEAD)"
 rm -rf "$WORK"; mkdir -p "$WORK"
 (cd "$SLOOP" && tar cf - --exclude=.git --exclude=./build --exclude=./assets/samples-cc0 .) | (cd "$WORK" && tar xf -)
 python3 "$HERE/patch_sloop.py" "$WORK"
+python3 "$HERE/patch_kits.py" "$WORK/tools"           # the site's own drum kits, synthesized (gen-kits.js)
 mkdir -p "$WORK/firmware/slime" "$WORK/build/slime"
 cp "$HERE/slime.c" "$HERE/slime_ui.c" "$WORK/firmware/slime/"
 cp "$HERE"/../core/*.c "$HERE"/../core/*.h "$WORK/firmware/slime/"
