@@ -370,6 +370,14 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
       26 sounds level-matched by measurement, 9 sound sets. The site's drummer feel ported (ghosts, accents, swing, drift,
       pickups; check-band 7 humanize checks). auto-check.sh proves the slime's chords and key journey end to end.
       fm1-emu strict 160 s: ~24 fps, audio 49%, 0 late notes. Details: the fm1 spec. HOW-TO.txt has the control map.
+    FM-1 SITE DRUMS + FM SOUNDS + SPEAKER RAILS (2026-11-18). Every rhythm plays the site's own kit (KITTONE + dHit
+      rebuilt as SLOOP drum-synth kits by fm1/host/gen-kits.js, levelled by SLOOP's level_drumkits.py; check-host: each
+      kick's end pitch and -60 dB time against the site, 11/11). Four 6-op FM patches (fm1/firmware/slime_fm6.py: tine,
+      bell, harp, bass) written from Yamaha's FM 101 articles and Chowning 1973, no factory bank data (Felucca's rule);
+      in key at three octaves, level-matched, a "dx" set. SLOOP's knob acceleration (after JIANT) on every ranged knob.
+      Rails: all knobs maxed on all parts -> peaks -5.21 dBFS, <= -16.4 LUFS, no build-up (sabotaged: limiter, runaway
+      echo). SLOOP's echo loop gain tops out at 0.84 and the reverb's at 0.92 (fx.c), so neither can run away. The dx set
+      costs screen time (~16 fps), never audio. One deadline miss at boot in every run, before any sound (not the FM).
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

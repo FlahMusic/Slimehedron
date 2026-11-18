@@ -45,7 +45,7 @@ ok "$(t "$M - $D < 6")" "the mix check can tell: drums at SLOOP's stock level ar
 #    within 1.5 dB of the part's default, measured alone
 L="$("$B" soundcheck)"; ok "$(t "$(num "$L" bad) == 0")" "every panel sound exists in its engine ($L)"
 lu1() { num "$("$B" song "$OUT/lv.wav" 24 major 6 100 7 1 KALIMBA)" lufs; }
-for pv in "mel MELI 10" "bass BASSI 8" "comp COMPI 8"; do
+for pv in "mel MELI 13" "bass BASSI 9" "comp COMPI 9"; do
   set -- $pv; ref=$(SL_ONLY=$1 lu1); worst=0; i=0
   while [ $i -lt $3 ]; do
     v=$(env SL_ONLY=$1 "SL_$2=$i" "$B" song "$OUT/lv.wav" 24 major 6 100 7 1 KALIMBA | tr ' ' '\n' | awk 'p{print;exit} $0=="lufs"{p=1}')
@@ -82,6 +82,48 @@ print(("1" if okp and okd else "0") + f" ends at {f:.0f} Hz (site {want['ke']}),
 EOF
 )
   ok "${r%% *}" "[$kit] the site's kick: ${r#* }"
+done
+
+# 9. the speaker rails: every knob a person can reach turned to its worst on all four parts at once (drive / punch,
+#    echo and space all the way, the character at full amount, the filter shut, open and high-passed, every fader +6 dB,
+#    the biggest room), the FM set too. SLOOP's master limiter must hold every peak at -5.2 dBFS, the mix must stay a
+#    mix (no louder than -14 LUFS), and nothing may build up (the last 8 bars no more than 3 dB over bars 9..16)
+stress() {
+  L="$(env "$@" "$B" song "$OUT/st.wav" 32 major 6 100 7 1 KALIMBA)"
+  python3 - "$OUT/st.wav" "$(num "$L" lufs)" "$(num "$L" peak_db)" <<'EOF'
+import sys, wave
+import numpy as np
+w = wave.open(sys.argv[1]); fs = w.getframerate(); ch = w.getnchannels()
+x = np.frombuffer(w.readframes(w.getnframes()), np.int16).reshape(-1, ch) / 32768.0
+pk = 20 * np.log10(np.abs(x).max() + 1e-12); bar = int(fs * 2.4)            # 100 bpm: a bar is 2.4 s
+db = lambda a: 10 * np.log10(np.mean(x[a * bar:(a + 8) * bar] ** 2) + 1e-20)
+grow = db(24) - db(8); lu = float(sys.argv[2])
+ok = pk <= -5.0 and lu <= -14 and grow <= 3 and np.isfinite(x).all()
+print(("1" if ok else "0") + f" peak {pk:.2f} dBFS, {lu} LUFS, the end {grow:+.1f} dB on the middle")
+EOF
+}
+for c in 0 1 2 3 4 5 6 7; do
+  r=$(stress SL_STRESS=$c:0); ok "${r%% *}" "[all at max, character $c] ${r#* }"
+done
+for cf in 6:-64 6:63 7:-64 7:63; do
+  r=$(stress SL_STRESS=$cf); ok "${r%% *}" "[all at max, character / filter $cf] ${r#* }"
+done
+r=$(stress SL_STRESS=6:0 SL_MELI=10 SL_BASSI=8 SL_COMPI=8); ok "${r%% *}" "[all at max, fuzz, the FM sounds] ${r#* }"
+
+# 8. our FM patches (slime_fm6.py) play in key: the note's own fundamental is its strongest partial, low, middle and high
+#    (at Chowning's full index the bell's 0.4x difference tone was: out of key), and every degree sounds within 6 cents
+#    of its wall (the tine's and the bass's detuned pairs beat around the note on purpose, as Yamaha's recipes do)
+for p in "SH TINE" "SH BELL" "SH HARP" "SH BASS"; do
+  parts=""
+  for n in 48 60 72; do
+    [ "$p" = "SH BASS" ] && n=$((n - 12))
+    "$B" note 9 "$p" $n > "$OUT/note.raw"
+    parts="$parts $(python3 "$HERE/host/notemeasure.py" "$OUT/note.raw" x $n | sed 's/.*strongest partial *//; s/x$//')"
+  done
+  off=$(echo $parts | tr ' ' '\n' | awk '{d=$1-1; if(d<0)d=-d; if(d>0.03)n++} END{print n+0}')
+  w=$("$B" pitch major 9 "$p" | tail -1 | awk '{print $2}')
+  [ "$p" = "SH BELL" ] && w=0   # (the pitch tool reads periods; an inharmonic bell has none: its partial check is the proof)
+  ok "$(t "$off == 0 && $w < 6 && $w > -6")" "[$p] in key: strongest partial at three octaves$parts (x the note), worst degree $w cents"
 done
 
 for p in "edo31 1 KALIMBA" "edo19all 1 GLOCKEN" "edo24 2 SOFT KEYS" "major 0 SUB BASS"; do

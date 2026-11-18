@@ -108,6 +108,23 @@ int main(int argc, char **argv)
         printf("sounds %u bad %u\n", n, bad);
         return bad ? 1 : 0;
     }
+    if (argc >= 5 && !strcmp(argv[1], "note")) {        /* note ENGINE "PRESET" MIDI: held 0.5 s, 3 s rendered, mono f32 */
+        static float buf[FS * 3];
+        uint32_t i, k;
+        setup((uint32_t)atoi(argv[2]), argv[3], 100);
+        trk[0].p[P_DLY] = 0; trk[0].p[P_REV] = 0; trk[0].p[P_CHOR] = 0;   /* the voice alone */
+        for (i = 0; i < 64 && sl_busy(0); i++) preview_render();
+        for (i = 0; i < 8; i++) { fm6_poll(); preview_render(); }        /* (an FM6 patch loads in the main loop) */
+        sl_note_on(0, atoi(argv[4]), 100, 0);
+        for (i = 0; i < FS * 3; i += CTL) {
+            float *o;
+            if (i == FS / 2) trk_note_off(&trk[0], (uint32_t)atoi(argv[4]));
+            o = preview_render();
+            for (k = 0; k < CTL && i + k < FS * 3; k++) buf[i + k] = o[2 * k] + o[2 * k + 1];
+        }
+        fwrite(buf, sizeof buf, 1, stdout);
+        return 0;
+    }
     if (argc >= 4 && !strcmp(argv[1], "hit")) {         /* hit KIT NOTE: one drum hit, 1 s, mono float32 on stdout */
         static float buf[FS];
         uint32_t i, k;
@@ -162,7 +179,16 @@ int main(int argc, char **argv)
         if (getenv("SL_BASSI")) sl_part_sound(SL_P_BASS, (uint32_t)atoi(getenv("SL_BASSI")));
         if (getenv("SL_COMPI")) sl_part_sound(SL_P_COMP, (uint32_t)atoi(getenv("SL_COMPI")));
         for (k = 0; k < 64 && (sl_busy(0) || sl_busy(1) || sl_busy(2)); k++) preview_render();   /* the presets' fade-ins */
+        for (k = 0; k < 8; k++) { fm6_poll(); preview_render(); }   /* an FM6 part's patch loads in the main loop, as on the device */
         slime_band_start(getenv("SL_KIT") ? sh_band_kit_by_name(getenv("SL_KIT")) : 0, (uint32_t)strtoul(argv[7], 0, 10) * 2654435761u);
+        if (getenv("SL_STRESS")) {   /* every knob a person can reach, at its worst: CHARACTER:FILTER (all four parts) */
+            int c = atoi(getenv("SL_STRESS")), fl = atoi(strchr(getenv("SL_STRESS"), ':') + 1), p;
+            for (p = 0; p < 4; p++) {
+                sl_fx f = {(int8_t)fl, 127, 127, 127, (uint8_t)c, 127};
+                sl_fxs[p] = f; sl_fx_apply((uint32_t)p); sl_mix[p] = 12;
+            }
+            song.g[G_RSIZE] = 127; slime_levels();
+        }
         if (getenv("SL_FXP")) { int p = atoi(getenv("SL_FXP")), i = atoi(strchr(getenv("SL_FXP"), ':') + 1); sl_fx_preset((uint32_t)p, (uint32_t)i); }   /* PART:PRESET */
         if (getenv("SL_HUMAN")) sl_band.human = atoi(getenv("SL_HUMAN"));
         if (getenv("SL_JOURNEY")) sl_band.journey = sl_journey_bars((double)bpm);   /* the slime on: the key journey */

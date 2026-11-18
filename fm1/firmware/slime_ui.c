@@ -181,26 +181,26 @@ static void sl_fx_turn(int32_t knob, int32_t d)
 {
     sl_fx *f = &sl_fxs[sl_fx_part];
     if (knob == 0) {
-        int32_t was = f->filt, now = clamp(was + d * 3, -64, 63);
+        int32_t was = f->filt, now = clamp(was + d, -64, 63);
         if ((was > 0 && now < 0) || (was < 0 && now > 0)) now = 0;   /* crossing the middle stops at open (a detent) */
         f->filt = (int8_t)now;                             /* (a first try snapped |f| < 3 to 0: single clicks never left it) */
         sl_say_num(sl_filter_word(f->filt), f->filt < 0 ? -f->filt : f->filt, 0);
         if (!f->filt) sl_say("filter open", 0);
     } else if (knob == 1) {
-        f->drive = (uint8_t)clamp((int32_t)f->drive + d * 3, 0, 127);
+        f->drive = (uint8_t)clamp((int32_t)f->drive + d, 0, 127);
         sl_say_num(sl_fx_part == SL_P_DRUMS ? "punch " : "drive ", f->drive * 100 / 127, "%");
     } else if (knob == 2) {
-        f->echo = (uint8_t)clamp((int32_t)f->echo + d * 3, 0, 127);
+        f->echo = (uint8_t)clamp((int32_t)f->echo + d, 0, 127);
         sl_say_num("echo ", f->echo * 100 / 127, "%");
     } else if (knob == 3) {
-        f->space = (uint8_t)clamp((int32_t)f->space + d * 3, 0, 127);
+        f->space = (uint8_t)clamp((int32_t)f->space + d, 0, 127);
         sl_say_num("space ", f->space * 100 / 127, "%");
     } else if (knob == 4) {                                /* SELECT: the character */
         f->ctype = (uint8_t)sl_wrap(f->ctype, d, (int32_t)SL_NCHAR);
         if (f->ctype && !f->camt) f->camt = 64;
         sl_say("character: ", SL_CHAR[f->ctype].name);
     } else if (knob == 5) {                                /* ALGORITHM: its amount */
-        f->camt = (uint8_t)clamp((int32_t)f->camt + d * 3, 0, 127);
+        f->camt = (uint8_t)clamp((int32_t)f->camt + d, 0, 127);
         sl_say_num(f->ctype ? SL_CHAR[f->ctype].name : "character off ", f->ctype ? f->camt * 100 / 127 : 0, "%");
     }
     sl_fxp[sl_fx_part] = 0xFF;                             /* (a preset no more: your own) */
@@ -255,10 +255,13 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
         sl_octave = (int8_t)clamp(sl_octave + (SL_PRESSED(B_OCTUP) ? 1 : -1), -2, 2);
         sl_say_num("octave ", sl_octave, 0);
     }
-    /* ---- the encoders, by page ---- */
+    /* ---- the encoders, by page ----
+     * Every knob over a range accelerates: SLOOP's accel() (ui_input.c, after JIANT FM by juanjiant-bit, GPL-3.0): a slow
+     * turn is one value a detent (fine tuning live), a fast one sweeps up to x16, a reversal never jumps, and SLOOP's
+     * MENU KNOB ACCEL OFF setting is honoured. Lists (sounds, kits, presets, walls) step one at a time. */
     if (sl_page == PG_HOME) {
-        if ((d = panel_enc(EN_K1)) != 0) { int32_t v = clamp(song.g[G_BPM] + d, 40, 200); song.g[G_BPM] = (int16_t)v; sl_say_num("tempo ", v, 0); }
-        if ((d = panel_enc(EN_K2)) != 0) { sl_spin = (int8_t)clamp(sl_spin + d * 4, -100, 100); if (sl_spin) sl_say_num("spin ", sl_spin, 0); else sl_say("spin off", 0); }
+        if ((d = panel_enc(EN_K1)) != 0) { int32_t v = clamp(song.g[G_BPM] + accel(EN_K1, d, 161), 40, 200); song.g[G_BPM] = (int16_t)v; sl_say_num("tempo ", v, 0); }
+        if ((d = panel_enc(EN_K2)) != 0) { sl_spin = (int8_t)clamp(sl_spin + accel(EN_K2, d, 51) * 4, -100, 100); if (sl_spin) sl_say_num("spin ", sl_spin, 0); else sl_say("spin off", 0); }
         if ((d = panel_enc(EN_K3)) != 0) { sl_kit_req = (uint8_t)sl_wrap(sl_kit, d, sh_band_nkits()); sl_say("rhythm: ", sh_band_kit_name(sl_kit_req)); }
         if ((d = panel_enc(EN_K4)) != 0) {
             int32_t nr = clamp(sl_root + d, 48, 71);
@@ -272,12 +275,12 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
             sl_snd_req[SL_P_MEL] = (uint8_t)i; sl_say("melody: ", SL_MEL_SND[i].name);
         }
     } else if (sl_page == PG_FX) {
-        if ((d = panel_enc(EN_K1)) != 0) sl_fx_turn(0, d);
-        if ((d = panel_enc(EN_K2)) != 0) sl_fx_turn(1, d);
-        if ((d = panel_enc(EN_K3)) != 0) sl_fx_turn(2, d);
-        if ((d = panel_enc(EN_K4)) != 0) sl_fx_turn(3, d);
+        if ((d = panel_enc(EN_K1)) != 0) sl_fx_turn(0, accel(EN_K1, d, 128));
+        if ((d = panel_enc(EN_K2)) != 0) sl_fx_turn(1, accel(EN_K2, d, 128));
+        if ((d = panel_enc(EN_K3)) != 0) sl_fx_turn(2, accel(EN_K3, d, 128));
+        if ((d = panel_enc(EN_K4)) != 0) sl_fx_turn(3, accel(EN_K4, d, 128));
         if ((d = panel_enc(EN_SELECT)) != 0) sl_fx_turn(4, d);
-        if ((d = panel_enc(EN_ALGO)) != 0) sl_fx_turn(5, d);
+        if ((d = panel_enc(EN_ALGO)) != 0) sl_fx_turn(5, accel(EN_ALGO, d, 128));
         if ((d = panel_enc(EN_PRESET)) != 0) {
             uint32_t i = (uint32_t)sl_wrap(sl_fxp[sl_fx_part] == 0xFF ? 0 : sl_fxp[sl_fx_part], d, (int32_t)SL_NFXP);
             sl_fx_preset(sl_fx_part, i);
@@ -297,7 +300,7 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
             sl_say("kit: ", DRUM_KIT_NAMES[DRUM_SAMPLED + i]);
         }
         if ((d = panel_enc(EN_SELECT)) != 0) {             /* the melody's note length */
-            sl_gate_ms = (uint32_t)clamp((int32_t)sl_gate_ms + d * 20, 40, 600);
+            sl_gate_ms = (uint32_t)clamp((int32_t)sl_gate_ms + accel(EN_SELECT, d, 29) * 20, 40, 600);
             sl_gate_blocks = sl_ms_to_block((double)sl_gate_ms);
             sl_say_num("note length ", (int32_t)sl_gate_ms, " ms");
         }
@@ -315,7 +318,7 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
         }
     } else {                                               /* MIX */
         int32_t p;
-        for (p = 0; p < 4; p++) if ((d = panel_enc((uint32_t)(EN_K1 + p))) != 0) sl_mix_turn((uint32_t)p, d);
+        for (p = 0; p < 4; p++) if ((d = panel_enc((uint32_t)(EN_K1 + p))) != 0) sl_mix_turn((uint32_t)p, accel((uint32_t)(EN_K1 + p), d, 53));
         if ((d = panel_enc(EN_SELECT)) != 0) {             /* swing: the tank's grid and the band together */
             double sw = sl_tank.s.swing + d * 0.025;
             sl_tank.s.swing = sw < 0.0 ? 0.0 : sw > 0.5 ? 0.5 : sw;
@@ -327,11 +330,13 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
             sl_say("echo time ", T[song.g[G_DTIME]]);
         }
         if ((d = panel_enc(EN_PRESET)) != 0) {             /* the room: small .. a hall */
-            song.g[G_RSIZE] = (int16_t)clamp(song.g[G_RSIZE] + d * 4, 0, 127);
+            song.g[G_RSIZE] = (int16_t)clamp(song.g[G_RSIZE] + accel(EN_PRESET, d, 32) * 4, 0, 127);
             sl_say_num("room size ", song.g[G_RSIZE] * 100 / 127, "%");
         }
     }
 #undef SL_PRESSED
+    fm6_poll();                             /* FM6: a part's patch loads when its preset asks (SLOOP calls this from its own
+                                             * ui_input, which this firmware does not run: without it no FM patch ever loaded) */
     slime_conduct();                        /* the music, ahead of the audio clock (slime.c) */
 }
 

@@ -91,3 +91,12 @@ Read from its source, cloned to WSL (~/fm1w/sloop-fm1):
 - https://github.com/hericdk/nomanskyFM (README at 8ba4833)
 - https://synthanatomy.com/2026/11/xfer-records-shrub-serum-for-m-vave-fm-1-before-gta-6.html
 - https://github.com/joakimeriksson/fm1-emu docs/isa-notes.md ("The FPU and the community firmwares")
+
+## FM patch sources (2026-11-18)
+
+Our FM patches are written from documented technique, never copied banks (DX7 ROM licensing is unestablished; Felucca:
+"no factory ROM data of any instrument"):
+- Yamaha, "FM 101" series, yamahasynth.com: Part Five "Expanding Your Sound" (E.PIANO tine, two-operator bass) and Part
+  Six "Complex Systems" (BASS 2's ratio-1.01 modulator, HARP 1).
+- J. Chowning, "The Synthesis of Complex Audio Spectra by Means of Frequency Modulation", JAES 21(7), 1973 (bells, 1:1.4).
+- Knob acceleration: SLOOP 2.7 ui_input.c accel(), after JIANT FM by juanjiant-bit (github.com/juanjiant-bit/JIANT, GPL-3.0).

@@ -53,4 +53,20 @@ sub("tools/build.py",
     "    fn = ''\n    for ln in dis.splitlines():     # nothing may call or load an address in the chip ROM\n"
     "        mh = re.match(r'^([A-Za-z_][\\w.]*):\\s*$', ln)\n        if mh:\n            fn = mh.group(1)\n"
     "        mm = LINE.match(ln)\n        if not mm or fn.startswith('__ieee754_'):   # slimehedron: JieLi's libm (see patch_sloop.py)\n            continue\n")
-print("patch_sloop: 13 changes applied")
+# FM patches of our own (slime_fm6.py: written from documented technique, cited there), after Felucca's eight, with
+# their slot names and a preset each. (Slots after the factory ones are the user bank: they move up by four.)
+FM6 = (Path(__file__).parent / "slime_fm6.py").read_text(encoding="utf-8").rstrip("\n")
+g = ROOT / "tools/gen_fm6_patches.py"
+s = g.read_text(encoding="utf-8")
+start = s.index("PATCHES = [")
+end = s.index("\n]\n", start)
+g.write_text(s[:end] + "\n" + FM6 + s[end:], encoding="utf-8")
+sub("firmware/src/eng_fm6.c", '{"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", ',
+    '{"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", ')
+sub("firmware/src/eng_fm6.c", '    {"NYLON PICK", {0, 0, 0, 0, 0, 0, 0, 7}, {0, 0, 127, 0}, 0, 0, FX(0, 20, 35, 30)},\n',
+    '    {"NYLON PICK", {0, 0, 0, 0, 0, 0, 0, 7}, {0, 0, 127, 0}, 0, 0, FX(0, 20, 35, 30)},\n'
+    '    {"SH TINE", {0, 0, 0, 0, 0, 0, 0, 8}, {0, 0, 127, 0}, 0, 0, FX(0, 30, 20, 35)},    /* slimehedron: slime_fm6.py */\n'
+    '    {"SH BASS", {0, 0, 0, 0, 0, 0, 0, 9}, {0, 0, 127, 0}, 0, 1, FX(0, 0, 0, 10)},\n'
+    '    {"SH HARP", {0, 0, 0, 0, 0, 0, 0, 10}, {0, 0, 127, 0}, 0, 0, FX(0, 10, 20, 40)},\n'
+    '    {"SH BELL", {0, 0, 0, 0, 0, 0, 0, 11}, {0, 0, 127, 0}, 0, 0, FX(0, 10, 25, 60)},\n')
+print("patch_sloop: 16 changes applied")

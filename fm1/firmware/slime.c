@@ -417,27 +417,28 @@ static void slime_band_sounds(void)
 enum { SL_P_MEL, SL_P_BASS, SL_P_COMP, SL_P_DRUMS, SL_NPARTS };
 static const char *const SL_PART_NAME[SL_NPARTS] = {"melody", "bass", "chords", "drums"};
 typedef struct { uint8_t eng; int8_t trim; const char *name; } sl_snd;
-#define SL_NMEL 10u
-#define SL_NBASS 8u
-#define SL_NCOMP 8u
+#define SL_NMEL 13u
+#define SL_NBASS 9u
+#define SL_NCOMP 9u
 static const sl_snd SL_MEL_SND[SL_NMEL] = {
     {1, 0, "KALIMBA"}, {1, 0, "MARIMBA"}, {1, 0, "GLOCKEN"}, {1, 1, "MUSIC BOX"}, {1, 1, "CELESTA"}, {1, -1, "HARP"},
     {1, 0, "FM PLUCK"}, {10, -2, "THUMB PNO"}, {2, -21, "SOFT KEYS"}, {3, 8, "GAME LEAD"},
+    {9, -10, "SH TINE"}, {9, -2, "SH BELL"}, {9, 9, "SH HARP"},          /* FM6: slime_fm6.py */
 };
 static const sl_snd SL_BASS_SND[SL_NBASS] = {
     {0, 0, "MONO BASS"}, {0, 1, "SUB BASS"}, {0, 0, "FUNK BASS"}, {0, -2, "SAW BASS"}, {1, -2, "FM BASS"}, {1, 4, "BASS GTR"},
-    {2, -8, "CZ BASS"}, {3, 0, "GB BASS"},
+    {2, -8, "CZ BASS"}, {3, 0, "GB BASS"}, {9, 28, "SH BASS"},
 };
 static const sl_snd SL_COMP_SND[SL_NCOMP] = {
     {1, 0, "RHODES"}, {1, 5, "M1 PIANO"}, {1, 8, "WURLI"}, {1, 7, "DX RHODES"}, {2, -10, "SOFT KEYS"}, {6, 3, "80S POLY"},
-    {1, 4, "AFRO KEYS"}, {3, 8, "CHIP CHORD"},
+    {1, 4, "AFRO KEYS"}, {3, 8, "CHIP CHORD"}, {9, 8, "SH TINE"},
 };
 static uint8_t sl_snd_of[3];                /* each synth part's sound, an index into its list */
 /* the sound sets (SOUND page, PRESETS): three sounds that suit each other */
-#define SL_NSET 9u
+#define SL_NSET 10u
 static const struct { const char *name; uint8_t mel, bass, comp; } SL_SETS[SL_NSET] = {
     {"slime", 0, 0, 0}, {"glass", 2, 1, 1}, {"wood", 1, 2, 6}, {"chip", 9, 7, 7}, {"music box", 3, 1, 2},
-    {"fm", 6, 4, 3}, {"harp", 5, 5, 4}, {"retro", 4, 3, 5}, {"thumb", 7, 6, 0},
+    {"fm", 6, 4, 3}, {"harp", 5, 5, 4}, {"retro", 4, 3, 5}, {"thumb", 7, 6, 0}, {"dx", 11, 8, 8},
 };
 static const sl_snd *sl_snd_entry(uint32_t part, uint32_t i)
 {
@@ -548,6 +549,9 @@ static void sl_part_sound(uint32_t part, uint32_t i)
     slime_levels();                                        /* (SLOOP's preset loader put the level back to its default) */
 }
 
+#ifndef SL_DEVICE
+static void slime_hook(uint32_t n) { (void)n; }   /* the host bench schedules and plays its own blocks (slimehost.c) */
+#endif
 #ifdef SL_DEVICE
 /* ------------------------------------------------------------------ the device ---
  * SLOOP's mixer calls slime_hook before each block it mixes (patch_sloop.py), in the audio interrupt. The main loop

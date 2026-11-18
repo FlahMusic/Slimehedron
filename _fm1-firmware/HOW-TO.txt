@@ -53,7 +53,11 @@ KNOBS                    KNOB 1     KNOB 2           KNOB 3     KNOB 4     SELEC
   character: chorus, phaser, flanger, crush, warm, fuzz, fold; amount turns its depth and its mix together
   fx presets: sound (the sound's own), dry, room, hall, dub echo, slapback, wide, tape, phase, jet, lofi, telephone,
               underwater, crunch
-  sound sets: slime, glass, wood, chip, music box, fm, harp, retro, thumb
+  sound sets: slime, glass, wood, chip, music box, fm, harp, retro, thumb, dx (the 6-operator FM sounds below)
+  FM sounds (SH, on the 6-operator engine): tine (electric piano, melody or chords), bell, harp, FM bass. Written
+              from Yamaha's own FM 101 recipes and Chowning's bell, not copied from any synth's factory bank
+  knobs: a slow turn moves one step (fine tuning), a fast turn sweeps (SLOOP's acceleration; off in SLOOP's menu)
+  speakers: SLOOP's limiter holds every peak at -5.2 dBFS whatever the knobs do (tested with all of them maxed)
   rhythms: pop rock disco bossa jazz samba conga march chip beep industrial, each with its own fills and feel
   scales: major minor pentatonic minor-pentatonic dorian mixolydian 19-note 31-note
   mix: each part from its measured level, down to off

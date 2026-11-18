@@ -1,6 +1,16 @@
 Slimehedron for the FM-1: which build is which. slimehedron-fm1.fwsc in this folder is always the newest; the git
 history keeps every older one (git log -- _fm1-firmware/slimehedron-fm1.fwsc). Check a file: its sha256 below.
 
+2026-11-18  the site's drums, FM sounds, speaker rails
+  sha256 b135f9beaf7161462473ca18c7a61fbc085c5da1c9bc93c9a6e42685e1d7ebee
+  - every rhythm plays the site's own drum kit, rebuilt on the chip's drum synth: each kick ends on the site's pitch
+    and dies when the site's does (all 11 measured)
+  - four FM sounds on the 6-operator engine (tine, bell, harp, FM bass), in key and level-matched; a "dx" sound set
+  - knob acceleration: slow = fine, fast = sweep
+  - every knob maxed on every part at once: peaks held at -5.2 dBFS, the mix no louder than -16.4 LUFS, no build-up
+  - fm1-emu strict, 160 s: default sounds ~24 fps, audio 55% of its deadline at worst, 0 late notes; the dx set
+    ~16 fps (the FM voices cost screen time, never audio); one deadline missed at boot, before any sound
+
 2026-11-16  the controls and fx pass
   sha256 51722e2236b724f1a4a3384665440609dab4594433d47ee2bbcf1bd16d4fc8f5
   - four pages (HOME, FX per part, SOUND, MIX); every encoder used; the bottom line names the knobs (HOW-TO.txt)

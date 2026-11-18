@@ -297,3 +297,26 @@ but powerful, merged dials, no wasted knobs; plenty of presets; the drums humani
 - Sweep: every fm1 host suite green (solids, curved space, melody 6000 notes, the tank against the plugin, the goos,
   drawing, portals, band, levels, auto, check-host). fm1-emu strict 160 s: ~24 fps, audio 49% of its deadline at worst,
   0 late notes. Not checked by a machine: how any of it sounds; the real panel; MIDI.
+
+## The site's drums, FM sounds, speaker rails (2026-11-18)
+
+- **Site kits.** `fm1/host/gen-kits.js` turns the site's KITTONE and dHit voices into SLOOP drum-synth kits (SH POP ..
+  SH INDUS, `slime_kits.py`), `patch_kits.py` puts them in SLOOP's generator, SLOOP's own `level_drumkits.py` levels
+  their lanes (`slime_kit_levels.json`). check-host renders each kick dry: end pitch within 20% of KITTONE `ke`, -60 dB
+  within 70..110% of `kd` (11/11; sabotage: the pop kick an octave up -> FAIL "ends at 96 Hz (site 48)"). The first
+  measurement read 600-790 ms decays: that was the drum room (G_DRREV) on the tail, not the voice (SL_DRY=1).
+- **FM patches** (`slime_fm6.py`, appended to Felucca's 8 by patch_sloop.py, slots F9..F12): SH TINE (Yamaha FM 101
+  part 5, E.PIANO tine as DX7 alg 5), SH BASS (part 5's two-op bass + part 6's ratio-1.01 modulator; carrier sustain
+  raised to 85/80 after measuring 16 LU under the part at the article's 70/55), SH HARP (part 6, HARP 1 as alg 3),
+  SH BELL (Chowning 1973, c:m 1:1.4, index lowered so the fundamental stays strongest + a short ratio-3.5 strike).
+  check-host: the strongest partial is the note's own at three octaves, degrees within 6 cents (sabotage: the bell at
+  full index -> strongest partial 3.21x, FAIL). Trims measured (+14 dB for the bass on FM6). `fm6_poll()` now runs in
+  our main loop: SLOOP calls it from ui_input, which this firmware does not run, so no FM6 patch could have loaded (none of our sounds used FM6 before).
+- **Rails.** check-host 9: every fx knob, every fader +6, the biggest room, each character, filter shut / high-passed,
+  the FM set: peak <= -5.0 dBFS (measured -5.21), <= -14 LUFS (worst -16.38), last 8 bars <= 3 dB over bars 9..16.
+  Sabotaged: LIM_T at full scale (13/13 FAIL, peak -1.11), a loop gain over 1 in the echo (FAIL on loudness).
+- **Knobs.** SLOOP's `accel()` (after JIANT FM) on tempo, spin, the fx knobs (now 1 value a detent slow), faders,
+  note length, room size. Lists never accelerate.
+- **Device** (fm1-emu strict 160 s): default ~24 fps, audio 55% worst, 0 late notes; dx set (three FM6 parts) ~16 fps,
+  60%, 0 late notes. SLOOP already splits voices onto core 1 (units_split). Not checked by a machine: how the FM
+  sounds and the kits sound; the knob feel on the real panel.
