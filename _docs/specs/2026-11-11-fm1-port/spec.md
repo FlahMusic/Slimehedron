@@ -385,3 +385,12 @@ three FM6 parts (15.5, from 9.3; the FM6 voices take ~48% of core 0). midi-check
 bends, clock follow). harmtest.c (sabotaged x4), check-host 12 (hand, hand over a progression), boot-check, session.sh,
 stucktest (one goo relax a tick on the device; "outside" counts turning shapes). SLOOP's keyboard_block no longer runs
 (it doubled every key). Microtonal keys measured in the emulator's audio: 38.5 / 38.8 cents a step in 31-EDO.
+
+## The pages pass (2026-11-18, latest)
+
+Flah: one setting reachable from several places, no mixer page, scale on a tapped button; "think in mpc or daw terms".
+Done means: every setting in exactly one place (checked by reading the poll code: each state variable written by one
+page); one button per page, no page behind a double tap; every page shows its knobs' names and values (session.sh's
+sheet, every step); the mixer mutes and solos from the keys with lights; all 28 scales reachable from one knob;
+midi-check, boot-check, session.sh, check-host, harmtest, stucktest, drawtanktest green; fm1-emu strict worst 5 s:
+default 52.9, page + cube + portals 55, mixer 61, stress 29.4, session 29.6 (0 late notes everywhere).

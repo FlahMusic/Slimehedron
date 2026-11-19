@@ -64,6 +64,8 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
   1.6 s holds while it plays. A **progression** (CHORDS page, the site's CHORD_MODE) owns the harmony over it.
 - **Pattern** (FM-1 DRUMS page): a person's 16-step drum pattern, played by the rhythm's drummer, no fills. Not the
   rhythm's own 4-bar pattern.
+- **Page** (FM-1): one button, one job: tank (HOME), song (SCL), mixer (GLO), fx (FX), sound (ENV), chords (EDIT), drums
+  (SEQ). SELECT picks what a page works on, the four knobs are its values, shown on the page's **panel** under the tank.
 - **Song / session** (FM-1): SAVE's three songs in flash; the session is written by itself when stopped.
 - **Triangle mixer**: `#triMix` (melody / drums / band). **Mixer**: studio's per-part volume/mute/solo (`MIX`).
 - **Beat lock**: balls are steered so their hits land on the grid (`beatLock`, `b.tq`).

@@ -565,6 +565,8 @@ static void slime_play_block(void)
 static const uint8_t SL_KIT_DRLVL[11] = {28, 28, 26, 28, 92, 31, 31, 38, 39, 28, 24};   /* (2026-11-16, humanize on: jazz's feel took its drums to 14.7 under, bossa's to 11.1;
                                              * 2026-11-18, the drum bus: bossa 29 -> 28, 8.8 LU under, the soft kits' rule is 9) */
 static const int8_t SL_KIT_BASS[11] = {0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0};
+static uint8_t sl_mute[4], sl_solo[4];       /* the MIXER's mutes and solos (melody, bass, chords, drums): a solo silences the
+                                             * parts not soloed, as a DAW's does */
 static int8_t sl_mix[4];                    /* the MIX page: each part against its measured level, in fader steps (~0.5 dB);
                                              * SL_MIX_OFF and below: that part off */
 #define SL_MIX_OFF (-40)
@@ -672,7 +674,8 @@ static void slime_levels(void)
     }
     for (p = 0; p < 4; p++) {                              /* off: the part's own mute */
         track_t *t = p == 3 ? TDRUM : &trk[p];
-        t->p[P_MUTE] = sl_mix[p] <= SL_MIX_OFF;
+        int any = sl_solo[0] | sl_solo[1] | sl_solo[2] | sl_solo[3];
+        t->p[P_MUTE] = sl_mix[p] <= SL_MIX_OFF || sl_mute[p] || (any && !sl_solo[p]);
     }
 }
 /* the band's sounds (synthesized): the web's bass is a round body with a 2nd-5th harmonic layer so a small speaker
@@ -730,7 +733,7 @@ static uint32_t sl_snd_count(uint32_t part) { return part == SL_P_MEL ? SL_NMEL 
  *   ECHO    the send to the tempo delay; SPACE the send to the reverb (their time and size: the MIX page)
  *   CHARACTER + AMOUNT  the INSERT: chorus, phaser, flanger, crush, warm, fuzz, fold; AMOUNT moves its depth, its mix
  *           and its intensity together (a crush loses bits and sample rate at once; a chorus deepens and gets wetter) */
-typedef struct { int8_t filt; uint8_t drive, echo, space, ctype, camt; } sl_fx;
+typedef struct { int8_t filt; uint8_t drive, echo, space, ctype, camt; int8_t pan; uint8_t pad; } sl_fx;   /* pan: -64..63 */
 #define SL_NCHAR 8u
 static const struct { const char *name; uint8_t it; } SL_CHAR[SL_NCHAR] = {   /* SLOOP's IT_ order: OFF SOFT HARD FOLD FUZZ CRUSH PHASER FLANGER CHORUS */
     {"off", 0}, {"chorus", 8}, {"phaser", 6}, {"flanger", 7}, {"crush", 5}, {"warm", 1}, {"fuzz", 4}, {"fold", 3},
@@ -779,6 +782,7 @@ static void sl_fx_apply(uint32_t part)
     const sl_fx *f = &sl_fxs[part % SL_NPARTS];
     track_t *t = part == SL_P_DRUMS ? TDRUM : &trk[part];
     t->p[P_TFLT] = f->filt;
+    t->p[P_PAN] = f->pan;
     sl_insert_of(f->ctype, f->ctype ? f->camt : 0u, t->p);
     if (part == SL_P_DRUMS) {
         song.g[G_DUCK] = f->drive;                          /* PUNCH */
@@ -793,7 +797,7 @@ static void sl_fx_read(uint32_t part)
 {
     sl_fx *f = &sl_fxs[part % SL_NPARTS];
     const track_t *t = part == SL_P_DRUMS ? TDRUM : &trk[part];
-    f->filt = (int8_t)t->p[P_TFLT]; f->ctype = 0; f->camt = 0;
+    f->filt = (int8_t)t->p[P_TFLT]; f->ctype = 0; f->camt = 0; f->pan = (int8_t)t->p[P_PAN];
     if (part == SL_P_DRUMS) { f->drive = (uint8_t)song.g[G_DUCK]; f->echo = (uint8_t)song.g[G_DRDLY]; f->space = (uint8_t)song.g[G_DRREV]; }
     else { f->drive = (uint8_t)t->p[P_DIST]; f->echo = (uint8_t)t->p[P_DLY]; f->space = (uint8_t)t->p[P_REV]; }
 }
@@ -833,8 +837,19 @@ static void slime_hook(uint32_t n) { (void)n; }   /* the host bench schedules an
  * SLOOP's mixer calls slime_hook before each block it mixes (patch_sloop.py), in the audio interrupt. The main loop
  * (slime_ui.c) owns the tank, the band, the fx and the mix (the conductor); sound changes go through the interrupt,
  * where SLOOP's preset fade expects them. */
-#define SL_NSCALE 8u
-static const char *const SL_SCALES[SL_NSCALE] = {"major", "minor", "pentaMaj", "pentaMin", "dorian", "mixolydian", "edo19all", "edo31"};
+/* every scale the site has (fm1/core/music.c, the web's own 28), in the SONG page's order: the modes, the minors, the
+ * pentatonics and the blues, the world's, then the microtonal tunings (a whole tuning: each key is its next step) */
+#define SL_NSCALE 28u
+static const char *const SL_SCALES[SL_NSCALE] = {"major", "minor", "dorian", "phrygian", "lydian", "mixolydian", "locrian",
+    "harmMin", "melMin", "pentaMaj", "pentaMin", "blues", "wholeTone", "chromatic", "hirajoshi", "inSen", "iwato", "hijaz",
+    "bhairav", "maqamRast", "maqamBayati", "slendro", "pelog", "neutral7", "edo19", "edo19all", "edo24", "edo31"};
+static const char *const SL_SCALE_NAME[SL_NSCALE] = {"major", "minor", "dorian", "phrygian", "lydian", "mixolydian",
+    "locrian", "harmonic minor", "melodic minor", "pentatonic", "minor pentatonic", "blues", "whole tone", "chromatic",
+    "hirajoshi", "in sen", "iwato", "hijaz", "bhairav", "maqam rast", "maqam bayati", "slendro", "pelog", "neutral",
+    "19-edo, 7 notes", "19-edo, all 19", "24-edo, all 24", "31-edo, all 31"};
+static const char *const SL_SCALE_SHORT[SL_NSCALE] = {"major", "minor", "dorian", "phryg", "lydian", "mixo", "locrian",
+    "harm m", "mel m", "pent", "m pent", "blues", "whole", "chrom", "hirajo", "in sen", "iwato", "hijaz", "bhairav", "rast",
+    "bayati", "slendro", "pelog", "neutral", "19 (7)", "19 edo", "24 edo", "31 edo"};
 static volatile uint32_t sl_key_req;        /* note keys pressed (bit k = key k, F3 up) */
 static volatile uint8_t sl_run;             /* PLAY: everything moves. Off at power-on: nothing plays until PLAY, so a person
                                              * can set it up first (Flah 2026-11-18); keys still play their notes */
@@ -854,6 +869,11 @@ static void sl_env_put(uint32_t part)
     for (i = 0; i < 5u; i++) trk[part % 3u].p[P[i]] = sl_env_v[part % 3u][i];
 }
 static volatile int8_t sl_spin;
+/* the TANK page: the melody's notes a bar (the site's auto adjuster aims at 8: SL_BUSY / 8 scales the aim) and how many
+ * bars a shape lives before the slime bursts it into a new one (0: it stays) */
+static const uint8_t SL_BUSY[5] = {4, 6, 8, 12, 16};
+static const uint8_t SL_CYCLE[4] = {32, 64, 128, 0};
+static uint8_t sl_dens = 2, sl_cycle = 1;
 static volatile uint32_t sl_lit_until[27];  /* key LEDs: fm1_ms until which key k glows (the melody rang its note) */
 static volatile uint32_t sl_beat_ms;        /* the band's last downbeat */
 static uint8_t sl_started, sl_was_run = 1;
@@ -1088,6 +1108,7 @@ static void slime_conduct(void)
     sl_band.journey = sl_slime && !sl_pinned ? sl_journey_bars((double)song.g[G_BPM]) : 0;
     sl_tank.s.spin = (double)sl_spin;
     sl_tank.s.auto_notes = sl_auto;
+    sl_tank.s.busy = SL_BUSY[sl_dens % 5u] / 8.0;
     if (!sl_run) {                                         /* stopped: a new shape (walls, portals, scale) shows at once */
         if (sl_reform_at_bar && sl_reform_fn) { sl_reform_at_bar = 0; sl_reform_fn(); }
         return;
@@ -1097,7 +1118,7 @@ static void slime_conduct(void)
     if (sl_stat.bars != bars0) { sl_bars_shape += sl_stat.bars - bars0; sl_beat_ms = fm1_ms; }
     /* the slime's own cycle (the web: the tank fills, bursts and reforms as a new shape): after 64 bars or a full tank,
      * at the next downbeat. Slime off: the shape stays (a shape picked by hand stays, as on the site). */
-    if (sl_slime && !sl_reform_at_bar && (sl_bars_shape >= 64u || sh_goo_fill(&sl_tank.goo) > 0.97)) {
+    if (sl_slime && !sl_reform_at_bar && SL_CYCLE[sl_cycle % 4u] && (sl_bars_shape >= SL_CYCLE[sl_cycle % 4u] || sh_goo_fill(&sl_tank.goo) > 0.97)) {
         static const uint8_t SHAPES[8] = {6, 5, 8, 3, 7, 4, 12, 6};
         sl_walls = SHAPES[sl_seed % 8u];
         sl_space = (uint8_t)(sl_seed % 3u == 2u);          /* 1 reform in 3 is portal space, as the web's auto */

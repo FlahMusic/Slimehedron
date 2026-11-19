@@ -15,7 +15,7 @@ static double fmax2(double a, double b) { return a > b ? a : b; }
 static double fclamp(double x, double lo, double hi) { return x < lo ? lo : x > hi ? hi : x; }
 
 sh_tank_settings sh_tank_defaults(void) {
-  sh_tank_settings s = { 6, sh_scale_by_id("major"), 2, 0.0625, 0.15, 1, 0.0, 0.12, 1, 100, 12, 94, 1, SH_SPACE_NORMAL, 1, 0 };
+  sh_tank_settings s = { 6, sh_scale_by_id("major"), 2, 0.0625, 0.15, 1, 0.0, 0.12, 1, 100, 12, 94, 1, SH_SPACE_NORMAL, 1, 0, 1.0 };
   return s;
 }
 
@@ -469,7 +469,7 @@ static void room_bar(sh_tank *t) {
   double bar_ticks = 240000.0 / fmax2(t->bpm, 1.0) / SH_FIXED, ball_bars = bt / bar_ticks;
   if (ball_bars < 1.0 || h <= 0.0) return;
   double area = 0.0; for (int i = 0; i < t->n; i++) { int j = (i + 1) % t->n; area += t->vx[i] * t->vy[j] - t->vx[j] * t->vy[i]; }
-  double hex = 1.5 * sqrt(3.0) * SH_TR * SH_TR, aim = 8.0 * fclamp(cbrt(fabs(area) * 0.5 / hex), 0.75, 1.25);
+  double hex = 1.5 * sqrt(3.0) * SH_TR * SH_TR, aim = 8.0 * fclamp(cbrt(fabs(area) * 0.5 / hex), 0.75, 1.25) * (t->s.busy > 0.0 ? t->s.busy : 1.0);
   int room = (int)(aim / (h / ball_bars) + 0.5);
   t->room = room < 1 ? 1 : room > 7 ? 7 : room;
 }

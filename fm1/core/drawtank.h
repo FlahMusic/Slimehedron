@@ -16,7 +16,7 @@
 
 /* Everything a row needs is worked out once a frame (2026-11-18: the per-row divisions were a fifth of a frame on the
  * chip): a line's slope, its inverse length, the rows it can touch; a polygon's edges with their slopes. */
-typedef struct { float ax, ay, dx, dy, iL2, idy, ylo, yhi, w, w2, wi2, alpha; uint16_t col; uint8_t k; } st_seg;
+typedef struct { float ax, ay, dx, dy, iL2, idy, ylo, yhi, w, w2, wi2, alpha, nx, ny; uint16_t col; uint8_t k; } st_seg;   /* nx, ny: the unit normal */
 typedef struct { float y0, y1, x0, sl; } st_edge;                            /* y0 < y1; x at y0; dx per row */
 #define ST_PMAX (SH_MAXWALLS > ST_HOLE ? SH_MAXWALLS : ST_HOLE)
 typedef struct { st_edge e[ST_PMAX]; int n; float ylo, yhi; uint16_t col; uint8_t k; } st_poly;
@@ -38,6 +38,8 @@ typedef struct {
 /* M: the camera's turn (3x3, row major: the web's _M); st_tumble makes the web's play/studio turn from two angles.
  * hue0: a turn of the colour wheel; ballHue: nb hues (0..1), or NULL for a hue by ball. */
 void st_tumble(float a, float b, float M[9]);
+/* the tank's middle on the screen and its scale (web px to screen px; ST_K is the whole screen's) */
+void st_set_frame(float cx, float cy, float k);
 void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0, const float *ballHue);
 /* rows y0.. of the band into buf (240 wide); only columns xlo..xhi are painted (the rest is left as it was) */
 void st_draw_band(const st_view *v, int y0, int rows, uint16_t *buf, uint16_t bg, int xlo, int xhi);

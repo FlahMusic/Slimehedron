@@ -32,6 +32,10 @@ int main(int argc, char **argv) {
   sh_tank_init(&T, s, 4); sh_tank_start(&T, 0.0);
   double bar = 3000.0, next = bar;
   for (long i = 0; i < 180L * 40; i++) { double now = i * SH_FIXED; sh_tank_tick(&T, now, 80.0, 1); if (now >= next) { sh_tank_on_bar(&T); next += bar; } }
+  /* (the renderer is under test, not the tank's population: six balls at least, spread for 20 ticks, so a turn always
+   * has balls to look at wherever the goo's phase put them) */
+  while (T.nb < 6) sh_tank_add_ball(&T);
+  for (long i = 0; i < 20; i++) sh_tank_tick(&T, (double)(180L * 40 + i) * SH_FIXED, 80.0, 1);
   printf("after 40 bars: %d balls, %d drops, fill %.2f\n", T.nb, T.goo.n, sh_goo_fill(&T.goo));
   const float turns[3][2] = { { 0.5f, 0.3f }, { 1.3f, 0.9f }, { 2.4f, 1.7f } };
   float bh[SH_BALLCAP]; for (int i = 0; i < SH_BALLCAP; i++) bh[i] = 0.05f + 0.11f * (float)i;
@@ -52,7 +56,13 @@ int main(int argc, char **argv) {
       if (px < 0 || py < 0 || px >= SH_SCREEN || py >= SH_SCREEN) continue;
       if (hypotf(V.fx[j] - V.fx[i], V.fy[j] - V.fy[i]) < 10) continue;   /* seen edge-on: a sliver under its neighbours' lines */
       float want = (float)T.walls[i].deg / (float)(T.s.scale->n * T.s.octs);   /* its note, from the tank: not the view's own colour */
-      seen++; if (hue_gap(hue_of(FRAME[py * SH_SCREEN + px]), want) > 0.04f) bad++; }
+      {   /* the midpoint's pixel or one of its four neighbours: a 1.4 px rim runs through one of them at full strength (one
+           * pixel alone can sit on the line's feathered edge, tinted by the glass behind: 2026-11-18) */
+        static const int NB[5][2] = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        int hit = 0;
+        for (int q = 0; q < 5; q++) { int x = px + NB[q][0], y = py + NB[q][1];
+          if (x >= 0 && y >= 0 && x < SH_SCREEN && y < SH_SCREEN && hue_gap(hue_of(FRAME[y * SH_SCREEN + x]), want) <= 0.04f) hit = 1; }
+        seen++; if (!hit) bad++; } }
     snprintf(m, sizeof m, "turn %d: every wall's front edge shows its note's colour (%d of %d off)", f, bad, seen);
     ok(seen >= 3 && bad == 0, m);
     int bbad = 0, bseen = 0; float rmin = 1e9f, rmax = 0, zmin = 1, zmax = 0;

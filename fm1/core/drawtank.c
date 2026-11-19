@@ -4,6 +4,10 @@
 #include "paint.h"
 
 #define MID (SH_SCREEN / 2.0f)
+/* where the tank sits and how big (st_set_frame): the middle of the screen at ST_K, or lifted and smaller over a page's
+ * panel */
+static float g_cx = MID, g_cy = MID, g_k = ST_K;
+void st_set_frame(float cx, float cy, float k) { g_cx = cx; g_cy = cy; g_k = k; }
 
 void st_tumble(float a, float b, float M[9]) {   /* the web's _M = Ry(a) * Rx(b) */
   float ca = cosf(a), sa = sinf(a), cb = cosf(b), sb = sinf(b);
@@ -17,7 +21,7 @@ static void p3(const float M[9], double x, double y, double z, float *sx, float 
   float cx = (float)(x - SH_TCX), cy = (float)(y - SH_TCY), cz = (float)(z * SH_TBOXD - SH_TBOXD / 2.0);
   float wx = M[0] * cx + M[1] * cy + M[2] * cz, wy = M[3] * cx + M[4] * cy + M[5] * cz, wz = M[6] * cx + M[7] * cy + M[8] * cz + (float)(SH_TBOXD / 2.0);
   float f = ST_CAM / (ST_CAM + wz);
-  *sx = MID + wx * f * ST_K; *sy = MID + wy * f * ST_K; *s = f * ST_K;
+  *sx = g_cx + wx * f * g_k; *sy = g_cy + wy * f * g_k; *s = f * g_k;
 }
 
 /* a polygon's edges (the horizontal ones never cross a row centre: left out) */
@@ -34,6 +38,7 @@ static void poly_make(st_poly *p, const float *x, const float *y, int n, uint16_
 static void seg_make(st_seg *s, float ax, float ay, float bx, float by, float w, uint16_t col, float alpha) {
   float dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy, wi = w - 1.0f; if (L2 < 1e-6f) L2 = 1e-6f;
   s->ax = ax; s->ay = ay; s->dx = dx; s->dy = dy; s->iL2 = 1.0f / L2; s->idy = (dy > 1e-3f || dy < -1e-3f) ? 1.0f / dy : 0.0f;
+  { float iL = 1.0f / sqrtf(L2); s->nx = dy * iL; s->ny = -dx * iL; }
   s->ylo = (ay < by ? ay : by) - w; s->yhi = (ay < by ? by : ay) + w;
   s->w = w; s->w2 = w * w; s->wi2 = wi > 0.0f ? wi * wi : -1.0f; s->alpha = alpha; s->col = col; s->k = (uint8_t)k32(alpha);
 }
@@ -74,7 +79,7 @@ void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0,
     p3(M, b->x, b->y, b->z, &v->x[i], &v->y[i], &s);
     v->r[i] = (float)SH_BR * s * 1.5f; v->z[i] = (float)b->z;            /* a touch bigger than the web's: 240 px */
     p3(M, b->x, b->y, 1.0, &v->sx[i], &v->sy[i], &s);                    /* its shadow on the back pane */
-    v->sx[i] += 3.0f * ST_K; v->sy[i] += 5.0f * ST_K; v->sr[i] = (float)SH_BR * s * 1.05f;
+    v->sx[i] += 3.0f * g_k; v->sy[i] += 5.0f * g_k; v->sr[i] = (float)SH_BR * s * 1.05f;
     v->bc[i] = pastel(ballHue ? ballHue[b - t->balls] : hue0 + 0.618f * (float)(b - t->balls), 0.6f, 0.98f);
     int k = i; while (k > 0 && v->z[v->order[k - 1]] < v->z[i]) { v->order[k] = v->order[k - 1]; k--; }   /* far first */
     v->order[k] = i;
@@ -136,9 +141,11 @@ static void seg_row(const st_seg *s, float yc, uint16_t *row, int xlo, int xhi) 
   float xa = s->ax + s->dx * tl, xb = s->ax + s->dx * th, lo = xa < xb ? xa : xb, hi = xa < xb ? xb : xa;
   int x0 = (int)(lo - s->w), x1 = (int)(hi + s->w) + 1;
   x0 = x0 < xlo ? xlo : x0; x1 = x1 > xhi ? xhi : x1;
-  for (int px = x0; px <= x1; px++) { float cx = px + 0.5f, t = ((cx - s->ax) * s->dx + (yc - s->ay) * s->dy) * s->iL2; t = t < 0 ? 0 : t > 1 ? 1 : t;
-    float qx = s->ax + s->dx * t - cx, qy = s->ay + s->dy * t - yc, d2 = qx * qx + qy * qy;
-    if (d2 < s->w2) row[px] = blend565(row[px], s->col, d2 < s->wi2 ? s->k : k32(s->alpha * (s->w - sqrtf(d2)))); }
+  /* the distance to the line is linear along the row: one add a pixel (the stretch past an end is at most w: a line is
+   * 1..1.4 px wide; the projection with its clamp and square root cost a seventh of a busy frame, fm1-emu 2026-11-18) */
+  float v = ((float)x0 + 0.5f - s->ax) * s->nx + (yc - s->ay) * s->ny;
+  for (int px = x0; px <= x1; px++, v += s->nx) { float d = v < 0.0f ? -v : v;
+    if (d < s->w) row[px] = blend565(row[px], s->col, d < s->w - 1.0f ? s->k : k32(s->alpha * (s->w - d))); }
 }
 
 /* a disc's pixels on one row, columns xlo..xhi: the body paints each pixel px (ddx: its offset from the centre) */

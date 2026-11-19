@@ -433,6 +433,24 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
         42.5; session.sh worst 31.8 (was 27), 0 late; the stress (dx set: 3 FM6 parts, 12 spinning walls, portals,
         top tempo, FX page, full goo) 15.5 (was 9.3): the FM6 voices are ~48% of core 0, the rest is the 12-wall
         drawing and the full goo. Not reached: 30 fps in that stress case.
+    FM-1 PAGES PASS (2026-11-18, latest). Flah: "no dedicated mixer page but a way to change the same setting in 5 diff
+      places", "a page somewhere to make all the tuning and scale and tempo in one spot", "think in mpc or daw terms".
+      - One button, one page, one job; every setting in one place; SELECT = what the page works on, K1-K4 its values,
+        ALGORITHM / PRESETS the extras; a page's button again = the tank. HOME tank (walls, spin, portals, note length;
+        notes a bar, new shape every), SCL song (tempo, swing, key, scale: all 28 of music.c; rhythm, chord every, key
+        pinned), GLO mixer (4 faders; strip sends; white keys 1-4 mute, 5-8 solo), FX (filter, drive, effect, amount,
+        pan, fx preset; SELECT part or the returns: delay time, repeats, room, bright, delay tone), ENV sound (ADSR,
+        glide, the sound / set / kit; SELECT all, a part, drums), EDIT chords, SEQ drums. Gone: double-tap pages, SCL
+        taps, SEQ band toggles, LFO x2 pin, the separate NOTES page, home's melody-sound, sends on the FX page.
+      - Pages draw a panel (rows 160-239: names, values, bars; mixer faders; the 8x16 drum grid; chord slots) under the
+        tank lifted and shrunk (st_set_frame 120, 84, 0.6 ST_K); redrawn only when sl_panel changes (memcmp). Lines in
+        drawtank step their distance linearly (no projection, no sqrt).
+      - New state: sl_mute / sl_solo (slime_levels), sl_fx.pan (P_PAN), sl_dens (tank s.busy: the room's aim x 4..16/8),
+        sl_cycle (32 / 64 / 128 bars / stays), G_DFDBK / G_RDAMP / G_DCOLOR. Songs SLM3. sl_fpsw[64]: every 5 s window's
+        fps in RAM (read with ramvar.py). drawtanktest: six balls at least, the rim checked on 5 pixels (scene drift
+        from the goo's phase fix had broken its single-pixel sample; sabotaged: a black rim fails it).
+      - fm1-emu strict: default 52.9, a page with a cube + portals 55, mixer 61, the stress case 29.4 (from 15.5),
+        session.sh worst 29.6 (the full-size tank at 161 bpm, 12 notes a bar, full goo, a loop), 0 late anywhere.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto

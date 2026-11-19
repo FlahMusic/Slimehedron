@@ -44,6 +44,7 @@ typedef struct {
   int guard;                      /* the FM-1's wall guard (0: the plugin's tank, number for number): a turning wall pushes
                                    * the notes it sweeps back in (the web's spinContain), a note rattling in a corner is
                                    * thrown back toward the middle, and a note that has come to rest melts into the goo */
+  double busy;                    /* the guard's room: its aim of notes a bar, against the web's 8 (1: the web's) */
 } sh_tank_settings;
 #define SH_SPACE_NORMAL 0
 #define SH_SPACE_PORTAL 1

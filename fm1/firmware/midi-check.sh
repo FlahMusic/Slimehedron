@@ -3,7 +3,7 @@
 #   sh fm1/firmware/midi-check.sh
 # Run 1 (major): PLAY at 4.3 s, a note into the DIN jack (C2) at 6 s, a panel key (F3) at 7 s, a computer's MIDI clock at
 #   120 bpm over USB from 8 s to 12 s, its STOP at 12.5 s, START at 13.5 s, a panic (CC 123) at 15.9 s.
-# Run 2 (31-note scale): six SCL taps (to edo31), PLAY; then notes go out with their bends.
+# Run 2 (31-note scale: the SONG page's scale knob), PLAY; then notes go out with their bends.
 # Run 3 (31-note scale, stopped, the melody's fx dry: its chorus smears the pitch): three keys up from the root, one at a
 #   time: the audio's pitch steps by 31-EDO's 38.7 cents.
 set -eu
@@ -27,7 +27,7 @@ run() {   # NAME KEYS MS [USB]
     --flash-chip uc25hq80 --midi none --usb --shot "$3" --lcd-only --record "$O/$1" > "$O/$1.log" 2>&1 || { tail -20 "$O/$1.log"; exit 1; }
 }
 run one "4300:PLAY,4390:PLAY^,6000:m902464,6300:m802400,7000:n0,7100:n0^" 16000 "$O/usb.txt"
-SCL=""; for i in 0 1 2 3 4 5 6; do SCL="$SCL$((4400 + i * 500)):SCL,$((4460 + i * 500)):SCL^,"; done
+SCL="4400:SCL,4460:SCL^,5000:e5:-1,5600:SCL,5660:SCL^,"   # (the SONG page's scale knob, one click left of major: 31-edo; back to the tank)
 run two "${SCL}9000:PLAY,9090:PLAY^" 20000
 run three "3900:FX,3960:FX^,4100:e6:1,4300:HOME,4360:HOME^,${SCL}9000:n7,9500:n7^,10000:n8,10500:n8^,11000:n9,11500:n9^" 12500
 python3 - "$O" "$ELF" <<'EOF'

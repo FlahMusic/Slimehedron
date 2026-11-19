@@ -30,6 +30,8 @@ static volatile uint32_t sl_dbg[4];
 /* where a frame's time goes (fm1_ticks, summed; fm1-emu reads it from a RAM dump): the main loop's polls (the conductor:
  * the tank and the band), preparing the view, drawing the bands, packing and sending them, the last wait for the panel */
 static volatile struct { uint32_t frames, poll, prep, draw, pack, sync, px; } sl_prof;
+static volatile uint16_t sl_fpsw[64];       /* the frame rate (x10) of each 5 s window after the splash, in order */
+static volatile uint32_t sl_fpsw_n;
 #define SL_MARGIN 8
 
 static uint16_t *sl_strip(uint32_t k) { return cv_px + (k & 1u) * SL_BAND_PX; }
@@ -243,11 +245,6 @@ static void sl_say(const char *a, const char *b)
     sl_label_until = fm1_ms + 1500u;
 }
 static const char *const SL_NOTE[12] = {"c", "c#", "d", "d#", "e", "f", "f#", "g", "g#", "a", "a#", "b"};
-static const char *sl_scale_word(uint32_t i)
-{
-    static const char *const W[SL_NSCALE] = {"major", "minor", "pentatonic", "minor pentatonic", "dorian", "mixolydian", "19 notes", "31 notes"};
-    return W[i % SL_NSCALE];
-}
 static int32_t sl_wrap(int32_t v, int32_t d, int32_t n) { return ((v + d) % n + n) % n; }
 static char *sl_num(char *b, int32_t v)     /* a signed number into b (b holds 8) */
 {
@@ -269,115 +266,188 @@ static void sl_say_num(const char *a, int32_t v, const char *unit)
     sl_say(a, b);
 }
 
-/* THE PAGES. HOME is the tank as you play it; FX, SOUND and MIX are one button each (the FM-1's own FX, EDIT and GLO),
- * and every page uses all seven encoders for things that belong together. FX steps through the parts, melody -> bass ->
- * chords -> drums -> back home; HOME always comes home (and, at home, makes a new shape). The bottom row names the four
- * knobs on every page but home, so nothing has to be remembered. */
-enum { PG_HOME, PG_FX, PG_SOUND, PG_MIX, PG_ENV, PG_CHORDS, PG_DRUMS };
-static uint8_t sl_page, sl_fx_part;
-static const char *const SL_FOOT[7][4] = {
-    {"tempo", "spin", "rhythm", "key"}, {"filter", "drive", "delay", "reverb"},
-    {"melody", "bass", "chords", "kit"}, {"melody", "bass", "chords", "drums"},
-    {"attack", "decay", "sustain", "release"},
-    {"root", "chord", "bars", "how many"}, {"lane", "fill", "shift", "pattern"},
-};
-static uint8_t sl_env_part;                 /* the NOTES page's part: melody, bass, chords */
-
-/* CHORDS (EDIT, double tap): a progression of up to 8 chords, the site's chord progression panel (CHORD_MODE): it owns
- * the harmony while it has chords; how many = 0 gives it back to the slime. A key sets the chord picked to its note and
- * moves on to the next; PRESETS deals one of the site's famous progressions in this key. Names as the keys call them.
- * DRUMS (GLO, double tap): a person's drum pattern, the site's step grid: the 16 white keys are the 16 steps of the lane
- * picked, a black key picks a lane; the keys' lights show the lane, the step playing blinks. */
+/* THE PAGES (2026-11-18, the MPC pass. Flah: "theres no dedicated mixer page but a way to change the same setting in 5
+ * diff places", "having to tap a button to change scale seems annoying af, you cant dedicate a page somewhere to make all
+ * the tuning and scale and tempo in one spot? think in mpc or daw terms"). One button, one page, one job; every setting
+ * lives in exactly one place; an encoder means the same kind of thing on every page: SELECT picks WHAT the page works on
+ * (a part, a chord, a lane), the four knobs are its values (named, with their values, on the page's panel), ALGORITHM and
+ * PRESETS are the page's two extras. A page's button again: back to the tank.
+ *   HOME  TANK    walls  spin  portals  note length      SELECT notes a bar   ALGO new shape every  (HOME again: a new shape)
+ *   SCL   SONG    tempo  swing  key  scale (all 28)      SELECT rhythm        ALGO chord every      PRESETS key journey
+ *   GLO   MIXER   melody bass chords drums (faders)      SELECT the strip     ALGO its delay        PRESETS its reverb
+ *                 keys: the first 4 white keys mute melody / bass / chords / drums, the next 4 solo them
+ *   FX    FX      filter  drive  character  amount       SELECT part, returns ALGO pan              PRESETS fx preset
+ *                 (the returns: delay time, feedback, reverb size, tone; ALGO the delay's tone)
+ *   ENV   SOUND   attack  decay  sustain  release        SELECT all, a part   ALGO glide            PRESETS the sound
+ *   EDIT  CHORDS  root  type  bars  how many             SELECT which chord   ALGO all up / down    PRESETS famous ones
+ *   SEQ   DRUMS   fill  shift  feel  mine / the rhythm's SELECT lane                                PRESETS from rhythm
+ * ARP: auto-notes on / off; LFO: the slime on / off; OCT- / OCT+ the keyboard's octave; PLAY, REC, SAVE. */
+enum { PG_HOME, PG_SONG, PG_MIX, PG_FX, PG_SOUND, PG_CHORDS, PG_DRUMS, PG_N };
+static uint8_t sl_page;
+static uint8_t sl_focus;                    /* MIXER: the strip ALGORITHM / PRESETS (its sends) work on */
+static uint8_t sl_fx_part;                  /* FX: 0..3 a part, 4 the returns (the delay and the reverb themselves) */
+static uint8_t sl_snd_part;                 /* SOUND: 0 all three synth parts, 1..3 melody / bass / chords, 4 the drums */
+static uint8_t sl_set;                      /* SOUND, all: the sound set last dealt */
 static uint8_t sl_cm_sel, sl_lane, sl_famous;
-static const char *const SL_ROMAN[12] = {"I", "bII", "II", "bIII", "III", "IV", "#IV", "V", "bVI", "VI", "bVII", "VII"};
+static uint8_t sl_dfill[SH_PLANES];          /* DRUMS: each lane's last fill */
+static uint32_t sl_len(const char *s) { uint32_t n = 0; while (s[n]) n++; return n; }
+static const char *const SL_PAGE_NAME[PG_N] = {"tank", "song", "mixer", "fx", "sound", "chords", "drums"};
+static const char *const SL_DTIME[9] = {"1/4", "1/8", "1/16", "1/32", "1/8 t", "1/16 t", "1/8 .", "1/16 .", "1/4 ."};
+
 static int sl_white(uint32_t k) { uint32_t pc = (53u + k) % 12u; return pc == 0u || pc == 2u || pc == 4u || pc == 5u || pc == 7u || pc == 9u || pc == 11u; }
 static int sl_step_of_key(uint32_t k) { uint32_t i, s = 0; if (!sl_white(k)) return -1; for (i = 0; i < k; i++) s += (uint32_t)sl_white(i); return (int)s; }
 static int sl_lane_of_key(uint32_t k) { uint32_t i, s = 0; if (sl_white(k)) return -1; for (i = 0; i < k; i++) s += (uint32_t)!sl_white(i); return s < SH_PLANES ? (int)s : -1; }
 static char *sl_cat(char *d, const char *s, const char *end) { while (*s && d < end) *d++ = *s++; *d = 0; return d; }
-static void sl_chord_name(char *b, uint32_t i)   /* "D m7": the chord's note (as the key stands) and its kind */
+static void sl_chord_name(char *b, uint32_t i)   /* "D min7": the chord's note (as the key stands) and its kind */
 {
     char *e = b + 11;
     b[0] = 0;
     sl_cat(sl_cat(b, SL_NOTE[(uint32_t)(sl_root + sl_band.cm_root[i % SH_CM_MAX]) % 12u], e), SH_CQ_NAME[sl_band.cm_qual[i % SH_CM_MAX] % SH_NCQ], e);
 }
-static void sl_chords_title(void)            /* the progression, or the chord picked when it does not fit */
+static void sl_pct(char *b, int32_t v, int32_t max) { char n[8]; sl_cat(sl_cat(b, sl_num(n, v * 100 / max), b + 7), "%", b + 7); }
+static const char *sl_filter_word(int32_t f) { return f < -2 ? "low-pass " : f > 2 ? "high-pass " : "open"; }
+static uint32_t sl_gate_ms = 110u;          /* the melody's note length (the TANK page) */
+
+/* THE PANEL: what a page shows under the (smaller) tank, made from the state each frame and drawn only when it changed */
+typedef struct { char name[10], val[12]; int8_t bar; uint8_t mark; } sl_pcol;   /* bar: -1 none, else 0..100; mark: 1 picked, 2 off */
+typedef struct {
+    uint8_t page;
+    char head[40], ex[2][16];               /* the top line (the page and what SELECT picked); ALGORITHM's and PRESETS' values */
+    sl_pcol c[4];
+    uint16_t pat[SH_PLANES]; uint8_t lane, step, pat_on;      /* DRUMS: the grid */
+    uint8_t cm_n, cm_sel, cm_cur; char cm[SH_CM_MAX][12];       /* CHORDS: the slots */
+} sl_panel;
+static sl_panel sl_pm, sl_pm_drawn;
+static void sl_col(sl_pcol *c, const char *name, const char *val, int bar, int mark)
 {
-    char *p = sl_label, *end = sl_label + sizeof sl_label - 1u, b[12];
+    sl_cat(c->name, name, c->name + sizeof c->name - 1u); sl_cat(c->val, val, c->val + sizeof c->val - 1u);
+    c->bar = (int8_t)(bar < -1 ? -1 : bar > 100 ? 100 : bar); c->mark = (uint8_t)mark;
+}
+static void sl_db_txt(char *b, int32_t m) { char n[8]; if (m <= SL_MIX_OFF) sl_cat(b, "off", b + 11); else { char *p = b; if (m > 0) p = sl_cat(p, "+", b + 11); p = sl_cat(p, sl_num(n, m / 2), b + 11); sl_cat(p, " db", b + 11); } }
+static int sl_env_fm(uint32_t part) { return sl_snd_entry(part, sl_snd_of[part])->eng == 9u; }   /* FM6: its own envelopes */
+static void sl_env_read(uint32_t part)       /* the part's envelope as its sound left it */
+{
+    static const uint8_t P[5] = {P_ATK, P_DEC, P_SUS, P_REL, P_GLIDE};
     uint32_t i;
-    if (!sl_band.cm_n) { sl_cat(sl_label, "chords: the slime's", end); return; }
-    for (i = 0; i < (uint32_t)sl_band.cm_n; i++) { sl_chord_name(b, i); if (i) p = sl_cat(p, " ", end); p = sl_cat(p, b, end); }
-    if (p - sl_label > 24) {
-        char n[8];
-        p = sl_cat(sl_label, "chord ", end); p = sl_cat(p, sl_num(n, sl_cm_sel + 1), end); p = sl_cat(p, ": ", end);
-        sl_chord_name(b, sl_cm_sel); sl_cat(p, b, end);
+    for (i = 0; i < 5u; i++) sl_env_v[part][i] = (uint8_t)clamp(trk[part].p[P[i]], 0, 127);
+}
+static void sl_panel_build(sl_panel *m)
+{
+    char b[24], n[8];
+    uint32_t i;
+    memset(m, 0, sizeof *m);
+    m->page = sl_page;
+    if (sl_page == PG_SONG) {
+        sl_cat(sl_cat(m->head, "song: ", m->head + 39), sh_band_kit_name(sl_kit), m->head + 39);
+        sl_col(&m->c[0], "tempo", sl_num(n, song.g[G_BPM]), (song.g[G_BPM] - 40) * 100 / 160, 0);
+        b[0] = 0; sl_pct(b, (int32_t)(sl_tank.s.swing * 100.0 + 0.5), 100); sl_col(&m->c[1], "swing", b, (int)(sl_tank.s.swing * 200.0), 0);
+        sl_col(&m->c[2], "key", SL_NOTE[sl_root % 12], -1, 0);
+        sl_col(&m->c[3], "scale", SL_SCALE_SHORT[sl_scale % SL_NSCALE], -1, 0);
+        b[0] = 0; sl_cat(sl_cat(sl_cat(b, "chord ", b + 23), sl_num(n, sl_band.chord_bars), b + 23), sl_band.chord_bars == 1 ? " bar" : " bars", b + 23);
+        sl_cat(m->ex[0], b, m->ex[0] + 15); sl_cat(m->ex[1], sl_pinned ? "key pinned" : "key moves", m->ex[1] + 15);
+    } else if (sl_page == PG_MIX) {
+        int any = sl_solo[0] | sl_solo[1] | sl_solo[2] | sl_solo[3];
+        sl_cat(sl_cat(m->head, "mixer: ", m->head + 39), SL_PART_NAME[sl_focus % 4u], m->head + 39);
+        for (i = 0; i < 4u; i++) {
+            int off = sl_mute[i] || (any && !sl_solo[i]) || sl_mix[i] <= SL_MIX_OFF;
+            b[0] = 0;
+            if (sl_solo[i]) sl_cat(b, "solo", b + 11); else if (sl_mute[i]) sl_cat(b, "mute", b + 11); else sl_db_txt(b, sl_mix[i]);
+            sl_col(&m->c[i], SL_PART_NAME[i], b, (sl_mix[i] - SL_MIX_OFF) * 100 / (12 - SL_MIX_OFF), off ? 2 : i == sl_focus ? 1 : 0);
+        }
+        b[0] = 0; sl_cat(b, "delay ", b + 23); sl_pct(b + 6, sl_fxs[sl_focus % 4u].echo, 127); sl_cat(m->ex[0], b, m->ex[0] + 15);
+        b[0] = 0; sl_cat(b, "reverb ", b + 23); sl_pct(b + 7, sl_fxs[sl_focus % 4u].space, 127); sl_cat(m->ex[1], b, m->ex[1] + 15);
+    } else if (sl_page == PG_FX) {
+        if (sl_fx_part >= 4u) {
+            sl_cat(m->head, "fx: the returns", m->head + 39);
+            sl_col(&m->c[0], "delay", SL_DTIME[song.g[G_DTIME] % 9], -1, 0);
+            b[0] = 0; sl_pct(b, song.g[G_DFDBK], 120); sl_col(&m->c[1], "repeats", b, song.g[G_DFDBK] * 100 / 120, 0);
+            b[0] = 0; sl_pct(b, song.g[G_RSIZE], 127); sl_col(&m->c[2], "room", b, song.g[G_RSIZE] * 100 / 127, 0);
+            b[0] = 0; sl_pct(b, 127 - song.g[G_RDAMP], 127); sl_col(&m->c[3], "bright", b, (127 - song.g[G_RDAMP]) * 100 / 127, 0);
+            b[0] = 0; sl_cat(b, "delay tone ", b + 23); sl_pct(b + 11, song.g[G_DCOLOR], 127); sl_cat(m->ex[0], b, m->ex[0] + 15);
+        } else {
+            const sl_fx *f = &sl_fxs[sl_fx_part];
+            sl_cat(sl_cat(m->head, "fx: ", m->head + 39), SL_PART_NAME[sl_fx_part], m->head + 39);
+            b[0] = 0; if (!f->filt) sl_cat(b, "open", b + 11); else { sl_cat(b, f->filt < 0 ? "lp " : "hp ", b + 11); sl_cat(b + 3, sl_num(n, f->filt < 0 ? -f->filt : f->filt), b + 11); }
+            sl_col(&m->c[0], "filter", b, 50 + f->filt * 50 / 64, 0);
+            b[0] = 0; sl_pct(b, f->drive, 127); sl_col(&m->c[1], sl_fx_part == SL_P_DRUMS ? "punch" : "drive", b, f->drive * 100 / 127, 0);
+            sl_col(&m->c[2], "effect", SL_CHAR[f->ctype % SL_NCHAR].name, -1, 0);
+            b[0] = 0; if (f->ctype) sl_pct(b, f->camt, 127); else sl_cat(b, "-", b + 11); sl_col(&m->c[3], "amount", b, f->ctype ? f->camt * 100 / 127 : -1, 0);
+            b[0] = 0; sl_cat(b, "pan ", b + 23); if (!f->pan) sl_cat(b + 4, "mid", b + 23); else { sl_cat(b + 4, f->pan < 0 ? "L" : "R", b + 23); sl_cat(b + 5, sl_num(n, f->pan < 0 ? -f->pan : f->pan), b + 23); }
+            sl_cat(m->ex[0], b, m->ex[0] + 15);
+            sl_cat(m->ex[1], sl_fxp[sl_fx_part] == 0xFF ? "your own" : SL_FXP[sl_fxp[sl_fx_part] % SL_NFXP].name, m->ex[1] + 15);
+        }
+    } else if (sl_page == PG_SOUND) {
+        static const char *const W[4] = {"atk", "dec", "sus", "rel"};   /* (the hardware words: the full ones touch at 240 px) */
+        uint32_t p = sl_snd_part == 0u ? 0u : sl_snd_part - 1u;   /* (all: the melody's values stand for the three) */
+        sl_cat(sl_cat(m->head, "sound: ", m->head + 39), sl_snd_part == 0u ? "all three" : sl_snd_part == 4u ? "drums" : SL_PART_NAME[p], m->head + 39);
+        if (sl_snd_part == 4u) {
+            for (i = 0; i < 4u; i++) sl_col(&m->c[i], W[i], "-", -1, 2);
+            sl_cat(m->ex[1], DRUM_KIT_NAMES[TDRUM->p[P_E0]], m->ex[1] + 15);
+        } else if (sl_env_fm(p)) {
+            for (i = 0; i < 4u; i++) sl_col(&m->c[i], W[i], "fm", -1, 2);
+            sl_cat(m->ex[0], "glide -", m->ex[0] + 15);
+            sl_cat(m->ex[1], sl_snd_part == 0u ? SL_SETS[sl_set % SL_NSET].name : sl_snd_entry(p, sl_snd_of[p])->name, m->ex[1] + 15);
+        } else {
+            if (!sl_env_on[p]) sl_env_read(p);
+            for (i = 0; i < 4u; i++) { b[0] = 0; sl_pct(b, sl_env_v[p][i], 127); sl_col(&m->c[i], W[i], b, sl_env_v[p][i] * 100 / 127, 0); }
+            b[0] = 0; sl_cat(b, "glide ", b + 23); sl_pct(b + 6, sl_env_v[p][4], 127); sl_cat(m->ex[0], b, m->ex[0] + 15);
+            sl_cat(m->ex[1], sl_snd_part == 0u ? SL_SETS[sl_set % SL_NSET].name : sl_snd_entry(p, sl_snd_of[p])->name, m->ex[1] + 15);
+        }
+    } else if (sl_page == PG_CHORDS) {
+        uint32_t c = sl_cm_sel % SH_CM_MAX;
+        if (!sl_band.cm_n) sl_cat(m->head, "chords: the slime's", m->head + 39);
+        else { sl_cat(m->head, "chords: ", m->head + 39); sl_cat(m->head + 8, sl_num(n, (int32_t)c + 1), m->head + 39); sl_cat(m->head + sl_len(m->head), " of ", m->head + 39); sl_cat(m->head + sl_len(m->head), sl_num(n, sl_band.cm_n), m->head + 39); }
+        m->cm_n = (uint8_t)sl_band.cm_n; m->cm_sel = (uint8_t)c; m->cm_cur = (uint8_t)(sl_band.cm_cur < 0 ? 0xFF : sl_band.cm_cur);
+        for (i = 0; i < (uint32_t)sl_band.cm_n && i < SH_CM_MAX; i++) sl_chord_name(m->cm[i], i);
+        sl_col(&m->c[0], "root", c < (uint32_t)sl_band.cm_n ? SL_NOTE[(uint32_t)(sl_root + sl_band.cm_root[c]) % 12u] : "-", -1, 0);
+        sl_col(&m->c[1], "type", c < (uint32_t)sl_band.cm_n ? (sl_band.cm_qual[c] ? SH_CQ_NAME[sl_band.cm_qual[c] % SH_NCQ] : "major") : "-", -1, 0);
+        b[0] = 0; if (c < (uint32_t)sl_band.cm_n) { sl_cat(b, sl_num(n, sl_band.cm_bars[c]), b + 11); sl_cat(b + sl_len(b), sl_band.cm_bars[c] == 1 ? " bar" : " bars", b + 11); } else sl_cat(b, "-", b + 11);
+        sl_col(&m->c[2], "bars", b, -1, 0);
+        sl_col(&m->c[3], "chords", sl_band.cm_n ? sl_num(n, sl_band.cm_n) : "off", -1, 0);
+        sl_cat(m->ex[1], SH_FAMOUS[sl_famous % SH_NFAMOUS].name, m->ex[1] + 15);
+    } else if (sl_page == PG_DRUMS) {
+        static const char *const FILL[6] = {"-", "16ths", "8ths", "3rds", "beats", "halves"};
+        sl_cat(sl_cat(m->head, "drums: ", m->head + 39), SH_PLANE_NAME[sl_lane % SH_PLANES], m->head + 39);
+        memcpy(m->pat, sl_band.pat, sizeof m->pat); m->lane = sl_lane; m->pat_on = (uint8_t)sl_band.pat_on;
+        m->step = (uint8_t)(sl_run ? sl_step % 16u : 0xFFu);
+        sl_col(&m->c[0], "fill", FILL[sl_dfill[sl_lane % SH_PLANES] % 6u], -1, 0);
+        sl_col(&m->c[1], "shift", "< >", -1, 0);
+        sl_col(&m->c[2], "feel", sl_band.human ? "drummer" : "exact", -1, 0);
+        sl_col(&m->c[3], "pattern", sl_band.pat_on ? "mine" : "rhythm", -1, 0);
     }
 }
-static void sl_drums_title(void)             /* the lane and its 16 steps: "kick x...x...x...x..." */
-{
-    char *p = sl_cat(sl_label, SH_PLANE_NAME[sl_lane % SH_PLANES], sl_label + sizeof sl_label - 1u);
-    uint32_t s;
-    if (!sl_band.pat_on) { sl_cat(p, ": the rhythm's", sl_label + sizeof sl_label - 1u); return; }
-    *p++ = ' ';
-    for (s = 0; s < 16u && p < sl_label + sizeof sl_label - 1u; s++) *p++ = (sl_band.pat[sl_lane % SH_PLANES] >> s) & 1u ? 'x' : '.';
-    *p = 0;
-}
-static void sl_page_say(void)
-{
-    if (sl_page == PG_FX) sl_say("fx: ", SL_PART_NAME[sl_fx_part]);
-    else if (sl_page == PG_SOUND) sl_say("sound", 0);
-    else if (sl_page == PG_MIX) sl_say("mix", 0);
-    else if (sl_page == PG_ENV) sl_say("notes: ", SL_PART_NAME[sl_env_part]);
-    else if (sl_page == PG_CHORDS) sl_say("chords", 0);
-    else if (sl_page == PG_DRUMS) sl_say("drums: my pattern", 0);
-    else sl_say("home", 0);
-}
-static void sl_page_title(void)              /* the page's name, held at the top while you are on it */
-{
-    const char *t = sl_page == PG_FX ? SL_PART_NAME[sl_fx_part] : sl_page == PG_ENV ? SL_PART_NAME[sl_env_part] : sl_page == PG_SOUND ? "sound" : sl_page == PG_MIX ? "mix" : "press play";   /* (home: only while stopped) */
-    uint32_t i = 0, j = 0;
-    const char *pre = sl_page == PG_FX ? "fx: " : sl_page == PG_ENV ? "notes: " : "";
-    if (sl_page == PG_CHORDS) { sl_chords_title(); return; }
-    if (sl_page == PG_DRUMS) { sl_drums_title(); return; }
-    while (pre[j] && i < sizeof sl_label - 1u) sl_label[i++] = pre[j++];
-    for (j = 0; t[j] && i < sizeof sl_label - 1u; j++) sl_label[i++] = t[j];
-    sl_label[i] = 0;
-}
-static const char *sl_filter_word(int32_t f) { return f < -2 ? "low-pass " : f > 2 ? "high-pass " : "open"; }
-static uint32_t sl_gate_ms = 110u;          /* the melody's note length */
 
 static void sl_fx_turn(int32_t knob, int32_t d)
 {
-    sl_fx *f = &sl_fxs[sl_fx_part];
+    sl_fx *f = &sl_fxs[sl_fx_part % 4u];
     if (knob == 0) {
         int32_t was = f->filt, now = clamp(was + d, -64, 63);
         if ((was > 0 && now < 0) || (was < 0 && now > 0)) now = 0;   /* crossing the middle stops at open (a detent) */
-        f->filt = (int8_t)now;                             /* (a first try snapped |f| < 3 to 0: single clicks never left it) */
+        f->filt = (int8_t)now;
         sl_say_num(sl_filter_word(f->filt), f->filt < 0 ? -f->filt : f->filt, 0);
         if (!f->filt) sl_say("filter open", 0);
     } else if (knob == 1) {
         f->drive = (uint8_t)clamp((int32_t)f->drive + d, 0, 127);
         sl_say_num(sl_fx_part == SL_P_DRUMS ? "punch " : "drive ", f->drive * 100 / 127, "%");
     } else if (knob == 2) {
-        f->echo = (uint8_t)clamp((int32_t)f->echo + d, 0, 127);
-        sl_say_num("delay ", f->echo * 100 / 127, "%");
-    } else if (knob == 3) {
-        f->space = (uint8_t)clamp((int32_t)f->space + d, 0, 127);
-        sl_say_num("reverb ", f->space * 100 / 127, "%");
-    } else if (knob == 4) {                                /* SELECT: the character */
         f->ctype = (uint8_t)sl_wrap(f->ctype, d, (int32_t)SL_NCHAR);
         if (f->ctype && !f->camt) f->camt = 64;
         sl_say("character: ", SL_CHAR[f->ctype].name);
-    } else if (knob == 5) {                                /* ALGORITHM: its amount */
-        char b[16];
-        const char *nm = f->ctype ? SL_CHAR[f->ctype].name : "character off";
-        uint32_t i = 0;
+    } else if (knob == 3) {
         f->camt = (uint8_t)clamp((int32_t)f->camt + d, 0, 127);
-        while (nm[i] && i < 13u) { b[i] = nm[i]; i++; }
-        b[i++] = ' '; b[i] = 0;                            /* ("chorus 100%", not "chorus100%") */
-        if (f->ctype) sl_say_num(b, f->camt * 100 / 127, "%"); else sl_say(nm, 0);
+        if (f->ctype) sl_say_num("amount ", f->camt * 100 / 127, "%"); else sl_say("character off", 0);
+    } else if (knob == 4) {
+        f->pan = (int8_t)clamp(f->pan + d, -64, 63);
+        if (!f->pan) sl_say("pan: the middle", 0); else sl_say_num(f->pan < 0 ? "pan left " : "pan right ", f->pan < 0 ? -f->pan : f->pan, 0);
+    } else if (knob == 5) {
+        f->echo = (uint8_t)clamp((int32_t)f->echo + d, 0, 127);
+        sl_say_num("delay send ", f->echo * 100 / 127, "%");
+    } else if (knob == 6) {
+        f->space = (uint8_t)clamp((int32_t)f->space + d, 0, 127);
+        sl_say_num("reverb send ", f->space * 100 / 127, "%");
     }
-    sl_fxp[sl_fx_part] = 0xFF;                             /* (a preset no more: your own) */
-    sl_fx_apply(sl_fx_part);
+    sl_fxp[sl_fx_part % 4u] = 0xFF;                        /* (a preset no more: your own) */
+    sl_fx_apply(sl_fx_part % 4u);
 }
 static void sl_mix_turn(uint32_t part, int32_t d)
 {
@@ -388,31 +458,21 @@ static void sl_mix_turn(uint32_t part, int32_t d)
            while (p[j] && i < 8u) b[i++] = p[j++]; b[i++] = ' '; b[i] = 0;
            sl_say_num(b, sl_mix[part] / 2, " db"); }
 }
-
-
-/* NOTES (ENV): a part's envelope. Its shapes, after the site's sound settings (attack, decay, sustain, release): the
- * sound's own, then five a person knows by name. An FM sound keeps its own (its operators are its envelope). */
-#define SL_NENVP 6u
-static const struct { const char *name; uint8_t v[5]; } SL_ENVP[SL_NENVP] = {
-    {"the sound's own", {0}}, {"pluck", {0, 40, 0, 30, 0}}, {"keys", {2, 70, 70, 45, 0}}, {"soft", {40, 70, 100, 70, 0}},
-    {"pad", {80, 90, 110, 95, 0}}, {"stab", {0, 25, 0, 20, 0}},
-};
-static int sl_env_fm(uint32_t part) { return sl_snd_entry(part, sl_snd_of[part])->eng == 9u; }   /* FM6: its own envelopes */
-static void sl_env_read(uint32_t part)       /* the part's envelope as its sound left it */
-{
-    static const uint8_t P[5] = {P_ATK, P_DEC, P_SUS, P_REL, P_GLIDE};
-    uint32_t i;
-    for (i = 0; i < 5u; i++) sl_env_v[part][i] = (uint8_t)clamp(trk[part].p[P[i]], 0, 127);
-}
+/* SOUND: a part's envelope (all: the three synth parts together; an FM sound keeps its own: its operators are its envelope) */
 static void sl_env_turn(uint32_t knob, int32_t d)
 {
     static const char *const W[5] = {"attack ", "decay ", "sustain ", "release ", "glide "};
-    uint32_t p = sl_env_part;
-    if (sl_env_fm(p)) { sl_say("fm sound: ", "its own envelope"); return; }
-    if (!sl_env_on[p]) { sl_env_read(p); sl_env_on[p] = 1; }
-    sl_env_v[p][knob] = (uint8_t)clamp((int32_t)sl_env_v[p][knob] + d, 0, 127);
-    sl_env_put(p);
-    sl_say_num(W[knob], sl_env_v[p][knob] * 100 / 127, "%");
+    uint32_t p, lo = sl_snd_part == 0u ? 0u : sl_snd_part - 1u, hi = sl_snd_part == 0u ? 2u : sl_snd_part - 1u;
+    int said = 0;
+    if (sl_snd_part == 4u) { sl_say("drums: ", "the kit's own"); return; }
+    for (p = lo; p <= hi; p++) {
+        if (sl_env_fm(p)) continue;
+        if (!sl_env_on[p]) { sl_env_read(p); sl_env_on[p] = 1; }
+        sl_env_v[p][knob] = (uint8_t)clamp((int32_t)sl_env_v[p][knob] + d, 0, 127);
+        sl_env_put(p);
+        if (!said) { sl_say_num(W[knob], sl_env_v[p][knob] * 100 / 127, "%"); said = 1; }
+    }
+    if (!said) sl_say("fm sound: ", "its own envelope");
 }
 
 /* SONGS (SAVE). What a person set up, kept in the FM-1's flash: three songs and the last session. A song is the sounds,
@@ -421,11 +481,11 @@ static void sl_env_turn(uint32_t knob, int32_t d)
  * otherwise use. A flash erase silences the audio while it runs (felucca.c), so a write waits for the music to stop,
  * as SLOOP's own SAVE does ("STOP BEFORE SAVE"); the session is written when stopped, 3 s after the last change, like
  * the site's own memory of where you were (and read back at power-on). */
-#define SL_SONG_MAGIC 0x534C4D32u   /* "SLM2" (2026-11-18: + the chord progression and the drum pattern; an SLM1 song is not read) */
+#define SL_SONG_MAGIC 0x534C4D33u   /* "SLM3" (2026-11-18: the pages pass: 28 scales, mutes, solos, pan; an older song is not read) */
 #define SL_NSONG 3u
 typedef struct {
     uint32_t magic, size;
-    uint8_t snd[3], kit, drumkit, scale, walls, space, slime, autoN, band, drums, pinned, chord_bars, dtime, rsize;
+    uint8_t snd[3], kit, drumkit, scale, walls, space, slime, autoN, mute[4], solo[4], busy, cycle, pinned, chord_bars, dtime, rsize, dfdbk, rdamp, dcolor;
     int8_t root, spin, octave, mix[4];
     uint16_t bpm, gate_ms;
     uint8_t swing100, fxp[4], env_on[3], env[3][5];
@@ -448,7 +508,8 @@ UI_SMALL static void sl_song_take(sl_song *g)
     g->magic = SL_SONG_MAGIC; g->size = sizeof *g;
     for (p = 0; p < 3u; p++) { g->snd[p] = sl_snd_of[p]; g->env_on[p] = sl_env_on[p]; memcpy(g->env[p], sl_env_v[p], 5); }
     g->kit = sl_kit; g->drumkit = (uint8_t)TDRUM->p[P_E0]; g->scale = sl_scale; g->walls = sl_walls; g->space = sl_space;
-    g->slime = sl_slime; g->autoN = sl_auto; g->band = sl_band_on; g->drums = sl_drums_on; g->pinned = sl_pinned;
+    g->slime = sl_slime; g->autoN = sl_auto; memcpy(g->mute, sl_mute, 4); memcpy(g->solo, sl_solo, 4); g->busy = sl_dens; g->cycle = sl_cycle; g->pinned = sl_pinned;
+    g->dfdbk = (uint8_t)song.g[G_DFDBK]; g->rdamp = (uint8_t)song.g[G_RDAMP]; g->dcolor = (uint8_t)song.g[G_DCOLOR];
     g->chord_bars = (uint8_t)sl_band.chord_bars; g->dtime = (uint8_t)song.g[G_DTIME]; g->rsize = (uint8_t)song.g[G_RSIZE];
     g->root = (int8_t)sl_root; g->spin = sl_spin; g->octave = sl_octave; g->bpm = (uint16_t)song.g[G_BPM]; g->gate_ms = (uint16_t)sl_gate_ms;
     g->swing100 = (uint8_t)(sl_tank.s.swing * 100.0 + 0.5);
@@ -471,7 +532,10 @@ UI_SMALL static void sl_song_put(const sl_song *g)   /* (requests, as a hand's: 
     sl_kit_req = g->kit; sl_scale_req = (uint8_t)(g->scale % SL_NSCALE);
     sl_root_req = (int8_t)(clamp(g->root, 48, 71) - sl_root);
     sl_walls = (uint8_t)clamp(g->walls, 3, 12); sl_space = g->space ? 1u : 0u; sl_reform_req = 1;
-    sl_slime = g->slime ? 1u : 0u; sl_auto = g->autoN ? 1u : 0u; sl_band_on = g->band ? 1u : 0u; sl_drums_on = g->drums ? 1u : 0u;
+    sl_slime = g->slime ? 1u : 0u; sl_auto = g->autoN ? 1u : 0u;
+    for (p = 0; p < 4u; p++) { sl_mute[p] = g->mute[p] ? 1u : 0u; sl_solo[p] = g->solo[p] ? 1u : 0u; }
+    sl_dens = (uint8_t)(g->busy % 5u); sl_cycle = (uint8_t)(g->cycle % 4u);
+    song.g[G_DFDBK] = (int16_t)clamp(g->dfdbk, 0, 120); song.g[G_RDAMP] = (int16_t)clamp(g->rdamp, 0, 127); song.g[G_DCOLOR] = (int16_t)clamp(g->dcolor, 0, 127);
     sl_pinned = g->pinned ? 1u : 0u;
     sl_band.chord_bars = g->chord_bars == 1u || g->chord_bars == 4u ? g->chord_bars : 2u;
     song.g[G_DTIME] = (int16_t)(g->dtime % 9u); song.g[G_RSIZE] = (int16_t)clamp(g->rsize, 0, 127);
@@ -543,6 +607,11 @@ static int sl_tap1(uint32_t b)               /* the first job's time has come (n
     return 0;
 }
 
+static void sl_goto(uint8_t pg)              /* a page's button: its page, or (pressed on it) back to the tank */
+{
+    sl_page = sl_page == pg ? (uint8_t)PG_HOME : pg;
+    sl_say(sl_page == PG_HOME ? "tank" : SL_PAGE_NAME[sl_page], 0);
+}
 static void slime_poll(void)                /* often: nothing a hand does waits for a frame */
 {
     uint32_t rel, pressed = fm1_input_edges(&rel), keys = fm1_input_note_edges();
@@ -552,30 +621,39 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
         uint32_t k;
         for (k = 0; k < 27u; k++) if ((keys >> k) & 1u) {
             int s = sl_step_of_key(k), l = sl_lane_of_key(k);
-            if (s >= 0 && s < 16) { sl_band.pat[sl_lane % SH_PLANES] ^= (uint16_t)(1u << s); if (!sl_band.pat_on) sl_band.pat_on = 1; }
+            if (s >= 0 && s < 16) { sl_band.pat[sl_lane % SH_PLANES] ^= (uint16_t)(1u << s); sl_band.pat_on = 1; }
             else if (l >= 0) sl_lane = (uint8_t)l;
         }
-        sl_drums_title(); sl_label_until = fm1_ms + 1500u;
         keys = 0;
+    }
+    if (keys && sl_page == PG_MIX) {                       /* MIXER: white keys 1-4 mute, 5-8 solo (the rest still play) */
+        uint32_t k;
+        for (k = 0; k < 27u; k++) if ((keys >> k) & 1u) {
+            int s = sl_step_of_key(k);
+            if (s < 0 || s > 7) continue;
+            if (s < 4) { sl_mute[s] = (uint8_t)!sl_mute[s]; sl_say(SL_PART_NAME[s], sl_mute[s] ? " muted" : " on"); }
+            else { sl_solo[s - 4] = (uint8_t)!sl_solo[s - 4]; sl_say(SL_PART_NAME[s - 4], sl_solo[s - 4] ? " solo" : " solo off"); }
+            keys &= ~(1u << k);
+        }
+        slime_levels();
     }
     if (keys && sl_page == PG_CHORDS) {                    /* CHORDS: a key sets the chord picked to its note, then the next */
         uint32_t k;
         const sh_scale *sc = sh_scale_by_id(SL_SCALES[sl_scale % SL_NSCALE]);
         for (k = 0; k < 27u; k++) if ((keys >> k) & 1u) {
             int semis = ((53 + (int)k - sl_root) % 12 + 12) % 12;
-            if (sl_cm_sel >= sl_band.cm_n) { sl_band.cm_n = sl_cm_sel + 1; sl_band.cm_bars[sl_cm_sel] = 1; }
+            if (sl_cm_sel >= sl_band.cm_n) { if (!sl_band.cm_n) { sl_band.cm_i = 0; sl_band.cm_left = 0; } sl_band.cm_n = sl_cm_sel + 1; }
             sl_band.cm_root[sl_cm_sel] = (int8_t)semis; sl_band.cm_qual[sl_cm_sel] = (uint8_t)sh_band_cq_for(sc, semis);
             if (!sl_band.cm_bars[sl_cm_sel]) sl_band.cm_bars[sl_cm_sel] = 1;
             sl_cm_sel = (uint8_t)((sl_cm_sel + 1u) % SH_CM_MAX);
         }
-        sl_chords_title(); sl_label_until = fm1_ms + 1500u;
     }
     if (keys) {
         fm1_irq_off(); sl_key_req |= keys; fm1_irq_on();
     }
     if (pressed) sl_changed_ms = fm1_ms;
     if ((pressed || keys) && sl_splash_t0 && !sl_splash_done && !sl_skip) { sl_skip = 1; sl_skip_at = fm1_ms; }   /* a hand: on to the fade */
-    /* ---- buttons: the same on every page ---- */
+    /* ---- the buttons: the same on every page ---- */
     {   /* PLAY: at once; a double tap: from the top (the band's bar 1, the loop's bar 1) */
         static uint32_t last;
         if (SL_PRESSED(B_PLAY)) {
@@ -585,8 +663,8 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
         }
     }
     if (SL_PRESSED(B_HOME)) {
-        if (sl_page != PG_HOME) { sl_page = PG_HOME; sl_say("home", 0); }
-        else {                                             /* at home: a NEW shape, never the same walls again */
+        if (sl_page != PG_HOME) { sl_page = PG_HOME; sl_say("tank", 0); }
+        else {                                             /* at the tank: a NEW shape, never the same walls again */
             static const uint8_t SHAPES[7] = {6, 5, 8, 3, 7, 4, 12};
             static uint8_t at;
             uint8_t w = sl_walls;
@@ -595,32 +673,14 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
             sl_reform_req = 1; sl_say("new shape", 0);
         }
     }
-    if (SL_PRESSED(B_FX)) {                                /* FX: melody -> bass -> chords -> drums -> home */
-        if (sl_page != PG_FX) { sl_page = PG_FX; sl_fx_part = 0; }
-        else if (++sl_fx_part >= SL_NPARTS) { sl_page = PG_HOME; sl_fx_part = 0; }
-        sl_page_say();
-    }
-    /* EDIT: the sound page; a double tap: CHORDS. GLO: the mix page; a double tap: DRUMS (my pattern). Again: home */
-    if (sl_tap2(B_EDIT, pressed)) { sl_page = sl_page == PG_CHORDS ? PG_HOME : PG_CHORDS; sl_page_say(); }
-    if (sl_tap1(B_EDIT)) { sl_page = sl_page == PG_SOUND ? PG_HOME : PG_SOUND; sl_page_say(); }
-    if (sl_tap2(B_GLO, pressed)) { sl_page = sl_page == PG_DRUMS ? PG_HOME : PG_DRUMS; sl_page_say(); }
-    if (sl_tap1(B_GLO)) { sl_page = sl_page == PG_MIX ? PG_HOME : PG_MIX; sl_page_say(); }
+    if (SL_PRESSED(B_SCL)) sl_goto(PG_SONG);
+    if (SL_PRESSED(B_GLO)) sl_goto(PG_MIX);
+    if (SL_PRESSED(B_FX)) sl_goto(PG_FX);
+    if (SL_PRESSED(B_ENV)) sl_goto(PG_SOUND);
+    if (SL_PRESSED(B_EDIT)) sl_goto(PG_CHORDS);
+    if (SL_PRESSED(B_SEQ)) sl_goto(PG_DRUMS);
     if (SL_PRESSED(B_ARP)) { sl_auto = (uint8_t)!sl_auto; sl_say("auto-notes ", sl_auto ? "on" : "off"); }
-    /* LFO: the slime on / off; a double tap: the key pinned (the slime goes on, the key journey stops: the site's key lock) */
-    if (sl_tap2(B_LFO, pressed)) { sl_pinned = (uint8_t)!sl_pinned; sl_say("key ", sl_pinned ? "pinned" : "free to move"); }
-    if (sl_tap1(B_LFO)) { sl_slime = (uint8_t)!sl_slime; sl_say("slime ", sl_slime ? "on" : "off"); }
-    /* SEQ: the band (drums, bass, chords) on / off; a double tap: the drums alone (the site's drums and band buttons) */
-    if (sl_tap2(B_SEQ, pressed)) {
-        uint8_t alone = (uint8_t)!(sl_drums_on && !sl_band_on);
-        sl_drums_on = 1; sl_band_on = (uint8_t)!alone; sl_say(alone ? "drums alone" : "band on", 0);
-    }
-    if (sl_tap1(B_SEQ)) {
-        uint8_t on = (uint8_t)!(sl_drums_on || sl_band_on);
-        sl_drums_on = sl_band_on = on; sl_say("band ", on ? "on" : "off");
-    }
-    /* SCL: the next scale; a double tap: the one before */
-    if (sl_tap2(B_SCL, pressed)) { sl_scale_req = (uint8_t)sl_wrap(sl_scale, -1, (int32_t)SL_NSCALE); sl_say("scale: ", sl_scale_word(sl_scale_req)); }
-    if (sl_tap1(B_SCL)) { sl_scale_req = (uint8_t)sl_wrap(sl_scale, 1, (int32_t)SL_NSCALE); sl_say("scale: ", sl_scale_word(sl_scale_req)); }
+    if (SL_PRESSED(B_LFO)) { sl_slime = (uint8_t)!sl_slime; sl_say("slime ", sl_slime ? "on" : "off"); }
     /* REC: the loop (count-in, take, close; overdub on a playing loop); a double tap: the loop cleared */
     if (sl_tap2(B_REC, pressed)) { sl_loop_clear(); sl_say("loop cleared", 0); }
     if (sl_tap1(B_REC)) {
@@ -653,179 +713,141 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
             if ((d = panel_enc(EN_PRESET)) != 0) { sl_slot = (uint8_t)sl_wrap(sl_slot, d, (int32_t)SL_NSONG); turned = 1; sl_say_num("song ", sl_slot + 1, 0); }
         }
     }
-    /* ENV: the NOTES page (each press: melody -> bass -> chords -> home) */
-    if (SL_PRESSED(B_ENV)) {
-        if (sl_page != PG_ENV) { sl_page = PG_ENV; sl_env_part = 0; }
-        else if (++sl_env_part >= 3u) { sl_page = PG_HOME; sl_env_part = 0; }
-        sl_page_say();
-    }
     if (SL_PRESSED(B_OCTDN) || SL_PRESSED(B_OCTUP)) {      /* the keyboard's octave, as on any synth; both: back to the middle */
         uint32_t both = (1u << panel.btn[B_OCTDN]) | (1u << panel.btn[B_OCTUP]);
         if ((fm1_in.buttons & both) == both) sl_octave = 0;
         else sl_octave = (int8_t)clamp(sl_octave + (SL_PRESSED(B_OCTUP) ? 1 : -1), -2, 2);
         sl_say_num("octave ", sl_octave, 0);
     }
-    /* ---- the encoders, by page ----
-     * Every knob over a range accelerates: SLOOP's accel() (ui_input.c, after JIANT FM by juanjiant-bit, GPL-3.0): a slow
-     * turn is one value a detent (fine tuning live), a fast one sweeps up to x16, a reversal never jumps, and SLOOP's
-     * MENU KNOB ACCEL OFF setting is honoured. Lists (sounds, kits, presets, walls) step one at a time. */
-    if (sl_page == PG_HOME) {
-        if ((d = panel_enc(EN_K1)) != 0) { int32_t v = clamp(song.g[G_BPM] + accel(EN_K1, d, 161), 40, 200); song.g[G_BPM] = (int16_t)v; sl_say_num("tempo ", v, 0); }
-        if ((d = panel_enc(EN_K2)) != 0) { sl_spin = (int8_t)clamp(sl_spin + accel(EN_K2, d, 51) * 4, -100, 100); if (sl_spin) sl_say_num("spin ", sl_spin, 0); else sl_say("spin off", 0); }
-        if ((d = panel_enc(EN_K3)) != 0) { sl_kit_req = (uint8_t)sl_wrap(sl_kit, d, sh_band_nkits()); sl_say("rhythm: ", sh_band_kit_name(sl_kit_req)); }
-        if ((d = panel_enc(EN_K4)) != 0) {
-            int32_t nr = clamp(sl_root + d, 48, 71);
-            sl_root_req = (int8_t)(nr - sl_root);
-            sl_say("key: ", SL_NOTE[nr % 12]);
-        }
-        if ((d = panel_enc(EN_SELECT)) != 0) { sl_walls = (uint8_t)clamp((int32_t)sl_walls + d, 3, 12); sl_reform_req = 1; sl_say_num("walls ", sl_walls, 0); }
-        if ((d = panel_enc(EN_ALGO)) != 0) { sl_space = (uint8_t)(d > 0); sl_reform_req = 1; sl_say(sl_space ? "portals on" : "portals off", 0); }
-        if ((d = panel_enc(EN_PRESET)) != 0) {
-            uint32_t i = (uint32_t)sl_wrap(sl_snd_of[SL_P_MEL], d, (int32_t)SL_NMEL);
-            sl_snd_req[SL_P_MEL] = (uint8_t)i; sl_env_on[SL_P_MEL] = 0; sl_say("melody: ", SL_MEL_SND[i].name);
-        }
-    } else if (sl_page == PG_FX) {
-        if ((d = panel_enc(EN_K1)) != 0) sl_fx_turn(0, accel(EN_K1, d, 128));
-        if ((d = panel_enc(EN_K2)) != 0) sl_fx_turn(1, accel(EN_K2, d, 128));
-        if ((d = panel_enc(EN_K3)) != 0) sl_fx_turn(2, accel(EN_K3, d, 128));
-        if ((d = panel_enc(EN_K4)) != 0) sl_fx_turn(3, accel(EN_K4, d, 128));
-        if ((d = panel_enc(EN_SELECT)) != 0) sl_fx_turn(4, d);
-        if ((d = panel_enc(EN_ALGO)) != 0) sl_fx_turn(5, accel(EN_ALGO, d, 128));
-        if ((d = panel_enc(EN_PRESET)) != 0) {
-            uint32_t i = (uint32_t)sl_wrap(sl_fxp[sl_fx_part] == 0xFF ? 0 : sl_fxp[sl_fx_part], d, (int32_t)SL_NFXP);
-            sl_fx_preset(sl_fx_part, i);
-            sl_say("fx: ", SL_FXP[i].name);
-        }
-    } else if (sl_page == PG_SOUND) {
-        int32_t p;
-        for (p = 0; p < 3; p++)
-            if ((d = panel_enc((uint32_t)(EN_K1 + p))) != 0) {
-                uint32_t i = (uint32_t)sl_wrap(sl_snd_of[p], d, (int32_t)sl_snd_count((uint32_t)p));
-                sl_snd_req[p] = (uint8_t)i; sl_env_on[p] = 0; sl_say(p == 0 ? "melody: " : p == 1 ? "bass: " : "chords: ", sl_snd_entry((uint32_t)p, i)->name);
+    /* ---- the encoders, by page. Every knob over a range accelerates (SLOOP's accel(), after JIANT FM): a slow turn is
+     * one step, a fast one sweeps; lists (scales, sounds, presets) step one at a time ---- */
+    {
+        int32_t k1 = panel_enc(EN_K1), k2 = panel_enc(EN_K2), k3 = panel_enc(EN_K3), k4 = panel_enc(EN_K4);
+        int32_t se = panel_enc(EN_SELECT), al = panel_enc(EN_ALGO), pr = panel_enc(EN_PRESET);
+        if (sl_page == PG_HOME) {                          /* TANK: the instrument */
+            if (k1) { sl_walls = (uint8_t)clamp((int32_t)sl_walls + k1, 3, 12); sl_reform_req = 1; sl_say_num("walls ", sl_walls, 0); }
+            if (k2) { sl_spin = (int8_t)clamp(sl_spin + accel(EN_K2, k2, 51) * 4, -100, 100); if (sl_spin) sl_say_num("spin ", sl_spin, 0); else sl_say("spin off", 0); }
+            if (k3) { sl_space = (uint8_t)(k3 > 0); sl_reform_req = 1; sl_say(sl_space ? "portals on" : "portals off", 0); }
+            if (k4) { sl_gate_ms = (uint32_t)clamp((int32_t)sl_gate_ms + accel(EN_K4, k4, 29) * 20, 40, 600); sl_gate_blocks = sl_ms_to_block((double)sl_gate_ms); sl_say_num("note length ", (int32_t)sl_gate_ms, " ms"); }
+            if (se) { sl_dens = (uint8_t)clamp(sl_dens + se, 0, 4); sl_say_num("about ", SL_BUSY[sl_dens], " notes a bar"); }
+            if (al) { sl_cycle = (uint8_t)clamp(sl_cycle + al, 0, 3); if (SL_CYCLE[sl_cycle]) sl_say_num("new shape every ", SL_CYCLE[sl_cycle], " bars"); else sl_say("the shape stays", 0); }
+        } else if (sl_page == PG_SONG) {                   /* SONG: tempo, swing, key, scale, rhythm, harmony */
+            if (k1) { int32_t v = clamp(song.g[G_BPM] + accel(EN_K1, k1, 161), 40, 200); song.g[G_BPM] = (int16_t)v; sl_say_num("tempo ", v, 0); }
+            if (k2) { double sw = sl_tank.s.swing + accel(EN_K2, k2, 21) * 0.025; sl_tank.s.swing = sw < 0.0 ? 0.0 : sw > 0.5 ? 0.5 : sw; sl_say_num("swing ", (int32_t)(sl_tank.s.swing * 100.0 + 0.5), "%"); }
+            if (k3) { int32_t nr = clamp(sl_root + k3, 48, 71); sl_root_req = (int8_t)(nr - sl_root); sl_say("key: ", SL_NOTE[nr % 12]); }
+            if (k4) { sl_scale_req = (uint8_t)sl_wrap(sl_scale, k4, (int32_t)SL_NSCALE); sl_say("scale: ", SL_SCALE_NAME[sl_scale_req]); }
+            if (se) { sl_kit_req = (uint8_t)sl_wrap(sl_kit, se, sh_band_nkits()); sl_say("rhythm: ", sh_band_kit_name(sl_kit_req)); }
+            if (al) { static const uint8_t CB[3] = {1, 2, 4}; int32_t at = sl_band.chord_bars >= 4 ? 2 : sl_band.chord_bars >= 2 ? 1 : 0;
+                      sl_band.chord_bars = CB[clamp(at + (al > 0 ? 1 : -1), 0, 2)]; sl_say_num("a chord every ", sl_band.chord_bars, sl_band.chord_bars == 1 ? " bar" : " bars"); }
+            if (pr) { sl_pinned = (uint8_t)(pr > 0); sl_say("key: ", sl_pinned ? "pinned" : "moves with the slime"); }
+        } else if (sl_page == PG_MIX) {                    /* MIXER: four faders, a strip's sends */
+            if (k1) sl_mix_turn(0, accel(EN_K1, k1, 53));
+            if (k2) sl_mix_turn(1, accel(EN_K2, k2, 53));
+            if (k3) sl_mix_turn(2, accel(EN_K3, k3, 53));
+            if (k4) sl_mix_turn(3, accel(EN_K4, k4, 53));
+            if (se) { sl_focus = (uint8_t)sl_wrap(sl_focus, se, 4); sl_say("strip: ", SL_PART_NAME[sl_focus]); }
+            if (al || pr) { uint8_t was = sl_fx_part; sl_fx_part = sl_focus; if (al) sl_fx_turn(5, accel(EN_ALGO, al, 128)); if (pr) sl_fx_turn(6, accel(EN_PRESET, pr, 128)); sl_fx_part = was; }
+        } else if (sl_page == PG_FX) {                     /* FX: a part's inserts and pan, or the returns */
+            if (se) { sl_fx_part = (uint8_t)sl_wrap(sl_fx_part, se, 5); sl_say("fx: ", sl_fx_part >= 4u ? "the returns" : SL_PART_NAME[sl_fx_part]); }
+            if (sl_fx_part >= 4u) {
+                if (k1) { song.g[G_DTIME] = (int16_t)sl_wrap(song.g[G_DTIME], k1, 9); sl_say("delay time ", SL_DTIME[song.g[G_DTIME]]); }
+                if (k2) { song.g[G_DFDBK] = (int16_t)clamp(song.g[G_DFDBK] + accel(EN_K2, k2, 121), 0, 120); sl_say_num("delay repeats ", song.g[G_DFDBK] * 100 / 120, "%"); }
+                if (k3) { song.g[G_RSIZE] = (int16_t)clamp(song.g[G_RSIZE] + accel(EN_K3, k3, 128), 0, 127); sl_say_num("reverb room ", song.g[G_RSIZE] * 100 / 127, "%"); }
+                if (k4) { song.g[G_RDAMP] = (int16_t)clamp(song.g[G_RDAMP] - accel(EN_K4, k4, 128), 0, 127); sl_say_num("reverb bright ", (127 - song.g[G_RDAMP]) * 100 / 127, "%"); }
+                if (al) { song.g[G_DCOLOR] = (int16_t)clamp(song.g[G_DCOLOR] + accel(EN_ALGO, al, 128), 0, 127); sl_say_num("delay tone ", song.g[G_DCOLOR] * 100 / 127, "%"); }
+            } else {
+                if (k1) sl_fx_turn(0, accel(EN_K1, k1, 128));
+                if (k2) sl_fx_turn(1, accel(EN_K2, k2, 128));
+                if (k3) sl_fx_turn(2, k3);
+                if (k4) sl_fx_turn(3, accel(EN_K4, k4, 128));
+                if (al) sl_fx_turn(4, accel(EN_ALGO, al, 128));
+                if (pr) { uint32_t i = (uint32_t)sl_wrap(sl_fxp[sl_fx_part] == 0xFF ? 0 : sl_fxp[sl_fx_part], pr, (int32_t)SL_NFXP);
+                          sl_fx_preset(sl_fx_part, i); sl_say("fx: ", SL_FXP[i].name); }
             }
-        if ((d = panel_enc(EN_K4)) != 0) {                 /* the drum kit: any of SLOOP's synthesized kits (a new rhythm brings its own) */
-            uint32_t n = DRUM_USR - DRUM_SAMPLED, cur = (uint32_t)TDRUM->p[P_E0] - DRUM_SAMPLED;
-            uint32_t i = (uint32_t)sl_wrap((int32_t)(cur < n ? cur : 0u), d, (int32_t)n);
-            TDRUM->p[P_E0] = (int16_t)(DRUM_SAMPLED + i);
-            sl_say("kit: ", DRUM_KIT_NAMES[DRUM_SAMPLED + i]);
+        } else if (sl_page == PG_SOUND) {                  /* SOUND: a part's sound and envelope (all: the three together) */
+            if (se) { static const char *const W[5] = {"all three", "melody", "bass", "chords", "drums"};
+                      sl_snd_part = (uint8_t)sl_wrap(sl_snd_part, se, 5); sl_say("sound: ", W[sl_snd_part]); }
+            if (k1) sl_env_turn(0, accel(EN_K1, k1, 128));
+            if (k2) sl_env_turn(1, accel(EN_K2, k2, 128));
+            if (k3) sl_env_turn(2, accel(EN_K3, k3, 128));
+            if (k4) sl_env_turn(3, accel(EN_K4, k4, 128));
+            if (al) sl_env_turn(4, accel(EN_ALGO, al, 128));
+            if (pr) {
+                if (sl_snd_part == 0u) {                   /* a sound set: melody, bass and chords that suit each other */
+                    sl_set = (uint8_t)sl_wrap(sl_set, pr, (int32_t)SL_NSET);
+                    sl_snd_req[0] = SL_SETS[sl_set].mel; sl_snd_req[1] = SL_SETS[sl_set].bass; sl_snd_req[2] = SL_SETS[sl_set].comp;
+                    sl_env_on[0] = sl_env_on[1] = sl_env_on[2] = 0;
+                    sl_say("sounds: ", SL_SETS[sl_set].name);
+                } else if (sl_snd_part == 4u) {            /* the drum kit: any of the synthesized kits (a new rhythm brings its own) */
+                    uint32_t n = DRUM_USR - DRUM_SAMPLED, cur = (uint32_t)TDRUM->p[P_E0] - DRUM_SAMPLED;
+                    uint32_t i = (uint32_t)sl_wrap((int32_t)(cur < n ? cur : 0u), pr, (int32_t)n);
+                    TDRUM->p[P_E0] = (int16_t)(DRUM_SAMPLED + i);
+                    sl_say("kit: ", DRUM_KIT_NAMES[DRUM_SAMPLED + i]);
+                } else {
+                    uint32_t p = sl_snd_part - 1u, i = (uint32_t)sl_wrap(sl_snd_of[p], pr, (int32_t)sl_snd_count(p));
+                    sl_snd_req[p] = (uint8_t)i; sl_env_on[p] = 0;
+                    sl_say(p == 0 ? "melody: " : p == 1 ? "bass: " : "chords: ", sl_snd_entry(p, i)->name);
+                }
+            }
+        } else if (sl_page == PG_CHORDS) {                 /* CHORDS: the progression */
+            const sh_scale *sc = sh_scale_by_id(SL_SCALES[sl_scale % SL_NSCALE]);
+            uint32_t c, i;
+            if (se) sl_cm_sel = (uint8_t)sl_wrap(sl_cm_sel, se, sl_band.cm_n > 0 ? (sl_band.cm_n < SH_CM_MAX ? sl_band.cm_n + 1 : SH_CM_MAX) : 1);
+            c = sl_cm_sel % SH_CM_MAX;
+            if ((k1 || k2 || k3) && sl_band.cm_n <= (int)c) {   /* turning a chord that is not there yet: the progression grows */
+                for (i = (uint32_t)sl_band.cm_n; i <= c; i++) { sl_band.cm_root[i] = 0; sl_band.cm_qual[i] = (uint8_t)sh_band_cq_for(sc, 0); sl_band.cm_bars[i] = 1; }
+                if (!sl_band.cm_n) { sl_band.cm_i = 0; sl_band.cm_left = 0; }
+                sl_band.cm_n = (int)c + 1;
+            }
+            if (k1) { int r = sl_wrap(sl_band.cm_root[c], k1, 12); sl_band.cm_root[c] = (int8_t)r; sl_band.cm_qual[c] = (uint8_t)sh_band_cq_for(sc, r); }
+            if (k2) sl_band.cm_qual[c] = (uint8_t)sl_wrap(sl_band.cm_qual[c], k2, SH_NCQ);
+            if (k3) { static const uint8_t BB[3] = {1, 2, 4}; int at = sl_band.cm_bars[c] >= 4 ? 2 : sl_band.cm_bars[c] >= 2 ? 1 : 0;
+                      sl_band.cm_bars[c] = BB[clamp(at + (k3 > 0 ? 1 : -1), 0, 2)]; }
+            if (k1 || k2) { char b[12]; sl_chord_name(b, c); sl_say("chord: ", b); }
+            if (k3) sl_say_num("bars: ", sl_band.cm_bars[c], 0);
+            if (k4) {                                      /* how many chords: 0 gives the harmony back to the slime */
+                int was = sl_band.cm_n, n = clamp(was + k4, 0, SH_CM_MAX);
+                for (i = (uint32_t)was; i < (uint32_t)n; i++) { sl_band.cm_root[i] = 0; sl_band.cm_qual[i] = (uint8_t)sh_band_cq_for(sc, 0); sl_band.cm_bars[i] = 1; }
+                if (!was && n) { sl_band.cm_i = 0; sl_band.cm_left = 0; }
+                sl_band.cm_n = n;
+                if (sl_cm_sel >= n && n) sl_cm_sel = (uint8_t)(n - 1);
+                if (n) sl_say_num("chords: ", n, 0); else sl_say("chords: the slime's", 0);
+            }
+            if (al && sl_band.cm_n) {                      /* the whole progression up or down a semitone */
+                for (i = 0; i < (uint32_t)sl_band.cm_n; i++) sl_band.cm_root[i] = (int8_t)sl_wrap(sl_band.cm_root[i], al, 12);
+                sl_say(al > 0 ? "all up a semitone" : "all down a semitone", 0);
+            }
+            if (pr) {                                      /* the site's famous progressions, in this key */
+                int minor = sc && sc->n == 7 && sc->cents[2] > 250.0f && sc->cents[2] < 350.0f;
+                sl_famous = (uint8_t)sl_wrap(sl_famous, pr, SH_NFAMOUS);
+                sh_band_cm_famous(&sl_band, sl_famous, minor, 1);
+                sl_cm_sel = 0;
+                sl_say("chords: ", SH_FAMOUS[sl_famous].name);
+            }
+        } else if (sl_page == PG_DRUMS) {                  /* DRUMS: my pattern */
+            uint32_t L;
+            if (se) { sl_lane = (uint8_t)sl_wrap(sl_lane, se, SH_PLANES); sl_say("lane: ", SH_PLANE_NAME[sl_lane]); }
+            L = sl_lane % SH_PLANES;
+            if (k1) {                                      /* fill: the lane on every 16th, 8th, 3rd 16th, beat, half bar, or empty */
+                static const uint8_t EVERY[6] = {0, 1, 2, 3, 4, 8};
+                uint32_t s, m = 0;
+                sl_dfill[L] = (uint8_t)sl_wrap(sl_dfill[L], k1, 6);
+                for (s = 0; EVERY[sl_dfill[L]] && s < 16u; s += EVERY[sl_dfill[L]]) m |= 1u << s;
+                sl_band.pat[L] = (uint16_t)m; sl_band.pat_on = 1;
+            }
+            if (k2) {                                      /* shift: the lane a 16th later / earlier, round the bar */
+                uint32_t p = sl_band.pat[L], r = (uint32_t)(((k2 % 16) + 16) % 16);
+                sl_band.pat[L] = (uint16_t)(((p << r) | (p >> (16u - r))) & 0xFFFFu);
+            }
+            if (k3) { sl_band.human = (int)(k3 > 0); sl_say("feel: ", sl_band.human ? "the drummer's" : "exact"); }
+            if (k4) { sl_band.pat_on = (int)(k4 > 0); sl_say("drums: ", sl_band.pat_on ? "my pattern" : "the rhythm's"); }
+            if (pr) {                                      /* the rhythm's own bar to start from, or a clean grid */
+                if (pr > 0) { sh_band_pat_from_kit(&sl_band); sl_say("drums: from the rhythm", 0); }
+                else { for (L = 0; L < SH_PLANES; L++) sl_band.pat[L] = 0; sl_say("drums: cleared", 0); }
+                sl_band.pat_on = 1;
+            }
         }
-        if ((d = panel_enc(EN_SELECT)) != 0) {             /* the melody's note length */
-            sl_gate_ms = (uint32_t)clamp((int32_t)sl_gate_ms + accel(EN_SELECT, d, 29) * 20, 40, 600);
-            sl_gate_blocks = sl_ms_to_block((double)sl_gate_ms);
-            sl_say_num("note length ", (int32_t)sl_gate_ms, " ms");
-        }
-        if ((d = panel_enc(EN_ALGO)) != 0) {               /* how long one chord lasts: 1, 2 or 4 bars (the site's chordBars) */
-            static const uint8_t CB[3] = {1, 2, 4};
-            int32_t at = sl_band.chord_bars >= 4 ? 2 : sl_band.chord_bars >= 2 ? 1 : 0;
-            sl_band.chord_bars = CB[clamp(at + (d > 0 ? 1 : -1), 0, 2)];
-            sl_say_num("chord every ", sl_band.chord_bars, sl_band.chord_bars == 1 ? " bar" : " bars");
-        }
-        if ((d = panel_enc(EN_PRESET)) != 0) {             /* a sound set: melody, bass and chords that suit each other */
-            static uint8_t set;
-            set = (uint8_t)sl_wrap(set, d, (int32_t)SL_NSET);
-            sl_snd_req[0] = SL_SETS[set].mel; sl_snd_req[1] = SL_SETS[set].bass; sl_snd_req[2] = SL_SETS[set].comp;
-            sl_env_on[0] = sl_env_on[1] = sl_env_on[2] = 0;
-            sl_say("sounds: ", SL_SETS[set].name);
-        }
-    } else if (sl_page == PG_CHORDS) {                    /* CHORDS: the progression */
-        const sh_scale *sc = sh_scale_by_id(SL_SCALES[sl_scale % SL_NSCALE]);
-        int32_t d1 = panel_enc(EN_K1), d2 = panel_enc(EN_K2), d3 = panel_enc(EN_K3), d4 = panel_enc(EN_K4);
-        int32_t ds = panel_enc(EN_SELECT), da = panel_enc(EN_ALGO), dp = panel_enc(EN_PRESET);
-        uint32_t c, i;
-        char b[12];
-        if (ds) { sl_cm_sel = (uint8_t)sl_wrap(sl_cm_sel, ds, sl_band.cm_n > 0 ? sl_band.cm_n : 1); }
-        c = sl_cm_sel % SH_CM_MAX;
-        if ((d1 || d2 || d3) && sl_band.cm_n <= (int)c) {     /* turning a chord that is not there yet: the progression grows */
-            for (i = (uint32_t)sl_band.cm_n; i <= c; i++) { sl_band.cm_root[i] = 0; sl_band.cm_qual[i] = (uint8_t)sh_band_cq_for(sc, 0); sl_band.cm_bars[i] = 1; }
-            if (!sl_band.cm_n) { sl_band.cm_i = 0; sl_band.cm_left = 0; }
-            sl_band.cm_n = (int)c + 1;
-        }
-        if (d1) { int r = sl_wrap(sl_band.cm_root[c], d1, 12); sl_band.cm_root[c] = (int8_t)r; sl_band.cm_qual[c] = (uint8_t)sh_band_cq_for(sc, r); }
-        if (d2) sl_band.cm_qual[c] = (uint8_t)sl_wrap(sl_band.cm_qual[c], d2, SH_NCQ);
-        if (d3) { static const uint8_t BB[3] = {1, 2, 4}; int at = sl_band.cm_bars[c] >= 4 ? 2 : sl_band.cm_bars[c] >= 2 ? 1 : 0;
-                  sl_band.cm_bars[c] = BB[clamp(at + (d3 > 0 ? 1 : -1), 0, 2)]; }
-        if (ds || d1 || d2 || d3) {
-            char n[8], t[24], *p;
-            sl_chord_name(b, c);
-            p = sl_cat(t, sl_num(n, (int32_t)c + 1), t + 23); p = sl_cat(p, ": ", t + 23); p = sl_cat(p, b, t + 23);
-            p = sl_cat(p, ", ", t + 23); p = sl_cat(p, sl_num(n, sl_band.cm_bars[c]), t + 23); sl_cat(p, sl_band.cm_bars[c] == 1 ? " bar" : " bars", t + 23);
-            sl_say("chord ", t);
-        }
-        if (d4) {                                          /* how many chords: 0 gives the harmony back to the slime */
-            int was = sl_band.cm_n, n = clamp(was + d4, 0, SH_CM_MAX);
-            for (i = (uint32_t)was; i < (uint32_t)n; i++) { sl_band.cm_root[i] = 0; sl_band.cm_qual[i] = (uint8_t)sh_band_cq_for(sc, 0); sl_band.cm_bars[i] = 1; }
-            if (!was && n) { sl_band.cm_i = 0; sl_band.cm_left = 0; }
-            sl_band.cm_n = n;
-            if (sl_cm_sel >= n && n) sl_cm_sel = (uint8_t)(n - 1);
-            if (n) sl_say_num("chords: ", n, 0); else sl_say("chords: the slime's", 0);
-        }
-        if (da && sl_band.cm_n) {                          /* ALGORITHM: the whole progression up or down a semitone */
-            for (i = 0; i < (uint32_t)sl_band.cm_n; i++) sl_band.cm_root[i] = (int8_t)sl_wrap(sl_band.cm_root[i], da, 12);
-            sl_chords_title(); sl_label_until = fm1_ms + 1500u;
-        }
-        if (dp) {                                          /* PRESETS: the site's famous progressions, in this key */
-            int minor = sc && sc->n == 7 && sc->cents[2] > 250.0f && sc->cents[2] < 350.0f;
-            sl_famous = (uint8_t)sl_wrap(sl_famous, dp, SH_NFAMOUS);
-            sh_band_cm_famous(&sl_band, sl_famous, minor, 1);
-            sl_cm_sel = 0;
-            sl_say("chords: ", SH_FAMOUS[sl_famous].name);
-        }
-    } else if (sl_page == PG_DRUMS) {                     /* DRUMS: my pattern */
-        int32_t d1 = panel_enc(EN_K1), d2 = panel_enc(EN_K2), d3 = panel_enc(EN_K3), d4 = panel_enc(EN_K4);
-        int32_t ds = panel_enc(EN_SELECT), da = panel_enc(EN_ALGO), dp = panel_enc(EN_PRESET);
-        static uint8_t fill[SH_PLANES];
-        uint32_t L;
-        if (d1 || ds) sl_lane = (uint8_t)sl_wrap(sl_lane, d1 ? d1 : ds, SH_PLANES);
-        L = sl_lane % SH_PLANES;
-        if (d2) {                                          /* fill: the lane on every 16th, 8th, 3rd 16th, beat, half bar, or empty */
-            static const uint8_t EVERY[6] = {0, 1, 2, 3, 4, 8};
-            uint32_t s, m = 0;
-            fill[L] = (uint8_t)sl_wrap(fill[L], d2, 6);
-            for (s = 0; EVERY[fill[L]] && s < 16u; s += EVERY[fill[L]]) m |= 1u << s;
-            sl_band.pat[L] = (uint16_t)m; sl_band.pat_on = 1;
-        }
-        if (d3) {                                          /* shift: the lane a 16th later / earlier, round the bar */
-            uint32_t p = sl_band.pat[L], r = (uint32_t)(((d3 % 16) + 16) % 16);
-            sl_band.pat[L] = (uint16_t)(((p << r) | (p >> (16u - r))) & 0xFFFFu);
-        }
-        if (d4) sl_band.pat_on = (int)(d4 > 0);           /* the pattern: mine, or the rhythm's own */
-        if (da) { sl_band.human = (int)(da > 0); sl_say("feel: ", sl_band.human ? "the drummer's" : "exact"); }
-        if (dp) {                                          /* PRESETS: the rhythm's own bar to start from, or a clean grid */
-            if (dp > 0) { sh_band_pat_from_kit(&sl_band); sl_say("drums: from the rhythm", 0); }
-            else { for (L = 0; L < SH_PLANES; L++) sl_band.pat[L] = 0; sl_say("drums: cleared", 0); }
-            sl_band.pat_on = 1;
-        }
-        if (d1 || ds || d2 || d3 || d4) { sl_drums_title(); sl_label_until = fm1_ms + 1500u; }
-    } else if (sl_page == PG_ENV) {                       /* NOTES: the part's envelope */
-        uint32_t q;
-        for (q = 0; q < 4u; q++) if ((d = panel_enc(EN_K1 + q)) != 0) sl_env_turn(q, accel(EN_K1 + q, d, 128));
-        if ((d = panel_enc(EN_SELECT)) != 0) { sl_env_part = (uint8_t)sl_wrap(sl_env_part, d, 3); sl_page_say(); }
-        if ((d = panel_enc(EN_ALGO)) != 0) sl_env_turn(4, accel(EN_ALGO, d, 128));
-        if ((d = panel_enc(EN_PRESET)) != 0) {
-            static uint8_t at[3];
-            uint32_t p = sl_env_part;
-            at[p] = (uint8_t)sl_wrap(at[p], d, (int32_t)SL_NENVP);
-            if (sl_env_fm(p)) sl_say("fm sound: ", "its own envelope");
-            else if (!at[p]) { sl_env_on[p] = 0; sl_snd_req[p] = sl_snd_of[p]; sl_say("notes: ", SL_ENVP[0].name); }
-            else { memcpy(sl_env_v[p], SL_ENVP[at[p]].v, 5); sl_env_on[p] = 1; sl_env_put(p); sl_say("notes: ", SL_ENVP[at[p]].name); }
-        }
-    } else {                                               /* MIX */
-        int32_t p;
-        for (p = 0; p < 4; p++) if ((d = panel_enc((uint32_t)(EN_K1 + p))) != 0) sl_mix_turn((uint32_t)p, accel((uint32_t)(EN_K1 + p), d, 53));
-        if ((d = panel_enc(EN_SELECT)) != 0) {             /* swing: the tank's grid and the band together */
-            double sw = sl_tank.s.swing + d * 0.025;
-            sl_tank.s.swing = sw < 0.0 ? 0.0 : sw > 0.5 ? 0.5 : sw;
-            sl_say_num("swing ", (int32_t)(sl_tank.s.swing * 100.0 + 0.5), "%");
-        }
-        if ((d = panel_enc(EN_ALGO)) != 0) {               /* the echo's time, in note values (SLOOP's N_DLY) */
-            static const char *const T[9] = {"1/4", "1/8", "1/16", "1/32", "1/8 triplet", "1/16 triplet", "1/8 dotted", "1/16 dotted", "1/4 dotted"};
-            song.g[G_DTIME] = (int16_t)sl_wrap(song.g[G_DTIME], d, 9);
-            sl_say("delay time ", T[song.g[G_DTIME]]);
-        }
-        if ((d = panel_enc(EN_PRESET)) != 0) {             /* the room: small .. a hall */
-            song.g[G_RSIZE] = (int16_t)clamp(song.g[G_RSIZE] + accel(EN_PRESET, d, 32) * 4, 0, 127);
-            sl_say_num("reverb size ", song.g[G_RSIZE] * 100 / 127, "%");
-        }
+        if (k1 | k2 | k3 | k4 | se | al | pr) sl_changed_ms = fm1_ms;
     }
 #undef SL_PRESSED
     fm6_poll();                             /* FM6: a part's patch loads when its preset asks (SLOOP calls this from its own
@@ -846,6 +868,96 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
         }
     }
     sl_session_tick();
+}
+
+/* THE PANEL'S DRAWING: rows SL_PANEL_Y..239 under the lifted tank, a band at a time into cv_px (SLOOP's text draws there).
+ * Drawn only when what it shows changed (sl_pm against sl_pm_drawn): a turn of a knob, a step of the drums' playhead */
+#define SL_PANEL_Y 160
+static uint16_t sl_part_col(uint32_t p)
+{
+    static const uint16_t C[4] = {RGB(96, 196, 160), RGB(104, 144, 228), RGB(222, 122, 184), RGB(238, 152, 80)};
+    return C[p % 4u];
+}
+static void sl_rect(uint16_t *b, int y0, int x, int y, int w, int h, uint16_t c)   /* a filled box, clipped to the band */
+{
+    int r, i, ya = y < y0 ? y0 : y, yb = y + h > y0 + 16 ? y0 + 16 : y + h;
+    if (x < 0) { w += x; x = 0; }
+    if (x + w > 240) w = 240 - x;
+    for (r = ya; r < yb; r++) for (i = 0; i < w; i++) b[(r - y0) * 240 + x + i] = c;
+}
+static void sl_text(int y0, int cx, int y, int maxw, const char *s, uint16_t c)   /* centred on cx, cut to maxw px */
+{
+    char t[24];
+    uint32_t n = 0;
+    while (s[n] && n < sizeof t - 1u) { t[n] = s[n]; n++; }
+    t[n] = 0;
+    while (n > 1u && text_w(&FONT_S, t) > maxw) t[--n] = 0;
+    if (y + 16 <= y0 || y >= y0 + 16) return;
+    cv_w = 240; cv_h = 16; cv_oy = -y0;
+    cv_text(cx - text_w(&FONT_S, t) / 2, y, &FONT_S, t, swap16(c));
+    cv_oy = 0;
+}
+static void sl_panel_band(uint16_t *b, int y0)
+{
+    const sl_panel *m = &sl_pm;
+    const uint16_t BGP = RGB(234, 230, 250), DIM = RGB(150, 136, 196), STRONG = RGB(70, 54, 140), TRACK = RGB(214, 208, 238),
+                   PICK = RGB(222, 216, 246), SL_ACC = RGB(140, 110, 220);
+    uint32_t i, c;
+    sl_rect(b, y0, 0, y0, 240, 16, BGP);
+    if (m->page == PG_DRUMS) {                             /* the grid: 8 lanes x 16 steps, the playing step lit */
+        for (i = 0; i < SH_PLANES; i++) {
+            int y = SL_PANEL_Y + 2 + (int)i * 8;
+            uint16_t on = sl_part_col(3);
+            if (i == m->lane) sl_rect(b, y0, 0, y - 1, 240, 8, PICK);
+            for (c = 0; c < 16u; c++) {
+                int x = (int)c * 15, hit = (m->pat[i] >> c) & 1u;
+                uint16_t col = hit ? (m->pat_on ? (i == m->lane ? STRONG : on) : DIM) : (c % 4u == 0u ? RGB(200, 192, 230) : TRACK);
+                if (c == m->step && hit) col = RGB(255, 255, 255);
+                sl_rect(b, y0, x + 1, y, 13, 6, col);
+            }
+        }
+        if (m->step < 16u) sl_rect(b, y0, (int)m->step * 15, SL_PANEL_Y, 15, 2, SL_ACC);
+        for (c = 0; c < 4u; c++) sl_text(y0, (int)c * 60 + 30, 224, 58, m->c[c].val, STRONG);
+        return;
+    }
+    if (m->page == PG_CHORDS) {                            /* the progression's slots: picked filled, playing underlined */
+        for (i = 0; i < SH_CM_MAX; i++) {
+            int x = (int)(i % 4u) * 60, y = SL_PANEL_Y + 2 + (int)(i / 4u) * 18;
+            if (i < m->cm_n) {
+                sl_rect(b, y0, x + 2, y, 56, 16, i == m->cm_sel ? SL_ACC : TRACK);
+                if (i == m->cm_cur) sl_rect(b, y0, x + 6, y + 15, 48, 2, STRONG);
+                sl_text(y0, x + 30, y, 54, m->cm[i], i == m->cm_sel ? RGB(255, 255, 255) : STRONG);
+            } else if (i == m->cm_n || (i == m->cm_sel)) {
+                sl_rect(b, y0, x + 2, y, 56, 16, i == m->cm_sel ? PICK : BGP);
+                sl_text(y0, x + 30, y, 54, "+", DIM);
+            }
+        }
+        for (c = 0; c < 4u; c++) { sl_text(y0, (int)c * 60 + 30, 200, 58, m->c[c].name, DIM); sl_text(y0, (int)c * 60 + 30, 218, 58, m->c[c].val, STRONG); }
+        return;
+    }
+    /* the others: ALGORITHM's and PRESETS' values on top, then a column a knob: its name, its value, its bar (the mixer: a fader) */
+    sl_text(y0, 60, SL_PANEL_Y + 1, 116, m->ex[0], DIM);
+    sl_text(y0, 180, SL_PANEL_Y + 1, 116, m->ex[1], DIM);
+    sl_rect(b, y0, 8, SL_PANEL_Y + 18, 224, 1, TRACK);
+    for (c = 0; c < 4u; c++) {
+        const sl_pcol *k = &m->c[c];
+        int x = (int)c * 60;
+        uint16_t acc = m->page == PG_MIX ? sl_part_col(c) : SL_ACC;
+        if (k->mark == 1u) sl_rect(b, y0, x + 2, SL_PANEL_Y + 20, 56, 60, PICK);
+        sl_text(y0, x + 30, SL_PANEL_Y + 21, 58, k->name, DIM);
+        if (m->page == PG_MIX) {                           /* a fader: filled from the bottom */
+            int h = 22, f = k->bar < 0 ? 0 : k->bar * h / 100;
+            sl_rect(b, y0, x + 25, SL_PANEL_Y + 38, 10, h, TRACK);
+            sl_rect(b, y0, x + 25, SL_PANEL_Y + 38 + h - f, 10, f, k->mark == 2u ? DIM : acc);
+            sl_text(y0, x + 30, SL_PANEL_Y + 62, 58, k->val, k->mark == 2u ? DIM : STRONG);
+        } else {
+            sl_text(y0, x + 30, SL_PANEL_Y + 40, 58, k->val, k->mark == 2u ? DIM : STRONG);
+            if (k->bar >= 0) {
+                sl_rect(b, y0, x + 8, SL_PANEL_Y + 62, 44, 5, TRACK);
+                sl_rect(b, y0, x + 8, SL_PANEL_Y + 62, 44 * k->bar / 100, 5, acc);
+            }
+        }
+    }
 }
 
 static void slime_ui(void)
@@ -873,13 +985,20 @@ static void slime_ui(void)
             else on = l == (int)sl_lane;
             fm1_led_key(14u + k, on);
         }
-    else for (k = 0; k < 27u; k++) fm1_led_key(14u + k, (int32_t)(sl_lit_until[k] - fm1_ms) > 0);
-    /* PLAY blinks until it is first pressed: nothing plays until then */
-    for (k = 0; k < 14u; k++) fm1_led_key(k, (k == panel.btn[B_PLAY] && (sl_run || (!ever_played && !splash && ((fm1_ms >> 9) & 1u)))) || (k == panel.btn[B_ARP] && sl_auto) ||
-                                             (k == panel.btn[B_LFO] && sl_slime) || (k == panel.btn[B_SEQ] && (sl_drums_on || sl_band_on)) ||
-                                             (k == panel.btn[B_FX] && sl_page == PG_FX) || (k == panel.btn[B_EDIT] && (sl_page == PG_SOUND || sl_page == PG_CHORDS)) ||
-                                             (k == panel.btn[B_GLO] && (sl_page == PG_MIX || sl_page == PG_DRUMS)) || (k == panel.btn[B_HOME] && sl_page == PG_HOME) ||
-                                             (k == panel.btn[B_ENV] && sl_page == PG_ENV) ||
+    else
+        for (k = 0; k < 27u; k++) {                        /* (MIXER: the first 4 white keys lit for each part heard, the next 4 for a solo) */
+            int s = sl_page == PG_MIX ? sl_step_of_key(k) : -1, any = sl_solo[0] | sl_solo[1] | sl_solo[2] | sl_solo[3];
+            if (s >= 0 && s < 4) fm1_led_key(14u + k, !sl_mute[s] && !(any && !sl_solo[s]));
+            else if (s >= 4 && s < 8) fm1_led_key(14u + k, sl_solo[s - 4]);
+            else fm1_led_key(14u + k, (int32_t)(sl_lit_until[k] - fm1_ms) > 0);
+        }
+    /* the buttons: each page's lit while you are on it; ARP auto-notes, LFO the slime; PLAY blinks until it is first pressed */
+    for (k = 0; k < 14u; k++) fm1_led_key(k, (k == panel.btn[B_PLAY] && (sl_run || (!ever_played && !splash && ((fm1_ms >> 9) & 1u)))) ||
+                                             (k == panel.btn[B_ARP] && sl_auto) || (k == panel.btn[B_LFO] && sl_slime) ||
+                                             (k == panel.btn[B_HOME] && sl_page == PG_HOME) || (k == panel.btn[B_SCL] && sl_page == PG_SONG) ||
+                                             (k == panel.btn[B_GLO] && sl_page == PG_MIX) || (k == panel.btn[B_FX] && sl_page == PG_FX) ||
+                                             (k == panel.btn[B_ENV] && sl_page == PG_SOUND) || (k == panel.btn[B_EDIT] && sl_page == PG_CHORDS) ||
+                                             (k == panel.btn[B_SEQ] && sl_page == PG_DRUMS) ||
                                              (k == panel.btn[B_REC] && (sl_loop_state == SL_LOOP_PLAY ? !sl_loop_dub || ((fm1_ms >> 7) & 1u) :
                                                                         sl_loop_state != SL_LOOP_OFF && ((fm1_ms >> 8) & 1u))));
     /* (REC: blinks for the count-in and the take, quick while overdubbing, steady while the loop plays) */
@@ -889,6 +1008,8 @@ static void slime_ui(void)
         a -= 6.2831853f * floorf(a / 6.2831853f); b -= 6.2831853f * floorf(b / 6.2831853f);
         st_tumble(0.5f * sinf(a), 0.3f + 0.2f * sinf(b), M);
     }
+    /* the tank: the whole screen on its own page; lifted and smaller over another page's panel */
+    if (sl_page != PG_HOME && !splash) st_set_frame(120.0f, 84.0f, ST_K * 0.6f); else st_set_frame(120.0f, 120.0f, ST_K);
     sl_prof.poll += fm1_ticks() - tk; tk = fm1_ticks();
     {
         /* the walls' colour wheel turns with the key (the key journey shows), and the slime takes the colour of the chord
@@ -902,15 +1023,14 @@ static void slime_ui(void)
     sl_prof.prep += fm1_ticks() - tk; tk = fm1_ticks();
     {
         /* Only the tank's box changes; the page around it is one colour. Send the box, joined with last frame's box
-         * (so what moved out of it is painted over), and nothing else: about half the pixels of a whole screen.
-         * The top line (the label) and the bottom one (the knob names) are sent on their own, and only when what
-         * they say changes, or the box reaches into them (2026-11-18: sent every frame they made the FX page a whole
-         * screen a frame, 28 fps in fm1-emu STRICT). Each band sends its own columns. */
+         * (so what moved out of it is painted over), and nothing else. The top line (the label) and a page's panel are
+         * sent only when what they show changes (sent every frame, a page was a whole screen a frame: 28 fps in fm1-emu
+         * STRICT, 2026-11-18). Each band sends its own columns. A new page: the whole screen once. */
         static int32_t px0 = 0, py0 = 0, px1 = 239, py1 = 239;   /* last frame's box: the whole screen at first */
         static char lab_drawn[sizeof sl_label];
-        static uint8_t foot_drawn = 0xFF;                       /* the page whose knob names are on screen (0xFF: none) */
-        int32_t x0 = 239, x1 = 0, y0, y1, r, nb = 0, full = 0;
-        uint8_t lab_need, foot_need, foot;
+        static uint8_t last_page = 0xFF;
+        int32_t x0 = 239, x1 = 0, y0, y1, r, nb = 0, full = 0, panel = sl_page != PG_HOME && !splash, panel_need = 0;
+        uint8_t lab_need;
         uint32_t px = 0;
         for (k = 0; k < (uint32_t)v->n; k++) {
             float a = v->fx[k] < v->bx[k] ? v->fx[k] : v->bx[k], c = v->fx[k] > v->bx[k] ? v->fx[k] : v->bx[k];
@@ -919,27 +1039,35 @@ static void slime_ui(void)
         }
         x0 -= SL_MARGIN; x1 += SL_MARGIN;                        /* a ball or a lit rim can stand a little proud */
         y0 = (int32_t)v->pymin - SL_MARGIN; y1 = (int32_t)v->pymax + SL_MARGIN;
-        if (v->n < 3 || splash || sl_bursting() || (sl_bn && fm1_ms - sl_burst_t0 < SL_BURST_MS + 100u)) { x0 = 0; x1 = 239; y0 = 0; y1 = 239; full = 1; }
+        if (sl_page != last_page && !splash) {               /* the tank moves only between the tank and a page: then the whole screen */
+            if ((sl_page == PG_HOME) != (last_page == PG_HOME)) full = 1;
+            last_page = sl_page;
+        }
+        if (v->n < 3 || splash || full || sl_bursting() || (sl_bn && fm1_ms - sl_burst_t0 < SL_BURST_MS + 100u)) { x0 = 0; x1 = 239; y0 = 0; y1 = 239; full = 1; }
         {
             int32_t ux0 = x0 < px0 ? x0 : px0, ux1 = x1 > px1 ? x1 : px1, uy0 = y0 < py0 ? y0 : py0, uy1 = y1 > py1 ? y1 : py1;
             px0 = x0; px1 = x1; py0 = y0; py1 = y1;
             x0 = clamp(ux0, 0, 239); x1 = clamp(ux1, 0, 239); y0 = clamp(uy0, 0, 239); y1 = clamp(uy1, 0, 239);
             x0 &= ~1; x1 |= 1;                                   /* even columns: the packing below moves two pixels a word */
+            if (panel && y1 >= SL_PANEL_Y) y1 = SL_PANEL_Y - 1;  /* (the panel's rows are its own) */
         }
-        {   /* the label: a page keeps its name up; stopped at home, "press play" */
-            uint8_t on = !splash && ((int32_t)(sl_label_until - fm1_ms) > 0 || sl_page != PG_HOME || !sl_run);
+        if (panel) { sl_panel_build(&sl_pm); panel_need = full || memcmp(&sl_pm, &sl_pm_drawn, sizeof sl_pm) != 0; }
+        {   /* the top line: what just changed (1.5 s), else the page and what SELECT picked; at the tank, stopped: "press play" */
+            uint8_t on = !splash && ((int32_t)(sl_label_until - fm1_ms) > 0 || panel || !sl_run);
             uint32_t q;
-            if (on && (int32_t)(sl_label_until - fm1_ms) <= 0) sl_page_title();
+            if (on && (int32_t)(sl_label_until - fm1_ms) <= 0) {
+                if (panel) { for (q = 0; q < sizeof sl_label - 1u && sl_pm.head[q]; q++) sl_label[q] = sl_pm.head[q]; sl_label[q] = 0; }
+                else { const char *pp = "press play"; for (q = 0; pp[q]; q++) sl_label[q] = pp[q]; sl_label[q] = 0; }
+            }
             if (!on) sl_label[0] = 0;
             for (q = 0; q < sizeof sl_label && sl_label[q] == lab_drawn[q] && sl_label[q]; q++) {}
             lab_need = full || sl_label[q] != lab_drawn[q] || (on && y0 < 16);
             sl_label_shown = on;
-            foot = sl_page != PG_HOME && !splash;
-            foot_need = full || (foot ? foot_drawn != sl_page || y1 >= 224 : foot_drawn != 0xFF);
         }
         for (k = 0; k < 15u; k++) {
-            int in_box = (int32_t)(k * 16u) <= y1 && (int32_t)(k * 16u + 15u) >= y0;
-            int whole = (k == 0u && lab_need) || (k == 14u && foot_need);   /* this band all across */
+            int pband = panel && (int32_t)(k * 16u) >= SL_PANEL_Y;
+            int in_box = !pband && (int32_t)(k * 16u) <= y1 && (int32_t)(k * 16u + 15u) >= y0;
+            int whole = (k == 0u && lab_need) || (pband && panel_need);   /* this band all across */
             uint32_t ry0, ry1, rows, bx0 = (uint32_t)x0, bx1 = (uint32_t)x1, w;
             uint16_t *b;
             if (!in_box && !whole) continue;
@@ -947,19 +1075,13 @@ static void slime_ui(void)
             else { ry0 = k * 16u < (uint32_t)y0 ? (uint32_t)y0 - k * 16u : 0u; ry1 = k * 16u + 15u > (uint32_t)y1 ? (uint32_t)y1 - k * 16u : 15u; }
             rows = ry1 - ry0 + 1u; w = bx1 - bx0 + 1u;
             b = sl_strip((uint32_t)nb++);                      /* (the other band may still be on its way to the panel) */
-            if (((k == 0u && sl_label_shown) || (k == 14u && foot)) && b != cv_px) { lcd_sync(); b = cv_px; nb++; }   /* (cv_text draws into cv_px) */
-            if (!splash || sp.alpha < 1.0f) st_draw_band(v, (int)(k * 16u), 16, b, BG, (int)bx0, (int)bx1);   /* (the splash alone covers it all) */
-            if (splash) sl_splash_band(b, (int)(k * 16u), &sp);
-            else if (sl_bursting()) sl_burst_band(b, (int)(k * 16u));
-            if (k == 14u && foot) {                            /* the bottom row: the four knobs' names */
-                uint32_t q;
-                cv_w = 240; cv_h = 16; cv_oy = 0;
-                for (q = 0; q < 4u; q++) {
-                    const char *n = SL_FOOT[sl_page][q];
-                    cv_text((int32_t)(30u + 60u * q) - text_w(&FONT_S, n) / 2, 0, &FONT_S, n, swap16(RGB(120, 104, 170)));
-                }
-                foot_drawn = sl_page;
-            } else if (k == 14u && whole) foot_drawn = 0xFF;
+            if (((k == 0u && sl_label_shown) || pband) && b != cv_px) { lcd_sync(); b = cv_px; nb++; }   /* (cv_text draws into cv_px) */
+            if (pband) { lcd_sync(); sl_panel_band(b, (int)(k * 16u)); }
+            else {
+                if (!splash || sp.alpha < 1.0f) st_draw_band(v, (int)(k * 16u), 16, b, BG, (int)bx0, (int)bx1);   /* (the splash alone covers it all) */
+                if (splash) sl_splash_band(b, (int)(k * 16u), &sp);
+                else if (sl_bursting()) sl_burst_band(b, (int)(k * 16u));
+            }
             if (k == 0u && sl_label_shown) {                   /* SLOOP's font into this band */
                 cv_w = 240; cv_h = 16; cv_oy = 0;
                 cv_text(120 - text_w(&FONT_S, sl_label) / 2, 0, &FONT_S, sl_label, swap16(RGB(90, 72, 150)));   /* (the band is
@@ -984,6 +1106,7 @@ static void slime_ui(void)
             slime_poll();
             sl_prof.poll += fm1_ticks() - tk; tk = fm1_ticks();
         }
+        if (panel_need) sl_pm_drawn = sl_pm;
         sl_px = px;
     }
     lcd_sync();
@@ -1002,6 +1125,7 @@ static void slime_ui(void)
             if (splash || !win_t) { win_t = fm1_ms; win_f = sl_frames; }
             else if (fm1_ms - win_t >= 5000u) {
                 fps_last = (sl_frames - win_f) * 10000u / (fm1_ms - win_t);
+                sl_fpsw[sl_fpsw_n++ % 64u] = (uint16_t)fps_last;   /* (every window, for fm1-emu's RAM dump) */
                 if (fps_last < fps_min) fps_min = fps_last;
                 win_t = fm1_ms; win_f = sl_frames;
             }
