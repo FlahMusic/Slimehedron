@@ -25,7 +25,9 @@ const ORDER = ['pop', 'rock', 'disco', 'bossa', 'jazz', 'samba', 'conga', 'march
 // the web's voice letters -> General MIDI notes on the FM-1's synthesized kits (SLOOP drums.c LANE_NOTE has these lanes):
 // K kick 36, s snare 38, h closed hat 42, o open hat 46, r rim 37, cl the bossa clave on the rim 37 (as records play it:
 // the web's own comment), c conga 63, C tom / low conga 43, y ride 51; fills: ht hi tom 48, lt low tom 43; x crash 49
-const GM = { K: 36, s: 38, h: 42, o: 46, r: 37, cl: 37, c: 63, C: 43, y: 51, ht: 48, lt: 43, x: 49 };
+// 2026-11-20: the site's own DRUMN (index.html), every piece its own note: the FM-1 plays the site's drum recipes itself now
+// (fm1/firmware/slime_drums.c), so the clave is not the rim and the high conga is not a tom (they shared 37 and 43 before)
+const GM = { K: 36, s: 38, h: 42, o: 46, r: 37, cl: 75, c: 62, C: 63, y: 51, ht: 50, lt: 45, x: 49 };
 const VOICES = ['K', 's', 'h', 'o', 'r', 'cl', 'c', 'C', 'y'];
 for (const k of ORDER) for (const v in KITS[k]) if (!VOICES.includes(v)) throw new Error('unmapped voice ' + v + ' in ' + k);
 const mask = steps => { let lo = 0, hi = 0; for (const s of steps) { if (s < 32) lo |= (1 << s) >>> 0; else hi |= (1 << (s - 32)) >>> 0; } return '0x' + ((BigInt(hi >>> 0) << 32n) | BigInt(lo >>> 0)).toString(16).padStart(16, '0') + 'ull'; };

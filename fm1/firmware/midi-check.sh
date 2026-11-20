@@ -3,9 +3,10 @@
 #   sh fm1/firmware/midi-check.sh
 # Run 1 (major): PLAY at 4.3 s, a note into the DIN jack (C2) at 6 s, a panel key (F3) at 7 s, a computer's MIDI clock at
 #   120 bpm over USB from 8 s to 12 s, its STOP at 12.5 s, START at 13.5 s, a panic (CC 123) at 15.9 s.
-# Run 2 (31-note scale: the SONG page's scale knob), PLAY; then notes go out with their bends.
-# Run 3 (31-note scale, stopped, the melody's fx dry: its chorus smears the pitch): three keys up from the root, one at a
-#   time: the audio's pitch steps by 31-EDO's 38.7 cents.
+# Run 2 (31-note scale: the SONG page's scale knob), PLAY; then notes go out with their bends, each on its part's channel.
+# Run 3 (31-note scale, stopped, the melody dry: its chorus amount and its sends at 0, it smears the pitch): three keys
+#   up from the root, one at a time: the audio's pitch steps by 31-EDO's 38.7 cents.
+# Run 4 (the MIDI page, SAVE): the melody's channel turned from 1 to 5, the chords' off; PLAY: the melody goes out on 5.
 set -eu
 HERE="$(cd "$(dirname "$0")" && pwd)"
 FW="${FW:-$HOME/fm1w/slime-fw/build/felucca.fwsc}"
@@ -29,7 +30,9 @@ run() {   # NAME KEYS MS [USB]
 run one "4300:PLAY,4390:PLAY^,6000:m902464,6300:m802400,7000:n0,7100:n0^" 16000 "$O/usb.txt"
 SCL="4400:SCL,4460:SCL^,5000:e5:-1,5600:SCL,5660:SCL^,"   # (the SONG page's scale knob, one click left of major: 31-edo; back to the tank)
 run two "${SCL}9000:PLAY,9090:PLAY^" 20000
-run three "3900:FX,3960:FX^,4100:e6:1,4300:HOME,4360:HOME^,${SCL}9000:n7,9500:n7^,10000:n8,10500:n8^,11000:n9,11500:n9^" 12500
+DRY="3600:FX,3660:FX^,3800:e5:-127,3900:GLO,3960:GLO^,4000:GLO,4060:GLO^,4100:GLO,4160:GLO^,4200:e2:-127,4250:GLO,4310:GLO^,4350:e2:-127,"
+run three "${DRY}4380:HOME,4430:HOME^,${SCL}9000:n7,9500:n7^,10000:n8,10500:n8^,11000:n9,11500:n9^" 12500
+run four "4400:SAVE,4460:SAVE^,4600:e2:4,4800:e4:-3,5000:HOME,5060:HOME^,5400:PLAY,5490:PLAY^" 9000
 python3 - "$O" "$ELF" <<'EOF'
 import os, re, sys, struct, subprocess
 import numpy as np
@@ -69,14 +72,17 @@ ok(not any(b[0] & 0xF0 == 0x90 and b[2] for b in st(M, 12700, 13500)), "the comp
 ok(any(b[0] & 0xF0 == 0x90 and b[2] for b in st(M, 13600, 15800)), "its START starts it again")
 ok(bpm[4] == 1 and bpm[5] <= 1, f"the panic (CC 123) empties the tank ({bpm[5]} notes in it after)")
 N = out("two"); bends = [b for t, b in N if b[0] & 0xF0 == 0xE0 and t >= 9000]
-mel = {b[0] & 15 for b in bends if 10 <= b[0] & 15 <= 15}; com = {b[0] & 15 for b in bends if 3 <= b[0] & 15 <= 8}
-ok(len(mel) >= 3, "31-EDO: the melody's notes go out with their own bends, round channels 11..16 (" + ",".join(str(c + 1) for c in sorted(mel)) + ")")
-ok(len(com) >= 3, "and the chords' round channels 4..9 (" + ",".join(str(c + 1) for c in sorted(com)) + ")")
+bch = {b[0] & 15 for b in bends}
+ok(bch and bch <= {0, 1, 2}, "31-EDO: the notes go out with their bends on their parts' own channels, no MPE (" + ",".join(str(c + 1) for c in sorted(bch)) + ")")
+ok(len([b for b in bends if b[0] & 15 == 0]) > 10 and len({(b[1], b[2]) for b in bends if b[0] & 15 == 0}) >= 3, "the melody's bends move from note to note on channel 1")
 pairs = 0; good = 0
 for i in range(len(N) - 1):
     a, b = N[i][1], N[i + 1][1]
     if a[0] & 0xF0 == 0xE0 and b[0] & 0xF0 == 0x90: pairs += 1; good += (a[0] & 15) == (b[0] & 15)
 ok(pairs > 10 and good == pairs, f"each bend is on its note's own channel, just before it ({good} of {pairs})")
+F = out("four"); fon = [b for t, b in F if t >= 5400 and b[0] & 0xF0 == 0x90 and b[2]]
+fch = {b[0] & 15 for b in fon}
+ok(4 in fch and 0 not in fch and 2 not in fch, "the MIDI page: the melody out on channel 5, the chords off, the bass on 2 (" + ",".join(str(c + 1) for c in sorted(fch)) + ")")
 # 3: the keys' pitch, 31-EDO: root, +1, +2 steps
 a = np.frombuffer(open(f"{o}/three/audio.raw", "rb").read(), "<i2").reshape(-1, 2)[:, 0].astype(float); fs = 44118
 def f0(t0):

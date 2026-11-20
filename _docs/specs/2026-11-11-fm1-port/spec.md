@@ -394,3 +394,30 @@ page); one button per page, no page behind a double tap; every page shows its kn
 sheet, every step); the mixer mutes and solos from the keys with lights; all 28 scales reachable from one knob;
 midi-check, boot-check, session.sh, check-host, harmtest, stucktest, drawtanktest green; fm1-emu strict worst 5 s:
 default 52.9, page + cube + portals 55, mixer 61, stress 29.4, session 29.6 (0 late notes everywhere).
+
+## Site drums, sounds on the left, MIDI page, 52 scales, portals, sync (2026-11-20)
+
+Flah: the drums don't sound like the site's; redundant settings; the three left knobs as the three sounds and a drums
+page of its own; the 3D turn too even; portals too small, on more walls, popping, the timing tight; each bounce on time
+with its sound; the fx up to par; SAVE as a MIDI menu (no MPE); the scale on a knob, the missing scales, the microtonal
+ones checked.
+
+Done means (measured):
+- Drums: `check-drums.sh` (the device's engine, all 11 kits x 12 pieces, against the browser's own dHit render): every
+  hit within 4 dB in time and 4.5 dB in colour, 1.5 / 1.5 on average (met: 0.40 / 0.84, worst 2.5 / 3.5); the pop kit
+  through the whole device path the same. Sabotaged x4. check-host 7 (each kick's pitch and -60 dB against the site,
+  11/11), 11 (each kit's glue within 1 dB of the site's; the presence dip 4.5..10 dB, its sabotage built in), 4 (pop
+  drums 6..11 LU under the melody: 7.95).
+- Controls: each setting written by one page's knob (read in slime_ui.c's poll); the left knobs the three sounds on
+  every page; session.sh walks every page and view.
+- Scales: `slimehost scales` (check-host 13): 52 resolve, every key and MIDI note on a degree in 13 keys, a 7-note
+  scale's keys reach all 7. Sabotaged x2.
+- Portals: portaltest 8 and 9 (4 holes, wider, 2x+ the notes through, popping only while shut, every exit's note on a
+  grid line, a hole fewer than the walls open, all on real walls). Sabotaged x4. stucktest 0 outside. check-tank exact.
+- Sync: synctest (>= 95% of wall notes heard within a tick of their bounce: 97.2%; >= 85% on a grid line: 90.4%, was
+  40.3%). Sabotaged. The screen draws the pose whose notes are sounding (slime.c sl_tpose, slime_ui.c sl_pose_apply).
+- FX: check-host 14 (the delay ping-pongs L R L R, each echo REPEATS times the last). Sabotaged.
+- MIDI: midi-check (per-part channels, the MIDI page turning the melody to 5 and the chords off, bends on the part's
+  channel, the clock followed over 4 beats).
+- fm1-emu strict session.sh: worst audio half 71%, 0 late notes, worst 5 s window 23.0 fps (rock's kit at 137%
+  decay, 164 bpm, full goo), most windows 40..64. Not met: >= 30 fps in that heaviest stretch (the pages pass: 29.6).

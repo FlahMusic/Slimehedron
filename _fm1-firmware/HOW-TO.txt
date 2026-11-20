@@ -33,43 +33,63 @@ At power-on the slime guy drops in with a little jingle (any button skips it), t
 until PLAY (it blinks; the screen says "press play"). Set it up first if you like; a new shape shows at once while
 stopped, and the keys play their notes.
 
-It works like a groovebox: ONE BUTTON, ONE PAGE, and every setting lives in exactly one place. On every page the
-encoders mean the same kind of thing: SELECT picks what the page works on (a part, a chord, a lane), the four knobs
-are its values, ALGORITHM and PRESETS are the page's two extras. Every page but the tank shows its knobs' names and
-values on a panel under the (smaller) tank. A page's button again: back to the tank.
+It works like a groovebox: ONE BUTTON, ONE PAGE, every setting in exactly one place.
+- The three knobs on the left are the three SOUNDS, on every page: SELECT the melody's, ALGORITHM the bass's,
+  PRESETS the chords'. The screen says which sound you landed on.
+- The four knobs are the page's. A page with more than four settings has VIEWS: press its button again for the next
+  view (the panel's top line says which, e.g. "mixer: pan 2/4"). HOME goes back to the tank.
+- Every page but the tank shows its knobs' names and values on a panel under the (smaller) tank.
 
-PAGE      BUTTON  KNOB 1     KNOB 2    KNOB 3      KNOB 4       SELECT          ALGORITHM          PRESETS
-tank      HOME    walls      spin      portals     note length  notes a bar     new shape every    -
-song      SCL     tempo      swing     key         scale        rhythm          a chord every      key moves / pinned
-mixer     GLO     melody     bass      chords      drums        the strip       its delay send     its reverb send
-fx        FX      filter     drive     effect      amount       part / returns  pan                fx preset
-sound     ENV     attack     decay     sustain     release      all / a part    glide              the sound
-chords    EDIT    root       type      bars        how many     which chord     all up / down      famous ones
-drums     SEQ     fill       shift     feel        mine/rhythm  lane            -                  from rhythm / clear
+PAGE / VIEW            BUTTON    KNOB 1        KNOB 2         KNOB 3          KNOB 4
+tank                   HOME      walls         spin           portals         notes a bar
+song                   SCL       tempo         swing          key             SCALE
+song: rhythm           SCL x2    rhythm        a chord every  key moves/pinned new shape every
+mixer: levels          GLO       melody        bass           chords          drums
+mixer: pan             GLO x2    melody        bass           chords          drums
+mixer: delay sends     GLO x3    melody        bass           chords          drums
+mixer: reverb sends    GLO x4    melody        bass           chords          drums
+fx: melody             FX        filter        drive          effect          amount
+fx: bass / chords      FX x2, x3 (the same four)
+fx: drums              FX x4     filter        punch          effect          amount
+fx: delay, reverb      FX x5     delay time    repeats        reverb room     brightness
+sound: melody          ENV       attack        decay          sustain         release
+sound: bass / chords   ENV x2,x3 (the same four)
+sound: length, glide   ENV x4    note length   melody glide   bass glide      chords glide  (the panel: length, melody, bass, chords)
+chords                 EDIT      which chord   root           type            bars
+chords: all            EDIT x2   how many      famous ones    all up / down   -
+drums: pattern         SEQ       lane          fill           shift           mine / rhythm's
+drums: kit             SEQ x2    kit           tune           decay           feel
+midi: channels         SAVE      melody ch     bass ch        chords ch       drums ch
+midi: in, clock        SAVE x2   in (channel)  sync           notes (out)     clock (out)
 
   tank: HOME on the tank makes a new shape. Notes a bar: the melody's density (4, 6, 8, 12, 16; the site aims at 8).
-        New shape every 32, 64 or 128 bars, or the shape stays. Portals: two wormholes, each rests two bars on a wall
-  song: scale is every scale the site has (28): the modes, harmonic and melodic minor, the pentatonics, blues, whole
-        tone, chromatic, hirajoshi, in sen, iwato, hijaz, bhairav, maqam rast and bayati, slendro, pelog, neutral, and
-        the microtonal tunings 19-edo (7 notes or all 19), 24-edo and 31-edo (all their notes: each key is the next step)
-  mixer: four faders (all the way down: off). The first 4 white keys mute melody / bass / chords / drums, the next 4
-        solo them (their lights show it); the other keys still play. The strip SELECT picks gets the two sends
-  fx: SELECT the part (melody, bass, chords, drums) or the returns (the delay and the reverb themselves: delay time,
-        repeats, reverb room, brightness; ALGORITHM the delay's tone). Effect: chorus, phaser, flanger, crush, warm,
-        fuzz, fold. Filter: left low-pass, right high-pass, the middle open (it stops there on the way through).
-        Presets: sound (the sound's own), dry, room, hall, dub delay, slapback, wide, tape, phase, jet, lofi, telephone,
-        underwater, crunch
-  sound: SELECT "all three" deals a sound set (slime, glass, wood, chip, music box, fm, harp, retro, thumb, dx) and
-        shapes all three envelopes together; a part: its own sound and envelope; drums: the drum kit. An FM sound keeps
-        its own envelope (its operators are its envelope). FM sounds (SH): tine, bell, harp, bass, written from
-        Yamaha's FM 101 recipes and Chowning's bell, not copied from any synth's factory bank
+        Portals: four wormholes, bigger than the site's two, each living a bar on one wall, then closing and popping
+        open on another; a note that goes in comes out of another hole, on the beat grid
+  song: SCALE (knob 4) runs through 52 scales: the 7 modes; harmonic and melodic minor, harmonic major, phrygian
+        dominant (hijaz), double harmonic (bhairav), hungarian minor, lydian dominant, altered, dorian #4, lydian
+        augmented, locrian natural 2, neapolitan minor and major, persian, enigmatic, prometheus, bebop dominant; whole
+        tone, both diminished, augmented; pentatonic, minor pentatonic, blues, major blues, egyptian, hirajoshi, in sen,
+        iwato, kumoi, yo, ryukyu; chromatic; then the ones between the keys: maqam rast, bayati and saba, slendro,
+        pelog, 7-edo (thai), just major, the overtone scale, 19-edo (7 notes or all 19), 24-edo, 31-edo (all their
+        notes: each key is the next step). The panel spells the whole name out. Keys and MIDI notes always land in it
+  mixer: all the way down: off. On any mixer view the first 4 white keys mute melody / bass / chords / drums, the next
+        4 solo them (their lights show it); the other keys still play
+  fx: effect: chorus, phaser, flanger, crush, warm, fuzz, fold. Filter: left low-pass, right high-pass, the middle
+        open (it stops there on the way through). The delay is stereo: its echoes go left, right, left, right
+  sound: each sound comes with its own envelope; turning one here makes it yours (a new sound starts from its own).
+        An FM sound keeps its own envelope (its operators are its envelope). FM sounds (SH): tine, bell, harp, bass,
+        written from Yamaha's FM 101 recipes and Chowning's bell, not copied from any synth's factory bank
   chords: up to 8 chords that the band loops instead of its own (how many = 0 gives the harmony back to the slime).
         A key sets the chord picked to its note and moves on: play the roots to enter a progression. Types: major,
-        min, 7, maj7, min7, dim, aug, sus2, sus4, 6, min6, min7b5, dim7, 9, maj9, min9, 7sus4, add9. PRESETS deals the
+        min, 7, maj7, min7, dim, aug, sus2, sus4, 6, min6, min7b5, dim7, 9, maj9, min9, 7sus4, add9. Famous ones: the
         site's 20 famous progressions (ii-V-I, autumn leaves, royal road, lofi loop...) in your key
-  drums: your own 16-step pattern, played by the rhythm's drummer (its accents and feel; no fills). The 16 white keys
-        are the steps, a black key picks the lane (kick, snare, hat, open hat, rim, conga, tom, ride). The panel shows
-        all 8 lanes, the keys' lights the lane picked, the step playing moves along
+  drums: the site's own drums, made on the FM-1 the way the site makes them (the kick's pitch dive and beater click,
+        the snare's noise and shell, the 808 metal hats, the open hat the next hat cuts off, the ride tuned to the key,
+        toms, congas, clave). PATTERN: your own 16 steps, played by the rhythm's drummer (no fills): the 16 white keys
+        are the steps, a black key picks the lane; turning to "mine" with nothing in it starts from the rhythm's bar.
+        KIT: any rhythm's kit for every rhythm ("rhythm": each plays its own), tuned up or down 12 semitones, its
+        decay from half to twice as long; feel: the drummer's accents and push, or exact
+  midi: see MIDI below
 
 THE OTHER BUTTONS
   keys        play their note (in the scale) and throw a ball into the tank. What you play steers the band's chord,
@@ -78,25 +98,27 @@ THE OTHER BUTTONS
   REC         records a loop of what you play: a count-in ("rec in 4 3 2 1"), you play, REC again and it closes at the
               end of its bar (1, 2, 4 or 8 bars). On a playing loop REC overdubs. The loop is your notes kept in the
               key: it moves with the key and the scale.                                     x2  clears the loop
-  SAVE        saves the song (stop first: writing the flash would cut the sound)            x2  loads it back
-              hold SAVE + turn PRESETS: song 1, 2 or 3. Stopped for 3 s, the session saves itself and comes back at
-              power-on
+  SAVE        the MIDI page. Saving needs nothing: stopped for 3 s, everything you set saves itself to the FM-1 and
+              comes back at power-on ("welcome back")
   ARP         the melody's auto-notes on / off            LFO   the slime on / off (it moves the key, fills, bursts)
   OCT- OCT+   the keyboard's octave (both together: the middle)        MASTER  volume
   knobs: a slow turn moves one step, a fast one sweeps (SLOOP's acceleration)
 
   notes: none ever sticks to a wall (a note rattling in a corner floats back to the middle; one sunk in a full slime
-              melts into it)
+              melts into it). The balls bend their speed a little so their bounces land on the beat grid, and the
+              screen shows the tank as you HEAR it: a bounce is drawn when its note sounds
   drums: through the site's own drum bus: glue, a little body, the presence dip that keeps them under the melody
   speakers: SLOOP's limiter holds every peak at -5.2 dBFS whatever the knobs do (tested with all of them maxed)
 
-MIDI (the jack in, USB in and out)
-  in:  any channel plays like the keys (in the scale, a ball, the loop, the chords); channel 10 plays the drum kit.
-       CC 1 / 74 the melody's filter, CC 7 its level, CC 73 / 75 / 72 its attack / decay / release, CC 120 / 123
-       stop everything. A MIDI clock sets the tempo; START plays from the top, STOP stops, CONTINUE plays
-  out (USB): the melody on channel 1, bass 2, chords 3, drums 10 (GM notes), your keys too, the clock and START /
-       STOP (not while a clock comes in). Notes that came in are not sent back out. In the 19- and 31-note scales
-       each note goes out with its own pitch bend (+-2 semitones, as GM): the melody round channels 11-16, the
-       chords round 4-9, the bass on 2. Set those channels to one sound on the synth that receives them
+MIDI (the jack in, USB in and out; the MIDI page is SAVE)
+  in:  every channel (or the one "in channel" picks) plays like the keys: in the scale, a ball, the loop, the chords.
+       The drums' channel (10 unless you change it) plays the drum kit. CC 1 / 74 the melody's filter, CC 7 its level,
+       CC 73 / 75 / 72 its attack / decay / release, CC 120 / 123 stop everything. With "sync: follow", a MIDI
+       clock sets the tempo and START plays from the top, STOP stops, CONTINUE plays ("own": it keeps its own)
+  out (USB): each part on its own channel (melody 1, bass 2, chords 3, drums 10 unless you change them; "off" sends
+       nothing for that part), your keys too; with "clock: out" the clock and START / STOP (not while a clock comes
+       in). Notes that came in are not sent back out; "notes: off" sends no notes at all. In a scale with notes
+       between the keys each note goes out with its own pitch bend (+-2 semitones, as GM) on its part's channel, just
+       before it (the FM-1 has no MPE: two chord notes bent differently at once share the later bend)
 The LEDs show what is on and which page you are on; a key lights when the melody plays its note; REC blinks for
 the count-in and the take, blinks fast while overdubbing, and stays lit while the loop plays.

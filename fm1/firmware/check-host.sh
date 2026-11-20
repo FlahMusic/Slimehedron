@@ -37,8 +37,8 @@ for scene in "major 6 100" "edo19all 12 120" "pentaMaj 5 80"; do
   ok "$(t "$M - $D >= 6 && $M - $D <= 11")" "[$1] drums 6..11 LU under the melody (melody $M, drums $D LUFS)"
   ok "$(t "$A >= -21.5 && $A <= -15 && $pk < -0.9")" "[$1] the whole mix $A LUFS (site -18.8, window -21..-15), peak $pk dBFS"
 done
-M=$(num "$(SL_ONLY=mel song major 6 100)" lufs); D=$(num "$(SL_ONLY=drums SL_DLVL=100 song major 6 100)" lufs)
-ok "$(t "$M - $D < 6")" "the mix check can tell: drums at SLOOP's stock level are only $(awk "BEGIN{print $M - $D}") LU under"
+M=$(num "$(SL_ONLY=mel song major 6 100)" lufs); D=$(num "$(SL_ONLY=drums SL_DLVL=127 song major 6 100)" lufs)
+ok "$(t "$M - $D < 6")" "the mix check can tell: drums at the top of their level are only $(awk "BEGIN{print $M - $D}") LU under"
 
 # 5. every sound the panel offers is a real preset of its engine (a misspelt one quietly became the engine's first
 #    preset: AFRO KEYS on the wrong engine played FAT BASS, 2026-11-16), and each part's sounds are level-matched:
@@ -65,10 +65,15 @@ for pp in "0 mel" "1 bass" "2 comp" "3 drums"; do
   ok "$(t "$worst <= 6")" "[$2] all 13 fx presets within 6 dB of its own sound (worst $worst dB)"
 done
 
-# 7. the site's own kits (gen-kits.js): every rhythm's kick, rendered dry on SLOOP's drum synth, ends on the site's pitch
-#    (KITTONE ke, within 20%) and dies when the site's does (-60 dB within 70..110% of kd: the meter smooths the tail)
+# 7. every rhythm's kick (the site's recipe, slime_drums.c; every piece against the site's own render: check-drums.sh),
+#    rendered dry, ends on the site's pitch (KITTONE ke, within 20%) and dies when the site's does: -60 dB within
+#    70..110% of kd + 20 ms (the site holds its ramp's end until it stops the oscillator 20 ms later: its own pop kick,
+#    rendered in the browser, reaches -60 dB at 360 ms for kd 340). The engine's own output (slimehost sdhit): through the
+#    bench's master the short kicks gain a -58..-62 dB tail of the master's own (march 246 ms against the engine's 219
+#    and the site's 218, measured 2026-11-20); the whole path is check-drums.sh's
+ki=0
 for kit in "SH POP" "SH ROCK" "SH DISCO" "SH BOSSA" "SH JAZZ" "SH SAMBA" "SH CONGA" "SH MARCH" "SH CHIP" "SH BEEP" "SH INDUS"; do
-  SL_DRY=1 "$B" hit "$kit" 36 > "$OUT/hit.raw"
+  "$B" sdhit $ki 36 > "$OUT/hit.raw"; ki=$((ki + 1))
   r=$(python3 - "$OUT/hit.raw" "$kit" "$HERE/slime_kits_expect.json" <<'EOF'
 import json, sys
 import numpy as np
@@ -77,8 +82,8 @@ e = np.abs(x); pk = e.max(); i0 = int(e.argmax()); env = np.convolve(e, np.ones(
 t60 = 1000 * (next((i for i in range(i0, len(env)) if env[i] < pk * 0.001), len(env)) - i0) / fs
 a, b = i0 + int(0.4 * want["kd"] / 1000 * fs), i0 + int(0.8 * want["kd"] / 1000 * fs)   # inside the kick, after its dive
 seg = x[a:b]; z = np.where(np.diff(np.signbit(seg)))[0]; f = (len(z) / 2) / ((b - a) / fs)
-okp = abs(f - want["ke"]) <= 0.2 * want["ke"]; okd = 0.7 * want["kd"] <= t60 <= 1.1 * want["kd"]
-print(("1" if okp and okd else "0") + f" ends at {f:.0f} Hz (site {want['ke']}), -60 dB at {t60:.0f} ms (site {want['kd']})")
+okp = abs(f - want["ke"]) <= 0.2 * want["ke"]; okd = 0.7 * (want["kd"] + 20) <= t60 <= 1.1 * (want["kd"] + 20)
+print(("1" if okp and okd else "0") + f" ends at {f:.0f} Hz (site {want['ke']}), -60 dB at {t60:.0f} ms (site {want['kd'] + 20})")
 EOF
 )
   ok "${r%% *}" "[$kit] the site's kick: ${r#* }"
@@ -135,7 +140,9 @@ EOF
 ok "${r%% *}" "[loop, key journey] ${r#* }"
 
 # 11. the drum bus (slime.c sl_drum_bus, the site's initDrums): every kit's glue takes off what the site's does on its
-#     loudest hit (within 1 dB of the browser's measurement), the presence dip takes 5..10 dB out of 2.8-5.6 kHz, and
+#     loudest hit (within 1 dB of the browser's measurement), the presence dip takes 4.5..10 dB out of 2.8-5.6 kHz (4.5:
+#     the site's own drums, 2026-11-20, put disco's and jazz's hats above the band, where the same filter cuts less:
+#     4.9 there; with the dip off, SL_NOPRES, the bus takes 0.06..1.05 on pop rock disco jazz industrial: below), and
 #     the drums sit at least 6 dB under the melody there (the site's dev-mix 6b)
 SITE_GR="pop:1.8 rock:4.2 disco:2.5 bossa:1.3 jazz:0.1 samba:1.9 conga:0.5 march:2.0 chip:0.9 beep:0.2 industrial:3.1"
 mp=$(num "$(SL_ONLY=mel "$B" song "$OUT/g.wav" 16 major 6 100 7 1 KALIMBA)" pres_db)
@@ -144,9 +151,12 @@ for kg in $SITE_GR; do
   L1="$(SL_KIT=$k SL_ONLY=drums "$B" song "$OUT/g.wav" 16 major 6 100 7 1 KALIMBA)"
   p0=$(num "$(SL_KIT=$k SL_ONLY=drums SL_DRUMBUS=0 "$B" song "$OUT/g.wav" 16 major 6 100 7 1 KALIMBA)" pres_db)
   gr=$(num "$L1" glue_worst_db); p1=$(num "$L1" pres_db)
-  ok "$(t "($gr + $want) <= 1 && ($gr + $want) >= -1 && $p0 - $p1 >= 5 && $p0 - $p1 <= 10 && $mp - $p1 >= 6")" \
+  ok "$(t "($gr + $want) <= 1 && ($gr + $want) >= -1 && $p0 - $p1 >= 4.5 && $p0 - $p1 <= 10 && $mp - $p1 >= 6")" \
      "[$k drum bus] glue $gr dB (site -$want), presence $(awk "BEGIN{printf \"%.1f\", $p0 - $p1}") dB down, $(awk "BEGIN{printf \"%.1f\", $mp - $p1}") dB under the melody"
 done
+p0=$(num "$(SL_KIT=industrial SL_ONLY=drums SL_DRUMBUS=0 "$B" song "$OUT/g.wav" 16 major 6 100 7 1 KALIMBA)" pres_db)
+p1=$(num "$(SL_NOPRES=1 SL_KIT=industrial SL_ONLY=drums "$B" song "$OUT/g.wav" 16 major 6 100 7 1 KALIMBA)" pres_db)
+ok "$(t "$p0 - $p1 < 4.5")" "the presence check can tell: the bus without its dip takes only $(awk "BEGIN{printf \"%.2f\", $p0 - $p1}") dB (industrial, the most glue)"
 
 # 8. our FM patches (slime_fm6.py) play in key: the note's own fundamental is its strongest partial, low, middle and high
 #    (at Chowning's full index the bell's 0.4x difference tone was: out of key), and every degree sounds within 6 cents
@@ -159,7 +169,8 @@ for p in "SH TINE" "SH BELL" "SH HARP" "SH BASS"; do
     parts="$parts $(python3 "$HERE/host/notemeasure.py" "$OUT/note.raw" x $n | sed 's/.*strongest partial *//; s/x$//')"
   done
   off=$(echo $parts | tr ' ' '\n' | awk '{d=$1-1; if(d<0)d=-d; if(d>0.03)n++} END{print n+0}')
-  w=$("$B" pitch major 9 "$p" | tail -1 | awk '{print $2}')
+  w=$(SL_PITCHDRY=1 "$B" pitch major 9 "$p" | tail -1 | awk '{print $2}')   # (dry: its own delay return was in the reading, 3.98 cents
+                                                                          # on the harp, 6.10 once the delay ping-ponged; dry 0.72)
   [ "$p" = "SH BELL" ] && w=0   # (the pitch tool reads periods; an inharmonic bell has none: its partial check is the proof)
   ok "$(t "$off == 0 && $w < 6 && $w > -6")" "[$p] in key: strongest partial at three octaves$parts (x the note), worst degree $w cents"
 done
@@ -181,6 +192,20 @@ SL_HANDTEST=2 SL_HLOG="$OUT/hand2.log" "$B" song "$OUT/hand2.wav" 20 major 6 100
 seq2=$(awk '$1=="B" && $2>=4 && $2<=11 {printf "%s", $3}' "$OUT/hand2.log")
 case "140014001400" in *"$seq2"*) r=$([ ${#seq2} = 8 ] && echo 1 || echo 0) ;; *) r=0 ;; esac
 ok "$r" "[hand over a progression] ii V I I, a chord a bar, whatever the hand plays (degrees $seq2)"
+
+# 13. the scales (SONG page, KNOB 4): every one is in the core, and every key and MIDI note (128 of them, in 13 keys)
+#     lands on one of its degrees, reaching all of a 7-note scale's notes in an octave of keys and each step of a whole
+#     tuning (sabotaged 2026-11-20: an id misspelt: "missing 1"; the snap taken out: 48 scales bad)
+r="$("$B" scales | tail -1)"
+ok "$(echo "$r" | grep -q " missing 0 bad 0" && echo 1 || echo 0)" "[scales] $r: every key in the scale, in every key"
+
+# 14. the delay in stereo, ping-pong (patch_sloop.py): a click into the delay bus comes back left, right, left, right,
+#     one delay apart, each echo REPEATS (0.505 here) times the one before, within 10%; the mono delay before: every
+#     echo in the middle
+r=$("$B" echo | awk '$1=="delay"{d=$2} $1=="echo"{n++; s[n]=$3; t[n]=$2; v[n]=($3=="L")?$4:$5}
+  END{ok=n>=5; for(i=1;i<=n;i++){ if(s[i]!=(i%2?"L":"R")) ok=0; if(t[i]!=i*d) ok=0; if(i>1 && (v[i]/v[i-1]<0.45 || v[i]/v[i-1]>0.56)) ok=0 }
+       printf "%d %d echoes, %s ... (each %.3f of the last)", ok, n, s[1] s[2] s[3] s[4], (n>1?v[2]/v[1]:0)}')
+ok "${r%% *}" "[delay] ping-pong: ${r#* }"
 
 echo
 [ "$FAILS" = 0 ] && echo "fm1 bridge: clean" || { echo "$FAILS FAILURE(S)"; exit 1; }

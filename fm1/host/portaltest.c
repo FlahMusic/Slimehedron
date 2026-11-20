@@ -7,6 +7,10 @@
  *      jump), and shrink to slip round a corner
  *   6  a busy portal tank: no ball ever lost, some go through, most notes are plain bounces
  *   0  normal space has no holes (and stays the plugin's, number for number: check-tank.js)
+ *   8  the FM-1's own (s.worm_pop): four holes, wider than the web's, more notes through them, each popping open on
+ *      walls of its own (never moving while open), every one on its wall, every trip out of ANOTHER hole and its note
+ *      on a grid line. Sabotaged 2026-11-20: the trip not timed (11 of 148 on the grid), the closing safeguards off
+ *      (139 moves while open), the web's size (78 px against 82, 17.9% through)
  * Prints PASS/FAIL; exit 1 on a fail.   portaltest */
 #include <stdio.h>
 #include <math.h>
@@ -115,6 +119,67 @@ int main(void) {
     snprintf(m, sizeof m, "6  14 s of a busy portal tank: every ball still there at every look (%d balls)", T.nb); ok(!lost && T.nb == 8, m);
     snprintf(m, sizeof m, "   some went through a wormhole (%d)", warps); ok(warps >= 1, m);
     snprintf(m, sizeof m, "   and most notes are plain bounces (%d trips, %d wall notes)", warps, hits); ok(warps < hits * 0.4, m); }
-  printf(fails ? "FAILED: %d\n" : "the FM-1 tank's wormholes behave like the web's\n", fails);
+  /* ---- 8: the FM-1's portals (s.worm_pop, Flah 2026-11-20: bigger, on more walls, popping in and out, chaotic, the
+   *         timing tight). The same busy tank (8 balls, 140 bpm, a minute) in the web's two gliding holes and in the pop
+   *         mode, with the device's worm_hold 8. (140: the web's trip, half a beat held to at least 240 ms, is then off the
+   *         grid; at 80 bpm it is two sixteenths and lands on the grid by itself, so a trip not timed passed: sabotaged) */
+  { int trips[2] = { 0, 0 }, hits[2] = { 0, 0 }, lostAny = 0, offWall = 0, sameWall = 0, popMoves = 0, openMoves = 0, exits = 0, onGrid = 0,
+        otherHole = 0, seenW[SH_NWORM][SH_MAXWALLS] = { { 0 } }, nbad = 0; double radSum[2] = { 0, 0 }, radN[2] = { 0, 0 }, worstGrid = 0;
+    for (int pop = 0; pop < 2; pop++) {
+      sh_tank_settings s = portal(); s.chaos = 0.12; s.worm_hold = 8; s.worm_pop = pop; s.walls = 6;
+      sh_tank_init(&T, s, 21); sh_tank_start(&T, 0); tick = 0;
+      for (int i = 0; i < 8; i++) sh_tank_add_ball(&T);
+      int was[SH_BALLCAP] = { 0 }, wa[SH_BALLCAP] = { 0 }, pw[SH_NWORM]; double pr[SH_NWORM];
+      for (int h = 0; h < SH_NWORM; h++) { pw[h] = T.worm[h].wall; pr[h] = T.worm[h].rad; }
+      for (int i = 0; i < 60 * 60; i++) {
+        int nh = step1(140); if (T.nb != 8) lostAny = 1;
+        for (int k = 0; k < nh; k++) if (!T.hits[k].pane) hits[pop]++;
+        for (int h = 0; h < T.worm_n; h++) { const sh_worm *P = &T.worm[h];
+          if (P->rad > SH_BR * 1.2) { radSum[pop] += P->rad; radN[pop] += 1; }
+          if (!pop) continue;
+          seenW[h][P->wall < 0 ? 0 : P->wall] = 1;
+          if (P->wall != pw[h] && pw[h] >= 0) { popMoves++; if (pr[h] > SH_BR) openMoves++; }   /* it may only move while closed */
+          for (int j = 0; j < h; j++) if (T.worm[j].wall == P->wall && P->rad > SH_BR && T.worm[j].rad > SH_BR) sameWall++;
+          if (P->rad > SH_BR) { const sh_wall *e = &T.walls[P->wall];
+            double d = fabs((P->x + SH_TCX - e->ax) * e->nx + (P->y + SH_TCY - e->ay) * e->ny); if (d > 0.6) offWall++; }
+          pw[h] = P->wall; pr[h] = P->rad; }
+        for (int k = 0; k < T.nb; k++) {
+          const sh_ball *b = &T.balls[k];
+          if (b->warp && !was[k]) { trips[pop]++; wa[k] = b->wa; }
+          if (pop && !b->warp && was[k]) {                   /* it came out: its note on a grid line, out of another hole */
+            exits++;
+            for (int q = 0; q < nh; q++) if (T.hits[q].ball == b->id && !T.hits[q].pane) {   /* on a line, and the ball shows a tick before it at most */
+              double g = T.hits[q].grid_ms + (T.hits[q].sound_ms - T.hits[q].at_ms);
+              if (T.hits[q].grid_ms < 0.5 && T.hits[q].sound_ms - T.hits[q].at_ms < SH_FIXED + 0.01) onGrid++;
+              if (g > worstGrid) worstGrid = g; }
+            { double best = 1e9; int hb = -1; for (int h = 0; h < T.worm_n; h++) { double dx = b->x - SH_TCX - T.worm[h].x, dy = b->y - SH_TCY - T.worm[h].y, d = dx * dx + dy * dy; if (d < best) { best = d; hb = h; } }
+              if (hb != wa[k]) otherHole++; } }
+          was[k] = b->warp; } } }
+    int walls4 = 1; for (int h = 0; h < SH_NWORM; h++) { int v = 0; for (int w = 0; w < SH_MAXWALLS; w++) v += seenW[h][w]; if (v < 4) walls4 = 0; }
+    double r0 = radSum[0] / fmax(radN[0], 1), r1 = radSum[1] / fmax(radN[1], 1), rate0 = (double)trips[0] / fmax(hits[0] + trips[0], 1), rate1 = (double)trips[1] / fmax(hits[1] + trips[1], 1);
+    (void)nbad;
+    snprintf(m, sizeof m, "8  the FM-1's holes: %d of them, open to a %.0f px radius on average (the web's two: %.0f)", SH_NWORM, r1, r0); ok(r1 > r0 * 1.3, m);
+    snprintf(m, sizeof m, "   a minute of a busy tank: %.1f%% of the notes go through (the web's: %.1f%%), every ball still there", 100 * rate1, 100 * rate0);
+    ok(rate1 > rate0 * 2 && !lostAny, m);
+    snprintf(m, sizeof m, "   each hole lives on at least 4 different walls, popping (%d moves, %d while it was open), never two open on one wall (%d)", popMoves, openMoves, sameWall);
+    ok(walls4 && popMoves >= 40 && openMoves == 0 && sameWall == 0, m);
+    snprintf(m, sizeof m, "   every open hole lies on its wall (%d ticks off it)", offWall); ok(offWall == 0, m);
+    snprintf(m, sizeof m, "   a ball comes out ON THE GRID: %d of %d exits' notes on a grid line, the ball within a tick of it (the worst %.1f ms)", onGrid, exits, worstGrid); ok(exits >= 20 && onGrid == exits, m);
+    snprintf(m, sizeof m, "   out of another hole than it went in: %d of %d", otherHole, exits); ok(otherHole * 10 >= exits * 9, m); }
+  /* ---- 9: the FM-1's holes on a triangle and a square: a hole fewer than the walls open (2, 3), every hole always on a
+   *         real wall (four holes on three walls left one on walls[-1]: notes out of the tank, stucktest 2026-11-20) */
+  { int bad = 0, over = 0, lost = 0;
+    for (int w = 3; w <= 4; w++) {
+      sh_tank_settings s = portal(); s.walls = w; s.worm_pop = 1; s.worm_hold = 8; s.spin = 100; s.chaos = 0.12; s.guard = 1;   /* (the device: the guard on) */
+      sh_tank_init(&T, s, 33); sh_tank_start(&T, 0); tick = 0;
+      for (int i = 0; i < 8; i++) sh_tank_add_ball(&T);
+      for (int i = 0; i < 20 * 60; i++) {
+        int open = 0; step1(140); if (T.nb != 8) lost = 1;
+        for (int h = 0; h < T.worm_n; h++) { if (T.worm[h].wall < 0 || T.worm[h].wall >= T.n) bad++; if (T.worm[h].rad > SH_BR) open++; }
+        if (open > w - 1) over++;
+        for (int k = 0; k < T.nb; k++) if (!T.balls[k].warp && !sh_tank_inside(&T, T.balls[k].x, T.balls[k].y)) bad++; } }
+    snprintf(m, sizeof m, "9  a triangle and a square: every hole on a real wall and every ball inside (%d ticks wrong), at most a hole fewer than the walls open (%d ticks over)", bad, over);
+    ok(bad == 0 && over == 0 && !lost, m); }
+  printf(fails ? "FAILED: %d\n" : "the FM-1 tank's wormholes behave like the web's, and the FM-1's own are bigger and on the grid\n", fails);
   return fails ? 1 : 0;
 }

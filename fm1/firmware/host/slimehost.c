@@ -135,7 +135,6 @@ int main(int argc, char **argv)
         preview_init();
         for (p = 0; p < 3u; p++) for (i = 0; i < sl_snd_count(p); i++) { const sl_snd *s = sl_snd_entry(p, i); n++;
             if (sl_preset_named(s->eng, s->name) < 0) { printf("missing %s on engine %u\n", s->name, s->eng); bad++; } }
-        for (i = 0; i < SL_NSET; i++) if (SL_SETS[i].mel >= SL_NMEL || SL_SETS[i].bass >= SL_NBASS || SL_SETS[i].comp >= SL_NCOMP) { printf("set %s out of range\n", SL_SETS[i].name); bad++; }
         for (i = 0; i < 11u; i++) {                       /* each rhythm's kit is one of SLOOP's synthesized kits */
             uint32_t k, j;
             n++;
@@ -165,13 +164,74 @@ int main(int argc, char **argv)
         fwrite(buf, sizeof buf, 1, stdout);
         return 0;
     }
+    if (argc >= 2 && !strcmp(argv[1], "echo")) {        /* echo: one click into the delay bus (1/8 at 100 bpm, repeats 60%),
+                                                          * the echoes it comes back as: each one's side, time and level */
+        static int32_t cin[CTL], din[CTL], rin[CTL], wl[CTL], wr[CTL];
+        uint32_t i, k, dl, at = 0; int32_t last = 0;
+        preview_init(); preview_render();
+        song.g[G_BPM] = 100; song.g[G_DTIME] = 1; song.g[G_DFDBK] = 72; song.g[G_DMIX] = 127; song.g[G_DCOLOR] = 127;
+        dl = delay_samples();
+        printf("delay %u samples\n", dl);
+        for (i = 0; i < FS * 3u; i += CTL) {
+            for (k = 0; k < CTL; k++) { cin[k] = rin[k] = 0; din[k] = i + k == 0 ? 20000 : 0; wl[k] = wr[k] = 0; }
+            fx_buses(cin, din, rin, wl, wr, CTL);
+            for (k = 0; k < CTL; k++) {
+                int32_t a = wl[k] < 0 ? -wl[k] : wl[k], b = wr[k] < 0 ? -wr[k] : wr[k];
+                if ((a > 300 || b > 300) && i + k > at + dl / 2u) { printf("echo %u %s %d %d\n", i + k, a > b ? "L" : "R", a, b); at = i + k; last = a > b ? a : b; }
+            }
+        }
+        (void)last;
+        return 0;
+    }
+    if (argc >= 4 && !strcmp(argv[1], "sdhit")) {       /* sdhit KITINDEX NOTE: the site's drum engine alone (no SLOOP
+                                                          * chain), 1 s, mono float32: what slime_drums.c itself makes */
+        static float buf[FS], l[CTL], r[CTL];
+        uint32_t i, k;
+        sd_hit((uint32_t)atoi(argv[3]), 110.0f / 96.0f, (uint32_t)atoi(argv[2]), 60);
+        for (i = 0; i < FS; i += CTL) {
+            for (k = 0; k < CTL; k++) l[k] = r[k] = 0.0f;
+            sd_render(l, r, CTL);
+            for (k = 0; k < CTL && i + k < FS; k++) buf[i + k] = l[k] + r[k];
+        }
+        fwrite(buf, sizeof buf, 1, stdout);
+        return 0;
+    }
+    if (argc >= 2 && !strcmp(argv[1], "scales")) {      /* scales: every scale on the SONG page is in the core, every key and
+                                                          * MIDI note lands on one of its degrees, in every key; a 7-note
+                                                          * scale's keys reach all 7, a whole tuning steps one note a key */
+        uint32_t i, bad = 0, missing = 0;
+        int root, m, d;
+        for (i = 0; i < SL_NSCALE; i++) {
+            const sh_scale *sc = sh_scale_by_id(SL_SCALES[i]);
+            uint32_t seen = 0, off = 0;
+            if (!sc) { printf("missing %s\n", SL_SCALES[i]); missing++; continue; }
+            for (root = 52; root <= 64; root++)
+                for (m = 0; m < 128; m++) {
+                    double c = sl_snap_cents(sc, m, root), in = fmod(fmod(c, 1200.0) + 1200.0, 1200.0);
+                    int hit = -1;
+                    for (d = 0; d < sc->n; d++) if (fabs(in - sc->cents[d]) < 0.01 || fabs(in - sc->cents[d] - 1200.0) < 0.01) hit = d;
+                    if (hit < 0) off++; else if (root == 60 && m >= 60 && m < 72 + (sc->n > 12 ? sc->n : 0)) seen |= 1u << (hit & 31);
+                }
+            if (off || seen != (sc->n >= 32 ? 0xFFFFFFFFu : (1u << sc->n) - 1u)) { printf("bad %s off %u seen %08x of %d\n", SL_SCALES[i], off, seen, sc->n); bad++; }
+        }
+        printf("scales %u missing %u bad %u\n", SL_NSCALE, missing, bad);
+        return missing || bad;
+    }
     if (argc >= 4 && !strcmp(argv[1], "hit")) {         /* hit KIT NOTE: one drum hit, 1 s, mono float32 on stdout */
         static float buf[FS];
         uint32_t i, k;
         preview_init(); preview_render();
-        sl_drum_kit(argv[2]); song.g[G_DRLVL] = 100;
+        sl_drum_kit(argv[2]); song.g[G_DRLVL] = getenv("SL_HITLVL") ? (int16_t)atoi(getenv("SL_HITLVL")) : 100;   /* (SL_HITLVL: under the master's limiter) */
+        {   /* the site's drums play the band's kit: "pop" .. "industrial" or "SH POP" .. "SH INDUS"; the ride in C */
+            static const char *const NM[11] = {"pop", "rock", "disco", "bossa", "jazz", "samba", "conga", "march", "chip", "beep", "industrial"};
+            uint32_t j;
+            for (j = 0; j < 11u; j++) if (!strcmp(argv[2], NM[j]) || !strcmp(argv[2], SL_KIT_SOUND[j])) { sl_band.kit = j; sl_drum_kit(SL_KIT_SOUND[j]); }
+            sl_root = 60;
+            if (getenv("SL_SITEDRUMS")) sl_sd_on = (uint8_t)atoi(getenv("SL_SITEDRUMS"));   /* 0: SLOOP's drum synth, as before */
+        }
         if (getenv("SL_DRY")) { song.g[G_DRREV] = 0; song.g[G_DRDLY] = 0; sl_drum_bus_on = 0; }   /* the hit alone, no room */
-        drum_on((uint32_t)atoi(argv[3]), 110);
+        if (getenv("SL_HITDBG")) fprintf(stderr, "itype %d tflt %d ins_run %d\n", TDRUM->p[P_ITYPE], TDRUM->p[P_TFLT], TDRUM->ins_run);
+        sl_drum_hit((uint32_t)atoi(argv[3]), 110);
         for (i = 0; i < FS; i += CTL) { float *o = preview_render(); for (k = 0; k < CTL && i + k < FS; k++) buf[i + k] = o[2 * k] + o[2 * k + 1]; }
         fwrite(buf, sizeof buf, 1, stdout);
         return 0;
@@ -185,6 +245,7 @@ int main(int argc, char **argv)
             double cents = sh_cents_for_degree(sc, deg), want = 440.0 * pow(2.0, (60 - 69) / 12.0 + cents / 1200.0), got, off;
             int note, fine, i, n = 0;
             setup((uint32_t)atoi(argv[3]), argv[4], 100);
+            if (getenv("SL_PITCHDRY")) { trk[SL_TRK_MEL].p[P_DLY] = 0; trk[SL_TRK_MEL].p[P_REV] = 0; }   /* (the voice without its echoes)*/
             sl_root = 60;
             sl_split(cents, &note, &fine);
             if (getenv("SL_NOFINE")) fine = 0;
@@ -251,6 +312,7 @@ int main(int argc, char **argv)
         }
         if (getenv("SL_TRIM")) trk[SL_TRK_MEL].p[P_ED_FX] = (int16_t)(trk[SL_TRK_MEL].p[P_ED_FX] + atoi(getenv("SL_TRIM")));
         if (getenv("SL_GAIN")) song.master_q12 = (uint32_t)atoi(getenv("SL_GAIN"));
+        if (getenv("SL_NOPRES")) { sl_pres_db = 0.0f; sl_bus_init = 0; }   /* (the presence dip off, the bus made again: check-host 11 must fail) */
         if (getenv("SL_DRUMBUS")) sl_drum_bus_on = (uint8_t)atoi(getenv("SL_DRUMBUS"));   /* 0: the drums without the site's bus */
         if (getenv("SL_GLUEMEAS")) sl_glue_scale = 1e6f;   /* the glue out of reach: the bus's own peak */
         slime_start(s, strtoull(argv[7], 0, 10), 60);

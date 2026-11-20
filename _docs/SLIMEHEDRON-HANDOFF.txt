@@ -451,6 +451,59 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
         from the goo's phase fix had broken its single-pixel sample; sabotaged: a black rim fails it).
       - fm1-emu strict: default 52.9, a page with a cube + portals 55, mixer 61, the stress case 29.4 (from 15.5),
         session.sh worst 29.6 (the full-size tank at 161 bpm, 12 notes a bar, full goo, a loop), 0 late anywhere.
+    FM-1 SITE DRUMS, LEFT KNOBS = SOUNDS, MIDI PAGE, 52 SCALES, PORTALS, SYNC (2026-11-20). Flah: the drums "barely sound
+      like my drums off the site"; redundant settings; the 3 left knobs = melody / bass / chords sounds and a drums page
+      of its own; the 3D turn "too even"; portals too small, on more walls, popping in and out, timing tight; "each note
+      bounce on time with the sound output"; fx up to par (Shrub: closed source, not compared); SAVE -> a MIDI menu, no
+      MPE; scales on a knob, the missing ones (phrygian dominant, hirajoshi ...), the microtonal ones checked.
+      - THE SITE'S DRUMS (fm1/firmware/slime_drums.c): dHit's recipes in C on the drum track (patch_sloop 23: after
+        SLOOP's voices, before the insert / filter / bus): kick dive + beater click, snare noise + falling body + stick,
+        the 808 metal (six band-limited squares: a hat's as its harmonics, recursive sines; the crash's polyBLEP), open
+        hat choked, ride tuned to the key, toms (1.59x mode), congas, clave, PIECE_DB per piece, KIT_DB as the kit's trim
+        (the glue's threshold measured on the trimmed kit, SD_GLUE_THR: every kit's glue within 1 dB of the site's).
+        band_tables.h now uses the site's DRUMN (clave 75, congas 62/63, toms 45/50). check-drums.sh: all 11 x 12 hits
+        against the browser's own render (fm1/host/site-hits.js, needs a scratch Playwright: NODE_PATH): mean 0.40 dB in
+        time, 0.84 in colour, worst 2.5 / 3.5 (the site against itself: 0.84 / 1.7; SLOOP's synth before: 12..58 /
+        15..42). Bugs found on the way, each now a sabotage: sl_exp2's cubic for per-sample decays (every hit dead in
+        15 ms), oscillators starting at -1 (a click), the metal 15 dB down, the kick tail through the bench master.
+        Cost: the first version missed the audio deadline 1,683 times in session.sh; block-at-a-time layers, no libm in
+        a hit's set-up, recursive sines, plain squares for the crash: session.sh worst audio half 71% (4,135 us), 0 late
+        notes, worst 5 s window 23.0 fps (rock's kit at 137% decay, 164 bpm, full goo; the pages pass had 29.6), most
+        windows 40..64. NOT MET: 30 fps in the heaviest stretch.
+      - CONTROLS: SELECT / ALGORITHM / PRESETS = the melody's / bass's / chords' sound on every page. A page's button
+        again = its next VIEW (HOME = the tank): song (tempo swing key SCALE | rhythm, chord every, key pin, shape
+        every), mixer (levels | pan | delay sends | reverb sends; keys mute / solo), fx (melody | bass | chords | drums |
+        delay + reverb), sound (ADSR x3 | note length + 3 glides), chords (slot root type bars | how many, famous,
+        transpose), drums (lane fill shift mine/rhythm | kit tune decay feel), MIDI = SAVE (4 channels | in channel,
+        clock in, notes out, clock out). Gone: sound sets, fx presets on a knob (still each sound's default), SAVE's 3
+        songs (the session saves itself: SLM4), the SLOOP-kit picker.
+      - SCALES: 52 (fm1/core/music.c: the site's 28 + lydian dominant, altered, harmonic major, hungarian minor, dorian
+        #4, neapolitan minor / major, lydian augmented, locrian natural 2, persian, enigmatic, prometheus, both
+        diminished, augmented, major blues, bebop dominant, egyptian, kumoi, yo, ryukyu, maqam saba, just major, the
+        overtone scale). hijaz IS phrygian dominant, bhairav IS double harmonic: both names shown. Microtonal fixes on
+        the FM-1 only (the SITE STILL HAS BOTH BUGS): pelog's 7th 1050 -> 933 (its step pattern; Wikipedia "Pelog",
+        9-EDO subset), "neutral7" was 150-cent steps then a 300 jump -> 7-EDO. slimehost scales: every id resolves,
+        every key / MIDI note lands on a degree in 13 keys (check-host 13; sabotaged: a misspelt id, no snap).
+      - CAMERA: three axes of sines at unrelated speeds, a view roll, a springy nod + roll on each beat as it sounds,
+        the camera at 760 (was 1000), the frame 8% smaller (st_tumble3, st_set_cam). Not measured: how it feels.
+      - PORTALS (tank.c s.worm_pop, the device only; 0 = the site's two gliding holes, plugin parity exact): 4 holes,
+        radius up to 126 px, each living a bar on a wall then popping open on a free one (a hole fewer than the walls
+        open: a triangle 2), a trip out of ANOTHER open hole ending on a grid line. portaltest 8 / 9: 108 px against 82,
+        23-30% of notes through against 9-10%, 0 moves while open, every exit's note on a line (sabotaged x4: untimed
+        trip 11/148, open moves, the site's size, four holes on three walls). stucktest: a hole left on walls[-1] let
+        notes out of a triangle (568 ball-ticks): fixed, 0.
+      - SYNC: the screen draws the tank as the speaker plays it (slime.c sl_tpose ring, stamped with the audio block its
+        notes sound at; slime_ui.c sl_pose_apply turns the walls / holes back and puts the balls where they were). The
+        guard's tank also sounds a note touched within a tick after a grid line ON that line (the device plans ~75 ms
+        ahead) and beat lock bends 0.7..1.4 every tick. synctest.c: on a grid line 40.3% -> 90.4%, heard within a tick
+        of the bounce 95.8% -> 97.2%, speed 8% off the tempo's on average (sabotaged: the site's rule fails the grid).
+      - FX: SLOOP's are better than assumed (a 4-line FDN reverb, LP-fed delay, chorus, inserts). Added: the delay in
+        stereo ping-pong (patch_sloop 24, one line two taps, no RAM): check-host 14 (L R L R, each 0.505 of the last;
+        sabotaged: mono). OTT / multiband not attempted: no CPU left after the drums.
+      - MIDI: a channel per part (or off), an in channel, clock in follow / ignore, notes out, clock out; bends on the
+        part's own channel (no MPE). Clock follow now over 4 beats (the audio interrupt's half-buffer bursts stamped
+        ticks up to 8 blocks off: 120 read as 119). midi-check 17/17 (the MIDI page, bends on each part's channel, 120 read as 120); boot-check 5/5.
+      - Not checked by a machine: how the drums sound on the FM-1's speaker; the camera's feel; ping-pong on headphones.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto
@@ -1332,6 +1385,9 @@ separate branches of files. Spec + research: _docs/specs/2026-11-06-many-walls/,
 ================================================================
 
 origin/main may be behind by up to 11 commits. Flah pushes / uploads.
+
+  (2026-11-20)  fm1: the site's drums on the device, sounds on the left knobs, a MIDI page, 52 scales, popping portals,
+                bounces in step with their sound, ping-pong delay (FM-1 only; the site untouched, no sw bump)
 
   (this pass)  review fixes: spin boost, auto-notes on reload, spin while stopped, seeds, lost capture, jackpot fill; sw v128
   b528895  plugin: goo is full (ADR 0007); handoff open-now block

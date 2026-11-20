@@ -38,7 +38,7 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 
 ## The music
 - **Key / root**: `S.root` (MIDI note; the key menu shows the pitch class, the octave row sets the register).
-- **Scale**: `S.scale`, one of 28, stored in **cents** (eight are microtonal). A **whole tuning** (19-, 24-, 31-EDO, all
+- **Scale**: `S.scale`, one of 28, stored in **cents** (eight are microtonal). The FM-1 has those and 24 more (52). A **whole tuning** (19-, 24-, 31-EDO, all
   notes) has every note of an evenly split octave, not a 7-note pick from it.
 - **Chord brain**: picks the band's chord each bar (`curRootDeg`). **Chord follower**: `noteFeed()` lets played notes steer it.
 - **Key journey**: the slime moves the key every ~90 s (not when pinned, `_keyPinned`).
@@ -65,8 +65,17 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 - **Pattern** (FM-1 DRUMS page): a person's 16-step drum pattern, played by the rhythm's drummer, no fills. Not the
   rhythm's own 4-bar pattern.
 - **Page** (FM-1): one button, one job: tank (HOME), song (SCL), mixer (GLO), fx (FX), sound (ENV), chords (EDIT), drums
-  (SEQ). SELECT picks what a page works on, the four knobs are its values, shown on the page's **panel** under the tank.
-- **Song / session** (FM-1): SAVE's three songs in flash; the session is written by itself when stopped.
+  (SEQ), MIDI (SAVE). The four knobs are its values, shown on the page's **panel** under the tank. A **view**: the same
+  button again shows the page's next four (mixer: levels, pan, delay sends, reverb sends). The three left knobs (SELECT,
+  ALGORITHM, PRESETS) are the melody's, bass's and chords' **sounds** on every page.
+- **Session** (FM-1): everything set, written to flash by itself 3 s after the music stops, read back at power-on. (SAVE's
+  three songs went 2026-11-20; SAVE is the MIDI page.)
+- **Site drums** (FM-1, `slime_drums.c`): the site's `dHit` recipes synthesized on the device, piece for piece
+  (`check-drums.sh` against the browser's own render). Not SLOOP's drum synth.
+- **Popping portals** (FM-1, `s.worm_pop`): four wormholes, bigger than the site's two, each living a bar on a wall, then
+  closing and opening on another; a trip ends on the grid. The site's two **gliding** holes are `worm_pop` 0.
+- **Pose** (FM-1, `sl_tpose`): the tank as a physics tick left it, kept so the screen draws the tank as the speaker plays
+  it (~75 ms behind the plan). Not the splash's `sl_pose` (the slime guy).
 - **Triangle mixer**: `#triMix` (melody / drums / band). **Mixer**: studio's per-part volume/mute/solo (`MIX`).
 - **Beat lock**: balls are steered so their hits land on the grid (`beatLock`, `b.tq`).
 - **Auto adjuster**: gives each shape its own pace with auto-notes on (`AUTO`, `autoRoom`): a notes-a-bar aim from its

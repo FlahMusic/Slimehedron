@@ -17,7 +17,9 @@ const code = [grab(/function rep\(base,bars\)\{[^\n]*\}/, 'rep'), grab(/function
 const SALT = 123456789;
 const W = new Function('_bandSalt', code)(SALT);
 const ORDER = ['pop', 'rock', 'disco', 'bossa', 'jazz', 'samba', 'conga', 'march', 'chip', 'beep', 'industrial'];
-const GM = { K: 36, s: 38, h: 42, o: 46, r: 37, cl: 37, c: 63, C: 43, y: 51, ht: 48, lt: 43, x: 49 };
+// 2026-11-20: the site's own DRUMN (index.html), every piece its own note: the FM-1 plays the site's drum recipes itself now
+// (fm1/firmware/slime_drums.c), so the clave is not the rim and the high conga is not a tom (they shared 37 and 43 before)
+const GM = { K: 36, s: 38, h: 42, o: 46, r: 37, cl: 75, c: 62, C: 63, y: 51, ht: 50, lt: 45, x: 49 };
 const want = [];
 ORDER.forEach((kit, k) => {
   const pat = W.KITS[kit], fl = W.feelFor(kit).fill, lo = W.KITVOICE[kit].lo;

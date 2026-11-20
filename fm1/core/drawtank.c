@@ -6,8 +6,9 @@
 #define MID (SH_SCREEN / 2.0f)
 /* where the tank sits and how big (st_set_frame): the middle of the screen at ST_K, or lifted and smaller over a page's
  * panel */
-static float g_cx = MID, g_cy = MID, g_k = ST_K;
+static float g_cx = MID, g_cy = MID, g_k = ST_K, g_cam = ST_CAM;
 void st_set_frame(float cx, float cy, float k) { g_cx = cx; g_cy = cy; g_k = k; }
+void st_set_cam(float cam) { g_cam = cam > 300.0f ? cam : 300.0f; }
 
 void st_tumble(float a, float b, float M[9]) {   /* the web's _M = Ry(a) * Rx(b) */
   float ca = cosf(a), sa = sinf(a), cb = cosf(b), sb = sinf(b);
@@ -15,12 +16,18 @@ void st_tumble(float a, float b, float M[9]) {   /* the web's _M = Ry(a) * Rx(b)
   M[3] = 0;  M[4] = cb;      M[5] = -sb;
   M[6] = -sa; M[7] = ca * sb; M[8] = ca * cb;
 }
+void st_tumble3(float a, float b, float c, float M[9]) {   /* Rz(c) * Ry(a) * Rx(b): the tumble, then the view rolled (the
+                                                            * horizon tips; a roll on the box's side is only its spin) */
+  float T[9], cc = cosf(c), sc = sinf(c);
+  st_tumble(a, b, T);
+  for (int j = 0; j < 3; j++) { M[j] = cc * T[j] - sc * T[3 + j]; M[3 + j] = sc * T[j] + cc * T[3 + j]; M[6 + j] = T[6 + j]; }
+}
 
 /* the web's P3: box-local (x, y in tank px; z 0 the front glass .. 1 the back) to the screen; *s = the scale there */
 static void p3(const float M[9], double x, double y, double z, float *sx, float *sy, float *s) {
   float cx = (float)(x - SH_TCX), cy = (float)(y - SH_TCY), cz = (float)(z * SH_TBOXD - SH_TBOXD / 2.0);
   float wx = M[0] * cx + M[1] * cy + M[2] * cz, wy = M[3] * cx + M[4] * cy + M[5] * cz, wz = M[6] * cx + M[7] * cy + M[8] * cz + (float)(SH_TBOXD / 2.0);
-  float f = ST_CAM / (ST_CAM + wz);
+  float f = g_cam / (g_cam + wz);
   *sx = g_cx + wx * f * g_k; *sy = g_cy + wy * f * g_k; *s = f * g_k;
 }
 
@@ -60,9 +67,9 @@ void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0,
   for (int i = 0; i < t->n; i++) { int j = (i + 1) % t->n; float a = v->fy[i], b = v->fy[j], c = v->by[i], d = v->by[j];
     float lo = a < b ? a : b, hi = a < b ? b : a; lo = c < lo ? c : lo; lo = d < lo ? d : lo; hi = c > hi ? c : hi; hi = d > hi ? d : hi;
     v->wy0[i] = lo - 1.0f; v->wy1[i] = hi + 1.0f; }
-  for (int h = 0; h < 2; h++) {   /* a wormhole: a disc in its wall's plane, across the wall and front to back */
+  for (int h = 0; h < SH_NWORM; h++) {   /* a wormhole: a disc in its wall's plane, across the wall and front to back */
     const sh_worm *P = &t->worm[h]; v->hn[h] = 0;
-    if (!t->worm_on || P->rad < SH_BR) continue;
+    if (!t->worm_on || h >= t->worm_n || P->rad < SH_BR) continue;
     for (int k = 0; k < ST_HOLE; k++) { float a = 6.2831853f * (float)k / ST_HOLE, c = cosf(a) * (float)P->rad, sn = sinf(a) * (float)P->rad;
       p3(M, SH_TCX + P->x + P->t1[0] * c, SH_TCY + P->y + P->t1[1] * c, (P->z + sn) / SH_TBOXD + 0.5, &v->hx[h][k], &v->hy[h][k], &s); }
     v->hy0[h] = 1e9f; v->hy1[h] = -1e9f;
@@ -71,6 +78,8 @@ void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0,
     v->hn[h] = ST_HOLE; }
   v->hrim[0] = rgb565(255 / 255.0f, 156 / 255.0f, 207 / 255.0f); v->hdeep[0] = rgb565(122 / 255.0f, 69 / 255.0f, 200 / 255.0f);   /* the web's WORMC */
   v->hrim[1] = rgb565(134 / 255.0f, 232 / 255.0f, 214 / 255.0f); v->hdeep[1] = rgb565(47 / 255.0f, 116 / 255.0f, 196 / 255.0f);
+  v->hrim[2] = rgb565(255 / 255.0f, 214 / 255.0f, 120 / 255.0f); v->hdeep[2] = rgb565(176 / 255.0f, 96 / 255.0f, 40 / 255.0f);    /* (the FM-1's other two) */
+  v->hrim[3] = rgb565(196 / 255.0f, 170 / 255.0f, 255 / 255.0f); v->hdeep[3] = rgb565(84 / 255.0f, 60 / 255.0f, 170 / 255.0f);
   v->nb = 0;
   for (int bi = 0; bi < t->nb; bi++) {
     const sh_ball *b = &t->balls[bi];
@@ -100,7 +109,7 @@ void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0,
     if (v->open[i]) { v->side[i].n = 0; v->side[i].ylo = 1e9f; v->side[i].yhi = -1e9f; continue; }
     poly_make(&v->side[i], qx, qy, 4, v->wc[i], 0.16f + 0.3f * v->lit[i]); }
   v->nside = v->n;
-  for (int h = 0; h < 2; h++) {   /* a hole: its rim (the outline grown 1.3 px), then its inside (shrunk 1.3 px) */
+  for (int h = 0; h < SH_NWORM; h++) {   /* a hole: its rim (the outline grown 1.3 px), then its inside (shrunk 1.3 px) */
     v->hole[h][0].n = v->hole[h][1].n = 0; v->hole[h][0].ylo = v->hole[h][1].ylo = 1e9f; v->hole[h][0].yhi = v->hole[h][1].yhi = -1e9f;
     if (!v->hn[h]) continue;
     float cx = 0, cy = 0, rs = 0, ox[ST_HOLE], oy[ST_HOLE], ix[ST_HOLE], iy[ST_HOLE];
@@ -169,7 +178,7 @@ void st_draw_band(const st_view *v, int y0, int rows, uint16_t *buf, uint16_t bg
     for (int i = 0; i < v->nb; i++) DISC_ROW(v->sx[i], v->sy[i], v->sr[i], yc, row[px] = blend565(row[px], shade, 5u););
     for (int i = 0; i < v->nside; i++) poly_row(&v->side[i], yc, row, xlo, xhi);                         /* the side walls, glass */
     for (int i = 0; i < v->nunder; i++) seg_row(&v->under[i], yc, row, xlo, xhi);                        /* rails, back edges */
-    for (int h = 0; h < 2; h++) if (v->hn[h]) { poly_row(&v->hole[h][0], yc, row, xlo, xhi); poly_row(&v->hole[h][1], yc, row, xlo, xhi); }   /* wormholes */
+    for (int h = 0; h < SH_NWORM; h++) if (v->hn[h]) { poly_row(&v->hole[h][0], yc, row, xlo, xhi); poly_row(&v->hole[h][1], yc, row, xlo, xhi); }   /* wormholes */
     for (int q = 0; q < nd; q++) { int k = dl[q]; uint32_t ka = v->dpool[k] ? 29u : 19u;           /* the goo, then its spray */
       DISC_ROW(v->dx[k], v->dy[k], v->dr[k], yc, row[px] = blend565(row[px], v->goo, ka);); }
     for (int o = 0; o < v->nb; o++) { int i = v->order[o]; float R = v->r[i]; uint32_t kz = k32(1.0f - 0.3f * v->z[i]);   /* balls, far first */

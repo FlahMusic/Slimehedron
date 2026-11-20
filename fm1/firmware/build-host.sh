@@ -37,7 +37,7 @@ $CC $SFLAGS -I"$GEN" -I"$HW/firmware/src" -I"$HW/firmware/host" -I"$CORE" \
 echo "built $OUT/slimehost"
 # the device's single-precision tank (floatify.py on copies of fm1/core and slime.c), the same bench around it
 F="$OUT/float"; rm -rf "$F"; mkdir -p "$F/core" "$F/host"
-cp "$CORE"/*.c "$CORE"/*.h "$F/core/"; cp "$HERE/slime.c" "$F/"; cp "$HERE/host/slimehost.c" "$F/host/"
+cp "$CORE"/*.c "$CORE"/*.h "$F/core/"; cp "$HERE/slime.c" "$HERE/slime_drums.c" "$F/"; cp "$HERE/host/slimehost.c" "$F/host/"
 python3 "$HERE/floatify.py" "$F/core" >/dev/null; python3 "$HERE/floatify.py" "$F" >/dev/null
 for f in tank music melody goo band; do $CC -std=c99 -O2 -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -c -o "$F/$f.o" "$F/core/$f.c"; done
 $CC $SFLAGS -I"$GEN" -I"$HW/firmware/src" -I"$HW/firmware/host" -I"$F/core" \

@@ -8,8 +8,8 @@
 #define SH_NDV 9
 static const char *const SH_KIT_NAME[SH_NKITS] = {"pop", "rock", "disco", "bossa", "jazz", "samba", "conga", "march", "chip", "beep", "industrial"};
 /* the drum voices: K s h o r cl c C y as General MIDI notes */
-static const uint8_t SH_DV_NOTE[SH_NDV] = {36, 38, 42, 46, 37, 37, 63, 43, 51};
-enum { SH_GM_HT = 48, SH_GM_LT = 43, SH_GM_CRASH = 49 };
+static const uint8_t SH_DV_NOTE[SH_NDV] = {36, 38, 42, 46, 37, 75, 62, 63, 51};
+enum { SH_GM_HT = 50, SH_GM_LT = 45, SH_GM_CRASH = 49 };
 /* each kit: 64 sixteenth steps (4 bars) per voice, bit s = step s */
 static const uint64_t SH_KIT_STEPS[SH_NKITS][SH_NDV] = {
   {0x0441044104410441ull, 0x1410101010101010ull, 0x1555555595555555ull, 0x4000000040000000ull, 0x0000000000000000ull, 0x0000000000000000ull, 0x0000000000000000ull, 0x0000000000000000ull, 0x0000000000000000ull},   /* pop */

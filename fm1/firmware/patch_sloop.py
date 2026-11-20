@@ -79,9 +79,13 @@ NL = chr(10)
 sub("firmware/src/fx.c", "static void slime_hook(uint32_t n);                      /* slimehedron: slime.c */",
     "static void slime_hook(uint32_t n);                      /* slimehedron: slime.c */" + NL +
     "static void sl_drum_bus(int32_t *l, int32_t *r, int32_t *v, int32_t *d, uint32_t n);   /* slimehedron: slime.c */" + NL +
-    "static uint8_t sl_drum_bus_on;")
+    "static uint8_t sl_drum_bus_on;" + NL +
+    "static void sl_sd_block(int32_t *l, int32_t *r, int32_t *v, int32_t *d, uint32_t n);   /* slimehedron: slime_drums.c */" + NL + "static uint8_t sl_sd_on;")
+# .. and the site's own drums (slime_drums.c) into the same buffers, after SLOOP's drum voices, before the insert
+sub("firmware/src/fx.c", "        slicer_drums(dl, dr, dv, dd, n);" + NL + "        drum_insert(dl, dr, dv, dd, n);",
+    "        slicer_drums(dl, dr, dv, dd, n);" + NL + "        sl_sd_block(dl, dr, dv, dd, n);   /* slimehedron */" + NL + "        drum_insert(dl, dr, dv, dd, n);")
 sub("firmware/src/fx.c", "    if (flt || (n <= CTL && (TDRUM->p[P_ITYPE] | TDRUM->ins_run))) {   /* .. or its INSERT: left, right, the sends */",
-    "    if (flt || (n <= CTL && (TDRUM->p[P_ITYPE] | TDRUM->ins_run | sl_drum_bus_on))) {   /* .. or its INSERT, or the drum bus */")
+    "    if (flt || (n <= CTL && (TDRUM->p[P_ITYPE] | TDRUM->ins_run | sl_drum_bus_on | sl_sd_on))) {   /* .. or its INSERT, the drum bus, the site's drums */")
 sub("firmware/src/fx.c", "            tflt_run(f, &fc, dd, n, 3);" + NL + "        }" + NL + "        for (i = 0; i < n; i++) {" + NL + "            mx->l[i] += dl[i];",
     "            tflt_run(f, &fc, dd, n, 3);" + NL + "        }" + NL + "        if (sl_drum_bus_on)" + NL +
     "            sl_drum_bus(dl, dr, dv, dd, n);   /* slimehedron */" + NL +
@@ -97,4 +101,33 @@ sub("firmware/src/main.c", "    fm1_delay_ms(900);                              
 # 2026-11-18 by midi-check.sh: each key went out twice, once on channel 1 unbent)
 sub("firmware/src/seq.c", "    keyboard_block();" + NL + "    drum_audition_poll();",
     "    /* slimehedron: keyboard_block() not called: the keys are slime.c's */" + NL + "    drum_audition_poll();")
-print("patch_sloop: 22 changes applied")
+# The delay in STEREO, PING-PONG (2026-11-20, Flah: the fx "top of the line"): SLOOP's tempo delay comes back in the
+# middle. One line, two taps: the left hears it at one delay, the right at two, and only the right's goes round again,
+# with the feedback squared, so the echoes fall left, right, left, right, each by REPEATS as before. No more memory (a
+# second line would be 128 KB). When two delays do not fit the line (a 1/4 dotted under 61 bpm), the mono delay as before.
+sub("firmware/src/fx.c", """        x = dly_buf[(fx.dly_w - dl) & (DLY_LEN - 1u)];
+        fx.dly_lp += mulq15(x - fx.dly_lp, col);
+        dly_buf[fx.dly_w & (DLY_LEN - 1u)] =
+            (int16_t)clamp((dly_in[i] >> 1) + mulq15(fx.dly_lp, fb), -32768, 32767);
+        fx.dly_w++;
+        x = mulq15(x << 1, dmix);
+        yl += x;
+        yr += x;""", """        if (2u * dl < DLY_LEN) {                        /* slimehedron: PING-PONG, one line, two taps (patch_sloop.py) */
+            int32_t xl = dly_buf[(fx.dly_w - dl) & (DLY_LEN - 1u)], xr = dly_buf[(fx.dly_w - 2u * dl) & (DLY_LEN - 1u)];
+            fx.dly_lp += mulq15(xr - fx.dly_lp, col);
+            dly_buf[fx.dly_w & (DLY_LEN - 1u)] =
+                (int16_t)clamp((dly_in[i] >> 1) + mulq15(mulq15(fx.dly_lp, fb), fb), -32768, 32767);
+            fx.dly_w++;
+            yl += mulq15(xl << 1, dmix);
+            yr += mulq15(mulq15(xr << 1, fb), dmix);
+        } else {
+        x = dly_buf[(fx.dly_w - dl) & (DLY_LEN - 1u)];
+        fx.dly_lp += mulq15(x - fx.dly_lp, col);
+        dly_buf[fx.dly_w & (DLY_LEN - 1u)] =
+            (int16_t)clamp((dly_in[i] >> 1) + mulq15(fx.dly_lp, fb), -32768, 32767);
+        fx.dly_w++;
+        x = mulq15(x << 1, dmix);
+        yl += x;
+        yr += x;
+        }""")
+print("patch_sloop: 24 changes applied")

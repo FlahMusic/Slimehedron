@@ -27,8 +27,13 @@ static const sh_scale SCALES[] = {
   S("maqamRast", 0, 200, 350, 500, 700, 900, 1050),
   S("maqamBayati", 0, 150, 300, 500, 700, 800, 1000),
   S("slendro", 0, 240, 480, 720, 960),
-  S("pelog", 0, 120, 270, 540, 670, 785, 1050),
-  S("neutral7", 0, 150, 300, 450, 600, 750, 900),
+  /* FM-1, 2026-11-20 (the site still has the old two): pelog's 7th at 933, not 1050. Pelog runs small-small-LARGE-
+   * small-small-small-LARGE, roughly 9-EDO's steps 1 1 2 1 1 1 2 (0 133 267 533 667 800 933: Wikipedia "Pelog", after
+   * Surjodiningrat's survey of 27 gamelans); at 1050 its last step was a small 150 and the large one sat before it. The
+   * first six keep the site's gamelan-like values. "neutral7" climbed 150-cent steps to 900 and jumped 300 to the octave:
+   * not a neutral scale. Now 7-EDO (171.43 c steps: every interval neutral, the Thai classical tuning's model) */
+  S("pelog", 0, 120, 270, 540, 670, 785, 933),
+  S("neutral7", 0, 171.43f, 342.86f, 514.29f, 685.71f, 857.14f, 1028.57f),
   S("edo19", 0, 189, 379, 505, 695, 884, 1074),
   S("edo19all", 0, 63.16f, 126.32f, 189.47f, 252.63f, 315.79f, 378.95f, 442.11f, 505.26f, 568.42f, 631.58f, 694.74f,
     757.89f, 821.05f, 884.21f, 947.37f, 1010.53f, 1073.68f, 1136.84f),
@@ -37,6 +42,34 @@ static const sh_scale SCALES[] = {
   S("edo31", 0, 38.71f, 77.42f, 116.13f, 154.84f, 193.55f, 232.26f, 270.97f, 309.68f, 348.39f, 387.1f, 425.81f,
     464.52f, 503.23f, 541.94f, 580.65f, 619.35f, 658.06f, 696.77f, 735.48f, 774.19f, 812.9f, 851.61f, 890.32f,
     929.03f, 967.74f, 1006.45f, 1045.16f, 1083.87f, 1122.58f, 1161.29f),
+  /* FM-1 only (2026-11-20, Flah: "theres a fuck ton of scales missing"): the rest of the common modes and their
+   * relatives (hijaz above IS phrygian dominant, bhairav IS double harmonic: the FM-1 says both names), the symmetric
+   * scales, more pentatonics, and three more tunings between the keys (maqam saba; just major and the overtone scale:
+   * harmonics 8..15, cents = 1200 log2(n / 8)) */
+  S("lydianDom", 0, 200, 400, 600, 700, 900, 1000),
+  S("altered", 0, 100, 300, 400, 600, 800, 1000),
+  S("harmMaj", 0, 200, 400, 500, 700, 800, 1100),
+  S("hungarianMin", 0, 200, 300, 600, 700, 800, 1100),
+  S("dorianSharp4", 0, 200, 300, 600, 700, 900, 1000),
+  S("neapMin", 0, 100, 300, 500, 700, 800, 1100),
+  S("neapMaj", 0, 100, 300, 500, 700, 900, 1100),
+  S("lydianAug", 0, 200, 400, 600, 800, 900, 1100),
+  S("locrianNat2", 0, 200, 300, 500, 600, 800, 1000),
+  S("persian", 0, 100, 400, 500, 600, 800, 1100),
+  S("enigmatic", 0, 100, 400, 600, 800, 1000, 1100),
+  S("prometheus", 0, 200, 400, 600, 900, 1000),
+  S("dimHW", 0, 100, 300, 400, 600, 700, 900, 1000),
+  S("dimWH", 0, 200, 300, 500, 600, 800, 900, 1100),
+  S("augmented", 0, 300, 400, 700, 800, 1100),
+  S("bluesMaj", 0, 200, 300, 400, 700, 900),
+  S("bebopDom", 0, 200, 400, 500, 700, 900, 1000, 1100),
+  S("egyptian", 0, 200, 500, 700, 1000),
+  S("kumoi", 0, 200, 300, 700, 900),
+  S("yo", 0, 200, 500, 700, 900),
+  S("ryukyu", 0, 400, 500, 700, 1100),
+  S("maqamSaba", 0, 150, 300, 400, 700, 800, 1000),
+  S("justMaj", 0, 203.91f, 386.31f, 498.04f, 701.96f, 884.36f, 1088.27f),
+  S("overtone", 0, 203.91f, 386.31f, 551.32f, 701.96f, 840.53f, 968.83f, 1088.27f),
 };
 #undef S
 

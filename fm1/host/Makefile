@@ -123,3 +123,7 @@ harmtest: ../core/band.c ../core/band.h ../core/band_tables.h ../core/music.c ha
 harm: harmtest
 	./harmtest
 .PHONY: harm
+
+synctest: $(TANKSRC) ../core/tank.h ../core/goo.h synctest.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -fsingle-precision-constant -c -o goo_16.o ../core/goo.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -o $@ ../core/tank.c ../core/music.c ../core/melody.c goo_16.o synctest.c -lm

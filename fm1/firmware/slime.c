@@ -25,7 +25,8 @@ float sinf(float), cosf(float), powf(float, float), log10f(float), expf(float); 
 #define SL_TRK_MEL 0u           /* the tank's melody and the pane chimes */
 #define SL_TRK_BASS 1u
 #define SL_TRK_COMP 2u
-#define SL_TRK_DRUM 0xFFu        /* a queued drum hit (drum_on), not a synth track */
+#define SL_TRK_DRUM 0xFFu        /* a queued drum hit (sl_drum_hit), not a synth track */
+static void sl_drum_hit(uint32_t note, uint32_t vel);
 #define SL_TRK_CLICK 0xFEu       /* the count-in's click (SLOOP's metronome voice: to the speakers, never into the loop) */
 #define SL_NQ 64u                /* notes waiting for their moment, and notes waiting for their note-off */
 /* THE CONDUCTOR (2026-11-16). The tank and the band are simulated AHEAD of the audio clock, in the main loop, and queue
@@ -201,13 +202,17 @@ static void sl_play_at(uint32_t ti, int root, double cents, int vel, uint32_t at
     sl_queue(e);
 }
 /* MIDI OUT, over USB (the FM-1's jack is MIDI in only): every note it plays, as the site sends them (sendMidi /
- * sendMidiAt): the melody on channel 1, the bass on 2, the chords on 3, the drums on 10 (GM notes). A microtonal scale
- * (a note off the 12 semitones) sends each note with its own pitch bend (GM's +-2 semitones) on a channel of its own,
- * as MPE does: the melody turns round channels 11..16, the chords round 4..9, the bass (one note at a time) keeps 2.
- * Notes from MIDI in are never echoed. The clock and the transport go out too, unless a clock is coming in. */
+ * sendMidiAt), each part on its own channel, set on the MIDI page (SAVE): by default the melody on 1, the bass on 2, the
+ * chords on 3, the drums on 10 (GM notes); a part can be off. A microtonal scale (a note off the 12 semitones) sends each
+ * note's pitch bend (GM's +-2 semitones) on its part's channel just before it. The FM-1 has no MPE, so there is no
+ * channel a note (Flah 2026-11-20): two chord notes bent differently at once share the later bend on the synth that
+ * hears them. Notes from MIDI in are never echoed. The clock and the transport go out too (unless switched off, or a
+ * clock is coming in). */
 #ifdef SL_DEVICE
 static uint8_t sl_micro;                     /* this scale has notes off the 12 semitones (set with the scale) */
-static uint8_t sl_rr[2];                     /* the round robins: melody, chords */
+static uint8_t sl_mch[4] = {0, 1, 2, 9};     /* the MIDI page: each part's channel (0..15; 16: off): melody, bass, chords, drums */
+static uint8_t sl_min_ch;                    /* MIDI in: 0 every channel, 1..16 that one only (the drums' channel always plays the kit) */
+static uint8_t sl_mclk_in = 1, sl_mo_en = 1, sl_mclk_out = 1;   /* follow a clock coming in; notes out; the clock and transport out */
 static volatile uint32_t sl_mdbg[8];         /* MIDI in, out, realtime out, tempo, playing, balls, chord, hand chord + 1 */
 static uint8_t sl_mo_mute;                   /* set while a note from MIDI in plays: it does not go back out */
 static volatile uint32_t sl_mo_n, sl_mi_n;   /* MIDI messages sent / taken in (fm1-emu's tests read them) */
@@ -219,12 +224,13 @@ static void sl_mo(uint32_t st, uint32_t d1, uint32_t d2)
 static uint8_t sl_mo_on(uint32_t trk, uint32_t note, uint32_t vel, int fine)   /* -> the channel + 1 it went out on */
 {
     uint32_t ch;
-    if (sl_mo_mute) return 0;                /* a note that came in over MIDI: never echoed */
-    if (trk == SL_TRK_DRUM) ch = 9u;
-    else if (trk == SL_TRK_BASS) ch = 1u;
-    else if (trk == SL_TRK_MEL) ch = sl_micro ? 10u + sl_rr[0]++ % 6u : 0u;
-    else if (trk == SL_TRK_COMP) ch = sl_micro ? 3u + sl_rr[1]++ % 6u : 2u;
+    if (sl_mo_mute || !sl_mo_en) return 0;   /* a note that came in over MIDI: never echoed */
+    if (trk == SL_TRK_DRUM) ch = sl_mch[3];
+    else if (trk == SL_TRK_BASS) ch = sl_mch[1];
+    else if (trk == SL_TRK_MEL) ch = sl_mch[0];
+    else if (trk == SL_TRK_COMP) ch = sl_mch[2];
     else return 0;
+    if (ch > 15u) return 0;                  /* that part: off */
     if (sl_micro && trk != SL_TRK_DRUM) {    /* the note's own bend: its cents off the semitone (fine: 2.367 a cent) */
         int32_t b = 8192 + (int32_t)((float)fine * (8192.0f / 200.0f / 2.367f) + (fine < 0 ? -0.5f : 0.5f));
         b = clamp(b, 0, 16383);
@@ -464,6 +470,29 @@ static void sl_band_step(double step_ms)
     }
 }
 
+/* THE PICTURE ON THE SOUND'S TIME (Flah 2026-11-20: "we want each note bounce to be on time with the sound output").
+ * The tank runs ahead of the speaker: the conductor plans SL_AHEAD_BLOCKS (45 ms) ahead and a note sounds SL_LAT_BLOCKS
+ * (30 ms) after its grid time, so the screen showed a bounce ~75 ms before it was heard. Each physics tick keeps its
+ * pose here (the balls, the walls' turn, their flashes), stamped with the audio block its sounds play at; the screen
+ * draws the pose of what the speaker is playing (slime_ui.c), not the plan. */
+#define SL_POSE_N 12u                         /* 12 ticks: 200 ms, more than the 75 ms lead and a slow frame */
+typedef struct { uint32_t id; float x, y, z; uint8_t warp; } sl_tpose_ball;
+typedef struct { uint32_t at; float rot; uint8_t nb, n; sl_tpose_ball b[SH_BALLCAP]; float flash[SH_MAXWALLS]; } sl_tpose_t;
+static sl_tpose_t sl_tpose[SL_POSE_N];
+static volatile uint32_t sl_pose_w;           /* poses written (the newest: sl_pose_w - 1) */
+static void sl_pose_push(uint32_t at)
+{
+    sl_tpose_t *p = &sl_tpose[sl_pose_w % SL_POSE_N];
+    int i;
+    p->at = at; p->rot = (float)sl_tank.rot; p->nb = (uint8_t)sl_tank.nb; p->n = (uint8_t)sl_tank.n;
+    for (i = 0; i < sl_tank.nb && i < SH_BALLCAP; i++) {
+        const sh_ball *b = &sl_tank.balls[i];
+        p->b[i].id = b->id; p->b[i].x = (float)b->x; p->b[i].y = (float)b->y; p->b[i].z = (float)b->z; p->b[i].warp = (uint8_t)b->warp;
+    }
+    for (i = 0; i < sl_tank.n && i < SH_MAXWALLS; i++) p->flash[i] = (float)sl_tank.walls[i].flash;
+    sl_pose_w++;
+}
+
 /* THE CONDUCTOR: one control block of music at block sl_sim (ahead of the audio clock): the band's sixteenths, the
  * tank's ticks, every note queued for its block. The main loop runs it (slime_schedule); the host bench too. */
 static void slime_block(void)
@@ -498,11 +527,12 @@ static void slime_block(void)
             sl_split(h->cents, &note, &fine);
             e.trk = SL_TRK_MEL; e.note = (uint8_t)clamp(note, 0, 127); e.fine = (int16_t)fine;
             e.vel = (uint8_t)clamp(h->pane ? h->vel / 2 : h->vel, 1, 127);
-            e.at = sl_at(h->sound_ms - now_ms > 0 ? h->sound_ms - now_ms : 0.0); e.hold = sl_gate_blocks;
+            e.at = sl_at(h->sound_ms - now_ms); e.hold = sl_gate_blocks;   /* (a note on the grid line just passed: before now, still to come for the speaker) */
             sl_stat.hits++;
             if (sl_mel_on) sl_queue(e);
         }
         if (tick_ms >= sl_next_bar_ms) { sh_tank_on_bar(&sl_tank); sl_next_bar_ms += 240000.0 / bpm; }
+        sl_pose_push(sl_sim + SL_LAT_BLOCKS - (uint32_t)((now_ms - tick_ms) / block_ms));   /* (when this tick's notes sound) */
         sl_ticks++;
     }
     sl_step_left -= block_ms;
@@ -535,7 +565,7 @@ static void slime_play_block(void)
                 sl_stat.late++; if (late > sl_stat.worst_late_blocks) sl_stat.worst_late_blocks = late; }
             sl_on_q[i].on = 0;
             if (e.trk == SL_TRK_DRUM) {
-                drum_on(e.note, e.vel); sl_stat.drums_played++; SL_LOG("D %u %u\n", sl_clock, e.note);
+                sl_drum_hit(e.note, e.vel); sl_stat.drums_played++; SL_LOG("D %u %u\n", sl_clock, e.note);
                 off = e; off.trk = SL_TRK_MOFF; off.at = sl_clock + 69u;   /* (a drum hit's MIDI note: 50 ms long) */
                 if ((off.mch = sl_mo_on(SL_TRK_DRUM, e.note, e.vel, 0)) != 0) sl_push_off(off);
                 continue;
@@ -565,6 +595,10 @@ static void slime_play_block(void)
 static const uint8_t SL_KIT_DRLVL[11] = {28, 28, 26, 28, 92, 31, 31, 38, 39, 28, 24};   /* (2026-11-16, humanize on: jazz's feel took its drums to 14.7 under, bossa's to 11.1;
                                              * 2026-11-18, the drum bus: bossa 29 -> 28, 8.8 LU under, the soft kits' rule is 9) */
 static const int8_t SL_KIT_BASS[11] = {0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0};
+/* the site's drums (slime_drums.c): one level for every kit, the pop kit's; each kit's own is the site's KIT_DB after the glue */
+#ifndef SL_SD_DRLVL
+#define SL_SD_DRLVL 79
+#endif
 static uint8_t sl_mute[4], sl_solo[4];       /* the MIXER's mutes and solos (melody, bass, chords, drums): a solo silences the
                                              * parts not soloed, as a DAW's does */
 static int8_t sl_mix[4];                    /* the MIX page: each part against its measured level, in fader steps (~0.5 dB);
@@ -582,6 +616,7 @@ typedef struct { float b0, b1, b2, a1, a2, z1[2], z2[2]; } sl_biq;
 static sl_biq sl_dbody, sl_dpres;
 static float sl_glue_gr;                     /* the gain reduction now (dB, <= 0) */
 static uint8_t sl_drum_bus_on = 1, sl_bus_init;
+static float sl_pres_db = -8.5f;             /* the presence dip (slimehost SL_NOPRES: 0, the sabotage) */
 static float sl_glue_peak, sl_glue_worst;    /* (slimehost: the bus's peak in, the deepest reduction) */
 static float sl_glue_scale = 1.0f;          /* (slimehost SL_GLUEMEAS: the threshold out of reach, to measure the peaks) */
 /* the threshold at G_DRLVL 100 (mix units; 32767 = 0 dBFS), by kit (pop rock disco bossa jazz samba conga march chip beep
@@ -625,6 +660,19 @@ static float sl_exp2(float x)
     return a.f * (1.0f + f * (0.69314718f + f * (0.24022651f + f * 0.05550411f)));
 }
 #define SL_DB2G(db) sl_exp2((db) * 0.16609640f)   /* 10^(dB/20) */
+#include "slime_drums.c"                  /* the site's drum recipes (dHit), played on the drum track */
+/* the site's glue on the site's drums: each kit's threshold where the site's sits under its own loudest hit (the site's
+ * bus peaks above, -16 less them), from each kit's peak on this bus at G_DRLVL 100 (slimehost SL_GLUEMEAS, 2026-11-20) */
+#ifndef SD_GLUE_TABLE
+#define SD_GLUE_TABLE 19245, 6719, 12143, 10088, 36084, 17152, 13422, 14481, 25137, 22326, 5349   /* (peaks at G_DRLVL 79: +0.0 -6.0 -2.2 -6.4 -0.8 -1.0 -7.4 -2.2 -1.5 -5.1 -8.6 dBFS) */
+#endif
+static const float SD_GLUE_THR[11] = {SD_GLUE_TABLE};
+static void sl_drum_hit(uint32_t note, uint32_t vel)   /* every drum hit: the band, MIDI channel 10, the bench */
+{
+    if (!sl_sd_on) { drum_on(note, vel); return; }
+    sd_queue_hit(note, vel);
+    if (note == 36u) drums.kick = 1;                  /* SLOOP's DUCK: the band dips under the kick (the site's 0.7 for 120 ms) */
+}
 static void sl_drum_bus(int32_t *l, int32_t *r, int32_t *v, int32_t *d, uint32_t n)
 {
     static uint32_t cn;
@@ -632,7 +680,7 @@ static void sl_drum_bus(int32_t *l, int32_t *r, int32_t *v, int32_t *d, uint32_t
     static const float GK = 8.0f, GS = 1.0f / 3.2f - 1.0f;   /* the knee (dB), the slope over it (3.2:1) */
     float pk = 0.0f, over, want, g0, g1, step;
     uint32_t i;
-    if (!sl_bus_init) { sl_bus_init = 1; sl_peq(&sl_dbody, 180.0f, 2.2f, 0.7f); sl_peq(&sl_dpres, 3800.0f, -8.5f, 0.8f); }
+    if (!sl_bus_init) { sl_bus_init = 1; sl_peq(&sl_dbody, 180.0f, 2.2f, 0.7f); sl_peq(&sl_dpres, 3800.0f, sl_pres_db, 0.8f); }
     if (n != cn) { cn = n; ca = 1.0f - expf(-(float)n / (FS * 0.004f)); cr = 1.0f - expf(-(float)n / (FS * 0.120f)); }
     for (i = 0; i < n; i++) {
         float a = (float)(l[i] < 0 ? -l[i] : l[i]), b = (float)(r[i] < 0 ? -r[i] : r[i]);
@@ -641,7 +689,7 @@ static void sl_drum_bus(int32_t *l, int32_t *r, int32_t *v, int32_t *d, uint32_t
     }
     if (pk > sl_glue_peak) sl_glue_peak = pk;
     {   /* the static curve on this block's peak (a soft knee), then the attack / release on the reduction */
-        float thr = SL_GLUE_THR[sl_band.kit % 11] * sl_glue_scale * (float)song.g[G_DRLVL] / 100.0f;
+        float thr = (sl_sd_on ? SD_GLUE_THR[sl_band.kit % 11] : SL_GLUE_THR[sl_band.kit % 11]) * sl_glue_scale * (float)song.g[G_DRLVL] / 100.0f;
         over = pk > 1.0f && thr > 1.0f ? 6.02059991f * sl_log2(pk / thr) : -99.0f;
         want = 2.0f * over < -GK ? 0.0f : 2.0f * over > GK ? GS * over : GS * (over + GK / 2.0f) * (over + GK / 2.0f) / (2.0f * GK);
         g0 = SL_DB2G(sl_glue_gr);
@@ -667,7 +715,7 @@ static void slime_levels(void)
     trk[SL_TRK_BASS].p[P_LEVEL] = (int16_t)clamp(SL_BASS_LEVEL + SL_KIT_BASS[k] + sl_mix[1], 0, 127);
     trk[SL_TRK_COMP].p[P_LEVEL] = (int16_t)clamp(SL_COMP_LEVEL + sl_mix[2], 0, 127);
     {   /* the drums' level is a linear gain: their fader steps as ~0.5 dB, up to +6 dB */
-        int32_t g = SL_KIT_DRLVL[k], m = sl_mix[3];
+        int32_t g = sl_sd_on ? SL_SD_DRLVL : SL_KIT_DRLVL[k], m = sl_mix[3];
         if (m > 0) g = g * (m >= 12 ? 8192 : 4096 + m * 341) / 4096;
         else if (m < 0) { int32_t q = 4096; while (m < -16) { q = q * 1626 / 4096; m += 16; } g = g * (q * DB_Q12[-m] / 4096) / 4096; }
         song.g[G_DRLVL] = (int16_t)clamp(g, 0, 127);
@@ -713,12 +761,6 @@ static const sl_snd SL_COMP_SND[SL_NCOMP] = {
     {1, 4, "AFRO KEYS"}, {3, 8, "CHIP CHORD"}, {9, 8, "SH TINE"},
 };
 static uint8_t sl_snd_of[3];                /* each synth part's sound, an index into its list */
-/* the sound sets (SOUND page, PRESETS): three sounds that suit each other */
-#define SL_NSET 10u
-static const struct { const char *name; uint8_t mel, bass, comp; } SL_SETS[SL_NSET] = {
-    {"slime", 0, 0, 0}, {"glass", 2, 1, 1}, {"wood", 1, 2, 6}, {"chip", 9, 7, 7}, {"music box", 3, 1, 2},
-    {"fm", 6, 4, 3}, {"harp", 5, 5, 4}, {"retro", 4, 3, 5}, {"thumb", 7, 6, 0}, {"dx", 11, 8, 8},
-};
 static const sl_snd *sl_snd_entry(uint32_t part, uint32_t i)
 {
     return part == SL_P_MEL ? &SL_MEL_SND[i % SL_NMEL] : part == SL_P_BASS ? &SL_BASS_SND[i % SL_NBASS] : &SL_COMP_SND[i % SL_NCOMP];
@@ -829,6 +871,30 @@ static void sl_part_sound(uint32_t part, uint32_t i)
     slime_levels();                                        /* (SLOOP's preset loader put the level back to its default) */
 }
 
+/* every scale (fm1/core/music.c: the site's 28 and the FM-1's own), in the SONG page's order: the modes, the minors
+ * and majors with a twist, the symmetric ones, the pentatonics and the blues, then the tunings between the keys (a
+ * whole tuning: each key is its next step). On the SONG page's KNOB 4 */
+#define SL_NSCALE 52u
+static const char *const SL_SCALES[SL_NSCALE] = {"major", "minor", "dorian", "phrygian", "lydian", "mixolydian", "locrian", "harmMin", "melMin", "harmMaj", "hijaz", "bhairav", "hungarianMin", "lydianDom", "altered", "dorianSharp4", "lydianAug", "locrianNat2", "neapMin", "neapMaj", "persian", "enigmatic", "prometheus", "bebopDom", "wholeTone", "dimHW", "dimWH", "augmented", "pentaMaj", "pentaMin", "blues", "bluesMaj", "egyptian", "hirajoshi", "inSen", "iwato", "kumoi", "yo", "ryukyu", "chromatic", "maqamRast", "maqamBayati", "maqamSaba", "slendro", "pelog", "neutral7", "justMaj", "overtone", "edo19", "edo19all", "edo24", "edo31"};
+static const char *const SL_SCALE_NAME[SL_NSCALE] = {"major", "minor", "dorian", "phrygian", "lydian", "mixolydian", "locrian", "harmonic minor", "melodic minor", "harmonic major", "phrygian dominant (hijaz)", "double harmonic (bhairav)", "hungarian minor", "lydian dominant", "altered (super locrian)", "dorian #4 (ukrainian)", "lydian augmented", "locrian natural 2", "neapolitan minor", "neapolitan major", "persian", "enigmatic", "prometheus", "bebop dominant", "whole tone", "diminished, half-whole", "diminished, whole-half", "augmented", "pentatonic", "minor pentatonic", "blues", "major blues", "egyptian (suspended)", "hirajoshi", "in sen", "iwato", "kumoi", "yo", "ryukyu", "chromatic", "maqam rast", "maqam bayati", "maqam saba", "slendro", "pelog", "7-edo (thai)", "just major", "overtone (harmonics 8-15)", "19-edo, 7 notes", "19-edo, all 19", "24-edo, all 24", "31-edo, all 31"};
+static const char *const SL_SCALE_SHORT[SL_NSCALE] = {"major", "minor", "dorian", "phryg", "lydian", "mixo", "locrian", "harm m", "mel m", "harm M", "phr dom", "dbl hrm", "hung m", "lyd dom", "altered", "dor #4", "lyd aug", "loc n2", "neap m", "neap M", "persian", "enigma", "prometh", "bebop", "whole", "dim hw", "dim wh", "aug", "pent", "m pent", "blues", "M blues", "egypt", "hirajo", "in sen", "iwato", "kumoi", "yo", "ryukyu", "chrom", "rast", "bayati", "saba", "slendro", "pelog", "7 edo", "just", "overtn", "19 (7)", "19 edo", "24 edo", "31 edo"};
+/* a key or a MIDI note, in the scale: a whole tuning (more than 12 notes) steps one note a key; any other scale takes
+ * the note nearest the key (the site's snapToScale) */
+static double sl_snap_cents(const sh_scale *sc, int midi, int root)
+{
+    double cents;
+    if (sc->n > 12) cents = (double)sh_cents_for_degree(sc, midi - root);
+    else {
+        double want = ((double)midi - (double)root) * 100.0, oct = floor(want / 1200.0), in = want - oct * 1200.0, best = 0, bd = 1e9;
+        int d;
+        for (d = 0; d <= sc->n; d++) {
+            double c = d == sc->n ? 1200.0 : (double)sc->cents[d], a = c > in ? c - in : in - c;
+            if (a < bd) { bd = a; best = c; }
+        }
+        cents = oct * 1200.0 + best;
+    }
+    return cents;
+}
 #ifndef SL_DEVICE
 static void slime_hook(uint32_t n) { (void)n; }   /* the host bench schedules and plays its own blocks (slimehost.c) */
 #endif
@@ -837,19 +903,6 @@ static void slime_hook(uint32_t n) { (void)n; }   /* the host bench schedules an
  * SLOOP's mixer calls slime_hook before each block it mixes (patch_sloop.py), in the audio interrupt. The main loop
  * (slime_ui.c) owns the tank, the band, the fx and the mix (the conductor); sound changes go through the interrupt,
  * where SLOOP's preset fade expects them. */
-/* every scale the site has (fm1/core/music.c, the web's own 28), in the SONG page's order: the modes, the minors, the
- * pentatonics and the blues, the world's, then the microtonal tunings (a whole tuning: each key is its next step) */
-#define SL_NSCALE 28u
-static const char *const SL_SCALES[SL_NSCALE] = {"major", "minor", "dorian", "phrygian", "lydian", "mixolydian", "locrian",
-    "harmMin", "melMin", "pentaMaj", "pentaMin", "blues", "wholeTone", "chromatic", "hirajoshi", "inSen", "iwato", "hijaz",
-    "bhairav", "maqamRast", "maqamBayati", "slendro", "pelog", "neutral7", "edo19", "edo19all", "edo24", "edo31"};
-static const char *const SL_SCALE_NAME[SL_NSCALE] = {"major", "minor", "dorian", "phrygian", "lydian", "mixolydian",
-    "locrian", "harmonic minor", "melodic minor", "pentatonic", "minor pentatonic", "blues", "whole tone", "chromatic",
-    "hirajoshi", "in sen", "iwato", "hijaz", "bhairav", "maqam rast", "maqam bayati", "slendro", "pelog", "neutral",
-    "19-edo, 7 notes", "19-edo, all 19", "24-edo, all 24", "31-edo, all 31"};
-static const char *const SL_SCALE_SHORT[SL_NSCALE] = {"major", "minor", "dorian", "phryg", "lydian", "mixo", "locrian",
-    "harm m", "mel m", "pent", "m pent", "blues", "whole", "chrom", "hirajo", "in sen", "iwato", "hijaz", "bhairav", "rast",
-    "bayati", "slendro", "pelog", "neutral", "19 (7)", "19 edo", "24 edo", "31 edo"};
 static volatile uint32_t sl_key_req;        /* note keys pressed (bit k = key k, F3 up) */
 static volatile uint8_t sl_run;             /* PLAY: everything moves. Off at power-on: nothing plays until PLAY, so a person
                                              * can set it up first (Flah 2026-11-18); keys still play their notes */
@@ -892,7 +945,8 @@ static void sl_start_shape(void)
     s.scale = sh_scale_by_id(SL_SCALES[sl_scale % SL_NSCALE]);
     s.auto_notes = sl_auto;
     s.guard = 1;                                           /* no note stuck ringing a wall (stucktest.c), the web's room */
-    s.worm_hold = 8;                                       /* a wormhole rests two bars before it moves ("they dont stay
+    s.worm_pop = 1;                                        /* four bigger holes, popping open on random walls, out on the grid */
+    s.worm_hold = 8;                                       /* (pop: each hole lives half of it, 4 beats; the web's glide rests 8) ("they dont stay
                                                             * long enough before moving so they dont rly get used": Flah) */
     sl_on_reform();
     slime_start(s, sl_seed++, sl_root);
@@ -911,19 +965,7 @@ static volatile uint8_t sl_ball_req;
 
 static void sl_note_in(int midi, int vel)
 {
-    const sh_scale *sc = sh_scale_by_id(SL_SCALES[sl_scale % SL_NSCALE]);
-    double cents;
-    if (sc->n > 12) cents = (double)sh_cents_for_degree(sc, midi - sl_root);
-    else {
-        double want = ((double)midi - (double)sl_root) * 100.0, oct = floor(want / 1200.0), in = want - oct * 1200.0, best = 0, bd = 1e9;
-        int d;
-        for (d = 0; d <= sc->n; d++) {
-            double c = d == sc->n ? 1200.0 : (double)sc->cents[d], a = c > in ? c - in : in - c;
-            if (a < bd) { bd = a; best = c; }
-        }
-        cents = oct * 1200.0 + best;
-    }
-    sl_hand(cents, vel);
+    sl_hand(sl_snap_cents(sh_scale_by_id(SL_SCALES[sl_scale % SL_NSCALE]), midi, sl_root), vel);
     sl_ball_req++;
     if (midi >= 53 && midi < 80) sl_lit_until[midi - 53] = fm1_ms + 140u;
 }
@@ -943,7 +985,7 @@ static uint32_t sl_clk_at;                  /* MIDI OUT's clock: when it starts 
 static uint8_t sl_clk_go;                    /* 0 stopped, 1 waiting to START, 2 running */
 static float sl_clk_ph;
 static volatile uint32_t sl_mclk_n;          /* realtime messages sent (fm1-emu's tests) */
-static void sl_mo_rt(uint32_t st) { midi_out_event(0x0Fu | st << 8); sl_mclk_n++; }
+static void sl_mo_rt(uint32_t st) { if (!sl_mclk_out) return; midi_out_event(0x0Fu | st << 8); sl_mclk_n++; }
 static void sl_midi_cc(uint32_t cc, uint32_t v)
 {
     if (cc == 1u || cc == 74u) { sl_fxs[SL_P_MEL].filt = (int8_t)(((int32_t)v - 127) / 2); sl_fx_apply(SL_P_MEL); }
@@ -966,11 +1008,16 @@ static void sl_midi_in(void)
         mi_r++;
         sl_mi_n++;
         if ((pkt & 15u) == 0xFu) {                                 /* the clock and the transport */
+            if (!sl_mclk_in) continue;                             /* (the MIDI page: not followed) */
             if (st == 0xF8u) {
                 sl_ext_at = sl_clock | 1u;
                 if (!sl_ck_n) sl_ck_t0 = sl_clock;
-                if (++sl_ck_n > 48u) {                             /* two beats of ticks: the tempo they keep */
-                    uint32_t blocks = sl_clock - sl_ck_t0, bpm = blocks ? (uint32_t)(2.0f * 60.0f * (float)FS / ((float)CTL * (float)blocks) + 0.5f) : 0u;
+                if (++sl_ck_n > 96u) {                             /* four beats of ticks: the tempo they keep. (Two before: the audio
+                                                                    * interrupt works a half-buffer, 8 blocks, in one burst, so a tick
+                                                                    * read in it carries any of those 8 blocks' clock: up to 0.6% over
+                                                                    * one second, and 120 bpm came out 119 once the drums took longer:
+                                                                    * midi-check, 2026-11-20. Over four beats: 0.3%.) */
+                    uint32_t blocks = sl_clock - sl_ck_t0, bpm = blocks ? (uint32_t)(4.0f * 60.0f * (float)FS / ((float)CTL * (float)blocks) + 0.5f) : 0u;
                     if (bpm >= 40u && bpm <= 200u && bpm != (uint32_t)song.g[G_BPM]) song.g[G_BPM] = (int16_t)bpm;
                     sl_ck_n = 1u; sl_ck_t0 = sl_clock;
                 }
@@ -980,10 +1027,11 @@ static void sl_midi_in(void)
             continue;
         }
         if ((st & 0xF0u) == 0x90u && d2) {
-            if ((st & 15u) == 9u) { drum_on(d1, d2); continue; }   /* channel 10: the kit */
+            if ((st & 15u) == (sl_mch[3] & 15u) && sl_mch[3] <= 15u) { sl_drum_hit(d1, d2); continue; }   /* the drums' channel: the kit */
+            if (sl_min_ch && (st & 15u) != sl_min_ch - 1u) continue;   /* (the MIDI page: one channel in) */
             sl_mo_mute = 1; sl_note_in((int)d1, (int)d2); sl_mo_mute = 0;   /* (always played: a page that takes the panel's keys
                                                                     * does not take MIDI's) */
-        } else if ((st & 0xF0u) == 0xB0u) sl_midi_cc(d1, d2);
+        } else if ((st & 0xF0u) == 0xB0u && (!sl_min_ch || (st & 15u) == sl_min_ch - 1u)) sl_midi_cc(d1, d2);
     }
 }
 /* THE BOOT JINGLE, under the splash (slime_ui.c). Flah: "a cool sound playing kinda like when u start a gamecube or

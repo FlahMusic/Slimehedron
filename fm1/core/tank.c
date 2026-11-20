@@ -15,7 +15,7 @@ static double fmax2(double a, double b) { return a > b ? a : b; }
 static double fclamp(double x, double lo, double hi) { return x < lo ? lo : x > hi ? hi : x; }
 
 sh_tank_settings sh_tank_defaults(void) {
-  sh_tank_settings s = { 6, sh_scale_by_id("major"), 2, 0.0625, 0.15, 1, 0.0, 0.12, 1, 100, 12, 94, 1, SH_SPACE_NORMAL, 1, 0, 1.0 };
+  sh_tank_settings s = { 6, sh_scale_by_id("major"), 2, 0.0625, 0.15, 1, 0.0, 0.12, 1, 100, 12, 94, 1, SH_SPACE_NORMAL, 1, 0, 0, 1.0 };   /* (worm_pop 0, guard 0) */
   return s;
 }
 
@@ -93,7 +93,8 @@ void sh_tank_init(sh_tank *t, sh_tank_settings s, uint64_t seed) {
   t->room = 7; t->a_hits = t->a_bticks = t->r_n = 0;
   if (t->s.worm_hold < 1) t->s.worm_hold = 1;
   t->worm_on = 0; t->worm_key = -1; t->worm_beat = 0; t->worm_open = 0.0;
-  for (int i = 0; i < 2; i++) { sh_worm *P = &t->worm[i]; P->rad = P->want = P->suck = P->spit = P->pre = 0.0; P->wall = -1; P->from = P->at = 0; P->dir = 1; P->za = P->zb = 0.0; P->x = P->y = P->z = 0.0; }
+  t->worm_n = t->s.worm_pop ? SH_NWORM : 2;
+  for (int i = 0; i < SH_NWORM; i++) { sh_worm *P = &t->worm[i]; P->rad = P->want = P->suck = P->spit = P->pre = 0.0; P->wall = -1; P->from = P->at = 0; P->dir = 1; P->za = P->zb = 0.0; P->x = P->y = P->z = 0.0; P->tt = 0.5; P->life = -1; }
   rebuild(t, 0);
   /* a regular polygon: its area, and the way from the middle to a wall's midpoint */
   double n = (double)t->n;
@@ -121,7 +122,7 @@ int sh_tank_inside(const sh_tank *t, double x, double y) {
 int sh_tank_add_ball_at(sh_tank *t, double x, double y, double z, double vx, double vy, double vz) {
   if (t->nb >= SH_BALLCAP) return 0;
   sh_ball *b = &t->balls[t->nb++];
-  b->x = x; b->y = y; b->z = z; b->vx = vx; b->vy = vy; b->vz = vz; b->tq = 1.0; b->tg = 0.0; b->bl = 0;
+  b->x = x; b->y = y; b->z = z; b->vx = vx; b->vy = vy; b->vz = vz; b->tq = 1.0; b->tg = 0.0; b->bl = 0; b->wb = -1;
   b->last_hit = -INFINITY; b->last_pane = -INFINITY; b->pane_n = 0; b->visc = 0.0; b->warp = 0; b->spit = -INFINITY;
   b->id = t->next_id++; b->rat_n = 0; b->still = 0; b->sw_wall = -1; b->sw_t = -INFINITY; b->autob = 0;
   return 1;
@@ -189,6 +190,14 @@ static void trigger(sh_tank *t, double cents, double imp, double goo, int pane, 
   double ti = tick_interval(t, t->tick_count), prev = t->last_tick, next = t->last_tick + ti;
   int held = t->s.quantize && goo == 0.0 && now - prev > SH_QLATE && next - now <= SH_QWAIT;
   double sound = held ? next : now;
+  /* the FM-1 (the guard on): a note touched within a tick after a grid line sounds ON the line, and one touched more than
+   * a tick before it waits for it (the device plans its notes ~75 ms ahead of the speaker, so a few ms before "now" is
+   * still to come for the speaker; the web counts up to 40 ms late as on time). Beat lock puts nearly every bounce within
+   * a tick of a line, so the note is heard as the bounce is seen (synctest.c) */
+  if (t->s.guard && t->s.quantize && goo == 0.0) {
+    if (now - prev <= SH_FIXED + 0.5) sound = prev;
+    else if (next - now <= SH_QWAIT) sound = next;
+  }
   if (t->nh < SH_MAXHITS) {
     sh_hit *h = &t->hits[t->nh++];
     h->cents = cents; h->vel = (int)fclamp(vel, 1.0, 127.0); h->imp = imp; h->goo = goo; h->pane = pane; h->wall = wall;
@@ -264,11 +273,71 @@ static void worm_place(sh_tank *t, sh_worm *P, double k) {
   double room = fmin2(WORM_MAX, lim * 0.92 + 0.001);
   P->want = e->broken ? 0.0 : room * smooth01(lim / (room * 1.2));
 }
+/* ---- the FM-1's portals (worm_pop; Flah 2026-11-20: "the portals are too small for most notes to even make it through,
+ * and add them to more of the walls, have them come in and out on diff walls not just opposite side of each other ...
+ * more fun and chaotic while still keeping the timing on the arps tight"). SH_NWORM holes, each half again as wide as
+ * the web's (up to 0.36 of the box's depth, 126 px), each living a few beats on one wall, then closing and popping open
+ * on a random wall no other hole is on (the lives staggered, so some are always open). A ball that goes in comes out of
+ * another open hole, picked at random, ON A GRID LINE: its trip is timed to end on the first sixteenth at least 180 ms
+ * away, and the note it rings coming out is held onto that line by quantize. */
+#define WORM_POP_MAX fmin2(126.0, SH_TBOXD * 0.36)
+static double worm_life_beats(const sh_tank *t) { return fmax2(2.0, (double)t->s.worm_hold * 0.5); }
+static void worm_pop_place(sh_tank *t, sh_worm *P, double open) {
+  int n = t->n; const sh_wall *e = &t->walls[P->at % n]; double tt = P->tt;
+  double L = hypot(e->bx - e->ax, e->by - e->ay); if (L == 0.0) L = 1.0;
+  P->x = e->ax + (e->bx - e->ax) * tt - SH_TCX; P->y = e->ay + (e->by - e->ay) * tt - SH_TCY; P->z = P->zb;
+  P->n[0] = e->nx; P->n[1] = e->ny; P->n[2] = 0.0; P->t1[0] = (e->bx - e->ax) / L; P->t1[1] = (e->by - e->ay) / L; P->t1[2] = 0.0;
+  P->wall = P->at % n; P->cents = e->cents;
+  double lim = fmin2(fmin2(tt * L, (1 - tt) * L), SH_TBOXD / 2 - fabs(P->z));
+  P->want = e->broken ? 0.0 : fmin2(WORM_POP_MAX, lim * 0.92 + 0.001) * open;
+}
+static void worm_pop_move(sh_tank *t, int i) {   /* a new life: a random wall no other hole is on (and not its last) */
+  sh_worm *P = &t->worm[i]; int n = t->n, free_w[SH_MAXWALLS], nf = 0;
+  int open_n = n - 1 < t->worm_n ? n - 1 : t->worm_n;   /* (the shut ones do not count) */
+  for (int w = 0; w < n; w++) { int used = w == P->at && n > open_n + 1; for (int j = 0; j < open_n; j++) if (j != i && t->worm[j].at == w) used = 1;
+    if (!used && !t->walls[w].broken) free_w[nf++] = w; }
+  if (nf) P->at = free_w[(int)(rnd(t) * nf) % nf];
+  P->from = P->at; P->tt = 0.4 + rnd(t) * 0.2; P->za = P->zb = (rnd(t) * 2 - 1) * 0.1 * SH_TBOXD;   /* (near the middle: room to open wide) */
+}
+static void worm_pop_tick(sh_tank *t, double now, int on) {
+  double life = worm_life_beats(t), beats = now / 60000.0 * t->bpm;
+  /* at most a hole fewer than the walls is open (a triangle: 2, a square: 3), so a hole always has a free wall to go to;
+   * the rest stay shut, each still on a wall (a hole on walls[-1]: the triangle's ball out of the tank, stucktest) */
+  int open_n = t->n - 1 < t->worm_n ? t->n - 1 : t->worm_n;
+  if (t->worm_key != t->n) { t->worm_key = t->n; for (int i = 0; i < t->worm_n; i++) { t->worm[i].at = i % t->n; t->worm[i].life = -1; t->worm[i].tt = 0.5; t->worm[i].za = t->worm[i].zb = 0.0; } }
+  for (int i = 0; i < t->worm_n; i++) { sh_worm *P = &t->worm[i];
+    if (i >= open_n) { if (P->at < 0 || P->at >= t->n) P->at = i % t->n; worm_pop_place(t, P, 0.0); continue; }
+    double b = beats / life + (double)i / (double)t->worm_n; int64_t lb = (int64_t)floor(b); double f = b - floor(b);
+    double edge = 0.3 / life;   /* a third of a beat to open, and to close (done a third of a beat before its life ends) */
+    if (P->at < 0 || (lb != P->life && P->rad < SH_BR)) { P->life = lb; worm_pop_move(t, i); }   /* it moves only when shut */
+    double open = lb != P->life ? 0.0 : smooth01(f / edge) * smooth01((1.0 - edge - f) / edge);
+    if (on) worm_pop_place(t, P, open); else P->want = 0.0; }
+}
+/* the first grid line at least 180 ms from now: when a trip through a hole ends */
+static double worm_grid_end(const sh_tank *t, double now) {
+  double g = t->last_tick; uint64_t c = t->tick_count;
+  for (int k = 0; k < 64 && g < now + 180.0; k++) g += tick_interval(t, c++);
+  return g;
+}
+/* the hole a ball goes out of: another open one, at random (none: -1, it backs out of its own) */
+static int worm_pick_out(sh_tank *t, int in) {
+  int c[SH_NWORM], nc = 0;
+  for (int j = 0; j < t->worm_n; j++) if (j != in && t->worm[j].want >= SH_BR * 1.6 && t->worm[j].rad >= SH_BR * 1.2) c[nc++] = j;
+  return nc ? c[(int)(rnd(t) * nc) % nc] : -1;
+}
 /* once a tick, before the balls move: are there wormholes, where are they, how open */
 static void worm_tick(sh_tank *t, double now) {
   int on = t->s.space == SH_SPACE_PORTAL; t->worm_on = on;
   t->worm_open += ((on ? 1.0 : 0.0) - t->worm_open) * 0.06; if (!on && t->worm_open < 0.01) t->worm_open = 0.0;
-  if (!on && t->worm_open == 0.0) { for (int i = 0; i < 2; i++) { t->worm[i].rad = 0.0; t->worm[i].suck *= 0.9; t->worm[i].spit *= 0.9; } return; }
+  if (!on && t->worm_open == 0.0) { for (int i = 0; i < t->worm_n; i++) { t->worm[i].rad = 0.0; t->worm[i].suck *= 0.9; t->worm[i].spit *= 0.9; } return; }
+  if (t->s.worm_pop) {
+    worm_pop_tick(t, now, on);
+    for (int i = 0; i < t->worm_n; i++) { sh_worm *P = &t->worm[i]; P->rad += (P->want * t->worm_open - P->rad) * 0.25; P->suck *= 0.9; P->spit *= 0.93; P->pre = 0.0; }
+    for (int i = 0; i < t->nb; i++) { const sh_ball *bl = &t->balls[i]; if (!bl->warp || bl->wb < 0) continue;
+      double left = bl->wt0 + bl->wdur - now; sh_worm *Q = &t->worm[bl->wb];
+      if (left < 160) Q->pre = fmax2(Q->pre, fmin2(1.0, 1 - left / 160)); }
+    return;
+  }
   double b = now / 60000.0 * t->bpm / (double)t->s.worm_hold; int64_t fb = (int64_t)floor(b); int n = t->n;
   if (t->worm_key != n) { t->worm_key = n; t->worm_beat = fb;   /* a new shape: the two holes start on opposite sides */
     for (int i = 0; i < 2; i++) { sh_worm *P = &t->worm[i]; P->from = P->at = i == 0 ? 0 : (n / 2 < n - 1 ? n / 2 : n - 1); P->dir = i ? -1 : 1; P->za = P->zb = (i ? -0.12 : 0.12) * SH_TBOXD; } }
@@ -282,13 +351,13 @@ static void worm_tick(sh_tank *t, double now) {
   if (d < A->want + B->want + 6) { double s = A->want + B->want; double kk = fmax2(0.0, (d - 6) / (s != 0.0 ? s : 1.0)); A->want *= kk; B->want *= kk; }
   for (int i = 0; i < 2; i++) { sh_worm *P = &t->worm[i]; P->rad += (P->want * t->worm_open - P->rad) * 0.25; P->suck *= 0.9; P->spit *= 0.93; P->pre = 0.0; }
   for (int i = 0; i < t->nb; i++) { const sh_ball *bl = &t->balls[i]; if (!bl->warp) continue;   /* the far hole swells a moment before it spits */
-    double left = bl->wt0 + bl->wdur - now; sh_worm *Q = &t->worm[1 - bl->wa];
+    double left = bl->wt0 + bl->wdur - now; sh_worm *Q = &t->worm[bl->wb];
     if (left < 160) Q->pre = fmax2(Q->pre, fmin2(1.0, 1 - left / 160)); }
 }
 /* is a ball touching wall idx at box-local (x, y, z) inside one of the holes on it? */
 static sh_worm *worm_at(sh_tank *t, int idx, double x, double y, double z) {
   if (!t->worm_on) return 0;
-  for (int i = 0; i < 2; i++) { sh_worm *P = &t->worm[i]; if (P->rad < SH_BR * 1.2 || P->wall != idx) continue;
+  for (int i = 0; i < t->worm_n; i++) { sh_worm *P = &t->worm[i]; if (P->rad < SH_BR * 1.2 || P->wall != idx) continue;
     double dx = x - P->x, dy = y - P->y, dz = z - P->z, dn = dx * P->n[0] + dy * P->n[1] + dz * P->n[2];
     double ax = dx - dn * P->n[0], ay = dy - dn * P->n[1], az = dz - dn * P->n[2], m = P->rad - SH_BR * 0.3;
     if (ax * ax + ay * ay + az * az < m * m) return P; }
@@ -296,7 +365,8 @@ static sh_worm *worm_at(sh_tank *t, int idx, double x, double y, double z) {
 }
 /* in: the ball leaves the tank's physics until it comes out of the other hole */
 static void worm_enter(sh_tank *t, sh_ball *b, sh_worm *P, double vx, double vy, double vz, double now) {
-  b->warp = 1; b->wa = (int)(P - t->worm); b->wt0 = now; b->wdur = worm_dur(t);
+  b->warp = 1; b->wa = (int)(P - t->worm); b->wt0 = now; b->wdur = worm_dur(t); b->wb = 1 - b->wa;
+  if (t->s.worm_pop) { b->wb = worm_pick_out(t, b->wa); b->wdur = worm_grid_end(t, now) - now; }   /* out of another, on the grid */
   b->wc[0] = P->x; b->wc[1] = P->y; b->wc[2] = P->z;
   for (int j = 0; j < 3; j++) { b->wn[j] = P->n[j]; b->wt1[j] = P->t1[j]; }
   b->wv[0] = vx; b->wv[1] = vy; b->wv[2] = vz; b->wspd = sqrt(vx * vx + vy * vy + vz * vz); if (b->wspd == 0.0) b->wspd = ball_speed(t);
@@ -305,8 +375,13 @@ static void worm_enter(sh_tank *t, sh_ball *b, sh_worm *P, double vx, double vy,
 }
 /* out: carried across, A's frame to B's, and spat out of B along its wall's inward normal. 0 = not yet (B opening) */
 static int worm_exit(sh_tank *t, sh_ball *b, int force, double now) {
-  sh_worm *Q = &t->worm[1 - b->wa], back;
-  if (!force && t->worm_on && Q->rad < SH_BR * 1.6 && now - b->wt0 < b->wdur + 700) return 0;   /* B squeezing round a corner */
+  if (t->s.worm_pop && t->worm_on && (b->wb < 0 || t->worm[b->wb].rad < SH_BR * 1.2)) b->wb = worm_pick_out(t, b->wa);   /* its hole closed: another */
+  sh_worm *Q = &t->worm[b->wb < 0 ? b->wa : b->wb], back;
+  if (t->s.worm_pop && (b->wb < 0 || !t->worm_on)) {   /* none open: back out of its own hole, where that is NOW (the walls
+                                                        * turn while it is away: where it went in may be outside them by
+                                                        * now; stucktest: 568 ball-ticks outside a shut tank) */
+    back = t->worm[b->wa]; back.rad = SH_BR * 2; back.wall = -1; back.cents = NAN; back.spit = 0; Q = &back; }
+  if (!force && !t->s.worm_pop && t->worm_on && Q->rad < SH_BR * 1.6 && now - b->wt0 < b->wdur + 700) return 0;   /* B squeezing round a corner */
   if (!t->worm_on || Q->rad < SH_BR * 1.2) {   /* no other hole: back out of the one it went in */
     back.x = b->wc[0]; back.y = b->wc[1]; back.z = b->wc[2]; for (int j = 0; j < 3; j++) { back.n[j] = b->wn[j]; back.t1[j] = b->wt1[j]; }
     back.rad = SH_BR * 2; back.wall = -1; back.cents = NAN; back.spit = 0; Q = &back; }
@@ -329,7 +404,7 @@ static int worm_exit(sh_tank *t, sh_ball *b, int force, double now) {
 static void worm_pull(const sh_tank *t, sh_ball *b, double ts) {
   if (!t->worm_on) return;
   double X = b->x - SH_TCX, Y = b->y - SH_TCY, Z = (b->z - 0.5) * SH_TBOXD;
-  for (int i = 0; i < 2; i++) { const sh_worm *P = &t->worm[i]; if (P->rad < SH_BR * 1.2) continue;
+  for (int i = 0; i < t->worm_n; i++) { const sh_worm *P = &t->worm[i]; if (P->rad < SH_BR * 1.2) continue;
     double reach = P->rad * 2.6, dx = P->x - X, dy = P->y - Y, dz = P->z - Z, d = sqrt(dx * dx + dy * dy + dz * dz);
     if (d >= reach || d < 1) continue;
     double vz = b->vz * SH_TBOXD, sp = sqrt(b->vx * b->vx + b->vy * b->vy + vz * vz); if (sp == 0.0) sp = 1.0;
@@ -402,7 +477,7 @@ static void beat_lock(const sh_tank *t, sh_ball *b, double now) {
   double goo_here = sh_goo_density(&t->goo, b->x, b->y, b->z);   /* a ball in the goo is not steered */
   if (!t->s.quantize || !t->playing || goo_here > 0.3) { b->tq += (1.0 - b->tq) * 0.2; b->tg = 0.0; return; }
   b->bl++;
-  if (b->bl % 2 == 1) return;   /* every other tick is plenty */
+  if (b->bl % 2 == 1 && !t->s.guard) return;   /* every other tick is plenty (the FM-1: every tick, to land within one) */
   double tq = b->tq, n = hit_ticks(t, b);
   if (!(n < 1e5)) { b->tq = tq + (1.0 - tq) * 0.2; b->tg = 0.0; return; }
   if (n < 4.0) return;          /* too close to steer smoothly: hold course */
@@ -410,20 +485,23 @@ static void beat_lock(const sh_tank *t, sh_ball *b, double now) {
   double cnt = fmin2(2.0 + ceil((left * 1.4) / fmax2(tick_interval(t, t->tick_count), 30.0)), 400.0);
   int count = (int)cnt;
 #define WANT(g) (tq * left / fmax2((g) - now, 1.0))
-  double tg = (b->tg != 0.0 && b->tg > now + SH_FIXED * 3.0 && fabs(WANT(b->tg) - 1.0) < 0.22) ? b->tg : 0.0;
+  /* the FM-1 bends further (0.7..1.4 of the tempo's speed, the web 0.8..1.22) and harder, so a bounce lands within a tick
+   * of a grid line; the bend still eases in over a few ticks, a ball drifting faster or slower, never jumping */
+  const double reach = t->s.guard ? 0.4 : 0.22, lo = t->s.guard ? 0.7 : 0.8, hi = t->s.guard ? 1.4 : 1.22, gain = t->s.guard ? 0.5 : 0.35;
+  double tg = (b->tg != 0.0 && b->tg > now + SH_FIXED * 3.0 && fabs(WANT(b->tg) - 1.0) < reach) ? b->tg : 0.0;
   if (tg == 0.0) {
     double bd = 1e9, g = t->last_tick; uint64_t c = t->tick_count;
     for (int i = 0; i < count; i++) {
       g += tick_interval(t, c); c++;
       if (g <= now + SH_FIXED * 2.0) continue;
       double w = WANT(g), d = fabs(log(w));
-      if (fabs(w - 1.0) < 0.22 && d < bd) { bd = d; tg = g; }
+      if (fabs(w - 1.0) < reach && d < bd) { bd = d; tg = g; }
       if (g > t_hit + left) break;
     }
   }
   if (tg == 0.0) { b->tq = tq + (1.0 - tq) * 0.2; return; }
   b->tg = tg;
-  b->tq = tq + (fclamp(WANT(tg), 0.8, 1.22) - tq) * 0.35;
+  b->tq = tq + (fclamp(WANT(tg), lo, hi) - tq) * gain;
 #undef WANT
 }
 
@@ -552,7 +630,9 @@ static void step(sh_tank *t, double now) {
   for (int bi = t->nb - 1; bi >= 0; bi--) {
     sh_ball b = t->balls[bi];
     if (b.warp) {   /* in the other dimension: no physics until the far hole spits it out */
-      if (!t->worm_on || now - b.wt0 >= b.wdur) worm_exit(t, &b, !t->worm_on, now);
+      if (!t->worm_on || now - b.wt0 >= b.wdur || (t->s.worm_pop && b.wt0 + b.wdur - now < SH_FIXED))   /* (pop: on the tick before its grid line,
+                                                                                         * so quantize holds its note onto the line) */
+        worm_exit(t, &b, !t->worm_on, now);
       t->balls[bi] = b; continue; }
     b.vy += gy;
     if (b.vy > ts * 1.6) b.vy = ts * 1.6;
