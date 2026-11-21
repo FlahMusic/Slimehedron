@@ -1,6 +1,15 @@
 Slimehedron for the FM-1: which build is which. slimehedron-fm1.fwsc in this folder is always the newest; the git
 history keeps every older one (git log -- _fm1-firmware/slimehedron-fm1.fwsc). Check a file: its sha256 below.
 
+2026-11-21  a new splash: headphones, his own little synth, the twinkle and the chord
+  sha256 b0a74547573702966b4d91eaeffd6e725b2d75a87179df15378ff663e074a7dd
+  - the slime guy lands chilling, sees his headphones coming (surprised), they click on, a little synth drops into his
+    hands and he's thrilled; a twinkly melody runs up and down into a big open major 7th as SLIMEHEDRON comes up
+  - stopped, a key just plays its note (no ball frozen in the still tank); the first PLAY says "keys drop notes in"
+  - HOME no longer makes a "new shape" (the walls knob does that); a shape or portals you set stay when the slime
+    reforms the tank
+  - smoother in the busiest moments (worst ~26 fps, was ~23; most of the time 40..64)
+
 2026-11-20  the site's drums, sounds on the left knobs, a MIDI page, 52 scales, bigger portals, bounces on the beat
   sha256 b1f3f8e59ac171898b1f7352e54b0845c6d87990824274e7a31d3547438a66a7
   - the drums are the site's own, made on the FM-1 the way the site makes them (kick dive and click, snare noise and

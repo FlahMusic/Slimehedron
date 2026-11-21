@@ -9,7 +9,8 @@
  *   steer how hard beat lock bends a ball's speed to put its bounce on a line (tq: 1 = the tempo's own speed)
  * Measured 2026-11-20 with the web's rules (a note up to 40 ms after a line counted as on it, beat lock 0.8..1.22):
  * 95.8% heard within a tick, 40.3% on a grid line (the worst 78 ms off). The FM-1's (tank.c: on the line just passed,
- * beat lock 0.7..1.4 every tick): 97.2% within a tick, 90.4% on a line, the speed 8% off the tempo's on average.
+ * beat lock 0.7..1.4, every other tick, gain 0.42): 97% within a tick, 88.3% on a line, the speed 7% off the tempo's on average. (Beat lock every
+ * tick, 2026-11-20: 90.4%, for twice the cost: a 16-ball tank's physics took as long as its drawing, 2026-11-21.)
  *   synctest [MIN_SYNC MIN_GRID]   with them: both shares must reach them (check: 0.95 0.85; sabotaged: the web's rules
  *                                  fail the grid at 40%)   */
 #include <stdio.h>

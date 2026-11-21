@@ -477,7 +477,7 @@ static void beat_lock(const sh_tank *t, sh_ball *b, double now) {
   double goo_here = sh_goo_density(&t->goo, b->x, b->y, b->z);   /* a ball in the goo is not steered */
   if (!t->s.quantize || !t->playing || goo_here > 0.3) { b->tq += (1.0 - b->tq) * 0.2; b->tg = 0.0; return; }
   b->bl++;
-  if (b->bl % 2 == 1 && !t->s.guard) return;   /* every other tick is plenty (the FM-1: every tick, to land within one) */
+  if (b->bl % 2 == 1) return;   /* every other tick is plenty (every tick on the FM-1 put the 16-ball tank's physics level with its drawing) */
   double tq = b->tq, n = hit_ticks(t, b);
   if (!(n < 1e5)) { b->tq = tq + (1.0 - tq) * 0.2; b->tg = 0.0; return; }
   if (n < 4.0) return;          /* too close to steer smoothly: hold course */
@@ -487,7 +487,7 @@ static void beat_lock(const sh_tank *t, sh_ball *b, double now) {
 #define WANT(g) (tq * left / fmax2((g) - now, 1.0))
   /* the FM-1 bends further (0.7..1.4 of the tempo's speed, the web 0.8..1.22) and harder, so a bounce lands within a tick
    * of a grid line; the bend still eases in over a few ticks, a ball drifting faster or slower, never jumping */
-  const double reach = t->s.guard ? 0.4 : 0.22, lo = t->s.guard ? 0.7 : 0.8, hi = t->s.guard ? 1.4 : 1.22, gain = t->s.guard ? 0.5 : 0.35;
+  const double reach = t->s.guard ? 0.4 : 0.22, lo = t->s.guard ? 0.7 : 0.8, hi = t->s.guard ? 1.4 : 1.22, gain = t->s.guard ? 0.42 : 0.35;   /* (0.42 every other tick: 0.5 there threw a corner rattle too many, stucktest 7 bursts) */
   double tg = (b->tg != 0.0 && b->tg > now + SH_FIXED * 3.0 && fabs(WANT(b->tg) - 1.0) < reach) ? b->tg : 0.0;
   if (tg == 0.0) {
     double bd = 1e9, g = t->last_tick; uint64_t c = t->tick_count;

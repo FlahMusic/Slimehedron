@@ -24,11 +24,13 @@ def note(t, n, hold=160):
     ev.append(f"{t}:n{n}"); ev.append(f"{t + hold}:n{n}^")
 
 
-# 0. power-on: the splash (the slime drops in, the jingle, the name, the fade), then it waits for PLAY
-for ms, what in ((620, "splash: he drops in"), (1500, "splash: the name"), (3300, "splash: the fade"), (4300, "stopped: press play")):
+# 0. power-on: the splash (the slime drops in, headphones on, the twinkle with its stars, the chord and the name, the
+#    fade), then it waits for PLAY; keys play their notes while stopped (no ball: the tank waits)
+for ms, what in ((560, "splash: he drops in"), (980, "splash: headphones"), (1700, "splash: the twinkle"), (2700, "splash: the name"),
+                 (3900, "splash: the fade"), (4700, "stopped: press play")):
     marks.append((ms, what))
-t = 4600
-note(t, 7); note(t + 400, 11); mark(t + 400, "keys play while stopped"); t += 1400
+t = 5000
+note(t, 7); note(t + 400, 11); mark(t + 400, "keys play while stopped (no ball)"); t += 1400
 # 1. SONG (SCL), set up stopped: tempo, swing, key, scale; SCL again: the rhythm, a chord every 4 bars, the key pinned
 #    and free again, a new shape every 128 bars
 press(t, "SCL"); mark(t, "song page"); t += 900
@@ -137,7 +139,7 @@ press(t, "ARP"); mark(t, "auto-notes off"); t += 3000
 press(t, "ARP"); mark(t, "auto-notes on"); t += 1500
 press(t, "LFO"); mark(t, "slime off"); t += 1500
 press(t, "LFO"); mark(t, "slime on"); t += 1500
-press(t, "HOME"); mark(t, "new shape"); t += 6000
+turn(t, 2, 1); mark(t, "walls +1 (a new shape)"); t += 6000
 # 12. play from the top; let it run; stop; the session saves itself 3 s later
 press(t, "PLAY", 60); press(t + 150, "PLAY", 60); mark(t + 150, "from the top"); t += 20000
 mark(t, "the song, running")

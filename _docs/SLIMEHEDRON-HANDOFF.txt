@@ -504,6 +504,27 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
         part's own channel (no MPE). Clock follow now over 4 beats (the audio interrupt's half-buffer bursts stamped
         ticks up to 8 blocks off: 120 read as 119). midi-check 17/17 (the MIDI page, bends on each part's channel, 120 read as 120); boot-check 5/5.
       - Not checked by a machine: how the drums sound on the FM-1's speaker; the camera's feel; ping-pong on headphones.
+    FM-1 SPLASH II, FIRST TOUCH, ONE LESS DOUBLE (2026-11-21). Flah: the scale was scrolled by a tap of SEL once
+      (an older build: since the pages pass only the SONG page's knob 4 writes sl_scale, checked by grep); another pass on
+      redundant controls; a more badass splash (headphones slide on, a little FM-1 of his own drops into his hands, his
+      face chill -> surprised -> excited, a twinkly melody into a big open 7th chord, the name, the fade); the first-touch
+      hint accurate; no lag.
+      - Splash (slime_ui.c, 4.1 s, skippable): drop and squash (thud), chilling (lids half down, small smile); headphones
+        slide down on an ease-out-back, he sees them (surprised: small pupils, an "o"), they click on (a hat's tss); a
+        mini synth drops into his hands, held at his tummy (64 x 26 px: case, a screen with the tank's hexagon, four
+        knobs, 14 keys in twos and threes; no maker's name), a woody tok; excited (^^ eyes, open grin, rosier cheeks, a
+        hop); the twinkle (C maj7 up and down, 9 notes, 100 ms apart, a gold star per note); the open C maj7 (C2 | C3 G3 E4
+        B4, melody E6 B6 D7) with the name rising and a glint; the fade. boot-check.sh: 11 checks (the headphones'
+        cushions, the synth's screen, the stars, the twinkle and the chord, silence, a stopped key, PLAY), sabotaged x4
+        (no headphones, no synth, no stars, a ball while stopped).
+      - First touch: stopped, a key (or a MIDI note) only plays its note; the tank does not tick, so a ball used to sit
+        frozen in it until PLAY. The screen says "press play"; the first PLAY says "keys drop notes in" for 2.5 s.
+      - Redundancy: HOME at the tank no longer makes a "new shape" (KNOB 1, walls, does the same). The slime's reform kept
+        overwriting a shape or portals set by hand: now kept (the site's rule), sl_hand_shape.
+      - Lag: in session.sh's slow stretch (105..125 s: a loop, a progression, a pattern, rock's kit at 137%, a 16-ball
+        tank) the tank's physics cost as much as its drawing (poll ~298k ticks a frame); beat lock had gone every tick.
+        Back to every other tick at gain 0.42 (0.5 there: stucktest 7 bursts): synctest 88.3% on a grid line (was 89-90),
+        97% in step; stucktest 0 stuck, 1 burst, 0 outside. session.sh: worst 5 s window 25.9 fps (was 23.0), worst audio half 66%, 0 late, slowest frame 89 ms. NOT MET: 30.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto
@@ -1386,6 +1407,8 @@ separate branches of files. Spec + research: _docs/specs/2026-11-06-many-walls/,
 
 origin/main may be behind by up to 11 commits. Flah pushes / uploads.
 
+  (2026-11-21)  fm1: splash II (headphones, his own synth, chill / surprised / excited, twinkle into an open maj7), stopped
+                keys only sound, HOME's duplicate "new shape" gone, hand-picked shapes stay, beat lock every other tick
   (2026-11-20)  fm1: the site's drums on the device, sounds on the left knobs, a MIDI page, 52 scales, popping portals,
                 bounces in step with their sound, ping-pong delay (FM-1 only; the site untouched, no sw bump)
 

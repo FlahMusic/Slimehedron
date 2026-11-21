@@ -13,7 +13,9 @@ INSTALL
 1. Double-click INSTALL-ON-FM1.bat (in this folder). A black window opens and stays open: leave it.
 2. Your browser opens http://localhost:8766/webapp/installer/ (if not, open it in Chrome or Edge yourself).
 3. The page says SLOOP: that is SLOOP's installer, which is what installs this file. Follow it; let it back up.
-4. When it is done, the FM-1 restarts: the slime drops in with his jingle, then the tank. Close the black window.
+4. When it is done, the FM-1 restarts: the slime drops in, gets his headphones and a little synth, his jingle plays,
+   then the tank.
+   Close the black window.
 (A firmware file can't be installed from a plain web page you open from disk: Web MIDI needs a local server, which
  is what the .bat starts. No public installer page takes an arbitrary .fwsc file; each firmware ships its own page.)
 
@@ -29,9 +31,11 @@ BACK TO THE OFFICIAL FIRMWARE
   firmware.
 
 PLAYING IT
-At power-on the slime guy drops in with a little jingle (any button skips it), then the tank waits: nothing plays
-until PLAY (it blinks; the screen says "press play"). Set it up first if you like; a new shape shows at once while
-stopped, and the keys play their notes.
+At power-on the slime guy drops in, chilling; headphones slide onto his head and a little synth drops into his hands
+(surprised, then thrilled), and his jingle plays (any button skips it). Then the
+tank waits, standing still: nothing plays until PLAY (it blinks; the screen says "press play"). Set it up first if
+you like (a new shape shows at once). Stopped, a key just plays its note. After PLAY the tank moves, the band plays,
+and each key also drops a note into the tank ("keys drop notes in", the first time).
 
 It works like a groovebox: ONE BUTTON, ONE PAGE, every setting in exactly one place.
 - The three knobs on the left are the three SOUNDS, on every page: SELECT the melody's, ALGORITHM the bass's,
@@ -62,7 +66,8 @@ drums: kit             SEQ x2    kit           tune           decay           fe
 midi: channels         SAVE      melody ch     bass ch        chords ch       drums ch
 midi: in, clock        SAVE x2   in (channel)  sync           notes (out)     clock (out)
 
-  tank: HOME on the tank makes a new shape. Notes a bar: the melody's density (4, 6, 8, 12, 16; the site aims at 8).
+  tank: HOME comes back here from any page. A shape or portals set here stay (the slime still bursts and refills the
+        tank, it just keeps your shape; untouched, it picks a new one each time). Notes a bar: the melody's density (4, 6, 8, 12, 16; the site aims at 8).
         Portals: four wormholes, bigger than the site's two, each living a bar on one wall, then closing and popping
         open on another; a note that goes in comes out of another hole, on the beat grid
   song: SCALE (knob 4) runs through 52 scales: the 7 modes; harmonic and melodic minor, harmonic major, phrygian

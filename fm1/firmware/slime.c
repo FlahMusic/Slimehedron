@@ -927,6 +927,8 @@ static volatile int8_t sl_spin;
 static const uint8_t SL_BUSY[5] = {4, 6, 8, 12, 16};
 static const uint8_t SL_CYCLE[4] = {32, 64, 128, 0};
 static uint8_t sl_dens = 2, sl_cycle = 1;
+static uint8_t sl_hand_shape;               /* the walls or the portals turned by hand: the slime's reforms keep them (the site:
+                                             * "a shape or space picked by hand stays") */
 static volatile uint32_t sl_lit_until[27];  /* key LEDs: fm1_ms until which key k glows (the melody rang its note) */
 static volatile uint32_t sl_beat_ms;        /* the band's last downbeat */
 static uint8_t sl_started, sl_was_run = 1;
@@ -966,7 +968,8 @@ static volatile uint8_t sl_ball_req;
 static void sl_note_in(int midi, int vel)
 {
     sl_hand(sl_snap_cents(sh_scale_by_id(SL_SCALES[sl_scale % SL_NSCALE]), midi, sl_root), vel);
-    sl_ball_req++;
+    if (sl_run) sl_ball_req++;                             /* (stopped, the tank stands still: a key only plays its note; a ball
+                                                            * there sat frozen until PLAY) */
     if (midi >= 53 && midi < 80) sl_lit_until[midi - 53] = fm1_ms + 140u;
 }
 static void sl_key(uint32_t k) { sl_note_in(53 + (int)k + 12 * sl_octave, 100); }
@@ -1034,17 +1037,24 @@ static void sl_midi_in(void)
         } else if ((st & 0xF0u) == 0xB0u && (!sl_min_ch || (st & 15u) == sl_min_ch - 1u)) sl_midi_cc(d1, d2);
     }
 }
-/* THE BOOT JINGLE, under the splash (slime_ui.c). Flah: "a cool sound playing kinda like when u start a gamecube or
- * gameboy color". Our own, neither console's: the slime lands (a low bloop and its octave on the bass), four notes
- * climb a C major 9 on the melody's sound, and the chord rings out under two high sparkles. ms: after the splash
- * starts (the slime lands at 420). On the band's own sounds, so it is in the mix and under the limiter like any note. */
+/* THE BOOT JINGLE, under the splash (slime_ui.c). Flah 2026-11-18: "a cool sound playing kinda like when u start a
+ * gamecube or gameboy color"; 2026-11-21: "a little twinkly melody into a nice big open 7th chord that flows nicely",
+ * after headphones slide onto the mascot's head and a little synth drops into his hands. Our own, neither console's: a
+ * soft thud as he lands, a hi-hat's "tss" as the headphones click on, a rim's woody tok as the synth lands, then a
+ * twinkle up and back down C major 7 on the melody's sound (a note every 100 ms, the stars pop with them), into a wide
+ * C major 7 (C2 under C3 G3 E4 B4: open, the third and seventh up high) with the melody ringing E6, B6 and the 9th, D7,
+ * over it as the name comes up. ms: after the splash starts (slime_ui.c's timeline: lands 380, headphones on 900, the
+ * synth in his hands 1100, twinkle 1160.., the chord 2100). On the band's own sounds, so it is in the mix and under the
+ * limiter like any note. A drum entry (SL_TRK_DRUM) plays the site's kit. */
 typedef struct { uint16_t ms; uint8_t trk, note, vel; uint16_t hold; } sl_jn;
 static const sl_jn SL_JINGLE[] = {
-    {420, SL_TRK_BASS, 36, 112, 150}, {540, SL_TRK_BASS, 48, 96, 240},
-    {600, SL_TRK_MEL, 76, 92, 220}, {690, SL_TRK_MEL, 79, 94, 220}, {780, SL_TRK_MEL, 83, 96, 220}, {870, SL_TRK_MEL, 86, 98, 300},
-    {1000, SL_TRK_COMP, 60, 80, 1500}, {1000, SL_TRK_COMP, 64, 80, 1500}, {1000, SL_TRK_COMP, 67, 80, 1500},
-    {1000, SL_TRK_COMP, 71, 80, 1500}, {1000, SL_TRK_COMP, 74, 80, 1500}, {1000, SL_TRK_BASS, 36, 100, 1400},
-    {1010, SL_TRK_MEL, 88, 96, 700}, {1190, SL_TRK_MEL, 91, 88, 1000},
+    {380, SL_TRK_BASS, 36, 70, 120}, {900, SL_TRK_DRUM, 42, 70, 0}, {1100, SL_TRK_DRUM, 37, 72, 0},
+    {1160, SL_TRK_MEL, 79, 82, 150}, {1260, SL_TRK_MEL, 84, 84, 150}, {1360, SL_TRK_MEL, 88, 86, 150}, {1460, SL_TRK_MEL, 91, 88, 150},
+    {1560, SL_TRK_MEL, 95, 92, 150}, {1660, SL_TRK_MEL, 93, 86, 150}, {1760, SL_TRK_MEL, 91, 84, 150}, {1860, SL_TRK_MEL, 88, 82, 150},
+    {1960, SL_TRK_MEL, 86, 84, 150},
+    {2100, SL_TRK_BASS, 36, 100, 1400}, {2100, SL_TRK_COMP, 48, 82, 1500}, {2100, SL_TRK_COMP, 55, 80, 1500},
+    {2100, SL_TRK_COMP, 64, 80, 1500}, {2100, SL_TRK_COMP, 71, 80, 1500}, {2100, SL_TRK_MEL, 88, 86, 900},
+    {2250, SL_TRK_MEL, 95, 78, 1000}, {2450, SL_TRK_MEL, 98, 64, 900},
 };
 #define SL_NJINGLE (sizeof SL_JINGLE / sizeof SL_JINGLE[0])
 static volatile uint32_t sl_boot_ms;        /* when the splash started (fm1_ms; 0: not yet): the main loop sets it */
@@ -1054,7 +1064,8 @@ static void sl_jingle(void)                 /* the audio interrupt: each note wh
     while (sl_boot_ms && sl_jn_at < SL_NJINGLE) {
         const sl_jn *j = &SL_JINGLE[sl_jn_at];
         sl_ev off = {0};
-        if (fm1_ms - sl_boot_ms < j->ms || sl_busy(j->trk)) return;   /* (its sound still loading: a moment later) */
+        if (fm1_ms - sl_boot_ms < j->ms || (j->trk != SL_TRK_DRUM && sl_busy(j->trk))) return;   /* (its sound still loading: a moment later) */
+        if (j->trk == SL_TRK_DRUM) { sl_drum_hit(j->note, j->vel); sl_jn_at++; continue; }
         sl_note_on(j->trk, j->note, j->vel, 0);
         off.trk = j->trk; off.note = j->note; off.at = sl_clock + sl_ms_to_block((double)j->hold);
         sl_push_off(off);
@@ -1168,8 +1179,10 @@ static void slime_conduct(void)
      * at the next downbeat. Slime off: the shape stays (a shape picked by hand stays, as on the site). */
     if (sl_slime && !sl_reform_at_bar && SL_CYCLE[sl_cycle % 4u] && (sl_bars_shape >= SL_CYCLE[sl_cycle % 4u] || sh_goo_fill(&sl_tank.goo) > 0.97)) {
         static const uint8_t SHAPES[8] = {6, 5, 8, 3, 7, 4, 12, 6};
-        sl_walls = SHAPES[sl_seed % 8u];
-        sl_space = (uint8_t)(sl_seed % 3u == 2u);          /* 1 reform in 3 is portal space, as the web's auto */
+        if (!sl_hand_shape) {                              /* (one picked by hand stays: the slime only bursts and refills it) */
+            sl_walls = SHAPES[sl_seed % 8u];
+            sl_space = (uint8_t)(sl_seed % 3u == 2u);      /* 1 reform in 3 is portal space, as the web's auto */
+        }
         sl_reform_at_bar = 1;
         sl_bars_shape = 0;
     }

@@ -112,12 +112,30 @@ UI_SMALL static void slime_splash(void)     /* power-on, before the sound starts
 }
 
 /* THE SPLASH (Flah 2026-11-18: "a characteristic little seafoam green slime guy with glasses as the initial boot splash
- * screen, with a cool sound playing kinda like when u start a gamecube or gameboy color type shit. and say Slimehedron,
- * then fade into the main mode"). Drawn here, pixel by pixel, no picture stored: the slime drops in, lands with a squash
- * and a wobble (the jingle's bloop: slime.c SL_JINGLE), a glint crosses his glasses, the name comes up under him, he
- * blinks, and it all fades into the tank. Any button or key skips to the fade. */
-#define SL_SPLASH_MS 3300u                  /* from the drop to the end of the fade */
+ * screen ... say Slimehedron, then fade into the main mode"; 2026-11-21: "headphones slide down onto his head and then
+ * the intro music plays", "a little FM1 of his own fall down into his hands to play on with us", "from chillin face
+ * relaxed to surprised and then excited", "he has no arms tho ... keep it cute and lighthearted, nintendo like"). Drawn
+ * here, pixel by pixel, no picture stored. The timeline (ms, and the jingle's: slime.c SL_JINGLE):
+ *   0..380     he drops in and lands with a squash and a wobble (a soft thud); chilling: eyes half shut, a small smile
+ *   420..900   headphones slide down onto his head, a little past and back (a hi-hat's "tss" as they click on); he sees
+ *              them coming at 600: surprised, eyes wide, a little "o"
+ *   700..1100  a little synth of his own drops into his hands, held in front of him (a woody tok as it lands)
+ *   1100       excited: happy ^^ eyes, a big open smile, a hop
+ *   1160..1960 a twinkle up and down C major 7, a note every 100 ms, a star popping round him with each; he bobs
+ *   2100       the open C major 7: SLIMEHEDRON rises, a glint crosses his glasses
+ *   3600..4100 it all fades into the tank
+ * Any button or key skips to the fade. The synth is a little mini-keyboard, no maker's name on it. */
+#define SL_SPLASH_MS 4100u                  /* from the drop to the end of the fade */
 #define SL_FADE_MS 500u
+#define SL_SP_HP0 420.0f                    /* the headphones set off */
+#define SL_SP_HP1 900.0f                    /* and are on */
+#define SL_SP_SEE 600.0f                    /* he sees them coming */
+#define SL_SP_FM0 700.0f                    /* the synth drops */
+#define SL_SP_FM1 1100.0f                   /* and is in his hands: excited */
+#define SL_SP_TW 1160.0f                    /* the first twinkle */
+#define SL_SP_CHORD 2100.0f                 /* the chord, the name */
+#define SL_SP_NSTAR 9
+static const uint8_t SL_STAR[SL_SP_NSTAR][2] = {{58, 78}, {184, 64}, {34, 122}, {206, 116}, {78, 42}, {166, 36}, {44, 160}, {198, 162}, {120, 22}};
 static uint32_t sl_splash_t0;               /* fm1_ms when it began (0: not yet) */
 static uint8_t sl_splash_done, sl_skip;
 static uint32_t sl_skip_at;
@@ -131,22 +149,41 @@ static uint16_t sl_bl(uint16_t a, uint16_t b, uint32_t k)   /* a toward b by k /
     return (uint16_t)(r | (r >> 16));
 }
 static uint32_t sl_k(float t) { int k = (int)(t * 32.0f + 0.5f); return (uint32_t)(k < 0 ? 0 : k > 32 ? 32 : k); }
+static float sl_back(float t0, float t1, float t, float from)   /* an ease-out-back drop: from px above to 0 (a touch past, then back) */
+{
+    float q;
+    if (t < t0) return from;
+    if (t >= t1) return 0.0f;
+    q = (t - t0) / (t1 - t0) - 1.0f;
+    return from * -(2.4f * q * q * q + 1.4f * q * q);
+}
 /* this frame's pose: where he is, how squashed, what shows */
-typedef struct { float cx, cy, W, H, glint, title, blink, alpha, shadow; } sl_pose;
+typedef struct { float cx, cy, W, H, glint, title, alpha, shadow, hp, fm, star[SL_SP_NSTAR]; int mood; } sl_pose;   /* mood: 0 chill, 1 surprised, 2 excited */
 static sl_pose sl_splash_pose(uint32_t ms)
 {
     sl_pose p;
     const float ground = 150.0f, W0 = 56.0f, H0 = 50.0f, t = (float)ms;
-    float s = 0.0f, up = 0.0f;
-    if (t < 420.0f) { float q = t / 420.0f; up = 190.0f * (1.0f - q * q); s = -0.12f * q; }   /* falling, a touch stretched */
-    else { float u = (t - 420.0f) / 1000.0f; s = 0.30f * expf(-u * 7.5f) * cosf(u * 31.0f); }   /* landed: squash, wobble */
+    float s = 0.0f, up = 0.0f, bob = 0.0f;
+    int i;
+    if (t < 380.0f) { float q = t / 380.0f; up = 190.0f * (1.0f - q * q); s = -0.12f * q; }   /* falling, a touch stretched */
+    else { float u = (t - 380.0f) / 1000.0f; s = 0.30f * expf(-u * 7.5f) * cosf(u * 31.0f); }   /* landed: squash, wobble */
+    if (t > SL_SP_HP1) { float v = (t - SL_SP_HP1) / 1000.0f; s += 0.13f * expf(-v * 9.0f) * cosf(v * 30.0f); }   /* the headphones land */
+    if (t > SL_SP_FM1) { float v = (t - SL_SP_FM1) / 1000.0f; s += 0.10f * expf(-v * 9.0f) * cosf(v * 30.0f); }   /* the synth lands */
+    p.hp = sl_back(SL_SP_HP0, SL_SP_HP1, t, -240.0f);    /* the headphones: px above where they sit (0: on his head) */
+    p.fm = sl_back(SL_SP_FM0, SL_SP_FM1, t, -260.0f);    /* the synth: px above where he holds it */
+    if (t > SL_SP_FM1 && t < SL_SP_FM1 + 260.0f) up += 9.0f * sinf((t - SL_SP_FM1) * (3.14159265f / 260.0f));   /* a happy hop */
+    if (t > SL_SP_TW) { float b = (t - SL_SP_TW) * (6.2831853f / 400.0f); bob = 2.5f * sinf(b - 6.2831853f * floorf(b / 6.2831853f)); }   /* nodding along */
     p.W = W0 * (1.0f + s); p.H = H0 * (1.0f - s);
-    p.cx = 120.0f; p.cy = ground - p.H * 0.92f - up;
+    p.cx = 120.0f; p.cy = ground - p.H * 0.92f - up + bob;
     p.shadow = 1.0f - (up / 190.0f);
-    p.glint = t > 900.0f && t < 1400.0f ? (t - 900.0f) / 500.0f : -1.0f;
-    p.title = sl_ease((t - 950.0f) / 450.0f);
-    p.blink = t > 2050.0f && t < 2190.0f ? 1.0f : 0.0f;
+    p.mood = t < SL_SP_SEE ? 0 : t < SL_SP_FM1 ? 1 : 2;
+    p.glint = t > SL_SP_CHORD && t < SL_SP_CHORD + 500.0f ? (t - SL_SP_CHORD) / 500.0f : -1.0f;
+    p.title = sl_ease((t - SL_SP_CHORD) / 450.0f);
     p.alpha = 1.0f - sl_ease((t - (float)(SL_SPLASH_MS - SL_FADE_MS)) / (float)SL_FADE_MS);
+    for (i = 0; i < SL_SP_NSTAR; i++) {                    /* each twinkle's star: pops in, fades over half a second */
+        float a = t - (SL_SP_TW + 100.0f * (float)i);
+        p.star[i] = a < 0.0f || a > 500.0f ? 0.0f : 1.0f - a / 500.0f;
+    }
     return p;
 }
 static void sl_title_render(void)           /* the name in SLOOP's large capitals, as coverage */
@@ -159,22 +196,56 @@ static void sl_title_render(void)           /* the name in SLOOP's large capital
     for (y = 0; y < 32; y++)
         for (x = 0; x < 240; x++) sl_title[y][x] = (uint8_t)(((swap16(cv_px[y * 240 + x]) >> 5) & 63u) >> 2);
 }
+/* his little synth, at (u, v) px from its top left (64 x 26): a pale case with a dark outline, a tiny screen with the
+ * tank's hexagon glowing on it, four knobs, a row of mini keys. Returns the colour, or 0 outside it */
+static uint16_t sl_synth_px(float u, float v)
+{
+    static const uint16_t CASE = 0xEF5Du, EDGE = 0x3186u, SCR = 0x2108u, HEX = 0x9FB9u, KNOB = 0x6B4Du, KEYW = 0xFFFFu, KEYB = 0x2104u;
+    float cu = u < 5.0f ? 5.0f - u : u > 59.0f ? u - 59.0f : 0.0f, cv = v < 5.0f ? 5.0f - v : v > 21.0f ? v - 21.0f : 0.0f;
+    float rc = cu * cu + cv * cv, du, dv, k;
+    if (u < 0.0f || u >= 64.0f || v < 0.0f || v >= 26.0f || rc > 25.0f) return 0;
+    if (rc > 13.0f || u < 1.0f || u > 63.0f || v < 1.0f || v > 25.0f) return EDGE;   /* the outline, rounded corners */
+    if (u > 6.0f && u < 26.0f && v > 4.0f && v < 14.0f) {                             /* the screen: the tank's hexagon */
+        du = u - 16.0f; dv = (v - 9.0f) * 1.15f; k = (du < 0.0f ? -du : du) * 0.5f + (dv < 0.0f ? -dv : dv) * 0.866f;
+        if (k > 2.6f && k < 3.8f) return HEX;
+        return SCR;
+    }
+    for (k = 0.0f; k < 4.0f; k += 1.0f) {                                             /* four knobs */
+        du = u - (34.0f + k * 7.5f); dv = v - 8.5f;
+        if (du * du + dv * dv < 7.0f) return du + dv < -1.5f ? 0xBDF7u : KNOB;
+    }
+    if (v > 16.0f && v < 24.0f && u > 3.0f && u < 61.0f) {                           /* the keys: fourteen white, the black between */
+        float w = (u - 3.0f) / 58.0f * 14.0f, f = w - (float)(int)w;
+        int n = (int)w % 7;
+        if (v < 20.5f && ((f > 0.72f && n != 2 && n != 6) || (f < 0.28f && n != 0 && n != 3))) return KEYB;   /* (after C D, F G A: twos and threes) */
+        return f < 0.07f ? 0xAD55u : KEYW;
+    }
+    return CASE;
+}
 /* one native-order band (rows y0..y0+15) of the splash, over what is there by p.alpha (1: all splash) */
 static void sl_splash_band(uint16_t *b, int y0, const sl_pose *p)
 {
-    static const uint16_t BODY = 0x8F38u, RIM = 0x4E31u, LINE = 0x2BEDu, LENS = 0x3970u, PINK = 0xFD18u, GLOW = 0xBF7Du, SHADE = 0xC5DBu;
+    static const uint16_t BODY = 0x8F38u, RIM = 0x4E31u, LINE = 0x2BEDu, LENS = 0x3970u, PINK = 0xFD18u, GLOW = 0xBF7Du, SHADE = 0xC5DBu,
+                          HPB = 0x4A6Bu, HPHI = 0x7BB2u, HPC = 0xFB76u, STAR = 0xFE47u, MOUTH = 0x5129u, TONGUE = 0xF2D3u;
     uint32_t ka = sl_k(p->alpha), kt = sl_k(p->title), ks = (uint32_t)(4.0f + 10.0f * p->shadow);
     float iW = 1.0f / p->W, iH = 1.0f / p->H, sx = p->W / 56.0f, sy = p->H / 50.0f;
     float ex = 20.0f * sx, ey = p->cy - 4.0f * sy, lr = 14.5f * (sx + sy) * 0.5f;    /* the eyes (lenses): off the middle, radius */
     float iSh = 1.0f / (p->W * (0.6f + 0.5f * p->shadow)), i1x = 1.0f / (7.0f * sx), i1y = 1.0f / (8.0f * sy), i2x = 1.0f / (5.0f * sx), i2y = 1.0f / (6.0f * sy);
     float bx0 = p->cx - p->W * 1.05f, bx1 = p->cx + p->W * 1.05f, by0 = p->cy - p->H * 1.05f, by1 = p->cy + p->H * 1.25f;   /* his box */
-    int r, x;
+    /* the headphones: a band over the top of his head (an ellipse ring, its upper part) and a cup on each side, hp px up */
+    float hcy = p->cy + 0.05f * p->H + p->hp, hrx = p->W * 1.06f, hry = p->H * 1.18f, ihx = 1.0f / hrx, ihy = 1.0f / hry;
+    float cupx = p->W * 1.0f, cupy = hcy - 0.02f * p->H, icx = 1.0f / (8.0f * sx), icy = 1.0f / (13.0f * sy);
+    float hy0 = hcy - hry - 4.0f, hy1 = cupy + 14.0f * sy;
+    float fx0 = p->cx - 32.0f, fy0 = p->cy + 0.36f * p->H + p->fm;                     /* the synth, held in front of his tummy */
+    int r, x, i;
     if (!ka) return;
     for (r = 0; r < 16; r++) {
         int y = y0 + r;
         float yc = (float)y + 0.5f, dy = (yc - p->cy) * iH, gy = yc - 92.0f, sy2 = (yc - 153.0f) * (1.0f / 6.0f), dy2 = dy * dy;
         float rry = dy < 0.0f ? dy2 : dy2 * dy2, d1y = (yc - (p->cy + 0.86f * p->H)) * i1y, d2y = (yc - (p->cy + 0.92f * p->H)) * i2y;
-        int inrow = yc > by0 && yc < by1, glowrow = gy * gy < 95.0f * 95.0f, shrow = sy2 * sy2 < 1.0f;
+        float hdy = (yc - hcy) * ihy, cdy = (yc - cupy) * icy;
+        int inrow = yc > by0 && yc < by1, glowrow = gy * gy < 95.0f * 95.0f, shrow = sy2 * sy2 < 1.0f, hprow = p->hp > -230.0f && yc > hy0 && yc < hy1;
+        int fmrow = yc >= fy0 && yc < fy0 + 26.0f;
         uint16_t *row = b + r * 240;
         for (x = 0; x < 240; x++) {
             float xc = (float)x + 0.5f, rr = 2.0f;
@@ -198,17 +269,26 @@ static void sl_splash_band(uint16_t *b, int y0, const sl_pose *p)
                 if (rr > 0.80f) c = sl_bl(BODY, RIM, sl_k((rr - 0.80f) * 3.2f));                 /* rounder toward the rim */
                 if (rr > 0.93f) c = sl_bl(c, LINE, sl_k((rr - 0.93f) * 11.0f));                  /* a soft outline */
                 if (h < 0.10f) c = sl_bl(c, 0xFFFFu, sl_k(0.75f * (1.0f - h / 0.10f)));          /* the shine, top left */
-                {   /* the face: glasses, eyes, a smile, rosy cheeks */
+                {   /* the face: glasses, eyes, a mouth, rosy cheeks, as he feels */
                     float lx = xc - (p->cx - ex), rx = xc - (p->cx + ex), ly = yc - ey;
                     float dl = lx * lx + ly * ly, dr2 = rx * rx + ly * ly, d = dl < dr2 ? dl : dr2, ox = dl < dr2 ? lx : rx;
                     float L2 = lr * lr, Li = (lr - 3.0f) * (lr - 3.0f);
                     float cx1 = xc - (p->cx - 0.56f * p->W), cx2 = xc - (p->cx + 0.56f * p->W), cyy = (yc - (p->cy + 0.26f * p->H)) / 4.0f;
-                    if ((cx1 * cx1) / 49.0f + cyy * cyy < 1.0f || (cx2 * cx2) / 49.0f + cyy * cyy < 1.0f) c = sl_bl(c, PINK, 14u);
+                    if ((cx1 * cx1) / 49.0f + cyy * cyy < 1.0f || (cx2 * cx2) / 49.0f + cyy * cyy < 1.0f) c = sl_bl(c, PINK, p->mood == 2 ? 22u : 14u);
                     if (d < Li) {                                                                /* inside a lens */
                         float px2 = ox - 1.0f * sx, py2 = ly - 2.0f * sy;
                         c = sl_bl(c, 0xFFFFu, 12u);
-                        if (p->blink > 0.0f) { if (py2 > -1.2f && py2 < 1.2f && px2 > -5.0f && px2 < 5.0f) c = LENS; }
-                        else if (px2 * px2 + py2 * py2 < 22.0f) c = (px2 + 1.6f) * (px2 + 1.6f) + (py2 + 1.8f) * (py2 + 1.8f) < 2.4f ? 0xFFFFu : 0x18C3u;
+                        if (p->mood == 2) {                                                      /* excited: happy ^^ eyes */
+                            float ax2 = px2 < 0.0f ? -px2 : px2, v = py2 - 0.85f * ax2 + 1.6f;   /* (the arch's top in the middle) */
+                            if (ax2 < 5.5f && v > -1.4f && v < 1.4f) c = LENS;
+                        } else {
+                            float pr = p->mood == 1 ? 10.0f : 22.0f;                             /* surprised: small pupils, wide eyes */
+                            if (px2 * px2 + py2 * py2 < pr) c = (px2 + 1.6f) * (px2 + 1.6f) + (py2 + 1.8f) * (py2 + 1.8f) < 2.4f ? 0xFFFFu : 0x18C3u;
+                            if (p->mood == 0 && py2 < 0.3f) {                                    /* chilling: lids half down */
+                                c = sl_bl(BODY, 0xFFFFu, 8u);
+                                if (py2 > -0.9f && px2 * px2 < 36.0f) c = LENS;
+                            }
+                        }
                         if (p->glint >= 0.0f) { float g = (ox + ly) / (2.0f * lr) + 1.0f - p->glint * 2.4f; if (g > -0.10f && g < 0.10f) c = sl_bl(c, 0xFFFFu, 24u); }
                     } else if (d < L2) c = LENS;                                                 /* the rims */
                     if (yc > ey - 2.6f && yc < ey + 0.6f && xc > p->cx - ex + lr - 1.0f && xc < p->cx + ex - lr + 1.0f) c = LENS;   /* the bridge */
@@ -216,17 +296,47 @@ static void sl_splash_band(uint16_t *b, int y0, const sl_pose *p)
                         float ax = xc < p->cx ? (p->cx - ex - lr) - xc : xc - (p->cx + ex + lr);
                         if (ax > -1.0f && ax < 9.0f * sx && yc > ey - 2.4f - ax * 0.15f && yc < ey + 0.2f - ax * 0.15f && rr < 0.95f) c = LENS;
                     }
-                    {   /* the smile: the bottom of a ring */
-                        float mx = xc - p->cx, my = yc - (p->cy + 6.0f * sy), m = mx * mx + my * my, R1 = 9.0f * sx;
-                        if (my > 2.0f && m < (R1 + 1.2f) * (R1 + 1.2f) && m > (R1 - 1.2f) * (R1 - 1.2f)) c = LENS;
+                    {   /* the mouth: a small smile, an "o", a big open grin */
+                        float mx = xc - p->cx, my = yc - (p->cy + 6.0f * sy), m = mx * mx + my * my;
+                        if (p->mood == 0) {
+                            float R1 = 7.0f * sx;
+                            if (my > 2.5f && m < (R1 + 1.1f) * (R1 + 1.1f) && m > (R1 - 1.1f) * (R1 - 1.1f)) c = LENS;
+                        } else if (p->mood == 1) {
+                            float oy = my - 6.0f * sy, o2 = mx * mx + oy * oy * 1.3f;
+                            if (o2 < 16.0f) c = o2 < 7.0f ? MOUTH : LENS;
+                        } else {
+                            float R1 = 10.0f * sx;
+                            if (my > 1.5f && m < (R1 + 1.0f) * (R1 + 1.0f)) c = m > (R1 - 0.6f) * (R1 - 0.6f) ? LENS : (my > R1 * 0.55f ? TONGUE : MOUTH);
+                        }
                     }
                 }
             }
-            if (kt && y >= 172 && y < 204) {                                                     /* the name, rising in */
-                int ty = y - 172 + (int)(8.0f * (1.0f - p->title));
+            if (fmrow && xc >= fx0 && xc < fx0 + 64.0f) {                                     /* his synth, in front of him */
+                uint16_t s2 = sl_synth_px(xc - fx0, yc - fy0);
+                if (s2) c = s2;
+            }
+            if (hprow) {                                                                         /* the headphones, over him */
+                float hdx = (xc - p->cx) * ihx, e = hdx * hdx + hdy * hdy, cdl = (xc - (p->cx - cupx)) * icx, cdr = (xc - (p->cx + cupx)) * icx;
+                float ql = cdl * cdl + cdy * cdy, qr = cdr * cdr + cdy * cdy, q = ql < qr ? ql : qr;
+                if (hdy < -0.05f && e > 0.86f && e < 1.0f) c = e < 0.91f ? HPHI : HPB;          /* the band, a lighter edge inside */
+                if (q < 1.0f) c = q < 0.45f ? HPC : (q < 0.62f ? sl_bl(HPC, HPB, 16u) : HPB);   /* a cup: pink cushion, dark shell */
+            }
+            if (kt && y >= 176 && y < 208) {                                                     /* the name, rising in */
+                int ty = y - 176 + (int)(8.0f * (1.0f - p->title));
                 if (ty >= 0 && ty < 32 && sl_title[ty][x]) c = sl_bl(c, 0x7AF5u, (uint32_t)sl_title[ty][x] * 2u * kt / 32u);
             }
             row[x] = ka >= 32u ? c : sl_bl(row[x], c, ka);
+        }
+        for (i = 0; i < SL_SP_NSTAR; i++) {                                                     /* the stars: a twinkle's cross */
+            int sxs = SL_STAR[i][0], sys = SL_STAR[i][1], d = y - sys, ad = d < 0 ? -d : d, arm, k;
+            if (p->star[i] <= 0.0f || ad > 8) continue;
+            arm = ad ? (ad == 1 ? 3 : 0) : 8;                                                    /* (the row through it: the long arm) */
+            k = (int)(p->star[i] * (float)(ka) * (float)(9 - ad) / 9.0f);
+            if (ad >= 2) { if (sxs >= 0 && sxs < 240) row[sxs] = sl_bl(row[sxs], STAR, (uint32_t)(k > 32 ? 32 : k)); continue; }
+            for (x = sxs - arm; x <= sxs + arm; x++) if (x >= 0 && x < 240) {
+                int kk = k * (9 - (x > sxs ? x - sxs : sxs - x)) / 9;
+                row[x] = sl_bl(row[x], STAR, (uint32_t)(kk > 32 ? 32 : kk < 0 ? 0 : kk));
+            }
         }
     }
 }
@@ -691,21 +801,17 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
         static uint32_t last;
         if (SL_PRESSED(B_PLAY)) {
             if (fm1_ms - last < SL_TAP_MS) { sl_run = 1; sl_step = 0; sl_loop_at = (uint8_t)(sl_loop_bars ? sl_loop_bars - 1u : 0u); sl_say("from the top", 0); }
-            else { sl_run = (uint8_t)!sl_run; sl_say(sl_run ? "play" : "stop", 0); }
+            else {
+                static uint8_t told;
+                sl_run = (uint8_t)!sl_run; sl_say(sl_run ? "play" : "stop", 0);
+                if (sl_run && !told) { told = 1; sl_say("keys drop notes in", 0); sl_label_until = fm1_ms + 2500u; }   /* (once: stopped,
+                                                           * a key only plays its note; playing, it drops a note into the tank) */
+            }
             last = fm1_ms;
         }
     }
-    if (SL_PRESSED(B_HOME)) {
-        if (sl_page != PG_HOME) { sl_page = PG_HOME; sl_pview = 0; sl_say("tank", 0); }
-        else {                                             /* at the tank: a NEW shape, never the same walls again */
-            static const uint8_t SHAPES[7] = {6, 5, 8, 3, 7, 4, 12};
-            static uint8_t at;
-            uint8_t w = sl_walls;
-            while (SHAPES[at % 7u] == w) at++;
-            sl_walls = SHAPES[at++ % 7u];
-            sl_reform_req = 1; sl_say("new shape", 0);
-        }
-    }
+    if (SL_PRESSED(B_HOME) && sl_page != PG_HOME) { sl_page = PG_HOME; sl_pview = 0; sl_say("tank", 0); }   /* (its "new shape"
+                                                           * at the tank went 2026-11-21: it did what KNOB 1, walls, does) */
     if (SL_PRESSED(B_SCL)) sl_goto(PG_SONG);
     if (SL_PRESSED(B_GLO)) sl_goto(PG_MIX);
     if (SL_PRESSED(B_FX)) sl_goto(PG_FX);
@@ -744,9 +850,9 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
             sl_say(p == 0 ? "melody: " : p == 1 ? "bass: " : "chords: ", sl_snd_entry(p, i)->name);
         }
         if (sl_page == PG_HOME) {                          /* TANK: the instrument */
-            if (k1) { sl_walls = (uint8_t)clamp((int32_t)sl_walls + k1, 3, 12); sl_reform_req = 1; sl_say_num("walls ", sl_walls, 0); }
+            if (k1) { sl_walls = (uint8_t)clamp((int32_t)sl_walls + k1, 3, 12); sl_reform_req = 1; sl_hand_shape = 1; sl_say_num("walls ", sl_walls, 0); }
             if (k2) { sl_spin = (int8_t)clamp(sl_spin + accel(EN_K2, k2, 51) * 4, -100, 100); if (sl_spin) sl_say_num("spin ", sl_spin, 0); else sl_say("spin off", 0); }
-            if (k3) { sl_space = (uint8_t)(k3 > 0); sl_reform_req = 1; sl_say(sl_space ? "portals on" : "portals off", 0); }
+            if (k3) { sl_space = (uint8_t)(k3 > 0); sl_reform_req = 1; sl_hand_shape = 1; sl_say(sl_space ? "portals on" : "portals off", 0); }
             if (k4) { sl_dens = (uint8_t)clamp(sl_dens + k4, 0, 4); sl_say_num("about ", SL_BUSY[sl_dens], " notes a bar"); }
         } else if (sl_page == PG_SONG && v == 0) {         /* SONG: tempo, swing, key, scale */
             if (k1) { int32_t t = clamp(song.g[G_BPM] + accel(EN_K1, k1, 161), 40, 200); song.g[G_BPM] = (int16_t)t; sl_say_num("tempo ", t, 0); }
