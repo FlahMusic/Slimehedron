@@ -13,17 +13,19 @@ Every page a suite opens presses a lesson's pulsing "listen" button the moment i
 | You touched | Run |
 |---|---|
 | the tall phone tank (play, portrait phones: the canvas at 2:3) | dev-tall, dev-phone, dev-devices, dev-hands |
+| the worm (and anything that places the page decorations) | dev-worm (always shown, never covered, rests and rises, wiggles: play 1280/1440/phone, studio) |
+| the triangle mixer | dev-trimix (the knob lands where you press, a tile not a sticker, by the sound column, off the buttons) |
 | the header / transport / any control's size | dev-decor (mascots whole, off the tank), dev-topbar, dev-a11y, dev-devices, dev-phone, dev-surface, dev-crowding |
 | play mode, the tank gestures, auto-notes | dev-hands, dev-ux, dev-firsttouch, dev-firstfive, dev-controls, dev-guide |
-| tank physics, spin, shapes, spaces | dev-hands, dev-space, dev-solid, dev-orb, dev-portal, dev-beatlock, dev-revive, dev-fluid |
+| tank physics, spin, shapes, spaces | dev-hands, dev-space, dev-solid, dev-orb, dev-portal (the holes hold a bar), dev-beatlock, dev-revive, dev-fluid |
 | the solid maths (any solid, orbs) | dev-solid, dev-orb, then `node _dev/solid-ref.js` and `cargo test` in `vst/` (the plugin checks against it) |
 | auto-notes pace per shape (the auto adjuster) | dev-autoadjust (~4 min, seeded) |
 | play mode's first minute (slime on, the tap bubble, the notes toggle under the tank) | dev-play, dev-firsttouch, dev-ux 1 |
-| the goo | dev-slimecontrast (SLIME_GL=1: a shade darker than the page, the chord colour wheel), dev-goopro (SLIME_GL=1: wet, volume, colour, the worker), dev-goo3d, dev-goosmooth, dev-goolook, dev-gl |
+| the goo | dev-burst (the burst: a liquid, no dust, clings then drains, one skin; 3 seeded bursts), dev-goocolour (the colour glides: no jumps, no turning back), dev-slimecontrast (SLIME_GL=1: a shade darker than the page, the chord colour wheel), dev-goopro (SLIME_GL=1: wet, volume, colour, the worker), dev-goo3d, dev-goosmooth, dev-goolook, dev-gl |
 | the 3D look / GPU tank | dev-gl, dev-look3d, dev-goopro (one look: glass, ADR 0012), dev-3d, dev-shapes, dev-potato |
 | the frame loop, render cost, pixel ratio (the render governor) | dev-governor, dev-perfmode, dev-potato, dev-phone, dev-gl |
 | harmony, keys, scales, the chord chip | dev-chordtest, dev-harmony, dev-harmony2, dev-world, dev-tuning, dev-band, dev-melody |
-| drums, bass, mix, audio | dev-audiopro (the limiter, the room, the stage, brightness, attack, drum timing), dev-mix (slow, ~25 min for 11 kits; `node _dev/dev-mix.js pop,jazz` for some), dev-drums, dev-bassmix, dev-chordbed, dev-sound, dev-fidelity, dev-realaudio, dev-audible, dev-silence, dev-ceiling |
+| drums, bass, mix, audio | dev-slimesound (a filling tank: low-passed, not thinned, no louder, softer starts), dev-audiopro (the limiter, the room, the stage, brightness, attack, drum timing), dev-mix (slow, ~25 min for 11 kits; `node _dev/dev-mix.js pop,jazz` for some), dev-drums, dev-bassmix, dev-chordbed, dev-sound, dev-fidelity, dev-realaudio, dev-audible, dev-silence, dev-ceiling |
 | studio tools (mixer, undo, song files, step grid) | dev-studiokeys (Space, focus, keys named), dev-daw, dev-declutter, dev-hostile, dev-tools, dev-chords, dev-studiopolish (tabs, segmented rows, tempo drag, mixer colours, first screen), dev-seq |
 | share links, recordings, MIDI | dev-ux (section 7), dev-takes, dev-wavtap, dev-midi, dev-midiexport, dev-manualnotes |
 | lessons / the map | dev-learn3 (no voice, listen first; runs without the listen-pressing driver), dev-lessons (slow, ~7 min), dev-map, dev-learnmap, dev-curriculum, dev-playable, dev-cheat, dev-answerable, dev-oneanswer, dev-earwork, dev-explore, dev-jam, dev-rjam, dev-make, dev-compose, dev-newunits, dev-review, dev-rest, dev-staff, dev-nolab |
@@ -73,6 +75,11 @@ Then rerun only what failed. A failure that passes on rerun goes on the flaky li
 - `dev-look3d` needs `python3` with PIL (dev-crayon was retired with the crayon look, ADR 0012); on Flah's Windows box `python3` is a Store alias (make a venv shim named python3).
 - `dev-gl` (needs SLIME_GL=1; runs on Flah's GPU) "the goo is a real 3D surface": 96-120 triangles some runs (fails 1 in 2; also before the tumble, 7d3f3bb).
 - `dev-hands` 3. "a flick keeps it spinning": 0.00 turns a second once (2026-11-02, right after a long run of suites), then 0.77 and 1.14 on reruns; the flick reads pointer timing.
+- Seen 2026-11-21: `dev-solid` [phone studio] "the corner menu ... sits on no control (covers sgCell)" once, green on rerun.
+  `dev-look3d` needs `python3` with PIL on PATH (it shells out for its picture checks); on Windows without it every
+  check before that passes and then it stops. Failing on f8b5849 too (control 2026-11-21, same numbers): `dev-goosmooth`
+  "redrawn on every frame" (149-150 of 300 repeats), `dev-goolook`, `dev-fluid` "a paused tank is completely
+  still" (38-39 moving frames), `dev-gl` "floods with its note's colour", `dev-crowding` [learn/landscape] mfill.
 - `dev-hands` 1. "tap it and the slime plays notes" (1 in 7 s once) and 3. "a quarter turn" (97 degrees sits on the 0.12 rad edge).
 - Fixed 2026-10-27: `dev-crayon` (the tap invite faded in over its frozen frames) and `dev-portal` GL visibility.
 

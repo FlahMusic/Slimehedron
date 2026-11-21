@@ -9,7 +9,8 @@
 //       heading away from its wall, at the same speed, drawn small and swelling to its size, ringing the
 //       note of the wall it came out of
 //    4. a ball that hits a wall anywhere else bounces off it as always and rings it: not every note is a portal
-//    5. the holes move WITH THE MUSIC: they slide in the first part of each beat and rest in the rest, they visit
+//    5. the holes move WITH THE MUSIC: they slide on each bar's 1 (in its first 3/4 beat) and sit still for the rest of
+//       the bar (Flah 2026-11-21: "sit still at least a bar or half bar"; they slid every beat), they visit
 //       several walls, and they shrink to slip round a corner instead of hanging off it
 //    6. a busy tank: no ball is ever lost, some go through, most do not
 //    7. on the graphics card the two holes are drawn (and not in a normal tank), and they are clearly coloured
@@ -109,13 +110,13 @@ const URL='http://127.0.0.1:8765/index.html';
   const r=await p.evaluate(()=>{S.spin=0;let T=performance.now();let B=2;const bn=beatNow;beatNow=()=>B;
     const pos=()=>__worm.P.map(P=>[P.x,P.y,P.z,P.rad,P.face>=0?P.face:P.wall]);
     let early=0,late=0,maxStep=0,visits=[new Set(),new Set()],cornerMin=1e9,last=pos();
-    for(let i=0;i<8*40;i++){B=2+i/40;T+=1000/60;_tickT=T;wormTick();const q=pos();
-      for(let k=0;k<2;k++){const d=Math.hypot(q[k][0]-last[k][0],q[k][1]-last[k][1],q[k][2]-last[k][2]);if(q[k][4]===last[k][4]){maxStep=Math.max(maxStep,d);(B%1<0.6?early+=d:late+=d);}
+    for(let i=0;i<16*40;i++){B=2+i/40;T+=1000/60;_tickT=T;wormTick();const q=pos();
+      for(let k=0;k<2;k++){const d=Math.hypot(q[k][0]-last[k][0],q[k][1]-last[k][1],q[k][2]-last[k][2]);if(q[k][4]===last[k][4]){maxStep=Math.max(maxStep,d);(B%4<0.75?early+=d:late+=d);}   /* (4: studio is in 4/4; the page's own wormHold would follow a sabotage) */
         visits[k].add(q[k][4]);if(q[k][4]!==last[k][4])cornerMin=Math.min(cornerMin,q[k][3],last[k][3]);}
       last=q;}
     beatNow=bn;return {early,late,maxStep,visits:visits.map(v=>v.size),cornerMin,rmax:wormMax()};});
-  ok(r.early>r.late*4,L+'5. the holes slide in the first part of each beat and rest in the rest ('+r.early.toFixed(0)+' px vs '+r.late.toFixed(0)+' px)');
-  ok(r.visits.every(v=>v>=2),L+'   over 8 beats each visits more than one wall ('+r.visits.join(', ')+')');
+  ok(r.early>r.late*20,L+'5. the holes slide on each bar 1 and sit still for the rest of the bar ('+r.early.toFixed(0)+' px vs '+r.late.toFixed(0)+' px)');
+  ok(r.visits.every(v=>v>=2),L+'   over 16 beats each visits more than one wall ('+r.visits.join(', ')+')');
   ok(r.maxStep<r.rmax*0.6,L+'   gliding, not jumping (largest move in one tick '+r.maxStep.toFixed(1)+' px)');
   ok(r.cornerMin<r.rmax*0.35,L+'   and a hole shrinks to slip round a corner (down to '+r.cornerMin.toFixed(0)+' of '+r.rmax.toFixed(0)+' px where it changes wall)');
   await ctx.close();}

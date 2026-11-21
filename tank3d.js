@@ -642,7 +642,9 @@ export function start(){
     for(const p of particles){if(p.pooled)continue;if(p.d)HUE.setRGB(liqRGB[0]/255,liqRGB[1]/255,liqRGB[2]/255,T.SRGBColorSpace);else hueCol(p.hue||0,0.7,0.62,HUE);gooPos(p,_q);   /* a droplet is the slime: the chord's colour (THE CHORD COLOUR), never the note's */
       drops.add(_q[0],_q[1],_q[2],p.d?p.r*2:5.2,HUE.r,HUE.g,HUE.b,p.fade?0.95*Math.max(0,1-p.age/34):0.95);}   // a droplet or bead at its true size (THE SPRAY)   // spray that will not join the goo fades as it flies
     shadows.done();trails.done();drops.done();drawWorms(now,fill);
-    gooClip(fill,solid);if(!(++mcTick%(gooAvg>6?Math.max(2,mcEvery):mcEvery)))gooUpdate();mc.visible=particles.length>0;
+    // (broken open, the goo is drawn by the page on its canvas over this one, as a liquid: index.html burstBlobs. Its
+    // marching-cubes skin here could not follow it: goo spread past the field's box was cut flat, grey slabs and spikes)
+    gooClip(fill,solid);if(fill&&!(++mcTick%(gooAvg>6?Math.max(2,mcEvery):mcEvery)))gooUpdate();mc.visible=particles.length>0&&fill;
     // broken open: the walls are loose glass slabs
     if(!fill){const segs=curSegs||[];let m=0;
       for(const s of segs){if(m>=MAXS)break;const mx=(s.ax+s.bx)/2-CX,my=(s.ay+s.by)/2-CY,L=Math.hypot(s.bx-s.ax,s.by-s.ay);

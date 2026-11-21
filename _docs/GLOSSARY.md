@@ -22,12 +22,13 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
 - **Shape**: a 2D polygon (prism in 3D) or a **solid** (cube, octahedron...). Grow ops: **cut / puff / flip**.
 - **Orb**: a solid with one face per note (`orbN`, N = the tank's notes, 12..124), faces spread by the golden angle and
   climbing low to high. Picked as "orb" in studio's shape menu; a new scale or range regrows it.
-- **Space**: `normal`, `portal` (two moving **wormholes**), `curved` (hyperbolic). `TSPACE`, not `SPACE` (that name is taken). On **auto**, play
+- **Space**: `normal`, `portal` (two **wormholes**, each holding a wall for a bar, then sliding on), `curved` (hyperbolic). `TSPACE`, not `SPACE` (that name is taken). On **auto**, play
   mixes them in on 1 reform in 3; studio does too, but only while the slime is on. A shape or space picked by hand stays.
 - **View**: 3D (default) or 2D, a look, not a speed setting. The tank has one render look, glass (ADR 0012); the page's crayon art is
   not a tank look.
 - **Ball / note**: a bouncing note. It plays when it hits a wall. **Shot** balls (`mute:1`) don't re-play their first hit.
-- **Goo / slime liquid**: the particles that fill the tank. When the tank is full it **bursts** and **reforms** into a new shape (~64 bars).
+- **Goo / slime liquid**: the particles that fill the tank. When the tank is full it **bursts** (the goo pours out as a sticky liquid,
+  `gooBurstStep`, drawn as one skin, `burstBlobs`) and **reforms** into a new shape (~64 bars).
 - **Pane**: the front and back glass in 3D. Pane hits play soft chord tones and never feed the chord brain.
 - **Spin**: the shape turning on its own axis (`rot`). Base spin is tempo-locked in play; a **flick** adds momentum (`SPINU`).
 - **Seed**: hold-to-loop marker. Rings its spot once a bar. Does not feed the chord follower.
@@ -74,6 +75,9 @@ agent mean the same thing. (Format follows the `GLOSSARY.md` convention used by 
   (`check-drums.sh` against the browser's own render). Not SLOOP's drum synth.
 - **Popping portals** (FM-1, `s.worm_pop`): four wormholes, bigger than the site's two, each living a bar on a wall, then
   closing and opening on another; a trip ends on the grid. The site's two **gliding** holes are `worm_pop` 0.
+- **Page decorations** (FM-1, `slime_ui.c`): the lake (`fm1/host/gen-scene.py`, loaded into RAM under the splash),
+  the **minis** (five pastel slimes round the edges, hop on each bar's 1) and the **worm** (the site's wiggle worm,
+  bottom right). Drawn under the tank through `st_bg_row`, only where a frame repaints.
 - **Pose** (FM-1, `sl_tpose`): the tank as a physics tick left it, kept so the screen draws the tank as the speaker plays
   it (~75 ms behind the plan). Not the splash's `sl_pose` (the slime guy).
 - **Triangle mixer**: `#triMix` (melody / drums / band). **Mixer**: studio's per-part volume/mute/solo (`MIX`).

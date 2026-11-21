@@ -3,7 +3,7 @@
 //  the screen edge and a star sits on the tank: keep them whole and away from the tank?" - yes).
 //    1. no decoration (the slimes, the rainbow girl and her sparkles, the motes, the worm) hangs more than 2 px off the
 //       screen, in play on a phone (390) and in play and studio on desktops (1280, 1440), while it is out (a peeker that
-//       is ducking away is meant to be off screen)
+//       is ducking away is meant to be off screen, and the worm's foot is under the floor on purpose)
 //    2. none of them covers more than 5 % of itself with the tank (the shape's own box)
 //  The crayon stars painted INTO the background pictures (bg-desktop / bg-mobile) are art, not elements: moving them is
 //  an art change (on the morning list), so they are not checked here.
@@ -27,7 +27,9 @@ const init=()=>{try{for(const k of ['slimehedron-coach','slimehedron-coach-studi
       if(!el.checkVisibility()||(el.classList.contains('peeker')&&el.dataset.state!=='out'))continue;
       const q=el.getBoundingClientRect();if(q.width<4||q.height<4)continue;n++;
       const name=(el.id||String(el.className.baseVal!=null?el.className.baseVal:el.className)).slice(0,28);
-      const off=Math.max(0,-q.left,q.right-innerWidth,-q.top,q.bottom-innerHeight);if(off>2)cut.push(name+' '+Math.round(off)+'px');
+      // (the worm comes up out of the floor and sinks back into it: his foot is under the screen's bottom edge on purpose,
+      // as a ducking peeker's is; his sides and top count. He was display:none from 2026-11-08 to 11-21, so never counted)
+      const off=Math.max(0,-q.left,q.right-innerWidth,-q.top,el.id==='wormEl'?0:q.bottom-innerHeight);if(off>2)cut.push(name+' '+Math.round(off)+'px');
       const ov=Math.max(0,Math.min(q.right,T.r)-Math.max(q.left,T.l))*Math.max(0,Math.min(q.bottom,T.b)-Math.max(q.top,T.t))/(q.width*q.height);
       if(ov>0.05)over.push(name+' '+Math.round(ov*100)+'%');}
     return {n,cut,over};});

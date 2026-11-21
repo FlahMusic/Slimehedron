@@ -50,8 +50,13 @@ const SURVEY=()=>{
 
   // 2. nothing on top of a WORD. Leaf-ish elements with real text only — a wrapper div that
   //    happens to span the page is not a label, and counting it produces phantom failures.
+  //    Only words a person can read: on the screen (the studio panel's heading below a tablet's fold is not), and not
+  //    on the page blurred behind the tools window (2026-11-21: decorations re-place when the tools open now, and the
+  //    blurred, unclickable buttons under the overlay were counted as covered).
+  const ov=document.getElementById('toolsOv'),under=e=>document.body.classList.contains('tools-on')&&ov&&!ov.contains(e);
   const words=[...document.querySelectorAll('h1,h2,h3,p,li,button,a,label,span')].filter(e=>{
-    if(!vis(e))return false;
+    if(!vis(e)||under(e))return false;
+    {const q=e.getBoundingClientRect();if(q.bottom<=0||q.top>=innerHeight||q.right<=0||q.left>=innerWidth)return false;}
     if(e.children.length>2)return false;
     return (e.textContent||'').trim().length>3;}).map(e=>({r:e.getBoundingClientRect(),
       t:(e.textContent||'').trim().slice(0,18)}));

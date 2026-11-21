@@ -1345,8 +1345,8 @@ TRAPS THAT COST WHOLE SESSIONS -- DO NOT REPEAT
     Happened 4+ times in the 2026-10-26 pass (voice leading, renderer try{}, the splash loop, a test). Use /* */.
   - A syntax error in tank3d.js fails SILENTLY: GL never loads and the canvas fallback draws instead. Check
     with `node --check` on a .mjs copy after every edit.
-  - Wormholes glide during the first 60% of each beat. A test that pins beatNow must pin it late in a beat
-    (x.8) or the holes are mid-move, and must keep it pinned through screenshots (a queued rAF fires once more).
+  - Wormholes glide in the first 3/4 beat of each BAR (wormHold, since 2026-11-21; it was every beat). A test that
+    pins beatNow must pin it after beat 1 of a bar (x.8 of beat 2-4) or the holes are mid-move, and must keep it pinned through screenshots (a queued rAF fires once more).
   - A test that calls simTick in a tight loop must set _tickT itself (wormhole exits use _tickT).
   - browser.js reads SLIME_GL at launch: a GL test needs a fresh launch() after setting process.env.SLIME_GL.
   - `pkill -f 'dev-u[x].js'` still kills your own shell when the SAME command line also contains "_dev/dev-ux.js".
@@ -1401,12 +1401,68 @@ separate branches of files. Spec + research: _docs/specs/2026-11-06-many-walls/,
     the frame skip on a real 120 Hz phone; heat over 20 minutes.
 
 
+WORM, SOUND AND SLIME PASS (2026-11-21, sw v169). Flah: "wtf have u done to my worm? he doesnt even pop up anymore",
+the triangle mixer more 3D and further left, portals that sit still a bar, the hideous resonant full-slime sound, the
+slime's colour jittering, an audio and FX pass, and "the slime falling out of geometries looks ... so unorganic".
+  - THE WORM: from 2026-11-08 his placer counted the other decorations (_decorBusy) as obstacles, so the floor
+    slimes took every spot and he was display:none in play and studio. He now dodges only controls, text and the
+    tank's own shape (a box round `edges`, not the canvas), and never hides outside lessons (pointer-events off at
+    worst). On phones he is 13vw / 16.5% tall (he fitted nowhere at 18vw), and the phone rule that shrank every
+    .slime no longer catches him. dev-worm (new): shown and on screen at every look, never covered, rests AND rises,
+    wiggles, off the controls, in play 1280/1440/390 and studio; sabotaged 3 ways (hidden, frozen, the old placer).
+  - Found on the way, the worm: his spot was worked out for the width asked (50) though the tablet CSS draws him 92,
+    so he hung off the right edge; he now measures himself and tries 100 / 80 / 64% before giving up (a 360 px phone
+    has ~50 px of floor). He also reads the page fresh (_hotRectsNow), and every decoration re-places when a layout
+    class changes (mode, tools, keyboard, lesson: a MutationObserver on body's class), not only on resize.
+    Suites widened on purpose: dev-decor lets the worm's foot sit under the floor (he was never counted before: hidden);
+    dev-crowding counts only words a person can read (on screen, not on the page blurred behind the tools window).
+    Its sabotage (the worm's clear-spot search skipped) still fails 10 layouts.
+  - FULL-SLIME SOUND: a filling tank HIGH-passed the whole mix up to ~2.2 kHz and opened the low-pass (with the filter
+    on), so a full tank kept only the gritty top: that was "resonant and shitty loud". Now the fill closes the master
+    low-pass 14 kHz -> ~1.5 kHz (Q 0.5, 0.6 s glide), the high-pass stays at 20 Hz, a note's attack and release grow
+    with the fill and its level drops 0.5x (no louder), the impact tick is muffled, the delay's repeats darken (a
+    3.5 kHz low-pass in the loop), its fill boost is +0.18 (was +0.3) with feedback capped 0.26 (was 0.35), and the
+    melody's room send blooms 0.17 -> 0.26 (plinky to harmonious). dev-slimesound (new): per wave, 4 kHz+ down 13-31
+    dB, under 400 Hz within 3 dB, centroid <= 0.7x (saw, square), K-weighted level <= +1 dB, rise >= 25 ms longer;
+    sabotaged 3 ways. Its first version passed nothing for the wrong reason: the tank was not ticking (the morph lives
+    in simTick, which runs only while playing) - the suite plays now, and holds the tape hiss off (it sits after the
+    filter and floored the 4 kHz reading).
+  - PORTALS hold a bar (wormHold = beats per bar, >= 2), sliding in the first 3/4 beat. dev-portal 5 asserts it with
+    a fixed 4-beat bar (the page's own wormHold would follow a sabotage); sabotaged (every beat: red).
+  - SLIME COLOUR: it aimed mid-bar between this chord and the predicted next one in 16 drum steps, and raced to the
+    chord after next at a bar line (one frame moved 104 of 441; 18 reversals in 20 s). Now it follows the sounding
+    chord through two 400 ms smoothers in real time (liquidColor; liqHSL=null still snaps it), and slimeShade finds its
+    lightness by halving (the 0.01 steps flickered on the 3D goo). dev-goocolour (new): worst move a frame <= 8 (now
+    ~2-6), <= 1 reversal (0), speed change <= 3; sabotaged 3 ways (snap, the old steps, frozen).
+  - TRIANGLE MIXER: a jelly tile (a side below the face, ground shadow, lit rim, a glossy ball knob), play's sits by
+    the sound column (left 104-140 px, was 150-210), studio's lifted off the keyboard button. Its pointer map was not
+    the viewBox (a tap on the top corner landed 13 units low): it uses getScreenCTM now. dev-trimix (new); sabotaged.
+  - THE BURST: out of the broken tank each drop fell alone (gravity, a 1.85 bounce) and was stamped as its own disc:
+    a rigid sheet of gravel gone in ~1.5 s, and on the GPU the marching-cubes skin was cut flat at its field box (grey
+    slabs). Now gooBurstStep is Clavet, Beaudoin & Poulin's particle viscoelastic fluid (SCA 2005, doi
+    10.2312/SCA/SCA05/219-228): viscosity impulses, double density relaxation with the burst's own packing as rest
+    density, sticky shards (no bounce, slide x0.82), position-based velocity, a spatial hash; ~1 ms a tick for 900 drops.
+    burstBlobs draws it as metaballs (soft dots added at half size, cut at a threshold, lit from the top left); in the
+    GL view the page's canvas draws it over the GL tank and the GL goo hides while broken. The burst kick swells the
+    mass outward instead of spraying it. dev-burst (new, 3 seeded bursts, medians): lone drops 2% (old 17%), 32% still
+    clinging at 2 s (old 10%), 3% at 5.5 s, outline/sqrt(area) 13.5 (old 16.4); sabotaged (sand, stuck, the old page).
+    Not caught by a machine: each drop drawn as its own disc OVER the new physics (13.6, the drops are packed); the
+    metaball look was judged on screenshots (scratchpad sheets, 2D, canvas-3D and GL).
+  - FM-1 (same day, separate commit): the lake behind the tank, the five minis and the site's worm (see the FM-1
+    notes). A control run (every decoration off) read the same worst 5 s window, 20.5 fps: they cost nothing
+    measurable; the earlier 25.9 was a different session.
+  - Not checked by a machine: how the new full-slime sound and the reverb bloom sound on real speakers; the burst on a
+    real phone's frame rate (1 ms a tick on this desktop, only while it bursts); the jelly mixer at 120 Hz.
+
 ================================================================
 8. GIT STATE AS OF THIS WRITING
 ================================================================
 
 origin/main may be behind by up to 11 commits. Flah pushes / uploads.
 
+  (2026-11-21)  site: the worm back, full-slime sound low-passed, portals hold a bar, the colour glides, a jelly mixer,
+                the burst as a viscoelastic liquid drawn as metaballs; sw v169
+  (2026-11-21)  fm1: the lake, the minis and the worm behind the tank
   (2026-11-21)  fm1: splash II (headphones, his own synth, chill / surprised / excited, twinkle into an open maj7), stopped
                 keys only sound, HOME's duplicate "new shape" gone, hand-picked shapes stay, beat lock every other tick
   (2026-11-20)  fm1: the site's drums on the device, sounds on the left knobs, a MIDI page, 52 scales, popping portals,

@@ -1238,8 +1238,8 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
 /* STUDIO: mixer bottom-left (the left gutter is empty there). PLAY: the left column holds the Sound buttons, so the
    mixer moves to bottom-CENTER, clear of both candy columns. Never steals tank height in either mode. */
 #triMixBar{position:absolute;z-index:60;padding:0}
-.mode-studio #triMixBar{bottom:10px;left:8px}
-.mode-play #triMixBar{bottom:clamp(120px,26vh,240px);left:clamp(150px,15vw,210px);transform:none} /* UP into the bg cloud (mid-left), slightly right of the Sound column — per Flah's circled spot */
+.mode-studio #triMixBar{bottom:62px;left:8px} /* (62: its drummer sat on the keyboard button) */
+.mode-play #triMixBar{bottom:clamp(120px,26vh,240px);left:clamp(104px,8.5vw,140px);transform:none} /* UP into the bg cloud (mid-left), slightly right of the Sound column — per Flah's circled spot */
 #autoRow{position:absolute;top:100px;left:50%;transform:translateX(-50%);z-index:61;padding:0} /* moved DOWN so it clears the tempo knob up top */
 .mode-learn #triMixBar,.mode-learn #autoRow{display:none}
 /* phone: BOTH modes put the mixer bottom-center (clear of the bottom-left slimes AND the bottom-right menu button)
@@ -1252,9 +1252,12 @@ main{flex:1;display:flex;gap:18px;padding:6px 18px 18px;min-height:0}
   .mode-studio #triMixBar,.mode-play #triMixBar{top:auto;bottom:6px;left:50%;transform:translateX(-50%)}
   #triMix svg{width:172px!important;height:auto!important}
   /* SLIMES were huge on phones (base 90px). scale to ~desktop proportion, smart-shrinking with the viewport. */
-  .slime{width:clamp(34px,10.5vw,50px)!important;height:auto!important;aspect-ratio:90/84} /* smaller on phone so more can spread without clutter */
+  .slime:not(#wormEl){width:clamp(34px,10.5vw,50px)!important;height:auto!important;aspect-ratio:90/84} /* smaller on phone so more can spread without clutter.
+     (Not the worm: he carries the class too, and height:auto with a slime's shape made him a 70 px square, sunk out of
+     sight by his own resting dip: on a phone he was a head for a moment and then gone, 2026-11-21, dev-worm.js) */
   #triMix .slime,#triMix img{width:auto!important;height:auto!important;aspect-ratio:auto!important} /* the mixer's own icons are CONTROLS, not scenery — never shrink them with the crowd */
-  #wormEl{width:clamp(62px,18vw,92px)!important} /* he is a CHARACTER, not background scatter - he was shrunk with the crowd and vanished */
+  #wormEl{width:clamp(48px,13vw,92px)!important} /* he is a CHARACTER, not background scatter - he was shrunk with the crowd and vanished.
+     (13vw, not 18: on a 390 phone the floor between the mixer and the 3D button is ~54 px; at 70 he fitted nowhere) */
 }
 /* ===== HARD SAFETY FALLBACK — guarantees a usable layout on ANY small device (no overlaps, ever) =====
    As the screen narrows, the mixer and side buttons step down in size and the tank keeps priority. These caps mean
@@ -2250,15 +2253,26 @@ select:focus-visible{outline:3px solid #8f6ae0;outline-offset:2px}
 <div id="triMixBar">
   <div id="triMix" title="drag to mix: melody (top) · drums (left) · band (right)">
     <svg viewBox="-40 -46 180 172" width="248" height="238" style="display:block;overflow:visible">
-      <defs><linearGradient id="tmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c6ff"/><stop offset=".5" stop-color="#bdeee0"/><stop offset="1" stop-color="#ffd3e7"/></linearGradient></defs>
+      <!-- A JELLY TILE, not a flat sticker (Flah 2026-11-21: "make the triangle mixer more 3d-like"): a soft shadow on the
+           ground, the tile's thick side below its face (the face's colours, deeper), the face lit from the top left
+           (a pale rim on the lit edges, a shade toward the bottom) and a glossy ball for the knob that casts a shadow -->
+      <defs><linearGradient id="tmg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9c6ff"/><stop offset=".5" stop-color="#bdeee0"/><stop offset="1" stop-color="#ffd3e7"/></linearGradient>
+        <linearGradient id="tmSide" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a98fe6"/><stop offset=".5" stop-color="#7fcdb8"/><stop offset="1" stop-color="#e99bbf"/></linearGradient>
+        <linearGradient id="tmShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#5a4a8c" stop-opacity=".16"/></linearGradient>
+        <radialGradient id="tmKnobG" cx=".36" cy=".32" r=".75"><stop offset="0" stop-color="#fff"/><stop offset=".28" stop-color="#c9f5e6"/><stop offset=".75" stop-color="#7fd8bd"/><stop offset="1" stop-color="#4fae96"/></radialGradient>
+        <filter id="tmBlur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.2"/></filter></defs>
+      <ellipse cx="50" cy="86" rx="40" ry="6" fill="#5a4a8c" opacity=".2" filter="url(#tmBlur)"/>
+      <path d="M50 8 Q55 8 58 13 L88 63 Q92 70 85 74 Q78 78 50 78 Q22 78 15 74 Q8 70 12 63 L42 13 Q45 8 50 8 Z" transform="translate(0 7)" fill="url(#tmSide)" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
       <path d="M50 8 Q55 8 58 13 L88 63 Q92 70 85 74 Q78 78 50 78 Q22 78 15 74 Q8 70 12 63 L42 13 Q45 8 50 8 Z" fill="url(#tmg)" stroke="rgba(255,255,255,.95)" stroke-width="2.5"/>
+      <path d="M50 8 Q55 8 58 13 L88 63 Q92 70 85 74 Q78 78 50 78 Q22 78 15 74 Q8 70 12 63 L42 13 Q45 8 50 8 Z" fill="url(#tmShade)" pointer-events="none"/>
+      <path d="M14 64 L43 15 Q46 10.5 50 10.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".9" pointer-events="none"/>
       <!-- the actual crayon slime band: keys (melody) at top, drummer bottom-left, bassist bottom-right -->
       <!-- one size (40) for all three; each centered the SAME distance outside its own corner so the trio reads as a balanced set -->
       <image href="mixslime_keys.png" x="30" y="-46" width="40" height="40" preserveAspectRatio="xMidYMid meet"/><!-- apex: backed up higher so it clears the peak -->
       <image href="mixslime_drum.png" x="-24" y="62" width="40" height="40" preserveAspectRatio="xMidYMid meet"/><!-- bottom-left: pushed further out/down off the corner -->
       <image href="mixslime_bass.png" x="84" y="62" width="40" height="40" preserveAspectRatio="xMidYMid meet"/><!-- bottom-right: mirror -->
 
-      <circle id="triKnob" cx="50" cy="53" r="10" fill="#9fe6cf" stroke="#fff" stroke-width="3.2" style="filter:drop-shadow(0 2px 4px rgba(120,110,160,.45))"/>
+      <circle id="triKnob" cx="50" cy="53" r="10" fill="url(#tmKnobG)" stroke="#fff" stroke-width="2.6" style="filter:drop-shadow(0 4px 3px rgba(90,74,140,.42))"/>
     </svg></div>
   <span id="drumCtl" style="display:flex;align-items:center;gap:8px;opacity:.35;pointer-events:none">
     <svg width="16" height="16" viewBox="0 0 24 24" style="flex:none"><use href="#icDrum"/></svg><!-- this cluster = the drums -->
@@ -2666,7 +2680,7 @@ const S={
 let BURST_MS=6000; // how long the corners stay broken open before reforming
 
 // ---------- audio ----------
-let AC=null,master=null,delayNode=null,dlyFb=null,dlyWet=null,masterFilt=null,slimeEQ=null,slimeComp=null,activeVoices=0,recTap=null,masterHP=null,bandBus=null,melBus=null,bandMix=null,padBus=null,melEcho=null,lim=null,outClip=null;
+let AC=null,master=null,delayNode=null,dlyFb=null,dlyWet=null,dlyLP=null,masterFilt=null,slimeEQ=null,slimeComp=null,activeVoices=0,recTap=null,masterHP=null,bandBus=null,melBus=null,bandMix=null,padBus=null,melEcho=null,lim=null,outClip=null;
 let outVol=null; // THE master volume. see initAudio
 // MASTER LIFT (2026-11-07): the level pass (critique 04/05) put the drums 10-15 LU under the melody. Before it they drove
 // the whole mix into the limiter (peaks pinned at -0.9 dBFS); after it the app measured 5-11 dB quieter (studio -18.3
@@ -2749,7 +2763,10 @@ function initAudio(){
   // pong). It was one mono line in the middle, the widest-sounding effect in the app drawn narrowest. Every hop, left
   // to right and right to left, goes through the feedback, so echo n is fb^(n-1) as before: left 1, right fb, left fb^2.
   dlyR=AC.createDelay(2.0);dlyR.delayTime.value=60/S.bpm*0.75;dlyFbR=AC.createGain();dlyFbR.gain.value=dlyFb.gain.value;
-  delayNode.connect(dlyFb);dlyFb.connect(dlyR);dlyR.connect(dlyFbR);dlyFbR.connect(delayNode);
+  // each repeat a little darker: a low-pass in the loop (tape and analogue delays do this). Without it the echoes of a
+  // bright note came back as bright as it, stacking into a metallic ring as the slime turned the delay up
+  dlyLP=AC.createBiquadFilter();dlyLP.type='lowpass';dlyLP.frequency.value=3500;dlyLP.Q.value=0.5;
+  delayNode.connect(dlyLP);dlyLP.connect(dlyFb);dlyFb.connect(dlyR);dlyR.connect(dlyFbR);dlyFbR.connect(delayNode);
   // +3 dB into each equal-power panner: the two sides together carry the power the centred echo did
   {const gl=AC.createGain(),gr=AC.createGain();gl.gain.value=gr.gain.value=Math.SQRT2;
    delayNode.connect(gl);gl.connect(panTo(dlyWet,-0.8));dlyR.connect(gr);gr.connect(panTo(dlyWet,0.8));   /* near hard left and right, as ping-pong delays are */}
@@ -2895,13 +2912,16 @@ function playSynth(freq,vel,imp,hold,firm,at,pan){   // hold = seconds to SIT at
   // fill drives envelope: empty = plucky/short, full = rounder attack/decay + longer release
   const shorten=1.15-imp*0.4;              // harder hits decay quicker
   // 4 ms at least: a 1 ms ramp throws a click about 1 kHz wide over a soft note (the tick is the deliberate transient)
-  const A=Math.max(0.004,(S.atk+ff*0.1)*ej), D=Math.max(0.001,(S.dec+ff*0.2)*ej*shorten),
-        Su=Math.max(0.0001,Math.min(1,S.sus+ff*0.2)), Rl=Math.max(0.02,(S.rel+ff*0.8)*ej*shorten);
+  // the slime (ff, 0..1 as it fills) slows a note's start and its tail and softens it: plinky in an empty tank, round
+  // and calm in a full one (Flah 2026-11-21: "slower attack and release"). Its level comes down as it lengthens, so a
+  // full tank is not louder for its notes overlapping (it was 5 dB louder: dev-slimesound.js)
+  const A=Math.max(0.004,(S.atk+ff*0.09)*ej), D=Math.max(0.001,(S.dec+ff*0.15)*ej*shorten),
+        Su=Math.max(0.0001,Math.min(1,S.sus+ff*0.1)), Rl=Math.max(0.02,(S.rel+ff*0.5)*ej*shorten);
   // --- tick layer (skipped when busy so old phones stay smooth) ---
   if(activeVoices<=24&&noiseBuf){
     const nz=AC.createBufferSource();nz.buffer=noiseBuf;
     const bp=AC.createBiquadFilter();bp.type='bandpass';bp.frequency.value=Math.min(9000,freq*5);bp.Q.value=1.1;
-    const ng=AC.createGain();const tickLvl=v*(0.05+imp*0.16)*(0.9+Math.random()*0.2);
+    const ng=AC.createGain();const tickLvl=v*(0.05+imp*0.16)*(0.9+Math.random()*0.2)*(1-0.8*ff);   // (the slime muffles the impact)
     ng.gain.setValueAtTime(0,t);ng.gain.linearRampToValueAtTime(tickLvl,t+0.0015);
     ng.gain.exponentialRampToValueAtTime(0.0001,t+0.006+imp*0.009);
     nz.connect(bp);bp.connect(ng);ng.connect(melBus||master);   // the tick belongs to the MELODY, not straight to the master
@@ -2926,7 +2946,7 @@ function playSynth(freq,vel,imp,hold,firm,at,pan){   // hold = seconds to SIT at
   const base=cutHz(S.cut)*vb, top=cutHz(Math.min(1,S.cut+S.fenv))*vb;
   f.frequency.setValueAtTime(S.fenv>0?top:base,tr);
   if(S.fenv>0)f.frequency.linearRampToValueAtTime(base,tr+A+D);
-  const g=AC.createGain();const peak=v*0.42*(dud?0.16:1)*(1-imp*0.18);
+  const g=AC.createGain();const peak=v*0.42*(dud?0.16:1)*(1-imp*0.18)*(1-0.5*ff);
   g.gain.setValueCurveAtTime(attackCurve(peak),tr,A);g.gain.linearRampToValueAtTime(peak*Su,tr+A+D);   // an S-curve: no corner to click
   // The sustain segment was a flat 0.05s, so a "whole note" and a "quarter note" were the same
   // length -- which made the note-duration lesson teach nothing by ear. hold extends it.
@@ -3810,15 +3830,28 @@ const PAGE_HUE=150/360;
 function slimeRGB(c){const r=c[0]/255,g=c[1]/255,b=c[2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;
   let h=0,s=0;if(d){s=l>0.5?d/(2-mx-mn):d/(mx+mn);h=(mx===r?((g-b)/d+(g<b?6:0)):mx===g?(b-r)/d+2:(r-g)/d+4)/6;}
   const q=slimeShade([h,s,l]);return hslRGB(q[0],q[1],q[2]);}
-function slimeShade(h,yMax){const dh=Math.abs(((h[0]-PAGE_HUE)%1+1.5)%1-0.5)*360,Ym=(yMax||SLIME_Y_MAX)*(dh<75?0.8:1);let l=h[2];for(let i=0;i<70&&l>0.05&&relLum(hslRGB(h[0],h[1],l))>Ym;i++)l-=0.01;return [h[0],h[1],l];}
-let liqRGB=[178,205,240],liqHSL=null; // eased every frame so the color glides between chords, never snaps (round the wheel: liqHSL)
+// (found by halving, not 0.01 steps: a colour gliding round the wheel snapped its lightness a hundredth at a time, a
+// flicker on the 3D goo, which shades the gliding colour every frame. Same floor as the old loop: at most 0.7 deeper, not under 0.05)
+function slimeShade(h,yMax){const dh=Math.abs(((h[0]-PAGE_HUE)%1+1.5)%1-0.5)*360,Ym=(yMax||SLIME_Y_MAX)*(dh<75?0.8:1);let l=h[2];
+  if(l<=0.05||relLum(hslRGB(h[0],h[1],l))<=Ym)return [h[0],h[1],l];
+  let lo=Math.max(0.05,l-0.7),hi=l;if(relLum(hslRGB(h[0],h[1],lo))>Ym)return [h[0],h[1],lo];
+  for(let i=0;i<14;i++){const m=(lo+hi)/2;if(relLum(hslRGB(h[0],h[1],m))>Ym)hi=m;else lo=m;}return [h[0],h[1],lo];}
+// THE POOL'S COLOUR FLOWS (Flah 2026-11-21: "a weird jitteriness ... causes the slime to glitch and sperg around when
+// it changes color, it should be a fluid gradual gradient thing that flows effortlessly"). It aimed mid-bar between
+// this chord and the predicted next one, in 16 steps a bar (the drum step), and when the bar turned before the chord
+// did (the scheduler runs ahead) it raced to the chord after next and back: one frame moved it 104 of 255, a bar line
+// 13-20 a frame for six frames running, and it reversed 18 times in 20 s (measured 2026-11-21, dev-goocolour). Now it
+// follows the chord that is sounding (liqHSL = null snaps it), through two smoothers in a row, in real time
+// (not frames): a chord change sets it off from standing, it swells and settles over ~1.5 s, and it cannot overshoot.
+let liqRGB=[178,205,240],liqHSL=null,_liqV=null,_liqT=0;
+const LIQ_TAU=400;   // ms, each of the two smoothers: 90% of the way in ~1.5 s
 function liquidColor(){
-  let tgt;
-  if(bandOn&&drumBar()){const f=(drumStep%drumBar())/drumBar();
-    tgt=hslMix(chordHSL(curRootDeg),chordHSL(nextRootDeg==null?curRootDeg:nextRootDeg),f);} // mid-bar the pool is literally between the two chords
-  else tgt=chordHSL(curRootDeg);   // no band: the chord the brain is on (blending the melody's notes went grey)
-  tgt=slimeShade(tgt);
-  liqHSL=liqHSL?hslMix(liqHSL,tgt,0.06):tgt.slice();const c=hslRGB(liqHSL[0],liqHSL[1],liqHSL[2]);liqRGB[0]=c[0];liqRGB[1]=c[1];liqRGB[2]=c[2];
+  const tgt=slimeShade(chordHSL(curRootDeg));   // the chord the band or the brain is on (blending the melody's notes went grey)
+  const now=performance.now();
+  if(!liqHSL||!_liqV){liqHSL=tgt.slice();_liqV=tgt.slice();_liqT=now;}
+  const a=1-Math.exp(-Math.min(100,Math.max(0,now-_liqT))/LIQ_TAU);_liqT=now;   // (called twice in a frame: the second call moves it 0)
+  _liqV=hslMix(_liqV,tgt,a);liqHSL=hslMix(liqHSL,_liqV,a);
+  const c=hslRGB(liqHSL[0],liqHSL[1],liqHSL[2]);liqRGB[0]=c[0];liqRGB[1]=c[1];liqRGB[2]=c[2];
   const P=(m,al)=>`rgba(${(liqRGB[0]+(255-liqRGB[0])*m)|0},${(liqRGB[1]+(255-liqRGB[1])*m)|0},${(liqRGB[2]+(255-liqRGB[2])*m)|0},${al})`; // toward white = pastel
   const D=(m,al)=>`rgba(${(liqRGB[0]*(1-m))|0},${(liqRGB[1]*(1-m))|0},${(liqRGB[2]*(1-m))|0},${al})`;                                     // toward dark = depth
   return {crest:P(0.55,0.88),mid:P(0.22,0.94),deep:D(0.24,0.97),lip:P(0.78,0.8),blob:P(0.3,0.85)};}
@@ -5378,8 +5411,66 @@ function startBreak(now){
     const dx=mx-CX,dy=my-CY,d=Math.hypot(dx,dy)||1,kick=2.6+Math.random()*2.2; // BIG pop outward — the finale
     frags.push({mx,my,ang,len:hl,vx:dx/d*kick+(Math.random()-0.5)*2.4,vy:dy/d*kick+(Math.random()-0.5)*2.4,
       va:(Math.random()-0.5)*0.14,cents:e.cents,hue:e.hue,flash:1});}
-  for(const p of particles){const dx=p.x-CX,dy=p.y-CY,d=Math.hypot(dx,dy)||1;const s=0.8+Math.random()*1.4;
-    p.vx+=dx/d*s+(Math.random()-0.5)*1.5;p.vy+=dy/d*s+(Math.random()-0.5)*1.5;}
+  // the goo heaves outward as ONE mass (each drop by how far out it sits, a little noise), and from here it is a
+  // viscoelastic liquid (gooBurstStep): it was 0.8-2.2 px a tick each in a random direction, a spray of sand
+  for(const p of particles){const dx=p.x-CX,dy=p.y-CY,s=0.9*Math.min(1.2,Math.hypot(dx,dy)/R)+Math.random()*0.25;
+    p.vx+=dx/R*s*1.4+(Math.random()-0.5)*0.3;p.vy+=dy/R*s*1.4-0.6+(Math.random()-0.5)*0.3;}
+  GOOB.rho0=0;   // measured on the first step: the goo's own packing is its rest
+}
+// ===== THE GOO BREAKS OUT AS A LIQUID (Flah 2026-11-21: "the look of the slime falling out of geometries looks absolutely
+// atrocious and so unorganic, do some deep learning on how to make slime/fluid physics on browser"). Out of the broken
+// tank every drop used to fall on its own, a grain of sand with gravity and a bounce, so the goo turned to dust. Now it
+// is Clavet, Beaudoin & Poulin's particle viscoelastic fluid (SCA 2005, "Particle-based viscoelastic fluid simulation",
+// doi 10.2312/SCA/SCA05/219-228), the cheap one built for games: each tick
+//   1. viscosity: neighbours closing on each other trade an impulse (linear + quadratic in their closing speed), so the
+//      goo moves together and thick
+//   2. every drop moves by its velocity (saving where it was)
+//   3. DOUBLE DENSITY RELAXATION: each drop's density and "near density" from its neighbours inside h; a drop packed
+//      tighter than the goo's rest density pushes them away, a drop at the skin (thinner) pulls them in (that pull is
+//      surface tension: the goo stays in blobs and strings and drips), and the near density's push (always outward,
+//      steeper close in) keeps drops from collapsing into clumps
+//   4. the broken walls: a drop is held out of each shard, with no bounce and its slide slowed (sticky: it clings,
+//      runs down and drips off)
+//   5. the velocity is where it went (position-based, as in the paper: steady at a 60 Hz tick)
+// The rest density is the goo's own packing when it bursts (measured), so it does not explode or implode on the first
+// tick. A spatial hash of cells h wide finds the neighbours: ~800 drops at ~10 neighbours is ~16,000 pairs a tick.
+const GOOB={h:PR*3.4,rho0:0,k:0.18,kn:0.9,sig:0.22,beta:0.04,stick:0.82,grid:new Map(),nb:[]};
+function gooBurstStep(segs){
+  const P=particles,n=P.length,h=GOOB.h,G=GOOB.grid,ih=1/h;if(!n)return;
+  G.clear();
+  for(let i=0;i<n;i++){const p=P[i],k=((Math.floor(p.x*ih)+512)<<11)|(Math.floor(p.y*ih)+512)&2047;let a=G.get(k);if(!a){a=[];G.set(k,a);}a.push(i);}
+  const NB=GOOB.nb;NB.length=0;   // pairs i<j inside h, flat: i, j
+  for(let i=0;i<n;i++){const p=P[i],cx=Math.floor(p.x*ih)+512,cy=Math.floor(p.y*ih)+512;
+    for(let gx=cx-1;gx<=cx+1;gx++)for(let gy=cy-1;gy<=cy+1;gy++){const a=G.get((gx<<11)|(gy&2047));if(!a)continue;
+      for(const j of a){if(j<=i)continue;const q=P[j],dx=q.x-p.x,dy=q.y-p.y;if(dx*dx+dy*dy<h*h)NB.push(i,j);}}}
+  // 1. gravity and viscosity
+  for(let i=0;i<n;i++){const p=P[i];p.vy+=gY;p.vx+=gX;}
+  for(let m=0;m<NB.length;m+=2){const a=P[NB[m]],b=P[NB[m+1]];let dx=b.x-a.x,dy=b.y-a.y;const d=Math.hypot(dx,dy);if(d<1e-4)continue;dx/=d;dy/=d;
+    const q=d/h,u=(a.vx-b.vx)*dx+(a.vy-b.vy)*dy;if(u<=0)continue;
+    const I=Math.min(u*0.5,(1-q)*(GOOB.sig*u+GOOB.beta*u*u))*0.5;a.vx-=I*dx;a.vy-=I*dy;b.vx+=I*dx;b.vy+=I*dy;}
+  // 2. move, keeping where it was
+  for(let i=0;i<n;i++){const p=P[i];p._px=p.x;p._py=p.y;p.x+=p.vx;p.y+=p.vy;}
+  // 3. double density relaxation
+  const rho=GOOB._r||(GOOB._r=new Float32Array(4096)),rn=GOOB._n||(GOOB._n=new Float32Array(4096));
+  if(rho.length<n){GOOB._r=new Float32Array(n*2);GOOB._n=new Float32Array(n*2);return gooBurstStep(segs);}
+  rho.fill(0,0,n);rn.fill(0,0,n);
+  for(let m=0;m<NB.length;m+=2){const i=NB[m],j=NB[m+1],a=P[i],b=P[j],d=Math.hypot(b.x-a.x,b.y-a.y);if(d>=h)continue;const w=1-d/h,w2=w*w;
+    rho[i]+=w2;rho[j]+=w2;rn[i]+=w2*w;rn[j]+=w2*w;}
+  if(!GOOB.rho0){const s2=Array.from(rho.subarray(0,n)).sort((x,y)=>x-y);GOOB.rho0=Math.max(0.6,s2[Math.floor(n*0.6)]||1);}
+  for(let m=0;m<NB.length;m+=2){const i=NB[m],j=NB[m+1],a=P[i],b=P[j];let dx=b.x-a.x,dy=b.y-a.y;const d=Math.hypot(dx,dy);if(d>=h||d<1e-4)continue;dx/=d;dy/=d;
+    const w=1-d/h,pr=GOOB.k*((rho[i]-GOOB.rho0)+(rho[j]-GOOB.rho0))*0.5,pn=GOOB.kn*(rn[i]+rn[j])*0.5;
+    let D=(pr*w+pn*w*w)*0.5;D=Math.max(-1.2,Math.min(2.5,D));
+    a.x-=D*dx;a.y-=D*dy;b.x+=D*dx;b.y+=D*dy;}
+  // 4. the shards: held out, no bounce, sticky
+  for(let i=0;i<n;i++){const o=P[i];o._st=0;
+    for(const e of segs){const ex=e.bx-e.ax,ey=e.by-e.ay,L2=ex*ex+ey*ey||1,t=((o.x-e.ax)*ex+(o.y-e.ay)*ey)/L2;if(t<0||t>1)continue;
+      const cxp=e.ax+t*ex,cyp=e.ay+t*ey;let dx=o.x-cxp,dy=o.y-cyp,d=Math.hypot(dx,dy);if(d>=o.r)continue;
+      if(d<1e-4){dx=-ey;dy=ex;d=Math.hypot(dx,dy)||1;}   // on the line: out on the side it came from
+      const pdx=o._px-cxp,pdy=o._py-cyp;if(pdx*dx+pdy*dy<0){dx=-dx;dy=-dy;}
+      o.x=cxp+dx/d*o.r;o.y=cyp+dy/d*o.r;o._st=1;}}
+  // 5. the velocity is where it went; a drop on a shard slides slowly
+  for(let i=0;i<n;i++){const p=P[i];p.vx=p.x-p._px;p.vy=p.y-p._py;if(p._st){p.vx*=GOOB.stick;p.vy*=GOOB.stick;}
+    const sp=Math.hypot(p.vx,p.vy);if(sp>14){p.vx*=14/sp;p.vy*=14/sp;}}   // (a cap, never reached by the goo itself)
 }
 // play-mode shape order: round/high-sided & culturally-loved first (heart, near-round dodecagon, star),
 // so a kid's eye is rewarded early and they stay. tweak this list to change what shows and when!
@@ -5453,8 +5544,8 @@ function fillPhysics(now){
       if(done||now-reformStart>2200)commitReform();
     }
     const segs=curSegs||computeSegs();
-    for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.vy+=gY;p.vx+=gX;p.x+=p.vx;p.y+=p.vy;p.vx*=0.994;segHit(p,segs);
-      if(p.y>H+60||p.x<-60||p.x>W+60||p.y<-200)particles.splice(i,1);}
+    gooBurstStep(segs);   // the goo is a liquid out here too (see THE GOO BREAKS OUT AS A LIQUID)
+    for(let i=particles.length-1;i>=0;i--){const p=particles[i];if(p.y>H+60||p.x<-60||p.x>W+60||p.y<-200)particles.splice(i,1);}
   }
   if(particles.length){let sy=0,n=0;for(const p of particles)if(p.pooled){sy+=p.y;n++;}
     if(n>8){const hF=Math.max(0,Math.min(1,((CY+R*0.72)-sy/n)/(R*1.44)));liquidH+=(hF-liquidH)*0.04;}}
@@ -5462,14 +5553,19 @@ function fillPhysics(now){
   if(burstFlash>0)burstFlash*=0.93;
   if(formGlow>0)formGlow*=0.95;
   if(masterFilt){const m=modLevel(),ff=fillFrac(),t=AC.currentTime;
-    // real coverage (not the old avg-height guess, which lied on triangles and floating goo) morphs the master filter
-    const hLift=Math.max(0,(ff-0.35)/0.65), base=S.filtOn?cutHzFill(1-m):14000;
-    const lp=Math.min(14000,base+(14000-base)*hLift*hLift);
-    const hp=S.filtOn?20*Math.pow(110,hLift):20; // 20 Hz -> ~2.2 kHz max, gentle on ears always
-    masterHP.frequency.setTargetAtTime(hp,t,0.35);
-    masterFilt.frequency.setTargetAtTime(lp,t,0.35);
+    // THE SLIME MUFFLES THE SOUND (Flah 2026-11-21: "more low passed than anything as its literally being filled with
+    // slime"). The tank's real coverage closes the master's low-pass, 14 kHz empty down to ~1.4 kHz full, whatever the
+    // filter switch says, with no resonance (Q 0.5). It used to do the opposite: with the filter on, a filling tank
+    // HIGH-passed the whole mix up to ~2.2 kHz and opened the low-pass to 14 kHz, so a full tank kept only the gritty top
+    // of every note ("so resonant and shitty loud"; dev-slimesound.js). The high-pass stays down where the low end lives.
+    const base=S.filtOn?cutHzFill(1-m*0.5):14000, slimeLP=14000*Math.pow(0.1,Math.pow(m,1.5));
+    masterHP.frequency.setTargetAtTime(20,t,0.35);
+    masterFilt.frequency.setTargetAtTime(Math.min(base,slimeLP),t,0.6);   // (0.6 s: the slime closes it slowly, as it rises)
     const wash=Math.pow(Math.min(1,ff/0.9),2); // square taper on TRUE coverage: no more washed-out sound at a visually 30% tank
-    let wet=S.fxOn?Math.min(0.5,S.dly+wash*0.3):0; // where the liquid says the delay belongs
+    let wet=S.fxOn?Math.min(0.42,S.dly+wash*0.18):0; // where the liquid says the delay belongs (+0.18 at full, was 0.3: the echoes piled up)
+    // plinky to harmonious: the melody's room send blooms as the slime rises (0.17 dry and close in an empty tank, 0.26
+    // full), so the notes run together into a chord in the room instead of stacking as separate pings in the echo
+    if(melSend)melSend.gain.setTargetAtTime(S.fxOn?0.17+wash*0.09:0.17,t,0.8);
     if(dlyGrab){const since=performance.now()-dlyGrab;
       if(since<10000)wet=_dlyHand;                                        // your hand owns the fader for 10 whole seconds — zero fighting
       else if(since<14000)wet=_dlyHand+(wet-_dlyHand)*((since-10000)/4000); // then it drifts home over 4s, ear and eye together
@@ -5477,7 +5573,7 @@ function fillPhysics(now){
     dlyWet.gain.setTargetAtTime(wet,t,0.5);
     const dt=document.getElementById('dlyTop'); // in auto mode the fader tracks what you actually hear — the slime IS the delay knob
     if(dt&&S.slimeMode&&(!dlyGrab||performance.now()-dlyGrab>=10000))dt.value=Math.round(Math.sqrt(Math.max(0,wet)/0.5)*100);
-    dlyFb.gain.setTargetAtTime(Math.min(0.35,0.14+wash*0.21),t,0.5);if(dlyFbR)dlyFbR.gain.setTargetAtTime(Math.min(0.35,0.14+wash*0.21),t,0.5);} // feedback hard-capped at 0.35
+    dlyFb.gain.setTargetAtTime(Math.min(0.26,0.14+wash*0.12),t,0.5);if(dlyFbR)dlyFbR.gain.setTargetAtTime(Math.min(0.26,0.14+wash*0.12),t,0.5);} // feedback capped at 0.26 (0.35 rang on)
 }
 
 // ===== THE GOO IN 3D: A LAVA LAMP =====
@@ -5779,13 +5875,16 @@ const WORM={on:false,open:0,key:'',beat:0,P:[0,1].map(i=>({i,x:0,y:0,z:0,n:[1,0,
 function wormOn(){return !!edges&&edges._space==='portal'&&fillState==='fill'&&!_labOn();}
 function wormMax(){return solid3D()&&edges._solid?SOLID_R*0.24:(VIEW.d3?Math.min(84,BOXD*0.24):36);}   // a hole's full radius, px: about one wall hit in eight goes through
 function wormBeat(){return beatNow();}
-// HOW THE HOLES MOVE. Each one rests in the middle of a wall (a face) and, on every beat, slides to a NEIGHBOURING
-// wall: the slide takes the first part of the beat (eased), then it rests there for the rest of it. Round the
+// HOW THE HOLES MOVE. Each one rests in the middle of a wall (a face) and, on every bar's 1, slides to a NEIGHBOURING
+// wall: the slide takes the first three quarters of a beat (eased), then it sits still for the rest of the bar (Flah
+// 2026-11-21: "they need to sit still at least a bar or half bar, theres no time for the notes to even get in them";
+// they slid on every beat, resting 0.4 of one, ~0.3 s at 80 bpm). Round the
 // corner it shrinks to nothing and opens again on the other side, so it is never hanging off an edge, and at rest
 // it is always fully open, whatever the shape (on an icosahedron's small faces too). Which neighbour it goes to
 // is a coin toss that mostly keeps it going the same way round; the two never head for the same wall, and in
 // the 3D box each also drifts front-to-back. So where a ball that goes in will come out is never the same twice.
-function wormGlide(b){const f=b-Math.floor(b),k=Math.min(1,f/0.6);return k*k*(3-2*k);}
+function wormHold(){return Math.max(2,beatsPerBar());}   // beats a hole stays on its wall (a bar; at least 2)
+function wormGlide(b){const h=wormHold(),f=b-Math.floor(b/h)*h,k=Math.min(1,f/0.75);return k*k*(3-2*k);}
 const _wormAdj=new Map();
 function wormFaces(){const key=SOLID.name+'|'+SOLID.planes.length;let A=_wormAdj.get(key);if(A)return A;
   const F=solidFaces(SOLID.planes);A={cen:F.map(f=>{const c=[0,0,0];for(const v of f){c[0]+=v.p[0];c[1]+=v.p[1];c[2]+=v.p[2];}return f.length?c.map(x=>x/f.length):[0,0,0];}),
@@ -5833,10 +5932,10 @@ function smooth01(x){x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}
 function wormTick(){const on=wormOn();WORM.on=on;
   WORM.open+=((on?1:0)-WORM.open)*0.06;if(!on&&WORM.open<0.01)WORM.open=0;
   if(!on&&WORM.open===0){for(const P of WORM.P){P.rad=0;P.suck*=0.9;P.spit*=0.9;}return;}
-  const b=wormBeat(),fb=Math.floor(b),n=wormSites(),key=(solid3D()&&edges._solid?SOLID.name:'w')+'|'+n;
+  const b=wormBeat(),fb=Math.floor(b/wormHold()),n=wormSites(),key=(solid3D()&&edges._solid?SOLID.name:'w')+'|'+n;
   if(WORM.key!==key){WORM.key=key;WORM.beat=fb;   // a new shape: start the two holes on opposite sides of it
     WORM.P.forEach((P,i)=>{P.from=P.at=Math.min(n-1,i===0?0:Math.floor(n/2));P.dir=i?-1:1;P.za=P.zb=(i?-0.12:0.12)*BOXD;});}
-  if(fb!==WORM.beat){const steps=Math.min(4,Math.abs(fb-WORM.beat));WORM.beat=fb;   // a new beat: each hole sets off for a neighbour
+  if(fb!==WORM.beat){const steps=Math.min(4,Math.abs(fb-WORM.beat));WORM.beat=fb;   // a new bar: each hole sets off for a neighbour
     for(let s=0;s<steps;s++)WORM.P.forEach((P,i)=>{P.from=P.at;P.za=P.zb;P.at=wormNext(P,WORM.P[1-i].at);P.zb=(Math.random()*2-1)*0.26*BOXD;});}
   const k=wormGlide(b);
   for(const P of WORM.P){if(on)wormPlace(P,k);else P.want=0;}
@@ -6252,6 +6351,43 @@ function drawRipples(){for(let i=ripples.length-1;i>=0;i--){const r=ripples[i];
   ctx.strokeStyle=`rgba(255,255,255,${r.a.toFixed(3)})`;ctx.lineWidth=1.6;
   ctx.beginPath();ctx.ellipse(r.x,r.y,r.r,r.r*0.32,0,0,7);ctx.stroke();
   r.r+=r.vr;r.a*=0.92;if(r.a<0.03)ripples.splice(i,1);}}
+// THE BROKEN-OUT GOO, DRAWN AS ONE LIQUID: real metaballs. Each drop adds a soft dot (a falloff sprite, 'lighter') to a
+// quarter-size field; the field is cut at a threshold, so drops that are close run together into one skin, a thin neck
+// between two blobs is a string, and a lone drop is a round bead (the classic metaball, Blinn 1982, done on a canvas as
+// blur-and-threshold, at half size). The skin is shaded by the field's depth: the chord's colour, deeper at the rim and lighter in the
+// thick middle, so it reads as a wet lump. It replaced softBlobs here, which stamped every drop as its own disc: once the
+// goo broke up, a heap of separate beads, gravel (2026-11-21 screenshots). Only the goo's box is read back.
+let _bbC=null,_bbX=null,_bbDot=null;
+function burstBlobs(){
+  const w=W>>1,h=H>>1;   // (half size: at a quarter the skin's edge was cut on 4 px steps and upscaled into stairs)
+  if(!_bbC||_bbC.width!==w||_bbC.height!==h){_bbC=document.createElement('canvas');_bbC.width=w;_bbC.height=h;_bbX=_bbC.getContext('2d',{willReadFrequently:true});}
+  if(!_bbDot){_bbDot=document.createElement('canvas');_bbDot.width=_bbDot.height=32;const d=_bbDot.getContext('2d'),g=d.createRadialGradient(16,16,0,16,16,16);
+    // (faint: the dots ADD, and a field that reaches 255 inside is a hard on/off mask with stair-step edges and no depth;
+    // at 0.2 a packed lump reads ~110 and a lone drop ~50, so the skin has a slope to soften and light)
+    g.addColorStop(0,'rgba(255,255,255,0.16)');g.addColorStop(0.35,'rgba(255,255,255,0.11)');g.addColorStop(0.7,'rgba(255,255,255,0.04)');g.addColorStop(1,'rgba(255,255,255,0)');d.fillStyle=g;d.fillRect(0,0,32,32);}
+  const X=_bbX;X.setTransform(1,0,0,1,0,0);X.globalCompositeOperation='source-over';X.clearRect(0,0,w,h);X.globalCompositeOperation='lighter';
+  let x0=w,y0=h,x1=0,y1=0;
+  for(const p of particles){const rr=Math.max(3,p.r*1.45),cx=p.x/2,cy=p.y/2;   // (the dot's reach: ~2.9 drop radii, so neighbours' dots overlap into a smooth field)
+    if(cx<-rr||cy<-rr||cx>w+rr||cy>h+rr)continue;X.drawImage(_bbDot,cx-rr,cy-rr,rr*2,rr*2);
+    if(cx-rr<x0)x0=cx-rr;if(cy-rr<y0)y0=cy-rr;if(cx+rr>x1)x1=cx+rr;if(cy+rr>y1)y1=cy+rr;}
+  x0=Math.max(0,Math.floor(x0));y0=Math.max(0,Math.floor(y0));x1=Math.min(w,Math.ceil(x1));y1=Math.min(h,Math.ceil(y1));
+  if(x1<=x0||y1<=y0)return;
+  const bw=x1-x0,bh=y1-y0,img=X.getImageData(x0,y0,bw,bh),D=img.data,c=liqRGB,T=44,E=10;
+  let F=burstBlobs._f;if(!F||F.length<bw*bh)F=burstBlobs._f=new Uint8Array(bw*bh*2);
+  for(let i=0,j=0;j<bw*bh;i+=4,j++)F[j]=D[i];   // the field (one channel is enough: the dots are white)
+  for(let y=0,i=0;y<bh;y++)for(let x=0;x<bw;x++,i+=4){const j=y*bw+x,f=F[j];
+    if(f<T-E){D[i+3]=0;continue;}
+    const a=f>=T+E?1:(f-(T-E))/(2*E),k=Math.min(1,Math.max(0,(f-T)/80));   // edge alpha; how deep into the lump
+    // lit from the top left: the field's slope across the pixel (up-left minus down-right) is the surface facing the light
+    // (the field climbs INTO the goo, so a skin facing the top-left light is where the field rises toward the
+    // bottom right: down-right minus up-left; read 5 px apart, so it is the lump's shape, not each drop's bump)
+    const sl=(x>4&&y>4&&x<bw-5&&y<bh-5)?(F[j+5*bw+5]-F[j-5*bw-5])/45:0;
+    // body shade, and a glint on the lit slopes, both inside the skin only (k): on the rim's steep edge they drew a pale
+    // fuzzy fringe round every lump
+    const m=0.74+0.3*k+Math.max(-0.16,Math.min(0.16,sl*0.14))*k,g=Math.pow(Math.max(0,Math.min(1,(sl-0.35)*1.4)),1.5)*0.75*k;   // (the glint: wet, as the GL goo's clearcoat)
+    D[i]=Math.min(255,c[0]*m+(255-c[0]*m)*g);D[i+1]=Math.min(255,c[1]*m+(255-c[1]*m)*g);D[i+2]=Math.min(255,c[2]*m+(255-c[2]*m)*g);D[i+3]=Math.round(a*238);}
+  X.globalCompositeOperation='source-over';X.clearRect(0,0,w,h);X.putImageData(img,x0,y0);
+  ctx.save();ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(_bbC,x0,y0,bw,bh,x0*W/w,y0*H/h,bw*W/w,bh*H/h);ctx.restore();}
 function softBlobs(col,in3D){ // glossy goo: upscale metaballs + sweeping shine + wet top rim — dust ball no more (perf mode keeps just the base)
   loctx.clearRect(0,0,loC.width,loC.height);
   loctx.fillStyle=col;
@@ -6358,7 +6494,7 @@ function drawParticles(noDrops){ // the goo: floats as a blob while young, settl
       ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}
     ctx.restore();
   }else{ // broken open: goo spills free, no clip — it's escaping
-    surfY=null;softBlobs(LC.mid);drawRipples();
+    surfY=null;burstBlobs();drawRipples();
     if(!noDrops)for(const p of particles){if(p.pooled)continue;
       ctx.fillStyle=aurora(p.hue,58,0.95);ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,7);ctx.fill();}}}
 // ---------- THE WORMHOLES ON THE CANVAS (the flat tank, and the 3D box when there is no graphics card) ----------
@@ -6673,6 +6809,7 @@ function glFrame(){viewTick();
   else{liquidColor();if(fillState==="fill"&&(++mFrame%10===0||!mMask))measureFill();}
   for(let i=ripples.length-1;i>=0;i--){const r=ripples[i];r.r+=r.vr;r.a*=0.92;if(r.a<0.03)ripples.splice(i,1);}
   GLV.api.setLite(LITE);GLV.api.render();
+  if(fillState!=="fill"&&particles.length){ctx.save();ctx.transform(...planeAt(0.5));burstBlobs();ctx.restore();}   // the goo broken out: a liquid on the canvas over the GL tank (see burstBlobs)
   }
 function draw(){
   // A FLASH FADES ON THE CLOCK, not per drawn frame: 0.86 a tick at 60 Hz, whatever the screen runs at (at 120 Hz, and in
@@ -7323,7 +7460,9 @@ function scheduleMix(){if(_mixRAF)return;_mixRAF=requestAnimationFrame(()=>{_mix
     kn.setAttribute('cx',S.wM*T[0]+S.wD*L[0]+S.wK*Rt[0]);kn.setAttribute('cy',S.wM*T[1]+S.wD*L[1]+S.wK*Rt[1]);
     scheduleMix();}
   let drag=false;
-  const pt=e=>{const r=svg.getBoundingClientRect();return [-14+(e.clientX-r.left)/r.width*128,-18+(e.clientY-r.top)/r.height*124];};
+  // the pointer in the drawing's own units, through the SVG's own transform: the old fixed map (-14 + 128 wide, -18 + 124
+  // tall) was not the viewBox (-40 + 180, -46 + 172), so the knob lagged the finger (a tap on the top corner landed 13 low)
+  const pt=e=>{const m=svg.getScreenCTM();if(!m)return [50,50.7];const q=new DOMPoint(e.clientX,e.clientY).matrixTransform(m.inverse());return [q.x,q.y];};
   svg.addEventListener('pointerdown',e=>{drag=true;svg.setPointerCapture(e.pointerId);const[x,y]=pt(e);setMix(x,y);e.preventDefault();});
   svg.addEventListener('pointermove',e=>{if(drag){const[x,y]=pt(e);setMix(x,y);}});
   svg.addEventListener('pointerup',()=>drag=false);svg.addEventListener('lostpointercapture',()=>drag=false);
@@ -8788,6 +8927,12 @@ const chillers=[]; // full-view slimes with cursor physics
     try{guardSlimes();}catch(e){}}
   window._relayoutDecor=relayoutDecor;
   requestAnimationFrame(relayoutDecor);let _fmT;addEventListener('resize',()=>{clearTimeout(_fmT);_fmT=setTimeout(relayoutDecor,220);});
+  // ANY LAYOUT CHANGE RE-PLACES THEM, not only a resize: opening the tools or the keyboard moved the buttons and every
+  // decoration stayed where the old page had put it, on "3D · auto" (dev-crowding, 2026-11-21). The page's layout lives
+  // in a few body classes; when one of those changes, the decorations are placed again once it has settled.
+  try{const LAYOUT=/^(mode-|tools-on$|kb-open$|lab-on$|lab-stage$)/,key=()=>Array.from(document.body.classList||[]).filter(c=>LAYOUT.test(c)).sort().join(' ');
+   let last=key();new MutationObserver(()=>{const k=key();if(k===last)return;last=k;clearTimeout(_fmT);_fmT=setTimeout(relayoutDecor,260);})
+     .observe(document.body,{attributes:true,attributeFilter:['class']});}catch(e){}   // (no MutationObserver: placed on resize only, as before)
   chillers.length=0; // margin slimes just bob — no cursor physics (lighter with a big crowd)
   // AUDIO-REACTIVE: on each beat, one random slime gives a little bounce — the crowd feels the groove
   window._bounceSlime=function(){const els=layer.querySelectorAll('.mfill, .peeker[data-state="out"]');if(!els.length)return;
@@ -8980,6 +9125,8 @@ const chillers=[]; // full-view slimes with cursor physics
   let _hotCache=null;
   function hotCached(){ if(!_hotCache)_hotCache=hotRects(6); return _hotCache; }
   window._hotRects=(pad)=>(pad===6?hotCached():hotRects(pad));
+  window._hotRectsNow=(pad)=>hotRects(pad);   // measured now: the worm re-places himself once a second, between the decor's
+                                              // relayouts, and the cache still held the page before a panel opened (dev-crowding)
   // WHAT IS TAKEN, for the two CHARACTERS (the worm and the rainbow girl) who live in their own
   // IIFEs and place themselves. Controls, words, and every other decoration except themselves.
   window._decorBusy=(skip,gap)=>{const g=(gap==null?decorGap():gap);
@@ -9140,34 +9287,56 @@ const chillers=[]; // full-view slimes with cursor physics
     // THE TANK CAN BE 0x0 (lesson mode hides it), and the worm was placing himself relative to its
     // right edge — which put him in the middle of the screen, sitting on the lesson cards. When
     // there is no tank, treat the screen edge as the boundary instead.
-    const tankR=(rc.width>2&&rc.height>2)?rc.right:0;
-    if(mob){wPx=54;hPx=Math.round(innerHeight*0.26);leftPx=Math.max(4,innerWidth-wPx-6);}
-    else{const gap=rightBound-tankR; wPx=Math.min(78,Math.max(56,gap-16));hPx=Math.round(innerHeight*0.34);
-      leftPx=Math.round(tankR+Math.max(8,(gap-wPx)/2));
-      if(leftPx+wPx>rightBound-8)leftPx=rightBound-wPx-8;}
-    el.style.width=wPx+'px';el.style.height=hPx+'px';el.style.left=leftPx+'px';el.style.right='auto';
-    el.style.display='';
+    // THE TANK, NOT ITS CANVAS: the canvas is far wider than the shape drawn on it (in play at 1280 it reached
+    // x=1001 with the hexagon ending at ~935), and counting all of it left him no floor between it and the
+    // drums but the 3D button's (2026-11-21). The shape's corners round its middle, 4% out (its 3D turn reaches
+    // about its own radius: at 1280 the hexagon's corners came to 935 of a 300-radius shape centred at 640).
+    const tb=(()=>{try{if(!(rc.width>2&&rc.height>2)||!edges||!edges.length)return null;const k=rc.width/cv.width;let cx=0,cy=0,R=0;
+      for(const e of edges){cx+=e.ax;cy+=e.ay;}cx/=edges.length;cy/=edges.length;for(const e of edges)R=Math.max(R,Math.hypot(e.ax-cx,e.ay-cy));
+      R*=1.04*k;const X=rc.left+cx*k,Y=rc.top+cy*k;return {l:X-R,t:Y-R,r:X+R,b:Y+R};}catch(e){return null;}})();
+    const tankR=tb?Math.min(rc.right,tb.r):(rc.width>2&&rc.height>2)?rc.right:0;
+    const gap=rightBound-tankR,w0=mob?0:Math.min(78,Math.max(56,gap-16)),h0=Math.round(innerHeight*(mob?0.165:0.34));   // (phone: 0.165 tall, risen clear of the band column's last button)
+    // his size, asked for (scale 1 first; smaller only where nothing fits) and then measured: the phone CSS sizes him
+    // (13vw), and his spot used to be worked out for the width asked, so on a tablet (92 drawn, 50 asked) he hung off the edge
+    const size=k=>{el.style.removeProperty('width');if(!mob)el.style.width=Math.round(w0*k)+'px';el.style.height=Math.round(h0*k)+'px';el.style.right='auto';el.style.display='';
+      if(mob&&k<1&&el.offsetWidth>2)el.style.setProperty('width',Math.round(el.offsetWidth*k)+'px','important');   // (beats the phone rule's !important)
+      wPx=el.offsetWidth>2?el.offsetWidth:Math.round((w0||50)*k);hPx=Math.round(h0*k);
+      leftPx=mob?Math.max(4,innerWidth-wPx-6):Math.min(Math.round(tankR+Math.max(8,(gap-wPx)/2)),rightBound-wPx-8);
+      el.style.left=leftPx+'px';};
+    size(1);
     // HE IS A CHARACTER, NOT WALLPAPER: he gets his own space, and never takes it from a word.
-    // Slide him along the floor to find a clear spot; if the screen is full (a lesson list fills it),
-    // he sits this one out. Same policy as the edge peekers — no free room means no slime, full stop.
+    // Slide him along the floor to find a spot clear of the FURNITURE (controls, words, the tank). The
+    // other decorations are not his obstacles: they are placed to keep clear of HIM (anchorPeekers,
+    // the margin placer). He used to count them (window._decorBusy), and the slimes on the floor took
+    // every spot, so from 2026-11-08 on he was display:none in play and studio, dancing where nobody
+    // could see him (Flah 2026-11-21: "he doesnt even pop up anymore at all"; dev-worm.js now holds
+    // him to it). With no clear spot he stays where he is and lets taps through (he never covers a
+    // control's click); only a lesson list, which fills the screen, sends him away.
+    el.style.pointerEvents='';
     try{
-      const hot=(typeof window._decorBusy==='function')?window._decorBusy(el):[];
-      const top=innerHeight-hPx, clash=(L)=>hot.some(o=>L<o.r&&L+wPx>o.l&&top<o.b&&top+hPx>o.t);
-      if(clash(leftPx)){
-        let found=null;
-        for(let d=1;d<=14&&found===null;d++){
-          for(const L of [leftPx-d*wPx*0.8,leftPx+d*wPx*0.8]){
-            if(L<4||L+wPx>innerWidth-4)continue;
-            if(!clash(L)){found=L;break;}}}
-        if(found!==null)el.style.left=Math.round(found)+'px';
-        else el.style.display='none';
-      }
-      // and if he has ended up somewhere he cannot actually be seen, he sits it out
-      const fb=el.getBoundingClientRect();
-      if(fb.width>2&&fb.height>2){
-        const vx=Math.max(0,Math.min(fb.right,innerWidth)-Math.max(fb.left,0));
-        const vy=Math.max(0,Math.min(fb.bottom,innerHeight)-Math.max(fb.top,0));
-        if((vx*vy)/(fb.width*fb.height)<0.15)el.style.display='none';}
+      const cvs=[...document.querySelectorAll('canvas')].map(c=>c.getBoundingClientRect()).filter(q=>q.width>2&&q.height>2);
+      // the side columns' CONTAINERS out too (their buttons stay in): on a phone their padded boxes run to the screen's
+      // foot though the buttons stop ~150 px above it, and left him no floor at all
+      const cols=['psWaves','psDrums'].map(id=>document.getElementById(id)).filter(Boolean).map(c=>c.getBoundingClientRect()).filter(q=>q.width>2&&q.height>2);
+      const hot=((typeof window._hotRectsNow==='function')?window._hotRectsNow(6):[])
+        .filter(o=>!cvs.some(q=>Math.abs(o.l-(q.left-6))<1&&Math.abs(o.t-(q.top-6))<1&&Math.abs(o.r-(q.right+6))<1&&Math.abs(o.b-(q.bottom+6))<1)) // (the canvases out:
+        .filter(o=>!cols.some(q=>Math.abs(o.l-(q.left-16))<1&&Math.abs(o.t-(q.top-16))<1&&Math.abs(o.r-(q.right+16))<1&&Math.abs(o.b-(q.bottom+16))<1))
+        .concat(tb?[tb]:[]);                                                                                                   //  the tank's own shape in)
+      // the clear spot nearest where he would stand, scanned in 6 px steps across the floor; at his size, then 80%, then
+      // 64% (a 360 px phone has ~50 px of floor between the mixer and the 3D button, and he sat on the button)
+      const spot=()=>{const top=innerHeight-hPx,clash=L=>hot.some(o=>L<o.r&&L+wPx>o.l&&top<o.b&&top+hPx>o.t);
+        if(!clash(leftPx))return leftPx;let found=null,bd=1e9;
+        for(let L=4;L+wPx<=innerWidth-4;L+=6)if(!clash(L)&&Math.abs(L-leftPx)<bd){bd=Math.abs(L-leftPx);found=L;}return found;};
+      let at=null;for(const k of [1,0.8,0.64]){if(k<1)size(k);at=spot();if(at!==null)break;}
+      if(at!==null)el.style.left=Math.round(at)+'px';
+      else if(S.mode==='learn')el.style.display='none';
+      else el.style.pointerEvents='none';
+      // and if he has ended up somewhere he cannot actually be seen, he sits it out. His LAYOUT box, not his drawn
+      // one: resting, he is sunk below the floor on purpose, and measuring that (getBoundingClientRect, with his
+      // translateY) hid him whenever this ran while he rested: a moment up, then gone (Flah 2026-11-21, a phone)
+      if(el.offsetWidth>2){
+        const vx=Math.max(0,Math.min(el.offsetLeft+el.offsetWidth,innerWidth)-Math.max(el.offsetLeft,0));
+        if(vx/el.offsetWidth<0.15)el.style.display='none';}
     }catch(e){}
   }
   addEventListener('resize',relayout); relayout();
