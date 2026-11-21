@@ -12,6 +12,9 @@
 # 5. stopped, a key plays its note (a peak over 1000 from 5.0 to 5.6 s) and drops no ball into the still tank (a run to
 #    6.0 s with the same key: the tank's ball count, sl_mdbg[5], is 0)
 # 6. PLAY starts the music (peaks over 3000 from 7.5 s)
+# 7. the page round the tank (2026-11-21): the lake's sky in the top left (blue pixels at 8 s), the pink mini slime in
+#    its corner, the worm bottom right (saturated pastel pixels), a new colour on him a beat later (8.0 s against 8.7 s)
+#    Sabotaged 2026-11-21: the lake layer off (the lake, minis and worm checks red), the worm off (the worm check red).
 set -eu
 FW="${FW:-$HOME/fm1w/slime-fw/build/felucca.fwsc}"
 EMU="${EMU:-$HOME/fm1w/fm1-emu}"
@@ -56,6 +59,15 @@ ok(k > 1000, f"stopped, a key plays its note (peak {k} from 5.0 to 5.6 s)")
 nb = int(sys.argv[2])
 ok(nb == 0, f"and drops no ball into the still tank ({nb} balls in it at 6.0 s)")
 ok(m > 3000, f"PLAY starts the music (peak {m} from 7.5 s)")
+f8, f87 = frame(8000), frame(8700)
+sky = int(((f8[18:50, 0:60, 2] - f8[18:50, 0:60, 0]) > 20).sum())
+pink = count(8000, (255, 178, 222), 22, (28, 50))
+def worm(a):
+    w = a[214:240, 192:232].reshape(-1, 3); sat = (w.max(axis=1) - w.min(axis=1)) > 60
+    return int(sat.sum()), (w[sat].mean(axis=0) if sat.sum() else np.zeros(3))
+n8, c8 = worm(f8); n87, c87 = worm(f87)
+ok(sky > 800 and pink > 40, f"the lake behind the tank ({sky} sky pixels top left) and the minis ({pink} pink pixels at the top-left one)")
+ok(n8 > 60 and np.abs(c8 - c87).sum() > 20, f"the worm bottom right ({n8} pixels of him), a new colour a beat later (moved {np.abs(c8 - c87).sum():.0f})")
 print("power-on behaves" if not fails else f"{fails} failed")
 sys.exit(1 if fails else 0)
 EOF

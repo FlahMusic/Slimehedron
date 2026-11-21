@@ -9,6 +9,7 @@
 static float g_cx = MID, g_cy = MID, g_k = ST_K, g_cam = ST_CAM;
 void st_set_frame(float cx, float cy, float k) { g_cx = cx; g_cy = cy; g_k = k; }
 void st_set_cam(float cam) { g_cam = cam > 300.0f ? cam : 300.0f; }
+void (*st_bg_row)(uint16_t *row, int y, int xlo, int xhi);   /* the page under the tank (0: a plain colour) */
 
 void st_tumble(float a, float b, float M[9]) {   /* the web's _M = Ry(a) * Rx(b) */
   float ca = cosf(a), sa = sinf(a), cb = cosf(b), sb = sinf(b);
@@ -172,7 +173,7 @@ void st_draw_band(const st_view *v, int y0, int rows, uint16_t *buf, uint16_t bg
   const uint16_t shade = rgb565(0.24f, 0.14f, 0.43f), white = 0xFFFF;
   for (int r = 0; r < rows; r++) {
     uint16_t *row = buf + r * SH_SCREEN; float yc = (float)(y0 + r) + 0.5f;
-    for (int x = xlo; x <= xhi; x++) row[x] = bg;
+    if (st_bg_row) st_bg_row(row, y0 + r, xlo, xhi); else for (int x = xlo; x <= xhi; x++) row[x] = bg;
     if (yc < v->pymin - 3 || yc > v->pymax + 3) continue;   /* nothing of the box on this row */
     poly_row(&v->back, yc, row, xlo, xhi);                                                               /* the back pane */
     for (int i = 0; i < v->nb; i++) DISC_ROW(v->sx[i], v->sy[i], v->sr[i], yc, row[px] = blend565(row[px], shade, 5u););

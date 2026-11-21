@@ -37,6 +37,11 @@ tank waits, standing still: nothing plays until PLAY (it blinks; the screen says
 you like (a new shape shows at once). Stopped, a key just plays its note. After PLAY the tank moves, the band plays,
 and each key also drops a note into the tank ("keys drop notes in", the first time).
 
+Behind the tank: a sunny lake in a forest (Game Boy Color pixels, soft and out of focus), five little pastel slimes
+round the edges that hop on each bar's 1, and the site's dancing worm in the bottom right corner: his head always pokes
+up and wiggles to the tempo, every 12 bars he rises to dance for 8 (the 4th and 8th in double time), a new colour each
+beat. They are decoration only: they never touch the music, and they are drawn only where the screen changes anyway.
+
 It works like a groovebox: ONE BUTTON, ONE PAGE, every setting in exactly one place.
 - The three knobs on the left are the three SOUNDS, on every page: SELECT the melody's, ALGORITHM the bass's,
   PRESETS the chords'. The screen says which sound you landed on.

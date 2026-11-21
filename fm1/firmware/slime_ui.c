@@ -105,6 +105,7 @@ static st_view *sl_view(void)
     return (st_view *)((p + 7u) & ~(uintptr_t)7u);
 }
 
+#include "slime_scene.h"   /* the background's lake (fm1/host/gen-scene.py) */
 #define SL_PAGE_BG 0xF7BFu                  /* the page's pale lilac (the tank's page, the splash's) */
 UI_SMALL static void slime_splash(void)     /* power-on, before the sound starts: the page's colour, the slime drops in next */
 {
@@ -1151,9 +1152,238 @@ static void sl_pose_restore(void)
     sl_pose_on = 0;
 }
 
+/* THE PAGE AROUND THE TANK (Flah 2026-11-21: "my dancing worm that jiggles to the beat from the site", "little mini
+ * pastel colored slimes decorating the background", "a nice gameboy color style sunny forest-enclosed bob ross coded
+ * stylized chiptune lake art in the background just faded so its out of focus", "just make em background objects ...
+ * not a strain on the tank fps", "preload all that up ... during the splash"). Three layers under the tank, drawn only
+ * where a frame already repaints (the tank's box, the label) plus the worm's and a hopping slime's own small patch:
+ *   the lake: fm1/host/gen-scene.py's picture (240 x 240, 256 colours, out of focus), copied from flash into RAM while
+ *             the splash plays (st_draw_band reads RAM, not the slower flash, every row)
+ *   the slimes: five pastel minis round the edges, drawn once into RAM at the splash; they hop on each bar's 1 (the
+ *             site's motes: a ripple, 26 ms apart)
+ *   the worm: the site's (index.html "wiggle worm"): 14 points up a spine with a wave climbing it, a fat pastel body with
+ *             rings, a face; bottom right, his head always poking up and wiggling to the tempo; every 12 bars he rests
+ *             4 (only his head and neck out) and rises to dance 8, the 4th and 8th of those in double time with a ^^
+ *             face; a new hue each beat, glided to. Stopped, he keeps the tempo, resting. Not drawn under a page's panel. */
+static uint8_t sl_scene[240 * 240] __attribute__((section(".pool")));
+static uint16_t sl_scene_pal[256];
+static uint8_t sl_scene_ready;
+#define SL_NMINI 5
+#define SL_MW 22
+#define SL_MH 18
+static const int16_t SL_MINI_AT[SL_NMINI][2] = {{20, 38}, {220, 42}, {18, 214}, {52, 228}, {150, 230}};   /* their middles */
+static const uint16_t SL_MINI_COL[SL_NMINI] = {0xFD9Bu, 0xCDDFu, 0xFE53u, 0xAEFFu, 0xFFB3u};   /* pink, lavender, peach, sky, lemon */
+static uint16_t sl_mini_px[SL_NMINI][SL_MH][SL_MW] __attribute__((section(".pool")));
+static uint8_t sl_mini_a[SL_NMINI][SL_MH][SL_MW] __attribute__((section(".pool")));   /* 0..32 */
+static int8_t sl_mini_hop[SL_NMINI];        /* px up now */
+static void sl_mini_render(void)            /* each mini: a dome on a flat bottom, a shine, two dot eyes, a smile (the mascot's
+                                             * shape, no glasses) */
+{
+    uint32_t i, x, y;
+    for (i = 0; i < SL_NMINI; i++)
+        for (y = 0; y < SL_MH; y++)
+            for (x = 0; x < SL_MW; x++) {
+                float dx = ((float)x + 0.5f - 11.0f) / 10.0f, dy = ((float)y + 0.5f - 11.0f) / 9.0f, rr = dx * dx + (dy < 0.0f ? dy * dy : dy * dy * dy * dy);
+                uint16_t c = SL_MINI_COL[i];
+                uint8_t a = 0;
+                if (rr < 1.0f) {
+                    float hx = dx + 0.45f, hy = dy + 0.5f;
+                    a = 32;
+                    if (rr > 0.78f) c = sl_bl(c, 0x6B4Du, sl_k((rr - 0.78f) * 2.2f));           /* a soft darker rim */
+                    if (hx * hx * 2.2f + hy * hy * 3.0f < 0.10f) c = sl_bl(c, 0xFFFFu, 20u);   /* the shine */
+                    {
+                        float ex = (float)x + 0.5f - 11.0f, ey = (float)y + 0.5f - 10.0f;
+                        if ((ex + 3.5f) * (ex + 3.5f) + ey * ey < 1.8f || (ex - 3.5f) * (ex - 3.5f) + ey * ey < 1.8f) c = 0x3186u;   /* eyes */
+                        else { float my = (float)y + 0.5f - 11.5f, m = ex * ex + my * my; if (my > 0.4f && m < 7.0f && m > 2.6f) c = 0x3186u; }   /* smile */
+                    }
+                } else if (rr < 1.18f && dy > 0.3f) { c = 0x8410u; a = 6; }                    /* a faint shadow under */
+                sl_mini_px[i][y][x] = c; sl_mini_a[i][y][x] = a;
+            }
+}
+static void sl_scene_load(void)             /* the splash's first frame: the picture into RAM, the minis drawn */
+{
+    memcpy(sl_scene, SL_SCENE, sizeof sl_scene);
+    memcpy(sl_scene_pal, SL_SCENE_PAL, sizeof sl_scene_pal);
+    sl_mini_render();
+    sl_scene_ready = 1;
+}
+/* the worm, this frame */
+#define SL_WN 14
+static struct {
+    float x[SL_WN], y[SL_WN];               /* the spine, base to head (screen px) */
+    float beat, rise, hue;
+    int dbl, on;
+    uint16_t body, ring, hi, edge;
+    int32_t x0, y0, x1, y1;                 /* his box */
+} sl_wm;
+static uint16_t sl_hsl(float h, float s, float l)   /* hue in turns, to RGB565 */
+{
+    float hh = (h - floorf(h)) * 6.0f, m2 = hh - 2.0f * floorf(hh * 0.5f);
+    float l2 = 2.0f * l - 1.0f, m1 = m2 - 1.0f, c = (1.0f - (l2 < 0.0f ? -l2 : l2)) * s, x = c * (1.0f - (m1 < 0.0f ? -m1 : m1)), m = l - c * 0.5f, r = 0, g = 0, b = 0;
+    if (hh < 1.0f) { r = c; g = x; } else if (hh < 2.0f) { r = x; g = c; } else if (hh < 3.0f) { g = c; b = x; }
+    else if (hh < 4.0f) { g = x; b = c; } else if (hh < 5.0f) { r = x; b = c; } else { r = c; b = x; }
+    return (uint16_t)(((uint32_t)((r + m) * 31.0f + 0.5f) << 11) | ((uint32_t)((g + m) * 63.0f + 0.5f) << 5) | (uint32_t)((b + m) * 31.0f + 0.5f));
+}
+static void sl_worm_frame(float dt_ms)
+{
+    static float wbeat, hue_now = 150.0f / 360.0f;
+    const float bpm = (float)song.g[G_BPM], L = 96.0f, WX = 210.0f, k = 0.42f;   /* his length (px), where he stands, site units to px */
+    float bt, u, wig, sw, amp;
+    int bar, cyc, up, i;
+    if (sl_run) {                                          /* the band's beat, as it sounds (the plan runs ~75 ms ahead) */
+        double len = 15000.0 / (double)bpm;
+        bt = (float)(((double)sl_step - sl_step_left / len) / 4.0) - 0.075f * bpm / 60.0f;
+        wbeat = bt;
+    } else { wbeat += dt_ms * bpm / 60000.0f; bt = wbeat; }   /* stopped: he keeps the tempo, resting */
+    bar = (int)floorf(bt / 4.0f); cyc = ((bar % 12) + 12) % 12; up = sl_run && cyc >= 4;
+    sl_wm.rise += ((up ? 1.0f : 0.0f) - sl_wm.rise) * 0.045f * (dt_ms / 16.7f > 3.0f ? 3.0f : dt_ms / 16.7f);
+    sl_wm.dbl = up && (((cyc - 4) & 3) == 3);
+    {   /* a new pastel hue each beat, glided to */
+        float t = (150.0f + floorf(bt) * 40.0f) / 360.0f, dh;
+        t -= floorf(t); dh = t - hue_now; dh -= floorf(dh + 0.5f);
+        hue_now += dh * 0.16f; hue_now -= floorf(hue_now);
+        sl_wm.body = sl_hsl(hue_now, 0.68f, 0.72f); sl_wm.ring = sl_hsl(hue_now, 0.42f, 0.56f);
+        sl_wm.hi = sl_hsl(hue_now, 0.75f, 0.85f); sl_wm.edge = sl_hsl(hue_now, 0.40f, 0.50f);
+    }
+    u = bt * (sl_wm.dbl ? 2.0f : 1.0f); wig = 0.22f + 0.78f * sl_wm.rise;
+    {   float a = u * 3.14159265f; a -= 6.2831853f * floorf(a / 6.2831853f); sw = sinf(a); }
+    if (sl_wm.dbl) sw = (sw < 0.0f ? -1.0f : 1.0f) * powf(sw < 0.0f ? -sw : sw, 0.6f);
+    amp = (sl_wm.dbl ? 48.0f : 34.0f) * wig;
+    {
+        float base = 244.0f + (1.0f - sl_wm.rise) * L * 0.62f;   /* resting: only his head and neck out */
+        sl_wm.x0 = 239; sl_wm.x1 = 0; sl_wm.y0 = 239; sl_wm.y1 = 239;
+        for (i = 0; i < SL_WN; i++) {
+            float f = (float)i / (float)(SL_WN - 1), a1 = u * 3.14159265f - f * 3.6f, a2 = u * 3.14159265f * 0.5f;
+            float wave, hip;
+            a1 -= 6.2831853f * floorf(a1 / 6.2831853f); a2 -= 6.2831853f * floorf(a2 / 6.2831853f);
+            wave = sinf(a1) * (8.0f + 16.0f * f) * (0.28f + 0.72f * f) * wig;
+            hip = sinf(a2) * 7.0f * (1.0f - f) * (sl_wm.dbl ? 1.7f : 1.0f) * wig;
+            sl_wm.x[i] = WX + (sw * powf(f, 1.3f) * amp * 0.6f + wave + hip) * k;
+            sl_wm.y[i] = base - f * L;
+            if (sl_wm.x[i] - 12.0f < (float)sl_wm.x0) sl_wm.x0 = (int32_t)(sl_wm.x[i] - 12.0f);
+            if (sl_wm.x[i] + 12.0f > (float)sl_wm.x1) sl_wm.x1 = (int32_t)(sl_wm.x[i] + 12.0f);
+        }
+        sl_wm.y0 = (int32_t)(sl_wm.y[SL_WN - 1] - 13.0f);
+        if (sl_wm.x1 > 239) sl_wm.x1 = 239;
+        if (sl_wm.y0 < 0) sl_wm.y0 = 0;
+    }
+    sl_wm.on = sl_wm.y0 < 239;
+}
+/* the minis' hops: on each bar's 1, a ripple 26 ms apart, 440 ms each, 5 px up */
+static void sl_minis_frame(void)
+{
+    static uint32_t last_bar = 0xFFFFFFFFu, hop_t0;
+    uint32_t i, bar = sl_step / 16u;
+    if (sl_run && bar != last_bar) { last_bar = bar; hop_t0 = fm1_ms + 75u; }   /* (as it sounds) */
+    for (i = 0; i < SL_NMINI; i++) {
+        int32_t t = (int32_t)(fm1_ms - hop_t0) - (int32_t)(i * 26u);
+        sl_mini_hop[i] = (int8_t)(t >= 0 && t < 440 && hop_t0 ? (int)(5.0f * sinf((float)t * (3.14159265f / 440.0f)) + 0.5f) : 0);
+    }
+}
+/* the row under the tank: the lake, the minis, the worm (st_draw_band calls it for every row it fills) */
+static uint8_t sl_decor_page;               /* a page's panel is up: the worm and the bottom minis are under it */
+static uint8_t sl_worm_tick;                /* this frame the worm moves (every other one) */
+static void sl_bg_row(uint16_t *row, int y, int xlo, int xhi)
+{
+    const uint8_t *s = sl_scene + y * 240;
+    int x, i;
+    for (x = xlo; x <= xhi; x++) row[x] = sl_scene_pal[s[x]];
+    for (i = 0; i < SL_NMINI; i++) {                       /* the minis */
+        int my0 = SL_MINI_AT[i][1] - 11 - sl_mini_hop[i], mx0 = SL_MINI_AT[i][0] - 11, sy = y - my0, a, b2;
+        if (sy < 0 || sy >= SL_MH || (sl_decor_page && SL_MINI_AT[i][1] > SL_PANEL_Y - 12)) continue;
+        a = mx0 < xlo ? xlo : mx0; b2 = mx0 + SL_MW - 1 > xhi ? xhi : mx0 + SL_MW - 1;
+        for (x = a; x <= b2; x++) { uint8_t al = sl_mini_a[i][sy][x - mx0]; if (al) row[x] = al >= 32u ? sl_mini_px[i][sy][x - mx0] : sl_bl(row[x], sl_mini_px[i][sy][x - mx0], al); }
+    }
+    if (sl_wm.on && !sl_decor_page && y >= sl_wm.y0 && y <= sl_wm.y1) {
+        /* the worm: his spine runs up the screen, so a row crosses it once: the spine's x there and the body's half-width
+         * across the row (R over the spine's lean), a round cap over his head. (A distance to every segment, each pixel,
+         * cost the frame rate half: session.sh 13.9 fps at worst, 2026-11-21) */
+        float yc = (float)y + 0.5f, R = 9.0f, hx = sl_wm.x[SL_WN - 1], hy = sl_wm.y[SL_WN - 1], cx, hw, bs, inv;
+        int a = sl_wm.x0 < xlo ? xlo : sl_wm.x0, b2 = sl_wm.x1 > xhi ? xhi : sl_wm.x1, j;
+        if (yc < hy) {                                                                         /* over his head: the cap */
+            float dy = hy - yc;
+            if (dy >= R) return;
+            cx = hx; hw = sqrtf(R * R - dy * dy); bs = (float)(SL_WN - 1);
+        } else {
+            for (j = 0; j < SL_WN - 1 && !(sl_wm.y[j + 1] <= yc && yc <= sl_wm.y[j]); j++) {}
+            if (j >= SL_WN - 1) return;                                                        /* (under the screen) */
+            {
+                float dy = sl_wm.y[j] - sl_wm.y[j + 1], t = (sl_wm.y[j] - yc) / dy, sl = (sl_wm.x[j + 1] - sl_wm.x[j]) / dy;
+                cx = sl_wm.x[j] + (sl_wm.x[j + 1] - sl_wm.x[j]) * t; hw = R * sqrtf(1.0f + sl * sl); bs = (float)j + t;
+            }
+        }
+        if (cx - hw > (float)b2 + 1.0f || cx + hw < (float)a) return;
+        inv = R / hw;
+        for (x = a; x <= b2; x++) {
+            float xc = (float)x + 0.5f, bdx = xc - cx, d = (bdx < 0.0f ? -bdx : bdx) * inv, ringp = bs + 0.5f;
+            uint16_t c;
+            if (d >= R) continue;
+            c = sl_wm.body;
+            if (bdx < -R * 0.2f && d < R * 0.72f) c = sl_bl(c, sl_wm.hi, sl_k(0.55f * (1.0f - d / (R * 0.72f))));   /* lit from the left, round */
+            if (ringp - floorf(ringp) < 0.11f && bs < (float)(SL_WN - 3)) c = sl_bl(c, sl_wm.ring, 8u);   /* his rings, faint (the site's: 30%) */
+            if (d > R - 1.3f) c = sl_bl(c, sl_wm.edge, 16u);                                   /* a soft edge */
+            if (yc > hy - R && yc < hy + R) {   /* the face, on his head */
+                float fx = (xc - hx) * 0.8f, fy = (yc - (hy + 0.5f)) * 0.8f;   /* (the site's face, 1.25x) */
+                if (sl_wm.dbl) {                                                               /* ^^ and an open mouth */
+                    float ax2 = fx + 3.0f < 0.0f ? -(fx + 3.0f) : fx + 3.0f, bx2 = fx - 3.0f < 0.0f ? -(fx - 3.0f) : fx - 3.0f;
+                    if ((ax2 < 2.0f && fy + 1.5f + ax2 * 0.8f > -0.6f && fy + 1.5f + ax2 * 0.8f < 0.6f) ||
+                        (bx2 < 2.0f && fy + 1.5f + bx2 * 0.8f > -0.6f && fy + 1.5f + bx2 * 0.8f < 0.6f)) c = 0x3186u;
+                    if (fy > 1.0f && fy < 4.0f && fx * fx < (4.0f - fy) * 3.0f) c = 0x3186u;
+                } else {
+                    if ((fx + 3.0f) * (fx + 3.0f) + (fy + 1.2f) * (fy + 1.2f) < 1.6f || (fx - 3.0f) * (fx - 3.0f) + (fy + 1.2f) * (fy + 1.2f) < 1.6f) c = 0x3186u;
+                    { float m = fx * fx + (fy - 0.6f) * (fy - 0.6f); if (fy > 1.2f && m < 7.0f && m > 3.0f) c = 0x3186u; }
+                }
+            }
+            row[x] = c;
+        }
+    }
+}
+
+/* a decoration's own patch, outside the tank's box: only the background (no tank pixel falls there: running the tank's
+ * renderer on those rows cost as much as drawing the tank's own rows again, whatever their width, because it walks every
+ * wall and drop a row; the decorations took the worst 5 s window from 25.9 to 19 fps, 2026-11-21) */
+static void sl_patch(st_view *v, int32_t x0, int32_t y0, int32_t x1, int32_t y1, uint32_t *nb, uint16_t bg, int panel, uint32_t *px)
+{
+    uint32_t k, r, i, w, ry0, ry1;
+    x0 = clamp(x0, 0, 239) & ~1; x1 = clamp(x1, 0, 239) | 1; y0 = clamp(y0, 16, 239); y1 = clamp(y1, 0, 239);   /* (not the label's row) */
+    if (panel && y1 >= SL_PANEL_Y) y1 = SL_PANEL_Y - 1;
+    if (x1 <= x0 || y1 < y0) return;
+    w = (uint32_t)(x1 - x0 + 1);
+    for (k = (uint32_t)y0 / 16u; k <= (uint32_t)y1 / 16u; k++) {
+        uint16_t *b = sl_strip((*nb)++);
+        ry0 = k * 16u < (uint32_t)y0 ? (uint32_t)y0 - k * 16u : 0u; ry1 = k * 16u + 15u > (uint32_t)y1 ? (uint32_t)y1 - k * 16u : 15u;
+        (void)v;
+        for (r = ry0; r <= ry1; r++) {
+            uint16_t *row = b + r * 240u;
+            if (st_bg_row) st_bg_row(row, (int)(k * 16u + r), (int)x0, (int)x1); else for (i = (uint32_t)x0; i <= (uint32_t)x1; i++) row[i] = bg;
+        }
+        for (r = 0; r <= ry1 - ry0; r++) {                 /* packed big-endian, as the frame's bands */
+            const uint16_t *s16 = b + (ry0 + r) * 240u + (uint32_t)x0;
+            uint16_t *d16 = b + r * w;
+            for (i = 0; i < w; i++) d16[i] = (uint16_t)((s16[i] >> 8) | (s16[i] << 8));
+        }
+        lcd_blit((uint32_t)x0, k * 16u + ry0, w, ry1 - ry0 + 1u, b);
+        *px += w * (ry1 - ry0 + 1u);
+    }
+}
+
+/* a patch less what the tank's box already repainted this frame (bx0..bx1 x by0..by1): up to four strips (the box is
+ * often most of the screen wide, and the worm and the minis mostly inside its columns: drawn twice, they cost the
+ * worst 5 s window a quarter of its frames in session.sh, 25.9 -> 19.3 fps) */
+static void sl_patch_out(st_view *v, int32_t x0, int32_t y0, int32_t x1, int32_t y1, int32_t bx0, int32_t by0, int32_t bx1, int32_t by1,
+                         uint32_t *nb, uint16_t bg, int panel, uint32_t *px)
+{
+    int32_t ix0 = x0 > bx0 ? x0 : bx0, ix1 = x1 < bx1 ? x1 : bx1;
+    if (bx1 < bx0 || by1 < by0 || ix1 < ix0 || y1 < by0 || y0 > by1) { sl_patch(v, x0, y0, x1, y1, nb, bg, panel, px); return; }   /* (apart) */
+    if (x0 < bx0) sl_patch(v, x0, y0, bx0 - 1, y1, nb, bg, panel, px);                  /* left of the box */
+    if (x1 > bx1) sl_patch(v, bx1 + 1, y0, x1, y1, nb, bg, panel, px);                  /* right of it */
+    if (y0 < by0) sl_patch(v, ix0, y0, ix1, by0 - 1, nb, bg, panel, px);                 /* above it, in its columns */
+    if (y1 > by1) sl_patch(v, ix0, by1 + 1, ix1, y1, nb, bg, panel, px);                 /* below it */
+}
+
 static void slime_ui(void)
 {
-    static const uint16_t BG = 0xF7BF;      /* the page's pale lilac */
+    static const uint16_t BG = 0xF7BF;      /* the page's pale lilac (under the lake, before it is loaded) */
     st_view *v = sl_view();
     float M[9], t = (float)fm1_ms * 0.001f;
     uint32_t k, i, t0 = fm1_ms, tk = fm1_ticks();
@@ -1161,7 +1391,11 @@ static void slime_ui(void)
     sl_pose sp = {0};
     int splash = 0;
     slime_poll();
-    if (!sl_splash_t0) { sl_title_render(); sl_splash_t0 = fm1_ms; sl_boot_ms = fm1_ms; }   /* the first frame: the splash begins */
+    if (!sl_splash_t0) {                                   /* the first frame: the splash begins, the page's decorations load
+                                                            * under it (the splash covers the screen until its fade) */
+        sl_title_render(); sl_splash_t0 = fm1_ms; sl_boot_ms = fm1_ms;
+        sl_scene_load(); st_bg_row = sl_bg_row;
+    }
     if (!sl_splash_done) {
         uint32_t ms = fm1_ms - sl_splash_t0;
         if (sl_skip) { uint32_t f = SL_SPLASH_MS - SL_FADE_MS + (fm1_ms - sl_skip_at); if (f > ms) ms = f; }
@@ -1271,6 +1505,17 @@ static void slime_ui(void)
             if (panel && y1 >= SL_PANEL_Y) y1 = SL_PANEL_Y - 1;  /* (the panel's rows are its own) */
         }
         if (panel) { sl_panel_build(&sl_pm); panel_need = full || memcmp(&sl_pm, &sl_pm_drawn, sizeof sl_pm) != 0; }
+        {   /* the worm and the minis, this frame (drawn by st_draw_band's rows: sl_bg_row) */
+            static uint32_t last_ms;
+            float dt = last_ms ? (float)(fm1_ms - last_ms) : 16.7f;
+            last_ms = fm1_ms;
+            static float acc;
+            sl_decor_page = (uint8_t)panel;
+            acc += dt;
+            sl_worm_tick = (uint8_t)!sl_worm_tick;
+            if (sl_worm_tick) { sl_worm_frame(acc); acc = 0.0f; }   /* (30 Hz, as the site draws him: half his cost) */
+            sl_minis_frame();
+        }
         {   /* the top line: what just changed (1.5 s), else the page and what SELECT picked; at the tank, stopped: "press play" */
             uint8_t on = !splash && ((int32_t)(sl_label_until - fm1_ms) > 0 || panel || !sl_run);
             uint32_t q;
@@ -1324,6 +1569,20 @@ static void slime_ui(void)
             sl_prof.pack += fm1_ticks() - tk; tk = fm1_ticks();
             slime_poll();
             sl_prof.poll += fm1_ticks() - tk; tk = fm1_ticks();
+        }
+        if (!splash && !full) {                              /* the decorations' own patches, where the tank's box did not reach */
+            static int32_t wx0 = 239, wy0 = 239, wx1 = 0, wy1 = 0;
+            static int8_t hop_was[SL_NMINI];
+            uint32_t q;
+            if (sl_wm.on && !panel && sl_worm_tick) {           /* the worm, when he moved: his box now and last time's (what he left) */
+                sl_patch_out(v, sl_wm.x0 < wx0 ? sl_wm.x0 : wx0, sl_wm.y0 < wy0 ? sl_wm.y0 : wy0, sl_wm.x1 > wx1 ? sl_wm.x1 : wx1, 239, x0, y0, x1, y1, (uint32_t *)&nb, BG, panel, &px);
+                wx0 = sl_wm.x0; wy0 = sl_wm.y0; wx1 = sl_wm.x1; wy1 = sl_wm.y1;
+            }
+            for (q = 0; q < SL_NMINI; q++)                      /* a mini mid-hop, or just landed */
+                if (sl_mini_hop[q] || hop_was[q]) {
+                    sl_patch_out(v, SL_MINI_AT[q][0] - 11, SL_MINI_AT[q][1] - 17, SL_MINI_AT[q][0] + 11, SL_MINI_AT[q][1] + 7, x0, y0, x1, y1, (uint32_t *)&nb, BG, panel, &px);
+                    hop_was[q] = sl_mini_hop[q];
+                }
         }
         if (panel_need) sl_pm_drawn = sl_pm;
         sl_px = px;

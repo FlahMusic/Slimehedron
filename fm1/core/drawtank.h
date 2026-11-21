@@ -40,6 +40,7 @@ typedef struct {
 void st_tumble(float a, float b, float M[9]);
 void st_tumble3(float a, float b, float c, float M[9]);   /* with a roll about the view axis */
 void st_set_cam(float cam);                                /* the camera's distance (ST_CAM: the web's) */
+extern void (*st_bg_row)(uint16_t *row, int y, int xlo, int xhi);   /* fills a row's xlo..xhi under the tank (0: bg) */
 /* the tank's middle on the screen and its scale (web px to screen px; ST_K is the whole screen's) */
 void st_set_frame(float cx, float cy, float k);
 void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0, const float *ballHue);
