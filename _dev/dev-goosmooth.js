@@ -23,6 +23,10 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
  await p.goto('http://127.0.0.1:8765/index.html?m=play&view=3d&space=normal');await p.waitForTimeout(3500);
  ok(await p.evaluate(()=>!!(window.__gl&&window.__gl.api)),'the GPU tank is running');
  await p.evaluate(async()=>{const s=document.getElementById('shape');s.value='cube';s.dispatchEvent(new Event('change'));await new Promise(r=>setTimeout(r,2500));
+   // LITE pinned off: drawn in software the GPU tank takes ~240 ms a frame, so the slow-device watchdog switches lite
+   // on during the load in most runs, and lite rebuilds the goo every other frame ON PURPOSE (mcEvery 2). This suite is
+   // about the full renderer; lite is the governor's business (dev-perfmode). (Flaky 0 / 149 repeats until 2026-11-23.)
+   LITE=false;window.__lite=false;document.body.classList.remove('lite');window.__gl.api.setLite(false);
    startBreak=()=>{};spawn=()=>{};balls.length=0;window.requestAnimationFrame=()=>0;window.__gl.api.gooSync(true);   /* frames drawn in one go: the skin is built here, not in the worker */
    const lt=lavaTick;lavaTick=function(n){const L=lt(n);L.kick[0]=L.kick[1]=L.kick[2]=0;return L;};});
  for(const HZ of [120,60]){
@@ -41,8 +45,9 @@ const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FA
     for(let i=1;i<out.length;i++){let m=0;for(let k=0;k<5;k++)m=Math.max(m,Math.abs(out[i][k]-out[i-1][k]));step.push(m);}
     for(let i=1;i<out.length-1;i++){let m=0;for(let k=0;k<5;k++)m=Math.max(m,Math.abs(out[i+1][k]-2*out[i][k]+out[i-1][k]));jerk.push(m);}
     const q=(a,f)=>{const s=[...a].sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor(s.length*f))];};
-    return {n:out.length,frozen:step.filter(x=>x<1e-6).length,step95:q(step,0.95),stepMax:q(step,1),jerk95:q(jerk,0.95),jerkMax:q(jerk,1)};},HZ);
+    return {lite:api.stats().lite,n:out.length,frozen:step.filter(x=>x<1e-6).length,step95:q(step,0.95),stepMax:q(step,1),jerk95:q(jerk,0.95),jerkMax:q(jerk,1)};},HZ);
   const L='['+HZ+' Hz] ';
+  ok(!r.lite,L+'the full renderer (lite pinned off): lite '+r.lite);
   ok(r.n>=290&&r.frozen<=r.n*0.02,L+'the goo is redrawn on every frame ('+r.frozen+' of '+r.n+' frames were a repeat; the old code repeated half of them)');
   ok(r.step95<3&&r.stepMax<6,L+'it flows: frame to frame it moves at most '+r.stepMax.toFixed(1)+' px (95% under '+r.step95.toFixed(1)+')');
   ok(r.jerk95<2&&r.jerkMax<4,L+'and without jolts (jerk: 95% under '+r.jerk95.toFixed(1)+' px, worst '+r.jerkMax.toFixed(1)+')');}

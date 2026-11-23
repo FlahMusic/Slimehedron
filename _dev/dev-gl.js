@@ -81,8 +81,12 @@ const ARGS=['--autoplay-policy=no-user-gesture-required','--enable-unsafe-swifts
   const wall=await p.evaluate(()=>{balls.length=0;particles.length=0;const e=edges[0],q=__P3((e.ax+e.bx)/2,(e.ay+e.by)/2,0),r=cv.getBoundingClientRect();
     for(const f of edges)f.flash=0;formGlow=0;draw();return {x:r.left+q[0]*r.width/W,y:r.top+q[1]*r.height/H};});
   const w0=await p.screenshot({clip:{x:wall.x-6,y:wall.y-6,width:12,height:12}});
-  await p.evaluate(()=>{edges[0].flash=1;draw();});
+  // the flash is HELD while the picture is taken: a flash fades on the clock (0.86 a 60 Hz tick, in draw), and the page's
+  // own frames, ~240 ms each in software GL, faded it to nothing before the screenshot landed (failing from 2026-11-07,
+  // when the fade moved onto the clock: 54 -> 54). A struck wall does light: 81,610 GL pixels change (2026-11-23 probe).
+  await p.evaluate(()=>{window.__hold=setInterval(()=>{edges[0].flash=1;},4);edges[0].flash=1;draw();});
   const w1=await p.screenshot({clip:{x:wall.x-6,y:wall.y-6,width:12,height:12}});
+  await p.evaluate(()=>clearInterval(window.__hold));
   // glass at rest is pearl (nearly colourless); a strike floods it with the note's colour: measure COLOUR, not brightness
   {const avg=im=>{let s=0;for(let i=0;i<im.data.length;i+=4){const r=im.data[i],g=im.data[i+1],b2=im.data[i+2];s+=Math.max(r,g,b2)-Math.min(r,g,b2);}return s/(im.data.length/4);};
     const a=avg(await decode(w0)),c=avg(await decode(w1));
@@ -103,8 +107,9 @@ const ARGS=['--autoplay-policy=no-user-gesture-required','--enable-unsafe-swifts
   const sol=await p.evaluate(()=>{_reduced=true;fillState='fill';   /* the box tumbles while playing (web-first 12): between the two pictures it turned, so hold the view still */frags=null;pressure=0;const s=document.getElementById('shape');s.value='icosa';s.dispatchEvent(new Event('change'));balls.length=0;particles.length=0;
     for(let i=0;i<SOLID.flash.length;i++)SOLID.flash[i]=0;draw();const r=cv.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,st:window.__gl.api.stats()};});
   const f0=await p.screenshot({clip:{x:sol.x-120,y:sol.y-120,width:240,height:240}});
-  await p.evaluate(()=>{for(let i=0;i<SOLID.flash.length;i++)SOLID.flash[i]=1;window.__gl.api.render();});
+  await p.evaluate(()=>{window.__hold=setInterval(()=>{for(let i=0;i<SOLID.flash.length;i++)SOLID.flash[i]=1;},4);for(let i=0;i<SOLID.flash.length;i++)SOLID.flash[i]=1;window.__gl.api.render();});   /* (held: see 4) */
   const f1=await p.screenshot({clip:{x:sol.x-120,y:sol.y-120,width:240,height:240}});
+  await p.evaluate(()=>clearInterval(window.__hold));
   {const avg=im=>{let s=0;for(let i=0;i<im.data.length;i+=4){const r=im.data[i],g=im.data[i+1],b2=im.data[i+2];s+=Math.max(r,g,b2)-Math.min(r,g,b2);}return s/(im.data.length/4);};
     const a=avg(await decode(f0)),c=avg(await decode(f1));
     ok(sol.st.tris>=120+240,'an icosahedron is drawn: 20 faces inside and out, and its 30 edges ('+sol.st.tris+' triangles)');

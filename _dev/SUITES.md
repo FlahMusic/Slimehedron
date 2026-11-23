@@ -75,11 +75,17 @@ Then rerun only what failed. A failure that passes on rerun goes on the flaky li
 - `dev-look3d` needs `python3` with PIL (dev-crayon was retired with the crayon look, ADR 0012); on Flah's Windows box `python3` is a Store alias (make a venv shim named python3).
 - `dev-gl` (needs SLIME_GL=1; runs on Flah's GPU) "the goo is a real 3D surface": 96-120 triangles some runs (fails 1 in 2; also before the tumble, 7d3f3bb).
 - `dev-hands` 3. "a flick keeps it spinning": 0.00 turns a second once (2026-11-02, right after a long run of suites), then 0.77 and 1.14 on reruns; the flick reads pointer timing.
+- `dev-goosmooth` 3. "rebuilding the surface" (4 ms): the machine's speed, not the code. 2026-11-23, same code, four
+  runs: 2.8 / 5.4 / 4.4 / 3.8 ms, and the physics tick timed in the same runs moves with it (0.4 ms beside 1.9, 0.8 beside
+  4.0): whole runs are slower (clock or heat). Its "redrawn on every frame" flake (0 or 149 repeats) was lite mode
+  switching on during the software-GL load; the suite pins lite off now.
 - Seen 2026-11-21: `dev-solid` [phone studio] "the corner menu ... sits on no control (covers sgCell)" once, green on rerun.
-  `dev-look3d` needs `python3` with PIL on PATH (it shells out for its picture checks); on Windows without it every
-  check before that passes and then it stops. Failing on f8b5849 too (control 2026-11-21, same numbers): `dev-goosmooth`
-  "redrawn on every frame" (149-150 of 300 repeats), `dev-goolook`, `dev-fluid` "a paused tank is completely
-  still" (38-39 moving frames), `dev-gl` "floods with its note's colour", `dev-crowding` [learn/landscape] mfill.
+  Fixed 2026-11-23 (each was failing on f8b5849 too): `dev-fluid` pause (play opens playing now; the suite presses pause),
+  `dev-goosmooth` repeats (lite mode switched on in the software-GL load; pinned off), `dev-gl` floods (the flash faded on
+  the clock before the screenshot landed; held), `dev-goolook` (its plant did not pin the turn or the chord colour; the
+  reference re-saved), `dev-crowding` [learn/landscape] (the map's words were not in the keep-out list: an app fix),
+  `dev-look3d` rim (it looked for the note where the flat projection put it, not where the tumbling GPU box drew it; it
+  finds the roundest blob now). dev-look3d finds python as python3, py or python (with Pillow).
 - `dev-hands` 1. "tap it and the slime plays notes" (1 in 7 s once) and 3. "a quarter turn" (97 degrees sits on the 0.12 rad edge).
 - Fixed 2026-10-27: `dev-crayon` (the tap invite faded in over its frozen frames) and `dev-portal` GL visibility.
 

@@ -36,6 +36,10 @@ const PLANT=()=>{
   // which would 'change' every pixel. This suite guards the goo renderer itself, so it pins 2D.
   if(window.setView3D)window.setView3D(false);
   S.playing=false; window.PIX=false;
+  // (and the shape's turn and the chord's colour: play turns with the tempo and the key journey moves the colour, so
+  // the same plant drew a different picture each run: 0% then 14.7% moved against a reference saved minutes before,
+  // 2026-11-23. Pinned: no turn, a fixed candy colour, snapped)
+  rot=0; S.spin=0; rebuild(); window.chordHSL=()=>[0.08,0.78,0.7]; liqHSL=null;
   if(window.__setLite)window.__setLite(false); else window.LITE=false;
   if(typeof mFrame!=='undefined')mFrame=0;
   if(typeof _poolMode!=='undefined')try{_poolMode=false;}catch(e){}

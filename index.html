@@ -9115,7 +9115,8 @@ const chillers=[]; // full-view slimes with cursor physics
   const TEXT_KEEPOUT='.psItem,.psLbl,.psSub,#psWaves,#psDrums,header h1,.psLbl,#chordBtn,'
                     +'.uCard,.uTxt,.uSec,.uSecT,.lgSay,aside h2,.card h2,#lgQ,.lgCue,'
                     +'#spShareRow,.lgStage h3,.lgCount,.rgName,.uHead,'
-                    +'.modeCard,.modeCard b,.modeCard span';   // the splash doors carry their own labels
+                    +'.modeCard,.modeCard b,.modeCard span,'   // the splash doors carry their own labels
+                    +'.lmSign,.lmCap';   // the lessons map's unit signs and lesson names (a margin slime sat on "Rhythm and Notation", landscape)
   // ONE MEASUREMENT PER PASS. Every placer was calling hotRects() itself — the worm, the rainbow
   // girl, the peekers, the nappers, the margin slimes — and each call does a querySelectorAll plus a
   // getBoundingClientRect on every control and label, which forces the browser to recompute layout.

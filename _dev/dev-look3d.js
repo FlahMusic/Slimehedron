@@ -10,13 +10,43 @@
 process.env.SLIME_GL='1';
 const {launch}=require('./browser');
 const {execFileSync}=require('child_process');const fs=require('fs'),os=require('os'),path=require('path');
+// python by any of its names: Windows has no python3 unless it came from the Store (its alias only opens the Store);
+// a python.org install answers to py and python. The first that runs with Pillow is used.
+const PYBIN=(()=>{for(const [c,pre] of [['python3',[]],['py',['-3']],['python',[]]]){try{execFileSync(c,[...pre,'-c','import PIL'],{stdio:'ignore'});return [c,pre];}catch(e){}}
+  console.log('  FAIL  needs python 3 with Pillow (winget install -e --id Python.Python.3.12, then py -m pip install pillow)');process.exit(1);})();
 const FAIL=[];const ok=(c,m)=>{console.log((c?'  PASS  ':'  FAIL  ')+m);if(!c)FAIL.push(m);};
 const TMP=fs.mkdtempSync(path.join(os.tmpdir(),'look3d-'));
 // luminance in a disc of radius a..b around (cx,cy) in an image
-const PY=`import sys,json,math
+const PY=`import sys,json,math,colorsys
 from PIL import Image
-im=Image.open(sys.argv[1]).convert('RGB');W,H=im.size;cx,cy,r=float(sys.argv[2]),float(sys.argv[3]),float(sys.argv[4])
+im=Image.open(sys.argv[1]).convert('RGB');W,H=im.size
 px=im.load()
+# the note: the ROUNDEST solid blob of saturated colour in the tank (walls are long thin lines; a difference of two
+# pictures caught the walls' glow too). Its middle is the blob's centroid, its radius from its area; the rim darkens
+# toward the page, so the blob is a little smaller than the drawn ball (grown 8%)
+x0,y0,x1,y1=[int(float(v)) for v in sys.argv[2:6]]
+x0,y0,x1,y1=max(0,x0),max(0,y0),min(W,x1),min(H,y1)
+sat={}
+for y in range(y0,y1):
+  for x in range(x0,x1):
+    R,G,B=px[x,y];h,l,s2=colorsys.rgb_to_hls(R/255,G/255,B/255)
+    if s2>0.4 and 0.3<l<0.85:sat[(x,y)]=1
+seen=set();best=None
+for q in list(sat):
+  if q in seen:continue
+  st=[q];seen.add(q);comp=[]
+  while st:
+    a=st.pop();comp.append(a)
+    for d in ((1,0),(-1,0),(0,1),(0,-1)):
+      b=(a[0]+d[0],a[1]+d[1])
+      if b in sat and b not in seen:seen.add(b);st.append(b)
+  n=len(comp)
+  if n<60 or n>4000:continue
+  xs=[c[0] for c in comp];ys=[c[1] for c in comp];w=max(xs)-min(xs)+1;hh=max(ys)-min(ys)+1
+  roundness=n/(math.pi*(max(w,hh)/2)**2)
+  if roundness>0.6 and min(w,hh)/max(w,hh)>0.7 and (best is None or roundness>best[0]):best=(roundness,sum(xs)/n,sum(ys)/n,math.sqrt(n/math.pi)*1.08)
+if best:_,cx,cy,r=best
+else:cx=cy=r=0
 def ring(a,b):
   s=0;n=0;sat=0
   for y in range(int(cy-b)-1,int(cy+b)+2):
@@ -25,7 +55,7 @@ def ring(a,b):
       if a<=d<=b and 0<=x<W and 0<=y<H:
         R,G,B=px[x,y];s+=0.299*R+0.587*G+0.114*B;mx=max(R,G,B);mn=min(R,G,B);sat+=(mx-mn)/255;n+=1
   return [s/max(1,n),sat/max(1,n)]
-print(json.dumps({'mid':ring(0,r*0.35),'rim':ring(r*0.72,r*0.92),'bg':ring(r*1.6,r*2.0)}))`;
+print(json.dumps({'mid':ring(0,r*0.35),'rim':ring(r*0.72,r*0.92),'bg':ring(r*1.6,r*2.0),'at':[round(cx),round(cy),round(r,1)]}))`;
 
 (async()=>{const b=await launch();
  const ctx=await b.newContext({viewport:{width:1000,height:800}});
@@ -63,14 +93,17 @@ print(json.dumps({'mid':ring(0,r*0.35),'rim':ring(r*0.72,r*0.92),'bg':ring(r*1.6
  await p.evaluate(()=>{window.setSpace('normal');balls.length=0;});
  // ---- 2. a note has a clean edge ----
 
- const shot=await p.evaluate(()=>{try{setPlaying(false);}catch(e){}particles.length=0;balls.length=0;window.requestAnimationFrame=()=>0;
+ // (the note is FOUND in the picture: the 3D box tumbles, and it was looked for where the flat projection P3 puts it,
+ // ~130 px from where the GPU drew it, so from then on this read the empty page: 'rim lighter than middle'. The view is
+ // held still too, as dev-gl does. 2026-11-23)
+ const shot=await p.evaluate(()=>{try{setPlaying(false);}catch(e){}_reduced=true;particles.length=0;balls.length=0;window.requestAnimationFrame=()=>0;const T0=performance.now();performance.now=()=>T0;   /* (pinned: one still picture) */
    spawn(CX,CY);const B=balls[0];B.vx=B.vy=0;B.x=B.px=CX;B.y=B.py=CY;B.z=B.pz=0.15;B.hue=0.58;B.trail.length=0;
    window.__gl.api.render();window.__gl.api.render();
-   const s=P3(CX,CY,0.15),c=document.getElementById('cv').getBoundingClientRect(),k=c.width/W;
-   return {x:c.left+s[0]*k,y:c.top+s[1]*k,r:BR*s[2]*window.__gl.api.noteScale*k};});
+   const g=document.getElementById('cvGL').getBoundingClientRect();return {x:g.left,y:g.top,r:g.right,b:g.bottom};});   // (the tank's box: the note is found inside it, below)
  const f=path.join(TMP,'ball.png');await p.screenshot({path:f});
- const m=JSON.parse(execFileSync('python3',['-c',PY,f,String(shot.x),String(shot.y),String(shot.r)]).toString());
+ const m=JSON.parse(execFileSync(PYBIN[0],[...PYBIN[1],'-c',PY,f,String(shot.x),String(shot.y),String(shot.r),String(shot.b)]).toString());
  if(process.env.KEEP)console.log('   ball at',JSON.stringify(shot),'shot',f);
+ ok(m.at[2]>=5,'the note is found where it is drawn (at '+m.at[0]+', '+m.at[1]+', radius '+m.at[2]+' px)');
  ok(m.mid[0]-m.rim[0]>18,'a note\'s rim is clearly darker than its middle (luminance '+m.mid[0].toFixed(0)+' -> '+m.rim[0].toFixed(0)+')');
  ok(m.bg[0]-m.rim[0]>45,'so its edge stands out from the pale page (page '+m.bg[0].toFixed(0)+', rim '+m.rim[0].toFixed(0)+')');
  ok(m.rim[1]>0.25,'and the rim is its own colour, not grey (saturation '+m.rim[1].toFixed(2)+')');

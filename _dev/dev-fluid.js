@@ -50,14 +50,18 @@ for(const mode of ['play','studio']){
   // This suite is about whether MOTION is smooth, not about whether pause works -- so assert the
   // freeze, then press play, then measure.
   if(mode==='play'){
-    const frozen=await p.evaluate(()=>new Promise(res=>{
+    // (play opens PLAYING since the slime pass, 2026-11: the slime is on and nothing sounds before a touch. This
+    // asserted a paused start and read the running tank as a broken pause. It presses pause, as a person would.)
+    const frozen=await p.evaluate(SAB=>new Promise(res=>{
+      if(S.playing)document.getElementById('playBtn').click();
+      if(SAB==='nopause')S.playing=true;
       for(let i=0;i<4;i++){try{spawnRain();}catch(e){}}
       const pts=[];let n=0;
       const tick=()=>{ if(balls.length)pts.push([balls[0].x,balls[0].y]);
         if(++n<40)requestAnimationFrame(tick);
         else{let moved=0;for(let i=1;i<pts.length;i++)if(Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1])>1e-6)moved++;
           res({samples:pts.length,moved:moved});}};
-      requestAnimationFrame(tick);}));
+      requestAnimationFrame(tick);}),process.env.SAB||'');
     ok(frozen.samples>0,'[play] balls exist to measure while paused ('+frozen.samples+')');
     ok(frozen.moved===0,'[play] a paused tank is completely still — pause really pauses ('+frozen.moved+' moving frames)');
     await p.evaluate(()=>{try{balls.length=0;}catch(e){}});
