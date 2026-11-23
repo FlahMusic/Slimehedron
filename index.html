@@ -1559,7 +1559,9 @@ canvas{background:none;border:0;box-shadow:none;border-radius:0;max-width:100%;m
 #cpDone{border:none;background:#b388f0;color:#fff;border-radius:8px;padding:5px 13px;font:800 12px system-ui;cursor:pointer}
 #cpDone:hover{background:#a074e8}
 aside{width:340px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-right:4px;position:relative;z-index:70}
-.slime.chill,#wormEl{pointer-events:none} /* the moving train + worm are pure ambiance — never catch clicks. */
+.slime.chill{pointer-events:none} /* the moving train is pure ambiance — never catches clicks. (The worm does now: children
+   tap whatever looks alive and are let down when nothing happens, NN/g; his placer keeps him off every control, and
+   where he can find no clear spot it turns his clicks off itself. His tap did nothing since this rule: 2026-11-23) */
 .slime.peeker,.slime.rgirl{pointer-events:auto;cursor:pointer} /* edge peekers ARE tap toys again (they're kept off the buttons by their spot placement, so they won't eat real clicks) */
 @keyframes beatBounce{0%{transform:translateY(0) scale(1,1)}22%{transform:translateY(-15px) scale(1.06,.94)}52%{transform:translateY(0) scale(.97,1.05)}100%{transform:translateY(0) scale(1,1)}}
 .slime.bpop .bob{animation:beatBounce .4s ease-out} /* audio-reactive pop on the beat (overrides the idle bob) */
@@ -9278,7 +9280,7 @@ const chillers=[]; // full-view slimes with cursor physics
   const asideEl=document.querySelector('aside');
   let dblUntil=0,curFace='',wBeat=0,lastT=performance.now(),rise=0,hueNow=150;
   window._wormReset=()=>{wBeat=0;lastT=performance.now();};
-  el.addEventListener('click',()=>{dblUntil=performance.now()+8*(60000/S.bpm);}); // tap = 2 bars of double-time
+  el.addEventListener('click',()=>{dblUntil=performance.now()+8*(60000/S.bpm);}); // tap = 2 bars of double-time, and up he comes
   function setFace(dbl){const k=dbl?'d':'n';if(k===curFace)return;curFace=k;
     face.innerHTML=dbl?'<path d="M-13 -5 l6 -6 l6 6 M2 -5 l6 -6 l6 6" fill="none" stroke="#2f2a44" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M-9 4 q9 15 18 0 Z" fill="#2f2a44"/><path d="M-7 5.5 q7 5 14 0" fill="#fff" opacity=".9"/>'
       :'<circle cx="-8" cy="-4" r="3.6" fill="#2f2a44"/><circle cx="8" cy="-4" r="3.6" fill="#2f2a44"/><path d="M-6 5 q6 6 12 0" fill="none" stroke="#2f2a44" stroke-width="3.4" stroke-linecap="round"/>';}
@@ -9358,8 +9360,8 @@ const chillers=[]; // full-view slimes with cursor physics
     if(S.playing&&!drumOn)wBeat+=dt*S.bpm/60000;
     if((++_lf%60)===0)relayout(); // catch mode/layout changes once a second (five rect reads a run; mode changes call _wormRelayout themselves)
     // ground cycle: rest ~4 bars (only the head pokes), then rise & wiggle ~8 bars, loop
-    const bt=beats(), bar=Math.floor(bt/4), cyc=((bar%12)+12)%12, up=cyc>=4;
-    rise+=((up?1:0)-rise)*0.045;                                   // smooth emerge / sink
+    const bt=beats(), bar=Math.floor(bt/4), cyc=((bar%12)+12)%12, up=cyc>=4||now<dblUntil;   // (a tap brings a resting worm up for his dance)
+    rise+=((up?1:0)-rise)*(now<dblUntil?0.16:0.045);              // smooth emerge / sink (a tap: up quick, ~0.3 s)
     el.style.transform='translateY('+((1-rise)*hPx*0.55).toFixed(1)+'px)'; // sink LESS so his whole head + mouth peek out while resting (was 0.72 = only eyes)
     const autoDbl=up&&(((cyc-4)&3)===3);                          // every 4th wiggle bar = 1 bar of double-time
     const dbl=(now<dblUntil)||autoDbl;setFace(dbl);

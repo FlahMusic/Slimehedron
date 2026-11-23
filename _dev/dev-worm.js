@@ -8,6 +8,8 @@
 //    3. he rests (sunk: only his head and neck out) AND rises (fully up) within the cycle
 //    4. he wiggles: his body's path changes from sample to sample
 //    5. he keeps clear of the controls: his box covers no button, select or input more than 10 px
+//    6. he answers a tap (2026-11-23: a CSS rule made him click-through, so his tap did nothing; children tap whatever
+//       looks alive, NN/g): tapped while he rests, his face is the excited one within 150 ms and he is up within 1 s
 //  In play at 1280 x 860 and 1440 x 900, on a phone (390 x 844), and in studio at 1280 x 860.
 //  Sabotage: SAB=hide (the old placer that counted the decorations), SAB=freeze (his tick stopped).
 //  Needs a local server: python -m http.server 8765. Run from the project root: node _dev/dev-worm.js
@@ -56,6 +58,16 @@ const RUNS=[['play',1280,860],['play',1440,900],['play',390,844],['studio',1280,
   ok(r.restSeen>0&&r.risenSeen>0,`${tag} he rests and rises within the cycle (${r.restSeen} looks resting, ${r.risenSeen} risen)`);
   ok(r.paths>r.n*0.6,`${tag} he wiggles (${r.paths} different shapes in ${r.n} looks)`);
   ok(r.maxOverlap<=10,`${tag} he keeps clear of the controls (overlaps one by ${r.maxOverlap.toFixed(0)} px at most)`);
+  // 6. a tap, while he rests (his click stays on unless he found no clear spot, which 5 already rules out)
+  if(!SAB){
+   await p.evaluate(()=>new Promise(res=>{const w=document.getElementById('wormEl'),t0=performance.now();
+     const f=()=>{const m=/translateY\(([-\d.]+)px\)/.exec(w.style.transform||'');if((m&&+m[1]>w.offsetHeight*0.4)||performance.now()-t0>15000)res();else setTimeout(f,100);};f();}));
+   const at=await p.evaluate(()=>{const f=document.getElementById('wFace').getBoundingClientRect();return {x:f.left+f.width/2,y:f.top+f.height/2,face:document.getElementById('wFace').innerHTML};});
+   const hit=await p.evaluate(a=>{const e=document.elementFromPoint(a.x,a.y),w=document.getElementById('wormEl');return !!e&&(e===w||w.contains(e));},at);
+   await p.mouse.click(at.x,at.y);await p.waitForTimeout(150);
+   const face=await p.evaluate(()=>document.getElementById('wFace').innerHTML);await p.waitForTimeout(850);
+   const ty=await p.evaluate(()=>{const w=document.getElementById('wormEl'),m=/translateY\(([-\d.]+)px\)/.exec(w.style.transform||'');return m?+m[1]/w.offsetHeight:1;});
+   ok(hit&&face!==at.face&&ty<0.15,`${tag} 6. he answers a tap (his head takes the tap: ${hit}; excited face in 150 ms: ${face!==at.face}; up in 1 s: ${(ty*100).toFixed(0)}% sunk)`);}
   ok(errs.length===0,`${tag} no page errors ${errs.slice(0,2).join(' | ')}`);
   await p.close();
  }
