@@ -7320,10 +7320,18 @@ try{ccMap=JSON.parse(localStorage.getItem('slimehedron-cc')||'{}');}catch(e){}
     $("midiInT").addEventListener('click',()=>{const on=$("midiInT").classList.toggle('on');midiPrefSave({on});if(on)enableMidiIn();});
     $("midiClkT").addEventListener('click',()=>{S.midiClock=$("midiClkT").classList.toggle('on');midiPrefSave({clk:S.midiClock});_dll=null;}); // re-arm DLL each time clock sync is toggled
     if(midiPref.clk){S.midiClock=true;$("midiClkT").classList.add('on');}
-    // MIDI in ON by default (unless you turned it off last time) — a music app should just hear your keyboard.
-    if(midiPref.on!==false)$("midiInT").classList.add('on');
-    const _mi=()=>{if($("midiInT").classList.contains('on'))enableMidiIn();window.removeEventListener('pointerdown',_mi);window.removeEventListener('keydown',_mi);};
+    // MIDI in hears your keyboard by itself, but only where the browser has ALREADY said yes. Since Chrome 124 every Web
+    // MIDI request asks the person first (Firefox too: developer.chrome.com/blog/web-midi-permission-prompt), and this
+    // asked on the first touch anywhere: a child's first tap in play opened a prompt about "MIDI devices" (2026-11-23,
+    // dev-midiprompt). Now: permission given -> it connects on the first touch, quietly; not given -> the switch shows off
+    // and nothing asks until someone switches it on (that click asks, and says what happened).
+    const _mi=()=>{window.removeEventListener('pointerdown',_mi);window.removeEventListener('keydown',_mi);
+      if(midiPref.on===false)return;
+      Promise.resolve().then(()=>navigator.permissions&&navigator.permissions.query?navigator.permissions.query({name:'midi'}):{state:'prompt'})
+        .then(st=>{if(st&&st.state==='granted'){$("midiInT").classList.add('on');enableMidiIn(true);}}).catch(()=>{});};
     window.addEventListener('pointerdown',_mi);window.addEventListener('keydown',_mi);
+    try{if(midiPref.on!==false&&navigator.permissions&&navigator.permissions.query)   // (reading the permission never asks)
+      navigator.permissions.query({name:'midi'}).then(st=>{if(st&&st.state==='granted')$("midiInT").classList.add('on');}).catch(()=>{});}catch(e){}
   }else{ // no Web MIDI (Safari, every iPhone/iPad browser): the MIDI rows go, nothing says why (ADR 0011). Taps and keys still play.
     ['midiT2','midiPort','panicBtn'].forEach(id=>{const r=$(id)&&$(id).closest('.row');if(r)r.hidden=true;});
     ['midiInT','mpeT'].forEach(id=>{const f=$(id)&&$(id).closest('details');if(f)f.hidden=true;});
@@ -8050,20 +8058,20 @@ function ccApply(cc,v){const el=document.getElementById(ccMap[cc].id);if(!el)ret
   else{const mn=+el.min||0,mx=(el.max!==''&&el.max!=null)?+el.max:100;el.value=mn+(v/127)*(mx-mn);}
   el.dispatchEvent(new Event('input'));el.dispatchEvent(new Event('change'));}
 function midiPrefSave(patch){try{const cur=JSON.parse(localStorage.getItem('slimehedron-midi')||'{}');localStorage.setItem('slimehedron-midi',JSON.stringify(Object.assign(cur,patch)));}catch(e){}}
-function bindMidiIns(access){
+function bindMidiIns(access,quiet){
   midiIns=[...access.inputs.values()];
   const sel=$("midiIn");if(!sel)return;
   let want='';try{want=JSON.parse(localStorage.getItem('slimehedron-midi')||'{}').dev||'';}catch(e){}
   sel.innerHTML=midiIns.length?midiIns.map((p,i)=>`<option value="${i}">${p.name}</option>`).join(''):'<option value="-1">no devices</option>';
   const match=midiIns.findIndex(p=>p.name===want);if(match>=0)sel.value=String(match); // remember device by NAME (index shuffles)
   midiIns.forEach(p=>{p.onmidimessage=ev=>{const s=$("midiIn");if(s&&midiIns[+s.value]!==p&&+s.value>=0)return;midiMsg(ev.data);};});
-  toast(midiIns.length?'MIDI: '+midiIns.length+' device'+(midiIns.length>1?'s':''):'no MIDI devices');}
-async function enableMidiIn(){
-  if(!navigator.requestMIDIAccess){toast('MIDI not supported here');return;}
+  if(midiIns.length||!quiet)toast(midiIns.length?'MIDI: '+midiIns.length+' device'+(midiIns.length>1?'s':''):'no MIDI devices');}
+async function enableMidiIn(quiet){   // quiet: connected by itself (permission given before): say only that a device is there
+  if(!navigator.requestMIDIAccess){if(!quiet)toast('MIDI not supported here');return;}
   try{const access=await navigator.requestMIDIAccess();
-    bindMidiIns(access);
-    access.onstatechange=()=>bindMidiIns(access); // USB hot-plug: devices appear/vanish live
-  }catch(e){toast('MIDI permission denied');}}
+    bindMidiIns(access,quiet);
+    access.onstatechange=()=>bindMidiIns(access,true); // USB hot-plug: devices appear/vanish live
+  }catch(e){$("midiInT").classList.remove('on');if(!quiet)toast('MIDI permission denied');}}
 // keyboard autonomy: space = balls, A = auto play, D = drums, arrows = tempo (recording is button-only — no hotkey to fat-finger mid-take)
 let lastKb=0;
 // how focus arrived: within half a second of a pointer press it is the mouse's; otherwise the keyboard's (or a script's)
