@@ -15,6 +15,8 @@
 # 7. the page round the tank (2026-11-21): the lake's sky in the top left (blue pixels at 8 s), the pink mini slime in
 #    its corner, the worm bottom right (saturated pastel pixels), a new colour on him a beat later (8.0 s against 8.7 s)
 #    Sabotaged 2026-11-21: the lake layer off (the lake, minis and worm checks red), the worm off (the worm check red).
+# 8. the minis answer a hand (2026-11-23, slime_minis.h): a key while it plays (7.9 s, clear of the bar's ripples) makes
+#    exactly ONE mini hop within 150 ms (the bar's 1 moves all five); with no key (7.70 against 7.86 s) none moves
 set -eu
 FW="${FW:-$HOME/fm1w/slime-fw/build/felucca.fwsc}"
 EMU="${EMU:-$HOME/fm1w/fm1-emu}"
@@ -22,7 +24,7 @@ O="${OUT:-$HOME/fm1w/out}/boot"
 R="$HOME/local/root"; export LD_LIBRARY_PATH="$R/usr/lib/x86_64-linux-gnu"
 rm -rf "$O"; mkdir -p "$O"
 cd "$EMU"
-FM1_STRICT=1 FM1_NO_PLAY=1 FM1_BENCH_KEYS="5000:n7,5200:n7^,6500:PLAY,6590:PLAY^" ./target/release/fm1-live --fwsc "$FW" --flash-chip uc25hq80 \
+FM1_STRICT=1 FM1_NO_PLAY=1 FM1_BENCH_KEYS="5000:n7,5200:n7^,6500:PLAY,6590:PLAY^,7900:n0,7990:n0^" ./target/release/fm1-live --fwsc "$FW" --flash-chip uc25hq80 \
   --midi none --shot 10000 --lcd-only --record "$O/rec" > "$O/emu.log" 2>&1 || { tail -20 "$O/emu.log"; exit 1; }
 FM1_STRICT=1 FM1_NO_PLAY=1 FM1_DUMPRAM="$O/stopped.ram" FM1_BENCH_KEYS="5000:n7,5200:n7^" ./target/release/fm1-live --fwsc "$FW" --flash-chip uc25hq80   --midi none --shot 6000 --lcd-only > "$O/emu2.log" 2>&1 || { tail -20 "$O/emu2.log"; exit 1; }
 NB=$(python3 "$HOME/fm1w/cmp/ramvar.py" "$(dirname "$FW")/felucca.elf" "$O/stopped.ram" sl_mdbg 8 | awk '{print $6}')
@@ -68,6 +70,11 @@ def worm(a):
 n8, c8 = worm(f8); n87, c87 = worm(f87)
 ok(sky > 800 and pink > 40, f"the lake behind the tank ({sky} sky pixels top left) and the minis ({pink} pink pixels at the top-left one)")
 ok(n8 > 60 and np.abs(c8 - c87).sum() > 20, f"the worm bottom right ({n8} pixels of him), a new colour a beat later (moved {np.abs(c8 - c87).sum():.0f})")
+AT = [(20, 38), (220, 42), (18, 214), (52, 228), (150, 230)]   # SL_MINI_AT (slime_ui.c)
+def box(a, i): x, y = AT[i]; return a[max(0, y - 20):min(240, y + 13), max(0, x - 12):min(240, x + 13)]
+def moved(t0, t1): return [i for i in range(5) if np.abs(box(frame(t1), i) - box(frame(t0), i)).sum() > 300]
+mk, m0 = moved(7860, 8020), moved(7700, 7860)
+ok(len(mk) == 1 and not m0, f"the minis answer a hand: a key moves {len(mk)} mini (#{mk}), no key moves {len(m0)}")
 print("power-on behaves" if not fails else f"{fails} failed")
 sys.exit(1 if fails else 0)
 EOF

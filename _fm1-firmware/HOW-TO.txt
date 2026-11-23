@@ -41,6 +41,8 @@ Behind the tank: a sunny lake in a forest (Game Boy Color pixels, soft and out o
 round the edges that hop on each bar's 1, and the site's dancing worm in the bottom right corner: his head always pokes
 up and wiggles to the tempo, every 12 bars he rises to dance for 8 (the 4th and 8th in double time), a new colour each
 beat. They are decoration only: they never touch the music, and they are drawn only where the screen changes anyway.
+They answer you: a key you play makes one little slime hop (low notes on the left, high on the right, so a scale run
+walks across them), and when the tank bursts they all jump twice and the worm comes up to dance.
 
 It works like a groovebox: ONE BUTTON, ONE PAGE, every setting in exactly one place.
 - The three knobs on the left are the three SOUNDS, on every page: SELECT the melody's, ALGORITHM the bass's,

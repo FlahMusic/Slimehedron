@@ -359,12 +359,15 @@ static int sl_hand_deg(void)                 /* the conductor, at a bar: the han
         if ((int32_t)(sl_sim - sl_hn_at[i % SL_HN]) < (int32_t)win) pcs[n++] = sl_hn_pc[i % SL_HN];
     return n && sl_tank.s.scale ? sh_band_hand_root(sl_tank.s.scale, pcs, n) : -1;
 }
+static volatile uint32_t sl_hand_n;          /* hands' notes so far, and the last one's cents: a mini answers it (slime_ui.c) */
+static volatile int32_t sl_hand_c;
 static void sl_hand(double cents, int vel)   /* a hand's note (cents above the key): now, and into the loop if it records */
 {
     int pc = ((int)(cents < 0 ? cents / 100.0 - 0.5 : cents / 100.0 + 0.5) % 12 + 12) % 12;
     sl_play_now(SL_TRK_MEL, sl_root, cents, vel, sl_gate_blocks ? sl_gate_blocks : 151u);
     sl_loop_hand(cents, vel);
     sl_hn_pc[sl_hn_w % SL_HN] = (uint8_t)pc; sl_hn_at[sl_hn_w % SL_HN] = sl_clock; sl_hn_w = sl_hn_w + 1u;
+    sl_hand_c = (int32_t)cents; sl_hand_n = sl_hand_n + 1u;
     SL_LOG("H %u %.0f\n", sl_clock, cents);
 }
 static void sl_loop_press(void)              /* REC (main loop, as the conductor) */

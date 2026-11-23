@@ -22,7 +22,7 @@ rm -rf "$WORK"; mkdir -p "$WORK"
 python3 "$HERE/patch_sloop.py" "$WORK"
 python3 "$HERE/patch_kits.py" "$WORK/tools"           # the site's own drum kits, synthesized (gen-kits.js)
 mkdir -p "$WORK/firmware/slime" "$WORK/build/slime"
-cp "$HERE/slime.c" "$HERE/slime_drums.c" "$HERE/slime_ui.c" "$HERE/slime_scene.h" "$WORK/firmware/slime/"
+cp "$HERE/slime.c" "$HERE/slime_drums.c" "$HERE/slime_ui.c" "$HERE/slime_scene.h" "$HERE/slime_minis.h" "$WORK/firmware/slime/"
 cp "$HERE"/../core/*.c "$HERE"/../core/*.h "$WORK/firmware/slime/"
 # single precision for the chip's FPU (floatify.py says why), and the FPU switched on for EVERY unit, SLOOP's too, as
 # JieLi's SDK and X0X (a shipping FM-1 firmware) build: one float ABI across the whole image

@@ -1171,6 +1171,7 @@ static uint8_t sl_scene_ready;
 #define SL_NMINI 5
 #define SL_MW 22
 #define SL_MH 18
+#include "slime_minis.h"
 static const int16_t SL_MINI_AT[SL_NMINI][2] = {{20, 38}, {220, 42}, {18, 214}, {52, 228}, {150, 230}};   /* their middles */
 static const uint16_t SL_MINI_COL[SL_NMINI] = {0xFD9Bu, 0xCDDFu, 0xFE53u, 0xAEFFu, 0xFFB3u};   /* pink, lavender, peach, sky, lemon */
 static uint16_t sl_mini_px[SL_NMINI][SL_MH][SL_MW] __attribute__((section(".pool")));
@@ -1235,9 +1236,10 @@ static void sl_worm_frame(float dt_ms)
         bt = (float)(((double)sl_step - sl_step_left / len) / 4.0) - 0.075f * bpm / 60.0f;
         wbeat = bt;
     } else { wbeat += dt_ms * bpm / 60000.0f; bt = wbeat; }   /* stopped: he keeps the tempo, resting */
-    bar = (int)floorf(bt / 4.0f); cyc = ((bar % 12) + 12) % 12; up = sl_run && cyc >= 4;
-    sl_wm.rise += ((up ? 1.0f : 0.0f) - sl_wm.rise) * 0.045f * (dt_ms / 16.7f > 3.0f ? 3.0f : dt_ms / 16.7f);
-    sl_wm.dbl = up && (((cyc - 4) & 3) == 3);
+    {   int party = sl_party_on(fm1_ms, sl_burst_t0, sl_bn);   /* a burst: he comes up quick and dances double time */
+        bar = (int)floorf(bt / 4.0f); cyc = ((bar % 12) + 12) % 12; up = (sl_run && cyc >= 4) || party;
+        sl_wm.rise += ((up ? 1.0f : 0.0f) - sl_wm.rise) * (party ? 0.16f : 0.045f) * (dt_ms / 16.7f > 3.0f ? 3.0f : dt_ms / 16.7f);
+        sl_wm.dbl = (up && (((cyc - 4) & 3) == 3)) || party; }
     {   /* a new pastel hue each beat, glided to */
         float t = (150.0f + floorf(bt) * 40.0f) / 360.0f, dh;
         t -= floorf(t); dh = t - hue_now; dh -= floorf(dh + 0.5f);
@@ -1270,15 +1272,19 @@ static void sl_worm_frame(float dt_ms)
     sl_wm.on = sl_wm.y0 < 239;
 }
 /* the minis' hops: on each bar's 1, a ripple 26 ms apart, 440 ms each, 5 px up */
-static void sl_minis_frame(void)
+static void sl_minis_frame(void)   /* the bar's ripple, a hand's mini, a burst's party (slime_minis.h, host/minitest.c) */
 {
-    static uint32_t last_bar = 0xFFFFFFFFu, hop_t0;
-    uint32_t i, bar = sl_step / 16u;
+    static uint32_t last_bar = 0xFFFFFFFFu, hop_t0, hand_seen, hand_t0[SL_NMINI];
+    static int hand_last = -1;
+    uint32_t i, bar = sl_step / 16u, hn = sl_hand_n;
     if (sl_run && bar != last_bar) { last_bar = bar; hop_t0 = fm1_ms + 75u; }   /* (as it sounds) */
-    for (i = 0; i < SL_NMINI; i++) {
-        int32_t t = (int32_t)(fm1_ms - hop_t0) - (int32_t)(i * 26u);
-        sl_mini_hop[i] = (int8_t)(t >= 0 && t < 440 && hop_t0 ? (int)(5.0f * sinf((float)t * (3.14159265f / 440.0f)) + 0.5f) : 0);
+    if (hn != hand_seen) {                                 /* a hand played: its mini hops now (a hand is never late) */
+        hand_seen = hn;
+        hand_last = sl_mini_for_note((double)sl_hand_c, SL_MINI_AT, SL_NMINI, hand_last);
+        hand_t0[hand_last] = fm1_ms ? fm1_ms : 1u;
     }
+    for (i = 0; i < SL_NMINI; i++)
+        sl_mini_hop[i] = (int8_t)sl_mini_hop_px(fm1_ms, (int)i, hop_t0, hand_t0[i], sl_burst_t0, sl_bn);
 }
 /* the row under the tank: the lake, the minis, the worm (st_draw_band calls it for every row it fills) */
 static uint8_t sl_decor_page;               /* a page's panel is up: the worm and the bottom minis are under it */

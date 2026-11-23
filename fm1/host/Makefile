@@ -36,6 +36,12 @@ check: all
 clean:
 	rm -f solidtest_double solidtest_float dump_*.json *.ppm
 
+# the minis answer a hand, the cast celebrates a burst (firmware/slime_minis.h): make minis
+minitest: minitest.c ../firmware/slime_minis.h
+	$(CC) $(CFLAGS) -o $@ minitest.c -lm
+minis: minitest
+	./minitest
+
 TANKSRC = ../core/tank.c ../core/goo.c ../core/music.c ../core/melody.c
 tanktest: $(TANKSRC) ../core/tank.h ../core/goo.h ../core/music.h ../core/melody.h tanktest.c
 	$(CC) $(CFLAGS) -o $@ $(TANKSRC) tanktest.c -lm
