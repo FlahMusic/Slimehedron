@@ -664,7 +664,9 @@ static void slime_play_block(void)
  * -21..-15 LUFS (the site sits at -18.8), peaks under -0.9 dBFS; drums at least 6 LU under the melody, the bass 3..10
  * under, the chords at least 3 under, the melody at least 1 LU over the whole band. Found by measuring (check-host.sh). */
 #ifndef SL_MEL_LEVEL
-#define SL_MEL_LEVEL 104
+#define SL_MEL_LEVEL 98                 /* (104 until 2026-11-25, Flah: "the melody even with all at 0db mixer is just so fucking loud
+                                         * ... jarring compared to other elements": 3 dB down. A hand's keys play at 100, louder than
+                                         * the bench's stand-in melody, so the melody heard sat higher than levels.sh measured) */
 #define SL_BASS_LEVEL 76          /* measured: 4.2..7.8 LU under the melody (levels.sh) */
 #define SL_COMP_LEVEL 70          /* measured: at 80 the chords were only 0.9..2.2 LU under the melody (the rule: >= 3) */
 #endif
@@ -674,15 +676,16 @@ static void slime_play_block(void)
  * drums sat 16.4 under (barely there), march / chip 11.3, industrial 7.1; jazz's sparse bass 10.6 (the rule: <= 10). */
 static const uint8_t SL_KIT_DRLVL[11] = {28, 28, 26, 28, 92, 31, 31, 38, 39, 28, 24};   /* (2026-11-16, humanize on: jazz's feel took its drums to 14.7 under, bossa's to 11.1;
                                              * 2026-11-18, the drum bus: bossa 29 -> 28, 8.8 LU under, the soft kits' rule is 9) */
-static const int8_t SL_KIT_BASS[11] = {0, 0, -3, 0, 3, 0, 0, -2, 0, -4, 0};   /* (2026-11-25: disco and beep under the rules since
+static const int8_t SL_KIT_BASS[11] = {0, 0, -3, 0, 3, 0, 0, -2, -2, -4, 0};   /* (2026-11-25: disco and beep under the rules since
                                              * the site's drums came, and BIG MONO's pluck sits louder in beep's busy line) */
-/* the site's drums: each kit down this many half dB on the FM-1 (disco's drums were 5.9 LU under the melody: the rule is 6) */
-static const uint8_t SL_SD_KIT_DOWN[11] = {0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0};
+/* the site's drums: each kit down this many half dB on the FM-1 (disco's drums were 5.9 LU under the melody: the rule is 6;
+ * jazz's 8.1 once the melody came down 2026-11-25: the soft kits' rule is 9) */
+static const uint8_t SL_SD_KIT_DOWN[11] = {0, 0, 3, 0, 3, 0, 0, 0, 0, 0, 0};
 /* the chords, by rhythm, in fader steps (disco's chord part is its busiest: its band sat 0.7..0.8 LU under the melody) */
 static const int8_t SL_KIT_COMP[11] = {0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0};
 /* the site's drums (slime_drums.c): one level for every kit, the pop kit's; each kit's own is the site's KIT_DB after the glue */
 #ifndef SL_SD_DRLVL
-#define SL_SD_DRLVL 79
+#define SL_SD_DRLVL 74                  /* (79 until 2026-11-25: the melody came down, the drums by ~0.6 dB with it) */
 #endif
 static uint8_t sl_mute[4], sl_solo[4];       /* the MIXER's mutes and solos (melody, bass, chords, drums): a solo silences the
                                              * parts not soloed, as a DAW's does */
@@ -833,9 +836,11 @@ typedef struct { uint8_t eng; int8_t trim; const char *name; } sl_snd;
 #define SL_NBASS 11u
 #define SL_NCOMP 10u
 static const sl_snd SL_MEL_SND[SL_NMEL] = {
-    {1, 0, "KALIMBA"}, {1, 0, "MARIMBA"}, {1, 0, "GLOCKEN"}, {1, 1, "MUSIC BOX"}, {1, 1, "CELESTA"}, {1, -1, "HARP"},
-    {1, 0, "FM PLUCK"}, {10, -2, "THUMB PNO"}, {2, -21, "SOFT KEYS"}, {3, 8, "GAME LEAD"},
-    {9, -10, "SH TINE"}, {9, -2, "SH BELL"}, {9, 9, "SH HARP"},          /* FM6: slime_fm6.py */
+    {1, 0, "KALIMBA"}, {1, 1, "MARIMBA"}, {1, 4, "GLOCKEN"}, {1, 5, "MUSIC BOX"}, {1, 3, "CELESTA"}, {1, 2, "HARP"},
+    {1, 0, "FM PLUCK"}, {10, -2, "THUMB PNO"}, {2, -20, "SOFT KEYS"}, {3, 12, "GAME LEAD"},
+    {9, -7, "SH TINE"}, {9, 0, "SH BELL"}, {9, 13, "SH HARP"},          /* FM6: slime_fm6.py */
+    /* (re-trimmed 2026-11-25 once the melody came down 3 dB: the master limiter had been evening them out, measured
+     * alone over 24 bars against KALIMBA's -22.64 LUFS: each within 0.3) */
 };
 /* (2026-11-25) the first of each list is the part's sound at power-on: the bass a mono-synth pluck (BIG MONO), the chords
  * a smooth DX piano (SMOOTH EP, Flah: "the e piano sound of dx7, nice and smooth and chill"); the 80s synths after them
@@ -1040,6 +1045,47 @@ static double sl_snap_cents(const sh_scale *sc, int midi, int root)
     }
     return cents;
 }
+/* NOTES (the ENV page): a part's own envelope over its sound's (attack, decay, sustain, release, glide); 0: the sound's */
+static uint8_t sl_env_on[3], sl_env_v[3][5];
+/* An FM sound's envelope is its carriers' (SLOOP's FM6 ignores the track's ADSR), so on an FM sound the same four knobs
+ * reshape the carriers from the patch's own (Flah 2026-11-25: the chords' ENV page "just says FM for them all? useless
+ * ... make them same as the other 2"): 64 (50%) is the sound as made; attack slows R1, decay slows R2 and R3, sustain
+ * lifts or lowers L3 (99 full, 0 none), release slows R4. The patch is re-read from its slot each time (no drift), in
+ * the main loop, and again whenever FM6 reloads it (a new sound, fm6_poll): sl_fm_env_poll */
+static uint8_t sl_fm_env_gen[3] = {0xFF, 0xFF, 0xFF};   /* fm6_pgen when our shape went on (0xFF: put it on again) */
+static int sl_env_is_fm(uint32_t part) { return sl_snd_entry(part, sl_snd_of[part % 3u])->eng == 9u; }
+static void sl_fm_env_apply(uint32_t part)
+{
+    uint8_t *v = fm6_patch[part % 3u];
+    uint32_t car, k;
+    const uint8_t *e = sl_env_v[part % 3u];
+    fm6_load_slot(part % 3u, (uint32_t)trk[part % 3u].p[P_E7]);
+    car = fm6_carriers(v[FP_ALG]);
+    for (k = 0; k < 6u; k++) if ((car >> k) & 1u) {
+        uint8_t *o = v + k * FP_OP;
+        int a = e[0] - 64, d = e[1] - 64, s = e[2] - 64, r = e[3] - 64, l3 = o[FP_L1 + 2];
+        o[FP_R1] = (uint8_t)clamp((int32_t)o[FP_R1] - a * 3 / 4, 0, 99);
+        o[FP_R1 + 1] = (uint8_t)clamp((int32_t)o[FP_R1 + 1] - d * 3 / 5, 0, 99);
+        o[FP_R1 + 2] = (uint8_t)clamp((int32_t)o[FP_R1 + 2] - d * 3 / 5, 0, 99);
+        o[FP_L1 + 2] = (uint8_t)clamp(s >= 0 ? l3 + (99 - l3) * s / 63 : l3 * (64 + s) / 64, 0, 99);
+        o[FP_R1 + 3] = (uint8_t)clamp((int32_t)o[FP_R1 + 3] - r * 3 / 5, 0, 99);
+    }
+    fm6_pgen[part % 3u]++;
+    sl_fm_env_gen[part % 3u] = fm6_pgen[part % 3u];
+}
+static void sl_fm_env_poll(void)             /* (the main loop) */
+{
+    uint32_t p;
+    for (p = 0; p < 3u; p++)
+        if (sl_env_on[p] && sl_env_is_fm(p) && !sl_busy(p) && sl_fm_env_gen[p] != fm6_pgen[p]) sl_fm_env_apply(p);
+}
+static void sl_env_put(uint32_t part)
+{
+    static const uint8_t P[5] = {P_ATK, P_DEC, P_SUS, P_REL, P_GLIDE};
+    uint32_t i;
+    if (sl_env_is_fm(part)) { sl_fm_env_gen[part % 3u] = 0xFF; trk[part % 3u].p[P_GLIDE] = sl_env_v[part % 3u][4]; return; }   /* (the main loop puts it on) */
+    for (i = 0; i < 5u; i++) trk[part % 3u].p[P[i]] = sl_env_v[part % 3u][i];
+}
 #ifndef SL_DEVICE
 static void slime_hook(uint32_t n) { (void)n; }   /* the host bench schedules and plays its own blocks (slimehost.c) */
 #endif
@@ -1060,14 +1106,6 @@ static volatile uint8_t sl_walls = 6, sl_space, sl_kit, sl_scale, sl_slime = 1;
 #define sl_auto 0u                          /* no auto-notes on the FM-1 (Flah 2026-11-25: "you don't need auto note on fm one
                                              * version. People can just play in their notes"): the tank's notes are the hand's */
 static volatile uint8_t sl_pinned;          /* the key held where it is (the site's key pin): the slime stays, the journey stops */
-/* NOTES (the ENV page): a part's own envelope over its sound's (attack, decay, sustain, release, glide); 0: the sound's */
-static uint8_t sl_env_on[3], sl_env_v[3][5];
-static void sl_env_put(uint32_t part)
-{
-    static const uint8_t P[5] = {P_ATK, P_DEC, P_SUS, P_REL, P_GLIDE};
-    uint32_t i;
-    for (i = 0; i < 5u; i++) trk[part % 3u].p[P[i]] = sl_env_v[part % 3u][i];
-}
 static volatile int8_t sl_spin;
 /* the TANK page: the melody's notes a bar (the site's auto adjuster aims at 8: SL_BUSY / 8 scales the aim) and how many
  * bars a shape lives before the slime bursts it into a new one (0: it stays) */
@@ -1322,6 +1360,7 @@ static void slime_conduct(void)
         if (sl_reform_at_bar && sl_reform_fn) { sl_reform_at_bar = 0; sl_reform_fn(); }
         return;
     }
+    sl_fm_env_poll();                                      /* (an FM sound's own envelope, as the ENV page set it) */
     {   /* the slime muffles the sound as the goo rises (sl_slime_morph) */
         static uint32_t last;
         if (fm1_ms - last >= 20u) {                        /* (50 a second: the lag is 600 ms) */

@@ -34,3 +34,15 @@ of making music and turning it more into a form of play".
 - Each ticket: a check that fails on the old behaviour (host bench or fm1-emu), sabotaged; check-host, levels, boot-check,
   session.sh green; fm1-emu fps no worse than now (default 43.9 worst window) unless the ticket says so.
 - Not checkable by a machine: how swing feels, how the goo looks to Flah, whether the solids read as "cool shapes".
+
+## Round 2 (Flah, 2026-11-25, after the play pass; decided in one round)
+
+- Minis: a happy ^_^ face (not -_-); they hop in turn, on the downbeat and the backbeat (subtle).
+- ENV: the chords' ENV page works like the others (an FM sound's envelope moved by the same four knobs, not "fm");
+  the "length, glide" view goes.
+- HOME knob 4 "notes a bar" goes (with no auto-notes it only set how many of your notes stay).
+- Bass: real funk (syncopation, ghost notes, octave pops, slides, velocity accents), on the SITE AND the FM-1 together.
+- Shapes: the "walls" knob becomes SHAPE, by name. Polygons face-on and tumbling on all 3 axes (not the prism's wheel),
+  "shards" with random side lengths, the true solids (cube, octahedron, dodecahedron, icosahedron), and CURVED
+  (non-Euclidean) shapes, which may have portals too.
+- Flah: "make sure redundant shit or confusing shit is either questioned with me involved or u find and resolve" it.

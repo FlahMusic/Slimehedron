@@ -259,5 +259,15 @@ for sw in 0 0.5; do
   else ok "$(t "$late >= 30 && $late <= 50")" "[swing 50%] the odd 16ths $late ms late (a 16th is 150 ms at 100 bpm: nearly a triplet)"; fi
 done
 
+# 17. an FM sound's envelope on the ENV page (slime.c sl_fm_env_apply; Flah 2026-11-25: the chords' page "just says FM ...
+#     useless"): the knobs move SMOOTH EP's carriers: attack at 100% starts it 6 dB+ softer (10..40 ms), sustain 100%
+#     holds it 2 dB+ louder (0.7..0.9 s, the key held), release 100% rings 20 dB+ longer after the key is let go
+lv() { "$B" note 9 "SMOOTH EP" 60 80 > "$OUT/fe.raw"; python3 -c "
+import numpy as np; x=np.fromfile('$OUT/fe.raw',np.float32); s=x[int($1*44100):int($2*44100)]; print('%.1f' % (20*np.log10(np.sqrt((s**2).mean())+1e-9)))"; }
+a0=$(SL_FMENV="64 64 64 64" lv 0.01 0.04); a1=$(SL_FMENV="127 64 64 64" lv 0.01 0.04)
+s0=$(SL_FMENV="64 64 64 64" lv 0.7 0.9); s1=$(SL_FMENV="64 64 127 64" lv 0.7 0.9)
+r0=$(SL_FMENV="64 64 64 64" lv 1.1 1.3); r1=$(SL_FMENV="64 64 64 127" lv 1.1 1.3)
+ok "$(t "$a0 - $a1 >= 6 && $s1 - $s0 >= 2 && $r1 - $r0 >= 20")" "[fm envelope] attack $a0 -> $a1 dB, sustain $s0 -> $s1 dB, release $r0 -> $r1 dB"
+
 echo
 [ "$FAILS" = 0 ] && echo "fm1 bridge: clean" || { echo "$FAILS FAILURE(S)"; exit 1; }

@@ -5,7 +5,8 @@
  *   2. a hand's hop is up at once (>= 4 px 80 ms after the note, 6 at its top) and gone by 320 ms
  *   3. a burst with drops is a party: every mini hops at least 8 px within the first 0.9 s and again (>= 6 px) after
  *      0.7 s; the party lasts 3 s; an "empty" reform (fewer than 8 drops: the first shape) is no party
- *   4. the bar's 1 still ripples (5 px, 26 ms apart), and nothing hops when nothing happened
+ *   4. a mini's beat hop (its own beat: the downbeat's or the backbeat's): 4 px over 300 ms, and nothing hops when nothing
+ *      happened
  *   minitest            prints PASS / FAIL, exit 1 on a failure (sabotage: -DSAB_PITCH, -DSAB_PARTY) */
 #include <stdio.h>
 #include <string.h>
@@ -50,10 +51,10 @@ int main(void)
         snprintf(m, sizeof m, "3. a burst is a party: every mini hops %d px+ in 0.9 s and %d px+ again; on 2.9 s, off 3.1 s (%s); an empty reform hops %d", lo1, lo2, late ? "no" : "yes", empty);
         ok(lo1 >= 8 && lo2 >= 6 && !late && empty == 0, m); }
     {   uint32_t t0 = 30000; int h0 = 0, h4 = 0, t, quiet = 0;
-        for (t = 0; t < 440; t += 2) { int a = sl_mini_hop_px(t0 + t, 0, t0, 0, 0, 0), c = sl_mini_hop_px(t0 + t, 4, t0, 0, 0, 0); if (a > h0) h0 = a; if (c > h4) h4 = c; }
+        for (t = 0; t < 300; t += 2) { int a = sl_mini_hop_px(t0 + t, 0, t0, 0, 0, 0), c = sl_mini_hop_px(t0 + t, 1, t0, 0, 0, 0); if (a > h0) h0 = a; if (c > h4) h4 = c; }
         for (t = 0; t < 5000; t += 7) { int i; for (i = 0; i < 5; i++) quiet |= sl_mini_hop_px(60000 + t, i, 0, 0, 0, 0); }
-        snprintf(m, sizeof m, "4. the bar's 1 still ripples (%d px, the last one %d px, 104 ms behind) and nothing hops by itself (%d)", h0, h4, quiet);
-        ok(h0 == 5 && h4 == 5 && sl_mini_hop_px(t0 + 104, 4, t0, 0, 0, 0) == 0 && quiet == 0, m); }
+        snprintf(m, sizeof m, "4. a beat's hop: %d px (and %d for another mini on it), down by 300 ms (%d), and nothing hops by itself (%d)", h0, h4, sl_mini_hop_px(t0 + 300, 0, t0, 0, 0, 0), quiet);
+        ok(h0 == 4 && h4 == 4 && sl_mini_hop_px(t0 + 300, 0, t0, 0, 0, 0) == 0 && quiet == 0, m); }
     printf(fails ? "%d FAILURE(S)\n" : "the minis answer and the cast celebrates\n", fails);
     return fails ? 1 : 0;
 }

@@ -196,6 +196,13 @@ int main(int argc, char **argv)
         trk[0].p[P_DLY] = 0; trk[0].p[P_REV] = 0; trk[0].p[P_CHOR] = 0;   /* the voice alone */
         for (i = 0; i < 64 && sl_busy(0); i++) preview_render();
         for (i = 0; i < 8; i++) { fm6_poll(); preview_render(); }        /* (an FM6 patch loads in the main loop) */
+        if (getenv("SL_FMENV")) {                          /* an FM sound's envelope as the ENV page sets it: "A D S R", 64 as made */
+            int e[4] = {64, 64, 64, 64};
+            sscanf(getenv("SL_FMENV"), "%d %d %d %d", &e[0], &e[1], &e[2], &e[3]);
+            for (i = 0; i < 4u; i++) sl_env_v[0][i] = (uint8_t)e[i];
+            sl_fm_env_apply(0);
+            for (i = 0; i < 4; i++) preview_render();
+        }
         sl_note_on(0, atoi(argv[4]), argc >= 6 ? atoi(argv[5]) : 100, 0);
         for (i = 0; i < FS * 3; i += CTL) {
             float *o;

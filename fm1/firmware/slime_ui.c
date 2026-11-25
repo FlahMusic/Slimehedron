@@ -3,15 +3,12 @@
  * ui_input / ui_leds / ui_draw are no longer called). The screen is the tank and nothing else: drawn 2.5D by
  * fm1/core/drawtank.c in 16-row bands, each band sent while the next is painted.
  *
- * Panel (studio):
+ * Panel (the pages: the PAGES map below):
  *   keys      their note in the tank's scale, now (a hand is never quantized), and a ball into the tank
- *   PLAY      everything runs / stands still              HOME   a new shape (on the next downbeat)
- *   ARP       the arp: the band's chords a note at a time, on / off (its page) SEQ    the drums on / off
- *   LFO       the slime: key journey, reforms             REC    the band (bass and chords) on / off
- *   SCL       the next scale                              OCT- / OCT+  the key down / up a semitone
- *   SELECT    the shape: 3..12 walls                      ALGORITHM  space: normal / portal
- *   PRESETS   the melody's sound                          KNOB 1 tempo   KNOB 2 spin   KNOB 3 rhythm   KNOB 4 scale
- *   MASTER    volume (SLOOP's main loop, unchanged)
+ *   PLAY      everything runs / stands still              HOME   the tank (from any page)
+ *   ARP       the arp on / off, and its page              LFO    the slime: key journey, reforms, swing, muffle
+ *   REC       a loop of the hand's notes                  OCT- / OCT+  the keyboard's octave (both: the middle)
+ *   SELECT / ALGORITHM / PRESETS  the melody's / bass's / chords' sound          MASTER  volume
  * LEDs: PLAY, ARP, LFO, SEQ, REC show their state; a key glows when the melody rings its note.
  * A change shows its new value in plain words at the top of the screen for 1.5 s.
  * The main loop never writes the tank: it leaves requests (slime.c) for the audio interrupt, which owns it. It READS
@@ -383,26 +380,28 @@ static void sl_say_num(const char *a, int32_t v, const char *unit)
  * lives in exactly one place; an encoder means the same kind of thing on every page: SELECT picks WHAT the page works on
  * (a part, a chord, a lane), the four knobs are its values (named, with their values, on the page's panel), ALGORITHM and
  * PRESETS are the page's two extras. A page's button again: back to the tank.
- *   HOME  TANK    walls  spin  portals  note length      SELECT notes a bar   ALGO new shape every  (HOME again: a new shape)
+ *   HOME  TANK    walls  spin  portals  -                          (the tank alone, full size)
  *   SCL   SONG    tempo  rhythm  key  scale (all 52)  | chord every  key pinned  shape every
- *   GLO   MIXER   melody bass chords drums (faders)      SELECT the strip     ALGO its delay        PRESETS its reverb
- *                 keys: the first 4 white keys mute melody / bass / chords / drums, the next 4 solo them
- *   FX    FX      filter  drive  character  amount       SELECT part, returns ALGO pan              PRESETS fx preset
- *                 (the returns: delay time, feedback, reverb size, tone; ALGO the delay's tone)
- *   ENV   SOUND   attack  decay  sustain  release        SELECT all, a part   ALGO glide            PRESETS the sound
- *   EDIT  CHORDS  root  type  bars  how many             SELECT which chord   ALGO all up / down    PRESETS famous ones
+ *   GLO   MIXER   levels | pan | delay sends | reverb sends (the four parts); keys: 4 white mute, the next 4 solo
+ *   FX    FX      filter (left low-pass, right high-pass)  drive  effect  amount, for melody | bass | chords | drums;
+ *                 then the returns: delay time, repeats, room, bright
+ *   ENV   SOUND   attack  decay  sustain  release, for melody | bass | chords (an FM sound: its carriers, 50% as made)
+ *   EDIT  CHORDS  root  type  bars  how many  | how many  famous  shift
  *   SEQ   DRUMS   lane  fill  shift  mine / the rhythm's | kit  tune  decay  swing
+ *   SAVE  MIDI    the four parts' channels | in channel, clock in, notes out, clock out
+ *   ARP   ARP     pattern  rate  octaves  gate (the button: the arp on / off)
+ * The three knobs on the left: the melody's, the bass's and the chords' SOUND, on every page.
  * ARP: the arp on / off and its page; LFO: the slime on / off; OCT- / OCT+ the keyboard's octave; PLAY, REC, SAVE. */
 /* PAGES, as a DAW or an MPC has them: one button, one job, and the same button again steps through the page's views
  * (HOME: back to the tank). The three knobs on the left are the three sounds on every page (Flah 2026-11-20: "make all
  * the 3 knobs on the left next to master just control presets for the 3 parts"), so a page has the four knobs only. */
 enum { PG_HOME, PG_SONG, PG_MIX, PG_FX, PG_SOUND, PG_CHORDS, PG_DRUMS, PG_MIDI, PG_ARP, PG_N };
 static uint8_t sl_page, sl_pview;
-static const uint8_t SL_NVIEW[PG_N] = {1, 2, 4, 5, 4, 2, 2, 2, 1};
+static const uint8_t SL_NVIEW[PG_N] = {1, 2, 4, 5, 3, 2, 2, 2, 1};
 static const char *const SL_VIEW_NAME[PG_N][5] = {
     {"tank"}, {"song", "song: harmony"}, {"mixer: levels", "mixer: pan", "mixer: delay sends", "mixer: reverb sends"},
     {"fx: melody", "fx: bass", "fx: chords", "fx: drums", "fx: delay, reverb"},
-    {"sound: melody", "sound: bass", "sound: chords", "sound: length, glide"}, {"chords", "chords: all"},
+    {"sound: melody", "sound: bass", "sound: chords"}, {"chords", "chords: all"},   /* ("length, glide" went: Flah 2026-11-25 "makes zero sense") */
     {"drums: pattern", "drums: kit"}, {"midi: channels", "midi: in, clock"}, {"arp"}};
 static uint8_t sl_fx_part;                  /* FX: the part sl_fx_turn works on (the FX view; the mixer's pan and sends) */
 static uint8_t sl_snd_part;                 /* SOUND: 1..3 the part sl_env_turn works on */
@@ -460,11 +459,11 @@ static void sl_col(sl_pcol *c, const char *name, const char *val, int bar, int m
 }
 static void sl_db_txt(char *b, int32_t m) { char n[8]; if (m <= SL_MIX_OFF) sl_cat(b, "off", b + 11); else { char *p = b; if (m > 0) p = sl_cat(p, "+", b + 11); p = sl_cat(p, sl_num(n, m / 2), b + 11); sl_cat(p, " db", b + 11); } }
 static int sl_env_fm(uint32_t part) { return sl_snd_entry(part, sl_snd_of[part])->eng == 9u; }   /* FM6: its own envelopes */
-static void sl_env_read(uint32_t part)       /* the part's envelope as its sound left it */
+static void sl_env_read(uint32_t part)       /* the part's envelope as its sound left it (an FM sound: 50% each, its own) */
 {
     static const uint8_t P[5] = {P_ATK, P_DEC, P_SUS, P_REL, P_GLIDE};
     uint32_t i;
-    for (i = 0; i < 5u; i++) sl_env_v[part][i] = (uint8_t)clamp(trk[part].p[P[i]], 0, 127);
+    for (i = 0; i < 5u; i++) sl_env_v[part][i] = (uint8_t)(sl_env_fm(part) && i < 4u ? 64 : clamp(trk[part].p[P[i]], 0, 127));
 }
 static void sl_onoff(sl_pcol *c, const char *name, int on, const char *yes, const char *no) { sl_col(c, name, on ? yes : no, -1, on ? 0 : 2); }
 static void sl_ch_txt(char *b, uint32_t ch, const char *zero) { char n[8]; b[0] = 0; if (ch == 0xFFu) sl_cat(b, zero, b + 11); else sl_cat(b, sl_num(n, (int32_t)ch + 1), b + 11); }
@@ -525,21 +524,9 @@ static void sl_panel_build(sl_panel *m)
         }
     } else if (sl_page == PG_SOUND && v < 3u) {
         static const char *const W[4] = {"atk", "dec", "sus", "rel"};   /* (the hardware words: the full ones touch at 240 px) */
-        if (sl_env_fm(v)) for (i = 0; i < 4u; i++) sl_col(&m->c[i], W[i], "fm", -1, 2);
-        else {
-            if (!sl_env_on[v]) sl_env_read(v);
-            for (i = 0; i < 4u; i++) { b[0] = 0; sl_pct(b, sl_env_v[v][i], 127); sl_col(&m->c[i], W[i], b, sl_env_v[v][i] * 100 / 127, 0); }
-        }
+        if (!sl_env_on[v]) sl_env_read(v);                 /* (an FM sound too: its carriers' shape, 50% = as made) */
+        for (i = 0; i < 4u; i++) { b[0] = 0; sl_pct(b, sl_env_v[v][i], 127); sl_col(&m->c[i], W[i], b, sl_env_v[v][i] * 100 / 127, 0); }
         sl_cat(m->ex[0], sl_snd_entry(v, sl_snd_of[v])->name, m->ex[0] + sizeof m->ex[0] - 1u);
-    } else if (sl_page == PG_SOUND) {                      /* the melody's note length, the three glides */
-        static const char *const G[3] = {"melody", "bass", "chords"};   /* (their glides: the line above says so; "glide m" ran into its neighbours) */
-        sl_col(&m->c[0], "length", sl_num(n, (int32_t)sl_gate_ms), (int)((sl_gate_ms - 40u) * 100u / 560u), 0);
-        for (i = 0; i < 3u; i++) {
-            if (sl_env_fm(i)) { sl_col(&m->c[i + 1u], G[i], "fm", -1, 2); continue; }
-            if (!sl_env_on[i]) sl_env_read(i);
-            b[0] = 0; sl_pct(b, sl_env_v[i][4], 127); sl_col(&m->c[i + 1u], G[i], b, sl_env_v[i][4] * 100 / 127, 0);
-        }
-        sl_cat(m->ex[0], "note length (ms), glides", m->ex[0] + sizeof m->ex[0] - 1u);
     } else if (sl_page == PG_CHORDS) {
         uint32_t c = sl_cm_sel % SH_CM_MAX;
         m->cm_n = (uint8_t)sl_band.cm_n; m->cm_sel = (uint8_t)c; m->cm_cur = (uint8_t)(sl_band.cm_cur < 0 ? 0xFF : sl_band.cm_cur);
@@ -638,13 +625,11 @@ static void sl_env_turn(uint32_t knob, int32_t d)
     uint32_t p, lo = sl_snd_part - 1u, hi = sl_snd_part - 1u;
     int said = 0;
     for (p = lo; p <= hi; p++) {
-        if (sl_env_fm(p)) continue;
         if (!sl_env_on[p]) { sl_env_read(p); sl_env_on[p] = 1; }
         sl_env_v[p][knob] = (uint8_t)clamp((int32_t)sl_env_v[p][knob] + d, 0, 127);
         sl_env_put(p);
         if (!said) { sl_say_num(W[knob], sl_env_v[p][knob] * 100 / 127, "%"); said = 1; }
     }
-    if (!said) sl_say("fm sound: ", "its own envelope");
 }
 
 /* THE SESSION. What a person set up, kept in the FM-1's flash by itself, as the site remembers where you were: the
@@ -885,7 +870,8 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
             if (k1) { sl_walls = (uint8_t)clamp((int32_t)sl_walls + k1, 3, 12); sl_reform_req = 1; sl_hand_shape = 1; sl_say_num("walls ", sl_walls, 0); }
             if (k2) { sl_spin = (int8_t)clamp(sl_spin + accel(EN_K2, k2, 51) * 4, -100, 100); if (sl_spin) sl_say_num("spin ", sl_spin, 0); else sl_say("spin off", 0); }
             if (k3) { sl_space = (uint8_t)(k3 > 0); sl_reform_req = 1; sl_hand_shape = 1; sl_say(sl_space ? "portals on" : "portals off", 0); }
-            if (k4) { sl_dens = (uint8_t)clamp(sl_dens + k4, 0, 4); sl_say_num("about ", SL_BUSY[sl_dens], " notes a bar"); }
+            /* (knob 4, "notes a bar", went 2026-11-25: with no auto-notes it only set how many of your notes the tank kept;
+             * it stays the site's 8) */
         } else if (sl_page == PG_SONG && v == 0) {         /* SONG: tempo, rhythm, key, scale */
             if (k1) { int32_t t = clamp(song.g[G_BPM] + accel(EN_K1, k1, 161), 40, 200); song.g[G_BPM] = (int16_t)t; sl_say_num("tempo ", t, 0); }
             if (k2) { sl_kit_req = (uint8_t)sl_wrap(sl_kit_req != 0xFFu ? sl_kit_req : sl_kit, k2, sh_band_nkits()); sl_say("rhythm: ", sh_band_kit_name(sl_kit_req)); }
@@ -923,11 +909,6 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
             if (k2) sl_env_turn(1, accel(EN_K2, k2, 128));
             if (k3) sl_env_turn(2, accel(EN_K3, k3, 128));
             if (k4) sl_env_turn(3, accel(EN_K4, k4, 128));
-        } else if (sl_page == PG_SOUND) {                  /* SOUND 4: the melody's note length, each part's glide */
-            int32_t kk[3];
-            if (k1) { sl_gate_ms = (uint32_t)clamp((int32_t)sl_gate_ms + accel(EN_K1, k1, 29) * 20, 40, 600); sl_gate_blocks = sl_ms_to_block((double)sl_gate_ms); sl_say_num("note length ", (int32_t)sl_gate_ms, " ms"); }
-            kk[0] = k2; kk[1] = k3; kk[2] = k4;
-            for (p = 0; p < 3u; p++) if (kk[p]) { sl_snd_part = (uint8_t)(p + 1u); sl_env_turn(4, accel((uint32_t)(EN_K2 + p), kk[p], 128)); }
         } else if (sl_page == PG_CHORDS) {                 /* CHORDS: a slot's chord; or the whole progression */
             const sh_scale *sc = sh_scale_by_id(SL_SCALES[sl_scale % SL_NSCALE]);
             uint32_t c, i;
@@ -1216,8 +1197,9 @@ static const uint16_t SL_MINI_COL[SL_NMINI] = {0xFD9Bu, 0xCDDFu, 0xFE53u, 0xAEFF
 static uint16_t sl_mini_px[SL_NMINI][SL_MH][SL_MW] __attribute__((section(".pool")));
 static uint8_t sl_mini_a[SL_NMINI][SL_MH][SL_MW] __attribute__((section(".pool")));   /* 0..32 */
 static int8_t sl_mini_hop[SL_NMINI];        /* px up now */
-static void sl_mini_render(void)            /* each mini: a dome on a flat bottom, a shine, two dot eyes, a smile (the mascot's
-                                             * shape, no glasses) */
+static void sl_mini_render(void)            /* each mini: a dome on a flat bottom, a shine, two happy ^ ^ eyes, a smile (the mascot's
+                                             * shape, no glasses). (The eyes were dots of 1.3 px: at this size they read as -_-,
+                                             * Flah 2026-11-25: "should instead be a happy ^_^ face") */
 {
     uint32_t i, x, y;
     for (i = 0; i < SL_NMINI; i++)
@@ -1233,7 +1215,9 @@ static void sl_mini_render(void)            /* each mini: a dome on a flat botto
                     if (hx * hx * 2.2f + hy * hy * 3.0f < 0.10f) c = sl_bl(c, 0xFFFFu, 20u);   /* the shine */
                     {
                         float ex = (float)x + 0.5f - 11.0f, ey = (float)y + 0.5f - 10.0f;
-                        if ((ex + 3.5f) * (ex + 3.5f) + ey * ey < 1.8f || (ex - 3.5f) * (ex - 3.5f) + ey * ey < 1.8f) c = 0x3186u;   /* eyes */
+                        float e1 = ex + 3.5f, e2 = ex - 3.5f, a1 = e1 < 0 ? -e1 : e1, a2 = e2 < 0 ? -e2 : e2;   /* eyes: a ^ each, */
+                        if ((a1 < 2.0f && (ey - (a1 - 1.3f)) * (ey - (a1 - 1.3f)) < 0.36f) ||   /* the arc's peak up, its ends down */
+                            (a2 < 2.0f && (ey - (a2 - 1.3f)) * (ey - (a2 - 1.3f)) < 0.36f)) c = 0x3186u;
                         else { float my = (float)y + 0.5f - 11.5f, m = ex * ex + my * my; if (my > 0.4f && m < 7.0f && m > 2.6f) c = 0x3186u; }   /* smile */
                     }
                 } else if (rr < 1.18f && dy > 0.3f) { c = 0x8410u; a = 6; }                    /* a faint shadow under */
@@ -1310,20 +1294,20 @@ static void sl_worm_frame(float dt_ms)
     }
     sl_wm.on = sl_wm.y0 < 239;
 }
-/* the minis' hops: on each bar's 1, a ripple 26 ms apart, 440 ms each, 5 px up */
-static void sl_minis_frame(void)   /* the bar's ripple, a hand's mini, a burst's party (slime_minis.h, host/minitest.c) */
+/* the minis' hops: every other one on the downbeats (1, 3), the rest on the backbeats (2, 4) */
+static void sl_minis_frame(void)   /* the beat's hops, a hand's mini, a burst's party (slime_minis.h, host/minitest.c) */
 {
-    static uint32_t last_bar = 0xFFFFFFFFu, hop_t0, hand_seen, hand_t0[SL_NMINI];
+    static uint32_t last_beat = 0xFFFFFFFFu, down_t0, back_t0, hand_seen, hand_t0[SL_NMINI];
     static int hand_last = -1;
-    uint32_t i, bar = sl_step / 16u, hn = sl_hand_n;
-    if (sl_run && bar != last_bar) { last_bar = bar; hop_t0 = fm1_ms + 75u; }   /* (as it sounds) */
+    uint32_t i, beat = sl_step / 4u, hn = sl_hand_n;
+    if (sl_run && beat != last_beat) { last_beat = beat; if (beat % 2u == 0u) down_t0 = fm1_ms + 75u; else back_t0 = fm1_ms + 75u; }   /* (as it sounds) */
     if (hn != hand_seen) {                                 /* a hand played: its mini hops now (a hand is never late) */
         hand_seen = hn;
         hand_last = sl_mini_for_note((double)sl_hand_c, SL_MINI_AT, SL_NMINI, hand_last);
         hand_t0[hand_last] = fm1_ms ? fm1_ms : 1u;
     }
     for (i = 0; i < SL_NMINI; i++)
-        sl_mini_hop[i] = (int8_t)sl_mini_hop_px(fm1_ms, (int)i, hop_t0, hand_t0[i], sl_burst_t0, sl_bn);
+        sl_mini_hop[i] = (int8_t)sl_mini_hop_px(fm1_ms, (int)i, i % 2u ? back_t0 : down_t0, hand_t0[i], sl_burst_t0, sl_bn);
 }
 /* the row under the tank: the lake, the minis, the worm (st_draw_band calls it for every row it fills) */
 static uint8_t sl_decor_page;               /* a page's panel is up: the worm and the bottom minis are under it */

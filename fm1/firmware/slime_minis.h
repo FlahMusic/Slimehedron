@@ -1,7 +1,9 @@
 /* THE MINIS ANSWER, AND THE CAST CELEBRATES A BURST (2026-11-23, Flah: "the personality and the general intuitiveness
  * and polish"; children tap whatever looks alive and are let down when nothing happens, NN/g, _docs/research/
  * 2026-11-23-personality-polish.md). Pure: slime_ui.c draws with it, host/minitest.c checks it.
- *   - on each bar's 1 the minis hop in a ripple, 26 ms apart, 440 ms each, 5 px (as before)
+ *   - on the beat they hop in turn (Flah 2026-11-25: "have them all alternate jumping on the down beat and back beat ...
+ *     more animation subtlely"): every other mini on beats 1 and 3, the rest on 2 and 4, 300 ms, 4 px (the caller
+ *     hands each its own beat's start). Was: the bar's 1, a ripple 26 ms apart, 440 ms, 5 px
  *   - a key a hand plays makes ONE mini hop at once, 320 ms, 6 px: the one on its side of the screen, low notes left,
  *     high notes right, by the note's place in its octave (a scale run walks across them)
  *   - a burst (a full tank, a real one: 8 flying drops or more, not the first empty shape) is a party for 3 s: two big
@@ -38,11 +40,11 @@ static int sl_hop_arc(int32_t t, int32_t len, float px)
     return (t >= 0 && t < len) ? (int)(px * sinf((float)t * (3.14159265f / (float)len)) + 0.5f) : 0;
 }
 
-/* mini i's hop now (px up) */
-static int sl_mini_hop_px(uint32_t now, int i, uint32_t bar_t0, uint32_t hand_t0, uint32_t burst_t0, int drops)
+/* mini i's hop now (px up): beat_t0 its own beat's start (the downbeat's or the backbeat's) */
+static int sl_mini_hop_px(uint32_t now, int i, uint32_t beat_t0, uint32_t hand_t0, uint32_t burst_t0, int drops)
 {
     int h = 0, k;
-    if (bar_t0) { k = sl_hop_arc((int32_t)(now - bar_t0) - i * 26, 440, 5.0f); if (k > h) h = k; }
+    if (beat_t0) { k = sl_hop_arc((int32_t)(now - beat_t0), 300, 4.0f); if (k > h) h = k; }
     if (hand_t0) { k = sl_hop_arc((int32_t)(now - hand_t0), 320, 6.0f); if (k > h) h = k; }
     if (sl_party_on(now, burst_t0, drops)) {
         int32_t t = (int32_t)(now - burst_t0) - i * 60;

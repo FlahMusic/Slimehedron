@@ -15,8 +15,9 @@
 # 7. the page round the tank (2026-11-21): the lake's sky in the top left (blue pixels at 8 s), the pink mini slime in
 #    its corner, the worm bottom right (saturated pastel pixels), a new colour on him a beat later (8.0 s against 8.7 s)
 #    Sabotaged 2026-11-21: the lake layer off (the lake, minis and worm checks red), the worm off (the worm check red).
-# 8. the minis answer a hand (2026-11-23, slime_minis.h): a key while it plays (7.9 s, clear of the bar's ripples) makes
-#    exactly ONE mini hop within 150 ms (the bar's 1 moves all five); with no key (7.70 against 7.86 s) none moves
+# 8. the minis answer a hand (2026-11-23, slime_minis.h): a key while stopped (5.0 s: no beat hops then) makes exactly ONE
+#    mini hop; with no key (4.64 against 4.90 s) none moves. Playing (2026-11-25), they hop in turn: in every 120 ms look
+#    the minis moving are all downbeat ones (0 2 4) or all backbeat ones (1 3), and both groups hop
 set -eu
 FW="${FW:-$HOME/fm1w/slime-fw/build/felucca.fwsc}"
 EMU="${EMU:-$HOME/fm1w/fm1-emu}"
@@ -73,8 +74,13 @@ ok(n8 > 60 and np.abs(c8 - c87).sum() > 20, f"the worm bottom right ({n8} pixels
 AT = [(20, 38), (220, 42), (18, 214), (52, 228), (150, 230)]   # SL_MINI_AT (slime_ui.c)
 def box(a, i): x, y = AT[i]; return a[max(0, y - 20):min(240, y + 13), max(0, x - 12):min(240, x + 13)]
 def moved(t0, t1): return [i for i in range(5) if np.abs(box(frame(t1), i) - box(frame(t0), i)).sum() > 300]
-mk, m0 = moved(7860, 8020), moved(7700, 7860)
+mk, m0 = moved(4900, 5160), moved(4640, 4900)          # (stopped: no beat hops; the key at 5.0 s)
 ok(len(mk) == 1 and not m0, f"the minis answer a hand: a key moves {len(mk)} mini (#{mk}), no key moves {len(m0)}")
+# (2026-11-25) playing, they hop in turn: minis 0 2 4 on the downbeats, 1 3 on the backbeats, never both at once
+win = [moved(t, t + 120) for t in range(7000, 8600, 120)]
+mixed = [w for w in win if w and not (set(w) <= {0, 2, 4} or set(w) <= {1, 3})]
+seen = set(i for w in win for i in w)
+ok(not mixed and seen & {0, 2, 4} and seen & {1, 3}, f"the minis hop in turn on the beat: {len(win)} looks, {len(mixed)} with both groups at once, seen {sorted(seen)}")
 print("power-on behaves" if not fails else f"{fails} failed")
 sys.exit(1 if fails else 0)
 EOF
