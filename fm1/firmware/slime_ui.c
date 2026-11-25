@@ -395,14 +395,14 @@ static void sl_say_num(const char *a, int32_t v, const char *unit)
 /* PAGES, as a DAW or an MPC has them: one button, one job, and the same button again steps through the page's views
  * (HOME: back to the tank). The three knobs on the left are the three sounds on every page (Flah 2026-11-20: "make all
  * the 3 knobs on the left next to master just control presets for the 3 parts"), so a page has the four knobs only. */
-enum { PG_HOME, PG_SONG, PG_MIX, PG_FX, PG_SOUND, PG_CHORDS, PG_DRUMS, PG_MIDI, PG_ARP, PG_N };
+enum { PG_HOME, PG_SONG, PG_MIX, PG_FX, PG_SOUND, PG_CHORDS, PG_DRUMS, PG_MIDI, PG_ARP, PG_PROJ, PG_N };
 static uint8_t sl_page, sl_pview;
-static const uint8_t SL_NVIEW[PG_N] = {1, 2, 4, 5, 3, 2, 2, 2, 1};
+static const uint8_t SL_NVIEW[PG_N] = {1, 2, 4, 5, 3, 2, 2, 2, 1, 1};
 static const char *const SL_VIEW_NAME[PG_N][5] = {
     {"tank"}, {"song", "song: harmony"}, {"mixer: levels", "mixer: pan", "mixer: delay sends", "mixer: reverb sends"},
     {"fx: melody", "fx: bass", "fx: chords", "fx: drums", "fx: delay, reverb"},
     {"sound: melody", "sound: bass", "sound: chords"}, {"chords", "chords: all"},   /* ("length, glide" went: Flah 2026-11-25 "makes zero sense") */
-    {"drums: pattern", "drums: kit"}, {"midi: channels", "midi: in, clock"}, {"arp"}};
+    {"drums: pattern", "drums: kit"}, {"midi: channels", "midi: in, clock"}, {"arp"}, {"projects"}};
 static uint8_t sl_fx_part;                  /* FX: the part sl_fx_turn works on (the FX view; the mixer's pan and sends) */
 static uint8_t sl_snd_part;                 /* SOUND: 1..3 the part sl_env_turn works on */
 static uint8_t sl_cm_sel, sl_lane, sl_famous;
@@ -467,6 +467,7 @@ static void sl_env_read(uint32_t part)       /* the part's envelope as its sound
 }
 static void sl_onoff(sl_pcol *c, const char *name, int on, const char *yes, const char *no) { sl_col(c, name, on ? yes : no, -1, on ? 0 : 2); }
 static void sl_ch_txt(char *b, uint32_t ch, const char *zero) { char n[8]; b[0] = 0; if (ch == 0xFFu) sl_cat(b, zero, b + 11); else sl_cat(b, sl_num(n, (int32_t)ch + 1), b + 11); }
+static void sl_proj_panel(sl_panel *m);   /* (the PROJECTS page: after the projects' code) */
 static void sl_panel_build(sl_panel *m)
 {
     char b[24], n[8];
@@ -559,6 +560,8 @@ static void sl_panel_build(sl_panel *m)
         b[0] = 0; sl_pct(b, (int32_t)(sl_swing * 100.0 + 0.5), 100); sl_col(&m->c[3], "swing", b, (int)(sl_swing * 200.0), 0);   /* (was "feel": the
                                                            * drummer's humanize on / off, "i literally don't even hear any difference": Flah) */
         sl_cat(m->ex[0], sd_tone == 0xFFu ? "each rhythm plays its own kit" : "every rhythm plays this kit", m->ex[0] + sizeof m->ex[0] - 1u);
+    } else if (sl_page == PG_PROJ) {                       /* PROJECTS: the slot, the job, what is in it, the hold */
+        sl_proj_panel(m);
     } else if (sl_page == PG_ARP) {                        /* ARP: the band's chords one note at a time */
         sl_col(&m->c[0], "pattern", SL_ARP_PAT_NAME[sl_arp_pat % SL_ARP_NPAT], -1, 0);
         sl_col(&m->c[1], "rate", SL_ARP_RATE[sl_arp_rate % SL_ARP_NRATE].name, (int)(sl_arp_rate * 100u / (SL_ARP_NRATE - 1u)), 0);
@@ -638,7 +641,8 @@ static void sl_env_turn(uint32_t knob, int32_t d)
  * which this firmware does not otherwise use. A flash erase silences the audio while it runs (felucca.c), so it is
  * written when stopped, 3 s after the last change, and read back at power-on. (SAVE's three songs went 2026-11-20: Flah
  * "idk what save does or where that saves shit to"; SAVE is the MIDI page.) */
-#define SL_SONG_MAGIC 0x534C4D35u   /* "SLM5" (2026-11-25: the sound lists, the arp; SLM4: 52 scales, the MIDI page, the drums' kit) */
+#define SL_SONG_MAGIC 0x534C4D36u   /* "SLM6" (2026-11-25: no loop, the shape by name: a project is this; SLM5: the sound lists, the
+                                     * arp; SLM4: 52 scales, the MIDI page, the drums' kit) */
 typedef struct {
     uint32_t magic, size;
     uint8_t snd[3], kit, scale, walls, space, slime, arp_on, arp_pat, arp_rate, arp_oct, arp_gate, mute[4], solo[4], busy, cycle, pinned, chord_bars, dtime, rsize, dfdbk, rdamp, dcolor;
@@ -646,12 +650,9 @@ typedef struct {
     uint16_t bpm, gate_ms;
     uint8_t swing100, fxp[4], env_on[3], env[3][5];
     sl_fx fx[4];
-    uint8_t loop_bars, pad;
     uint8_t cm_n, cm_root[SH_CM_MAX], cm_qual[SH_CM_MAX], cm_bars[SH_CM_MAX], pat_on, human;   /* CHORDS, DRUMS */
     uint16_t pat[SH_PLANES];
     uint8_t mch[4], min_ch, mclk_in, mo_en, mclk_out, dtone, ddecay; int8_t dtune;   /* the MIDI page; the drums' kit */
-    uint16_t loop_n;
-    sl_lev loop[SL_LOOP_MAX];
     uint32_t sum;
 } sl_song;
 _Static_assert(sizeof(sl_song) <= ST_PAYLOAD_MAX, "a song fits one flash object");
@@ -739,6 +740,133 @@ UI_SMALL static void sl_session_tick(void)   /* main loop: the session into flas
     sl_song_take(&sl_sbuf);
     if (sl_sbuf.sum == sl_auto_hash || !audio_quiet()) return;
     if (st_save(SL_OBJ_SESSION, &sl_sbuf, sizeof sl_sbuf) == 0) sl_auto_hash = sl_sbuf.sum;
+}
+
+/* PROJECTS (REC; Flah 2026-11-25: "the knobs up top can flip through diff ones u made ... loads all the settings from
+ * there including presets, mixer shit etc"; asked: a page, hold REC to do it; saving while the music plays, gapless;
+ * research _docs/research/2026-11-25-fm1-projects.md). Eight slots, each a whole session (sl_song: the sounds, the mix,
+ * the fx, tempo, key, scale, rhythm, shape, chords, drums, arp, MIDI), all eight in one flash object (OBJ_PROJECT0, which
+ * SLOOP's own sections would use: this firmware has none).
+ * GAPLESS: SLOOP's st_save erases the copy it writes, interrupts off, ~50 ms of silence. Here the spare copy is erased
+ * beforehand, only when it is quiet (stopped, nothing sounding: sl_proj_tidy), and a save programs it a 256 B page at a
+ * time, each started just after the audio has rendered a half (CoralFlower's ST_PROG_SYNC: its ~1 ms with interrupts off
+ * falls inside the 2.1 ms the DMA forgives), the header last, then read back. Saved, the copy it replaced is the new
+ * spare: erased at the next quiet moment. A second save before then waits for the music to stop ("saves when you stop") */
+#define SL_NPROJ 8u
+#define SL_OBJ_PROJECTS OBJ_PROJECT0
+_Static_assert(SL_NPROJ * sizeof(sl_song) <= ST_PAYLOAD_MAX, "the eight projects fit one flash object");
+static sl_song sl_proj[SL_NPROJ];           /* the slots as in flash (magic 0: empty) */
+static uint8_t sl_proj_ready, sl_proj_clean, sl_proj_pending;   /* read at boot; the spare copy erased; a save waiting */
+static uint8_t sl_proj_slot, sl_proj_do;    /* the page: the slot, the job (SL_PJ_*) */
+static volatile uint32_t sl_pjdbg[7];      /* (project-check.sh reads it: writes, loads, the last write's code, the tempo a load
+                                             * set, the slots found at power-on, the tempo saved, the tempo before the load) */
+enum { SL_PJ_LOAD, SL_PJ_SAVE, SL_PJ_DELETE, SL_PJ_N };
+static const char *const SL_PJ_NAME[SL_PJ_N] = {"load", "save", "delete"};
+#ifndef SL_SAB_ERASE
+#define getenv_sab_erase() 0                /* (the sabotage build, -DSL_SAB_ERASE=1: SLOOP's st_save, which erases while playing) */
+#else
+#define getenv_sab_erase() SL_SAB_ERASE
+#endif
+static uint32_t sl_proj_spare(void) { st_hdr_t h; int cur = st_current(SL_OBJ_PROJECTS, &h); return cur == 0 ? 1u : 0u; }
+static int sl_proj_blank(uint32_t copy)     /* the copy all erased (0xFF), read in short windows */
+{
+    uint8_t b[64];
+    uint32_t base = st_sector(SL_OBJ_PROJECTS, copy), off, i;
+    for (off = 0; off < ST_SECTOR; off += sizeof b) {
+        if (st_read(base + off, b, sizeof b)) return 0;
+        for (i = 0; i < sizeof b; i++) if (b[i] != 0xFFu) return 0;
+    }
+    return 1;
+}
+static void sl_after_render(void)           /* wait for the audio to render a half (bounded: interrupts off would stop both) */
+{
+    uint32_t h = audio_halves, t = fm1_ms, i;
+    for (i = 0; audio_halves == h && fm1_ms - t < 8u && i < 4000000u; i++) {}
+}
+static int sl_proj_write(void)              /* the eight slots into the (erased) spare copy, page by page, the header last */
+{
+    st_hdr_t h;
+    int cur = st_current(SL_OBJ_PROJECTS, &h), rc;
+    uint32_t seq = cur < 0 ? 0u : h.seq, c = cur == 0 ? 1u : 0u, base = st_sector(SL_OBJ_PROJECTS, c), len = sizeof sl_proj, off;
+    memcpy(st_buf, sl_proj, len);
+    for (off = 0; off < len; off += 256u) {
+        uint32_t n = len - off > 256u ? 256u : len - off;
+        sl_after_render();
+        if ((rc = st_prog(base + ST_PAYLOAD_OFF + off, st_buf + off, n)) != 0) return rc;
+    }
+    h.magic = ST_MAGIC; h.type = (uint16_t)SL_OBJ_PROJECTS; h.slot = (uint16_t)c; h.seq = seq + 1u; h.len = len;
+    h.crc = st_crc32(st_buf, len); h.rsv[0] = h.rsv[1] = 0xFFFFFFFFu; h.hcrc = st_crc32(&h, sizeof h - 4u);
+    sl_after_render();
+    if ((rc = st_prog(base, &h, sizeof h)) != 0) return rc;
+    {   st_hdr_t chk; if (st_head(SL_OBJ_PROJECTS, c, &chk) || memcmp(&chk, &h, sizeof h) || st_body(SL_OBJ_PROJECTS, c, &chk)) return -7; }
+    sl_proj_clean = 0;                          /* (the copy it replaced is the spare now: erased when it is quiet) */
+    sl_pjdbg[0]++;
+    return 0;
+}
+static void sl_proj_commit(void)            /* now if the spare is clean (gapless), else when the music stops */
+{
+    if (!flash_ok) { sl_say("no flash", 0); return; }
+    if (!sl_proj_clean && (sl_run || !audio_quiet())) { sl_proj_pending = 1; sl_say("saves when you stop", 0); return; }
+    if (!sl_proj_clean && st_erase(st_sector(SL_OBJ_PROJECTS, sl_proj_spare())) != 0) { sl_say("save failed", 0); return; }
+    sl_proj_clean = 1;
+    { int rc = getenv_sab_erase() ? st_save(SL_OBJ_PROJECTS, sl_proj, sizeof sl_proj) : sl_proj_write(); sl_pjdbg[2] = (uint32_t)rc;
+      if (rc != 0) sl_say("save failed", 0); else if (getenv_sab_erase()) { sl_pjdbg[0]++; sl_proj_clean = 0; } }
+}
+UI_SMALL static void sl_proj_boot(void)     /* power-on: the slots, and whether the spare copy is ready */
+{
+    uint32_t i;
+    memset(sl_proj, 0, sizeof sl_proj);
+    if (flash_ok && st_load(SL_OBJ_PROJECTS, sl_proj, sizeof sl_proj) != (int)sizeof sl_proj) memset(sl_proj, 0, sizeof sl_proj);
+    for (i = 0; i < SL_NPROJ; i++) if (!sl_song_ok(&sl_proj[i])) memset(&sl_proj[i], 0, sizeof sl_proj[i]); else sl_pjdbg[4]++;
+    sl_proj_clean = (uint8_t)(flash_ok && sl_proj_blank(sl_proj_spare()));
+    sl_proj_ready = 1;
+}
+UI_SMALL static void sl_proj_tidy(void)     /* main loop: stopped and quiet, the spare copy erased; a waiting save written */
+{
+    static uint32_t checked;
+    if (!sl_proj_ready || !flash_ok || sl_run || fm1_ms - checked < 1500u || !audio_quiet()) return;
+    checked = fm1_ms;
+    if (!sl_proj_clean) { if (st_erase(st_sector(SL_OBJ_PROJECTS, sl_proj_spare())) == 0) sl_proj_clean = 1; return; }
+    if (sl_proj_pending) { sl_proj_pending = 0; if (sl_proj_write() != 0) sl_say("save failed", 0); else sl_say_num("saved: project ", sl_proj_slot + 1, 0); }
+}
+static void sl_proj_do_job(void)            /* the page's job on the page's slot (REC held long enough) */
+{
+    sl_song *g = &sl_proj[sl_proj_slot % SL_NPROJ];
+    if (sl_proj_do == SL_PJ_LOAD) {
+        if (!sl_song_ok(g)) { sl_say("empty slot", 0); return; }
+        sl_pjdbg[6] = (uint32_t)song.g[G_BPM]; sl_song_put(g); sl_changed_ms = fm1_ms; sl_say_num("loaded: project ", sl_proj_slot + 1, 0); sl_pjdbg[1]++; sl_pjdbg[3] = (uint32_t)song.g[G_BPM];
+    } else if (sl_proj_do == SL_PJ_SAVE) {
+        sl_song_take(g); sl_pjdbg[5] = (uint32_t)song.g[G_BPM]; sl_proj_commit(); if (!sl_proj_pending) sl_say_num("saved: project ", sl_proj_slot + 1, 0);
+    } else {
+        if (!sl_song_ok(g)) { sl_say("already empty", 0); return; }
+        memset(g, 0, sizeof *g); sl_proj_commit(); if (!sl_proj_pending) sl_say_num("deleted: project ", sl_proj_slot + 1, 0);
+    }
+}
+static uint32_t sl_rec_t0;                  /* REC held since (0: not held); its job done this hold */
+static uint8_t sl_rec_done;
+static uint32_t sl_rec_need(void) { return sl_proj_do == SL_PJ_DELETE ? 2000u : 1000u; }
+/* a slot in a few words: "d dorian 96 rock hexagon" */
+static void sl_proj_line(char *b, uint32_t cap, const sl_song *g);
+static void sl_proj_panel(sl_panel *m)
+{
+    char n[8];
+    uint32_t held = sl_rec_t0 && !sl_rec_done ? (fm1_ms - sl_rec_t0) * 100u / sl_rec_need() : 0u;
+    sl_col(&m->c[0], "slot", sl_num(n, (int32_t)sl_proj_slot + 1), (int)(sl_proj_slot * 100u / (SL_NPROJ - 1u)), 0);
+    sl_col(&m->c[1], "job", SL_PJ_NAME[sl_proj_do % SL_PJ_N], -1, 0);
+    sl_col(&m->c[2], "", "", -1, 2);
+    sl_col(&m->c[3], "hold", held ? (held >= 100u ? "go" : "...") : "rec", held > 100u ? 100 : (int)held, 0);   /* ("hold rec" was cut to "hold re") */
+    sl_proj_line(m->ex[0], sizeof m->ex[0], &sl_proj[sl_proj_slot % SL_NPROJ]);
+}
+static void sl_proj_line(char *b, uint32_t cap, const sl_song *g)
+{
+    char n[8], *e = b + cap - 1u;
+    b[0] = 0;
+    if (!sl_song_ok(g)) { sl_cat(b, "empty", e); return; }
+    sl_cat(b, SL_NOTE[(uint32_t)(g->root % 12 + 12) % 12u], e); sl_cat(b + sl_len(b), " ", e);
+    sl_cat(b + sl_len(b), SL_SCALE_SHORT[g->scale % SL_NSCALE], e); sl_cat(b + sl_len(b), " ", e);
+    sl_cat(b + sl_len(b), sl_num(n, g->bpm), e); sl_cat(b + sl_len(b), " ", e);
+    sl_cat(b + sl_len(b), sh_band_kit_name(g->kit % (uint32_t)sh_band_nkits()), e); sl_cat(b + sl_len(b), " ", e);
+    sl_cat(b + sl_len(b), SL_SHAPE[g->walls % SL_NSHAPE].name, e);
 }
 
 /* TAPS. A button with a second job does it on a double tap (a second press within 300 ms); its first job then waits
@@ -834,9 +962,17 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
     }
     if (SL_PRESSED(B_LFO)) { sl_slime = (uint8_t)!sl_slime; sl_swing_hand = 0; sl_say("slime ", sl_slime ? "on" : "off"); }   /* (a new slime session: the
                                                            * swing breathes again until the knob is turned) */
-    /* REC: nothing, for now (Flah 2026-11-25: the loop "saves between shutdowns but i have no way to delete the attempt ...
-     * basically creates phantom notes when u power the device on ... just remove the function from REC for now"). The loop
-     * engine (slime.c sl_loop_*) stays, unreachable from the panel; REC is to become projects (save / load / delete) */
+    /* REC: the PROJECTS page (its loop went 2026-11-25: "phantom notes when u power the device on"). On the page, HOLD REC
+     * to do the job: 1 s to load or save, 2 s to delete (the panel's bar fills); let go before and nothing happens */
+    if (SL_PRESSED(B_REC)) {
+        if (sl_page != PG_PROJ) { sl_page = PG_PROJ; sl_pview = 0; sl_say("projects: hold REC", 0); }
+        else { sl_rec_t0 = fm1_ms ? fm1_ms : 1u; sl_rec_done = 0; }
+    }
+    if (rel & (1u << panel.btn[B_REC])) {
+        if (sl_rec_t0 && !sl_rec_done && sl_page == PG_PROJ) sl_say("hold REC to ", SL_PJ_NAME[sl_proj_do % SL_PJ_N]);
+        sl_rec_t0 = 0;
+    }
+    if (sl_rec_t0 && !sl_rec_done && sl_page == PG_PROJ && fm1_ms - sl_rec_t0 >= sl_rec_need()) { sl_rec_done = 1; sl_proj_do_job(); }
     if (SL_PRESSED(B_SAVE)) sl_goto(PG_MIDI);              /* SAVE: the MIDI page (the session saves itself) */
     if (SL_PRESSED(B_OCTDN) || SL_PRESSED(B_OCTUP)) {      /* the keyboard's octave, as on any synth; both: back to the middle */
         uint32_t both = (1u << panel.btn[B_OCTDN]) | (1u << panel.btn[B_OCTUP]);
@@ -966,6 +1102,9 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
             if (k3) { sd_decay = (uint8_t)clamp((int32_t)sd_decay + k3, 4, 16); sl_say_num("decay ", sd_decay * 100 / 8, "%"); }
             if (k4) { double sw = sl_swing + accel(EN_K4, k4, 21) * 0.025; sl_swing = sw < 0.0 ? 0.0 : sw > 0.5 ? 0.5 : sw; sl_swing_hand = 1;
                       sl_say_num("swing ", (int32_t)(sl_swing * 100.0 + 0.5), "%"); }
+        } else if (sl_page == PG_PROJ) {                   /* PROJECTS: the slot, the job */
+            if (k1) { sl_proj_slot = (uint8_t)clamp((int32_t)sl_proj_slot + (k1 > 0 ? 1 : -1), 0, (int32_t)SL_NPROJ - 1); sl_rec_t0 = 0; }
+            if (k2) { sl_proj_do = (uint8_t)clamp((int32_t)sl_proj_do + (k2 > 0 ? 1 : -1), 0, SL_PJ_N - 1); sl_rec_t0 = 0; sl_say("hold REC to ", SL_PJ_NAME[sl_proj_do]); }
         } else if (sl_page == PG_ARP) {                    /* ARP: pattern, rate, octaves, gate */
             if (k1) { sl_arp_pat = (uint8_t)sl_wrap(sl_arp_pat, k1, SL_ARP_NPAT); sl_say("arp: ", SL_ARP_PAT_NAME[sl_arp_pat]); }
             if (k2) { sl_arp_rate = (uint8_t)clamp((int32_t)sl_arp_rate + (k2 > 0 ? 1 : -1), 0, (int32_t)SL_ARP_NRATE - 1); slime_levels(); sl_say("arp rate ", SL_ARP_RATE[sl_arp_rate].name); }
@@ -990,21 +1129,15 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
     fm6_poll();                             /* FM6: a part's patch loads when its preset asks (SLOOP calls this from its own
                                              * ui_input, which this firmware does not run: without it no FM patch ever loaded) */
     slime_conduct();                        /* the music, ahead of the audio clock (slime.c) */
-    {   /* the session as it was left (power-on), once the splash is over; the loop's news on the screen */
-        static uint8_t last_state, last_count;
+    {   /* the session as it was left (power-on), once the splash is over; the projects' slots */
         if (!sl_restored && sl_conducting && !sl_splashing()) {
             sl_restored = 1;
             if (sl_song_read(SL_OBJ_SESSION)) { sl_auto_hash = sl_sbuf.sum; sl_say("welcome back", 0); }
-        }
-        if (sl_loop_countin != last_count) { last_count = sl_loop_countin; if (last_count) sl_say_num("rec in ", last_count, 0); }
-        if (sl_loop_state != last_state) {
-            if (sl_loop_state == SL_LOOP_REC) sl_say("rec: play now", 0);
-            else if (sl_loop_state == SL_LOOP_PLAY && last_state == SL_LOOP_REC) sl_say_num("loop: ", sl_loop_bars, sl_loop_bars == 1u ? " bar" : " bars");
-            else if (sl_loop_state == SL_LOOP_OFF && last_state == SL_LOOP_REC) sl_say("no notes: no loop", 0);
-            last_state = sl_loop_state;
+            sl_proj_boot();
         }
     }
     sl_session_tick();
+    sl_proj_tidy();
 }
 
 /* THE PANEL'S DRAWING: rows SL_PANEL_Y..239 under the lifted tank, a band at a time into cv_px (SLOOP's text draws there).
@@ -1444,9 +1577,7 @@ static void slime_ui(void)
                                              (k == panel.btn[B_GLO] && sl_page == PG_MIX) || (k == panel.btn[B_FX] && sl_page == PG_FX) ||
                                              (k == panel.btn[B_ENV] && sl_page == PG_SOUND) || (k == panel.btn[B_EDIT] && sl_page == PG_CHORDS) ||
                                              (k == panel.btn[B_SEQ] && sl_page == PG_DRUMS) ||
-                                             (k == panel.btn[B_REC] && (sl_loop_state == SL_LOOP_PLAY ? !sl_loop_dub || ((fm1_ms >> 7) & 1u) :
-                                                                        sl_loop_state != SL_LOOP_OFF && ((fm1_ms >> 8) & 1u))));
-    /* (REC: blinks for the count-in and the take, quick while overdubbing, steady while the loop plays) */
+                                             (k == panel.btn[B_REC] && sl_page == PG_PROJ));   /* (REC: lit on its PROJECTS page) */
     /* THE CAMERA, round the box in three dimensions (Flah 2026-11-20: "it rotates too evenly, maybe add some wobble and
      * more dimension"). It was two sines, the yaw and the pitch, one speed each: an even, repeating sway. Now each axis
      * is three sines at speeds no whole ratio apart (it never comes round the same way twice), the view also rolls (the

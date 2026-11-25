@@ -40,7 +40,7 @@ LIB="${SLIME_LIBDIR:-$TC/pi32v2/lib/r3}"   # the r3 (FPU) build of libm / libc
 mkdir -p "$WORK/build/slime/lib"; cp "$LIB/libm.a" "$LIB/libc.a" "$LIB/libcompiler-rt.a" "$WORK/build/slime/lib/"
 # LCD_BAUD 0: the panel's SPI at 60 MHz (~44 MHz measured on an FM-1 by X0X, firmware/src/lcd.c; ST7789 <= ~62 MHz).
 # SLOOP's 4 (12 MHz) takes ~77 ms to send a whole screen; the tank redraws the whole screen every frame.
-export SLIME_CFLAGS="$FPU -DLCD_BAUD=0u -Ifirmware/slime -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -DSH_MAXHITS=32 -DSL_DEVICE=1"
+export SLIME_CFLAGS="$FPU -DLCD_BAUD=0u -Ifirmware/slime -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -DSH_MAXHITS=32 -DSL_DEVICE=1 ${SLIME_EXTRA:-}"   # (SLIME_EXTRA: a sabotage build)
 export SLIME_LINK="$OBJS --gc-sections build/slime/lib/libm.a build/slime/lib/libc.a build/slime/lib/libcompiler-rt.a"
 cd "$WORK" && JIELI_TOOLCHAIN="$TC" sh build.sh
 OUTDIR="$(cd "$HERE/../.." && pwd)/_fm1-firmware"; mkdir -p "$OUTDIR" && cp "$WORK/build/felucca.fwsc" "$OUTDIR/slimehedron-fm1.fwsc" && echo "package -> _fm1-firmware/slimehedron-fm1.fwsc"

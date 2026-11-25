@@ -848,8 +848,9 @@ static const sl_snd SL_MEL_SND[SL_NMEL] = {
  * (DX BASS, POLY BRASS, DREAM STAB: patch_sloop.py, slime_fm6.py). SMOOTH EP takes SH TINE's place in the chords.
  * CHIP CHORD is gone (Flah 2026-11-25: "sounds fucking horrendous ... like a bunch of white noise on the lower notes"). */
 static const sl_snd SL_BASS_SND[SL_NBASS] = {
-    {0, 15, "BIG MONO"}, {9, 20, "DX BASS"}, {0, 0, "MONO BASS"}, {0, 1, "SUB BASS"}, {0, 0, "FUNK BASS"}, {0, -2, "SAW BASS"},
-    {1, -2, "FM BASS"}, {1, 4, "BASS GTR"}, {2, -8, "CZ BASS"}, {3, 0, "GB BASS"}, {9, 28, "SH BASS"},
+    {0, 15, "BIG MONO"}, {9, 20, "DX BASS"}, {0, 1, "MONO BASS"}, {0, 2, "SUB BASS"}, {0, 3, "FUNK BASS"}, {0, 0, "SAW BASS"},
+    {1, 0, "FM BASS"}, {1, 5, "BASS GTR"}, {2, -6, "CZ BASS"}, {3, 1, "GB BASS"}, {9, 31, "SH BASS"},
+    /* (re-trimmed 2026-11-25 for the funk bass's short accented notes, alone over 24 bars against BIG MONO's -27.89) */
 };
 static const sl_snd SL_COMP_SND[SL_NCOMP] = {
     {9, 17, "SMOOTH EP"}, {1, 0, "RHODES"}, {1, 7, "DX RHODES"}, {1, 8, "WURLI"}, {1, 5, "M1 PIANO"}, {0, 12, "POLY BRASS"},

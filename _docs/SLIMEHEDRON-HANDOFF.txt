@@ -626,8 +626,14 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
         (FX knob 1: left low-pass, right high-pass).
       - FUNK BASS, SITE AND FM-1 (sw v176): FEELS bass.funk; ghosts 'g' and octave pops in genBass, staccato by funk,
         real accents; band.c in lockstep (check-band parity + a funk check, SAB=funk red). FM-1 bass -1.5 dB after.
-      - REC: nothing for now (its loop and the session's kept loop gone: "phantom notes"). Projects researched next
-        (_docs/research/2026-11-25-fm1-projects.md when the research lands).
+      - REC = PROJECTS (research _docs/research/2026-11-25-fm1-projects.md; Flah chose the page + hold, gapless saving):
+        8 slots in OBJ_PROJECT0, each an SLM6 session (the loop dropped: ~200 B); KNOB 1 slot, KNOB 2 load / save / delete,
+        HOLD REC 1 s (delete 2 s). GAPLESS: the spare copy erased only when quiet (sl_proj_tidy), a save programs it a
+        256 B page at a time after an audio half renders (CoralFlower's ST_PROG_SYNC), header last, read back; a second
+        save before the next quiet moment waits for stop. project-check.sh (new): saved while playing and loaded back,
+        no dead run >= 3 ms nor a repeated buffer half around the save, 0 late, the slot there after a power cycle;
+        sabotaged (SLIME_EXTRA=-DSL_SAB_ERASE=1: SLOOP's erasing st_save): an 11.6 ms dead gap, red. Measured: loading a
+        project at 90 bpm while playing at 175 made 1 note late (a +3 bpm load: 0); not chased.
       - SHAPES stage A: SHAPE knob by name (triangle .. dodecagon, shards 4..8: core s.shard), the slime picks them too;
         THE TUMBLE (picture only: drawn in the turning frame, turned about a precessing tilted axis). NEXT: stage B,
         CURVED shapes on the device with portals (core/space.c + drawspace.c exist and match the site); stage C, true

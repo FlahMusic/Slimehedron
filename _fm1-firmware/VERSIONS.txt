@@ -1,6 +1,16 @@
 Slimehedron for the FM-1: which build is which. slimehedron-fm1.fwsc in this folder is always the newest; the git
 history keeps every older one (git log -- _fm1-firmware/slimehedron-fm1.fwsc). Check a file: its sha256 below.
 
+2026-11-25  latest: projects on REC, shapes by name, funk bass, happy minis
+  sha256 01022287368eb78963ddffb25a53cc561fa05b0332f057b8b5f60d4cf5682841
+  - REC = PROJECTS: 8 slots of everything; KNOB 1 the slot, KNOB 2 load / save / delete, HOLD REC to do it (1 s, delete
+    2 s). Saves while the music plays with no gap in the sound
+  - SHAPE (HOME knob 1) by name: triangle .. dodecagon and shards (every side its own length); a spinning shape tumbles
+  - the bass has funk: ghost notes, octave pops, short bouncy notes, real accents
+  - the minis smile ^_^ and hop in turn on the beat; the walls are solid pastels that fade as they take hits
+  - ENV works on FM sounds too; the melody 3 dB quieter
+  - your saved session starts fresh once with this build
+
 2026-11-25  later: swing, the arp, wall HP, the goo as one slime
   sha256 1fe7d4d9e4b52c7e7c1d3ca68ba88c778c374d1824d15976cd929d576a82080d
   - DRUMS (SEQ x2): "feel" is now SWING (0 straight .. 50% nearly a triplet); it breathes with the slime on until you

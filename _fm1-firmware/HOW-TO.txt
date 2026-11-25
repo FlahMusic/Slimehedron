@@ -120,8 +120,11 @@ THE OTHER BUTTONS
   keys        play their note (in the scale) and throw a ball into the tank. What you play steers the band's chord,
               as on the site (the chord of your last notes holds while you play; a progression you entered keeps its own)
   PLAY        plays / stops                                  x2 (a double tap)  from the top
-  REC         nothing for now (its loop went: it came back at power-on with no way to delete it). It will become
-              projects: save, load and delete everything you set
+  REC         PROJECTS: 8 slots, each everything you set (sounds, mix, fx, tempo, key, scale, rhythm, shape, chords,
+              drums, arp, MIDI). REC opens the page; KNOB 1 the slot (the line on top says what is in it), KNOB 2 the
+              job: load, save, delete. HOLD REC to do it: 1 s to load or save, 2 s to delete (the bar fills); let go
+              before and nothing happens. Saving works while the music plays, with no gap in the sound (if you save
+              twice in a row it may say "saves when you stop" and finish when you press stop)
   SAVE        the MIDI page. Saving needs nothing: stopped for 3 s, everything you set saves itself to the FM-1 and
               comes back at power-on ("welcome back")
   ARP         the band's chords as an arpeggio, on / off, and its page (pattern, rate, octaves, gate)
