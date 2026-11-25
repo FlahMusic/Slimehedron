@@ -34,3 +34,4 @@ host/harmtest
 host/synctest
 host/minitest
 __pycache__/
+host/walltest

@@ -26,7 +26,7 @@ typedef struct {
   st_seg under[2 * SH_MAXWALLS], over[SH_MAXWALLS]; int nunder, nover;       /* rails and back edges; the front rim on top */
   float fx[SH_MAXWALLS], fy[SH_MAXWALLS], bx[SH_MAXWALLS], by[SH_MAXWALLS];   /* each corner at the front and the back */
   float wy0[SH_MAXWALLS], wy1[SH_MAXWALLS];                                 /* each side wall's rows (a row past them skips it) */
-  uint16_t wc[SH_MAXWALLS]; float lit[SH_MAXWALLS]; uint8_t open[SH_MAXWALLS]; int n;
+  uint16_t wc[SH_MAXWALLS]; float lit[SH_MAXWALLS], hpf[SH_MAXWALLS]; uint8_t open[SH_MAXWALLS]; int n;   /* hpf: how whole (wall_hp) */
   float x[SH_BALLCAP], y[SH_BALLCAP], r[SH_BALLCAP], z[SH_BALLCAP], sx[SH_BALLCAP], sy[SH_BALLCAP], sr[SH_BALLCAP];
   uint16_t bc[SH_BALLCAP]; int order[SH_BALLCAP], nb;                         /* balls, drawn back to front */
   float dx[SH_GOO_MAXD], dy[SH_GOO_MAXD], dr[SH_GOO_MAXD]; uint8_t dpool[SH_GOO_MAXD]; int nd;

@@ -122,6 +122,15 @@ stuck: stucktest
 	NOHANDS=1 ./stucktest 1
 .PHONY: stuck
 
+# wall HP, the FM-1's (walltest.c): a wall breaks on its own hits, opens 2 bars, notes fall out; `make walls` must PASS
+walltest: $(TANKSRC) ../core/tank.h ../core/goo.h walltest.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -fsingle-precision-constant -c -o goo_16.o ../core/goo.c
+	$(CC) $(CFLAGS) -DSH_GOO_LIGHT -DSH_GOO_DIV=16 -o $@ ../core/tank.c ../core/music.c ../core/melody.c goo_16.o walltest.c -lm
+
+walls: walltest
+	./walltest
+.PHONY: walls
+
 # the band's other harmony owners (a hand, a progression) and a person's drum pattern: `make harm` must PASS
 harmtest: ../core/band.c ../core/band.h ../core/band_tables.h ../core/music.c harmtest.c
 	$(CC) $(CFLAGS) -o $@ ../core/band.c ../core/music.c harmtest.c -lm

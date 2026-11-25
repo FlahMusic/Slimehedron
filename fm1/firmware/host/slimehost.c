@@ -115,6 +115,11 @@ static void hand_script(int mode)
     if (mode == 2 && sl_stat.bars == 0 && sl_band.cm_n == 0) sh_band_cm_famous(&sl_band, 0, 0, 1);
     if (sl_step == last_step) return;
     last_step = sl_step;
+    if (mode == 3) {                                       /* two notes only, a low E and a high C: the fallback's (the lowest: iii)
+                                                            * and the site's triad fit (C, its 5th unplayed: I) disagree */
+        if (sl_stat.bars >= 4 && sl_stat.bars < 12 && sl_step % 4u == 1u) { sl_hand(400, 100); sl_hand(1200, 96); }
+        return;
+    }
     if (sl_stat.bars >= 4 && sl_stat.bars < 12 && sl_step % 4u == 1u) { sl_hand(C[0], 100); sl_hand(C[1], 96); sl_hand(C[2], 92); }   /* a chord, strummed */
 }
 
@@ -309,6 +314,7 @@ int main(int argc, char **argv)
         if (!f) { perror(argv[2]); return 2; }
         s.scale = sh_scale_by_id(argv[4]); s.walls = atoi(argv[5]);
         s.guard = getenv("SL_GUARD") ? atoi(getenv("SL_GUARD")) : 1; s.worm_hold = 8;   /* the tank as the device runs it (slime.c sl_start_shape) */
+        s.wall_hp = getenv("SL_WALLHP") ? atoi(getenv("SL_WALLHP")) : 48;
         if (!s.scale) { fprintf(stderr, "unknown scale\n"); return 2; }
         setup((uint32_t)atoi(argv[8]), argv[9], bpm);
         slime_band_sounds();

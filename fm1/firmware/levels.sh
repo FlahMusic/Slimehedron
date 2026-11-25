@@ -5,6 +5,10 @@
 #   (bass + chords + drums together); the whole mix -21..-15 LUFS, peak under -0.9 dBFS.
 #   sh fm1/firmware/levels.sh [kits...]      (after build-host.sh)   env SL_DLVL / SL_BLVL / SL_CLVL try other faders
 set -eu
+# (the melody here is the bench's stand-in player, the tank's auto-notes, a constant ~8 notes a bar: the device has no
+#  auto-notes, its melody is a hand's. Wall HP, on in the device's tank, lets the stand-in's notes fall out (0.9 LU fewer):
+#  the parts are judged against the same steady player as before, so the walls stay whole here. 2026-11-25)
+export SL_WALLHP=0
 B="${OUT:-$HOME/fm1w/out}/slimehost"; W="${OUT:-$HOME/fm1w/out}/lv.wav"
 KITS="${*:-pop rock disco bossa jazz samba conga march chip beep industrial}"
 lu() { "$B" song "$W" 32 major 6 100 7 1 KALIMBA | tr ' ' '\n' | awk 'p{print;exit} $0=="lufs"{p=1}'; }

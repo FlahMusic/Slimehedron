@@ -15,7 +15,7 @@ static double fmax2(double a, double b) { return a > b ? a : b; }
 static double fclamp(double x, double lo, double hi) { return x < lo ? lo : x > hi ? hi : x; }
 
 sh_tank_settings sh_tank_defaults(void) {
-  sh_tank_settings s = { 6, sh_scale_by_id("major"), 2, 0.0625, 0.15, 1, 0.0, 0.12, 1, 100, 12, 94, 1, SH_SPACE_NORMAL, 1, 0, 0, 1.0, 0 };   /* (worm_pop 0, guard 0, worm_max 0) */
+  sh_tank_settings s = { 6, sh_scale_by_id("major"), 2, 0.0625, 0.15, 1, 0.0, 0.12, 1, 100, 12, 94, 1, SH_SPACE_NORMAL, 1, 0, 0, 1.0, 0, 0 };   /* (worm_pop 0, guard 0, worm_max 0, wall_hp 0) */
   return s;
 }
 
@@ -52,6 +52,8 @@ static void wall_degrees(const sh_tank *t, int n, int td, int *out) {
 }
 
 /* the web's buildEdges for a plain polygon, turned by rot; a spinning rebuild keeps each wall's flash and closes gaps */
+/* wall HP (s.wall_hp): each wall's share of the hits, at least 2 */
+int sh_tank_wall_hp_full(const sh_tank *t) { int n = t->s.walls > 0 ? t->s.walls : 1, h = (int)floor((double)t->s.wall_hp / (double)n + 0.5); return h < 2 ? 2 : h; }
 static void rebuild(sh_tank *t, int keep_flash) {
   int n = t->s.walls;
   double c = cos(t->rot), s = sin(t->rot);
@@ -73,8 +75,13 @@ static void rebuild(sh_tank *t, int keep_flash) {
     double flash = keep_flash ? t->walls[i].flash : 0.0;
     sh_wall *e = &t->walls[i];
     e->ax = ax; e->ay = ay; e->bx = bx; e->by = by; e->nx = nx; e->ny = ny;
-    e->deg = degs[i]; e->cents = cents_for_degree(t, degs[i]); e->flash = flash; e->broken = 0; e->reform = 0.0;
+    e->deg = degs[i]; e->cents = cents_for_degree(t, degs[i]); e->flash = flash;
+    if (keep_flash && t->s.wall_hp && t->n == n) continue;   /* (a turn: a wall keeps its hits and its break; the plugin's
+                                                          * tank opens them afresh, number for number as it always did) */
+    e->broken = 0; e->reform = 0.0;
+    e->hp = t->s.wall_hp ? sh_tank_wall_hp_full(t) : 0; e->open_until = 0.0;
   }
+  if (keep_flash && t->s.wall_hp && t->n == n) return;
   t->n = n;
   t->broken_n = 0;
 }
@@ -87,7 +94,7 @@ void sh_tank_init(sh_tank *t, sh_tank_settings s, uint64_t seed) {
   for (int i = 0; i < SH_MAXWALLS; i++) t->walls[i].flash = 0.0;
   t->n = 0; t->rot = 0.0; t->rot_v = 0.0; t->nb = 0; t->nh = 0;
   t->bpm = 80.0; t->playing = 1; t->now = 0.0; t->last_tick = 0.0; t->tick_count = 0;
-  t->broken_n = 0; t->wall_bars = 0; t->last_break = -INFINITY; t->home_root_deg = 0;
+  t->broken_n = 0; t->wall_bars = 0; t->last_break = -INFINITY; t->home_root_deg = 0; t->walls_broke = t->fell = 0;
   sh_melody_init(&t->melody); t->has_mel_next = 0; t->mel_next = 0.0; t->mel_step_n = 0; t->aim_deg = -1;
   t->phi = 0.0; t->next_id = 1; t->thrown = t->melted = 0;
   t->room = 7; t->a_hits = t->a_bticks = t->r_n = 0;
@@ -124,7 +131,7 @@ int sh_tank_add_ball_at(sh_tank *t, double x, double y, double z, double vx, dou
   sh_ball *b = &t->balls[t->nb++];
   b->x = x; b->y = y; b->z = z; b->vx = vx; b->vy = vy; b->vz = vz; b->tq = 1.0; b->tg = 0.0; b->bl = 0; b->wb = -1;
   b->last_hit = -INFINITY; b->last_pane = -INFINITY; b->pane_n = 0; b->visc = 0.0; b->warp = 0; b->spit = -INFINITY;
-  b->id = t->next_id++; b->rat_n = 0; b->still = 0; b->sw_wall = -1; b->sw_t = -INFINITY; b->autob = 0;
+  b->id = t->next_id++; b->rat_n = 0; b->still = 0; b->sw_wall = -1; b->sw_t = -INFINITY; b->autob = 0; b->gone = 0;
   return 1;
 }
 
@@ -171,9 +178,23 @@ static void repair_wall(sh_tank *t) {
   t->walls[i].reform = 0.001;
 }
 
+/* a wall's note used one of its hits (wall_hp): at none left it breaks open for 2 bars, if the tank can spare it (at most
+ * a third of the walls open, one at least: a triangle may open one of its three, Flah's HP 16); else it holds on its last hit */
+static void wall_hit(sh_tank *t, int wi, double now) {
+  sh_wall *e = &t->walls[wi];
+  int n = t->n, live = 0, lim = (int)floor((double)n * 0.34);
+  if (e->broken) return;
+  if (--e->hp > 0) return;
+  for (int i = 0; i < n; i++) if (!t->walls[i].broken) live++;
+  if (lim < 1) lim = 1;
+  if (n - live >= lim || live <= 2) { e->hp = 1; return; }
+  e->broken = 1; e->reform = 0.0; e->open_until = now + 2.0 * 240000.0 / t->bpm;
+  t->walls_broke++;
+}
 void sh_tank_on_bar(sh_tank *t) {
   t->wall_bars++;
   if (t->s.guard) room_bar(t);
+  if (t->s.wall_hp) return;                                /* (the walls break by their hits instead) */
   if (t->wall_bars % 8 == 0) break_wall(t);
   if (t->wall_bars % 24 == 0) repair_wall(t);
 }
@@ -590,7 +611,7 @@ static void spin_contain(sh_tank *t, double w, double now) {
   for (int i = 0; i < t->n; i++) if (t->walls[i].broken && t->walls[i].reform < 0.55) open = 1;
   for (int bi = 0; bi < t->nb; bi++) {
     sh_ball *b = &t->balls[bi];
-    if (b->warp) continue;
+    if (b->warp || b->gone) continue;
     for (int wi = 0; wi < t->n; wi++) {
       const sh_wall *e = &t->walls[wi];
       if (e->broken && e->reform < 0.55) continue;
@@ -609,6 +630,7 @@ static void spin_contain(sh_tank *t, double w, double now) {
         if (!pushing && !guard_silent(t, b, sp_in, now) && now - b->last_hit > 60.0) {
           b->last_hit = now; if (b->autob) t->a_hits++;
           trigger(t, e->cents, fmin2(fabs(vn) / (ts == 0.0 ? 1.0 : ts), 1.0), 0.0, 0, wi, now, b->id);
+          if (t->s.wall_hp) wall_hit(t, wi, now);          /* (a turning wall's push rings it: that costs a hit too) */
           sh_goo_splash(&t->goo, b->x, b->y, b->z, e->nx, e->ny, &t->rng);
         }
       }
@@ -637,6 +659,8 @@ static void step(sh_tank *t, double now) {
       t->balls[bi] = b; continue; }
     b.vy += gy;
     if (b.vy > ts * 1.6) b.vy = ts * 1.6;
+    if (b.gone) { b.vy += 0.45; if (b.vy > 14.0) b.vy = 14.0; }   /* out through a break: it falls
+                                                         * away (the drawn tank's floor is no floor to it) */
     /* substep so a fast ball can never leap past a wall: at most half a radius per micro-step */
     double dist0 = sqrt(b.vx * b.vx + b.vy * b.vy), sc = ceil(dist0 / (SH_BR * 0.5));
     int sub = !(sc >= 1.0) ? 1 : sc > 8.0 ? 8 : (int)sc;
@@ -645,9 +669,12 @@ static void step(sh_tank *t, double now) {
     for (int s = 0; s < sub; s++) {
       b.x += b.vx * isub; b.y += b.vy * isub;
       int hit_wall = 0;
-      for (int wi = 0; wi < t->n; wi++) {
+      for (int wi = 0; wi < t->n && !b.gone; wi++) {
         sh_wall e = t->walls[wi];
-        if (e.broken && e.reform < 0.55) continue;
+        if (e.broken && e.reform < 0.55) {
+          /* wall_hp: a note a radius past an open break has left the tank: it is gone (it falls away, no wall holds it) */
+          if (t->s.wall_hp && (b.x - e.ax) * e.nx + (b.y - e.ay) * e.ny < -SH_BR) b.gone = 1;
+          continue; }
         double dist = (b.x - e.ax) * e.nx + (b.y - e.ay) * e.ny;
         if (dist >= SH_BR) continue;
         double ex = e.bx - e.ax, ey = e.by - e.ay;
@@ -676,6 +703,7 @@ static void step(sh_tank *t, double now) {
             double goo = under ? fmin2((0.35 + 0.65 * depth) * ((1.0 - b.visc) / 0.2), 1.0) : 0.0;
             double imp = fmin2(fabs(vn) / (ts == 0.0 ? 1.0 : ts), 1.0) * (1.0 - goo * 0.45);
             trigger(t, e.cents, imp, goo, 0, wi, now, b.id);
+            if (t->s.wall_hp) wall_hit(t, wi, now);
             if (b.autob) t->a_hits++;
             sh_goo_splash(&t->goo, b.x, b.y, b.z, e.nx, e.ny, &t->rng);   /* the note's drops join the pool */
           }
@@ -684,7 +712,7 @@ static void step(sh_tank *t, double now) {
       if (b.warp) { warped = 1; break; }
       /* a ball that truly left through an open gap and wandered off is gone */
       if (!hit_wall && !sh_tank_inside(t, b.x, b.y) && (b.x < -80.0 || b.x > SH_TW + 80.0 || b.y < -80.0 || b.y > SH_TH + 80.0)) {
-        killed = 1; break;
+        killed = 1; if (t->s.wall_hp) t->fell++; break;
       }
     }
     if (killed) { for (int i = bi + 1; i < t->nb; i++) t->balls[i - 1] = t->balls[i]; t->nb--; continue; }
@@ -754,7 +782,8 @@ int sh_tank_tick(sh_tank *t, double now_ms, double bpm, int playing) {
   /* a healing wall fades back in */
   for (int i = 0; i < t->n; i++) {
     sh_wall *e = &t->walls[i];
-    if (e->broken && e->reform > 0.0) { e->reform = fmin2(e->reform + 0.007, 1.0); if (e->reform >= 1.0) { e->broken = 0; e->reform = 0.0; } }
+    if (t->s.wall_hp && e->broken && e->reform == 0.0 && now >= e->open_until) e->reform = 0.001;   /* (its 2 bars are up: it heals) */
+    if (e->broken && e->reform > 0.0) { e->reform = fmin2(e->reform + 0.007, 1.0); if (e->reform >= 1.0) { e->broken = 0; e->reform = 0.0; if (t->s.wall_hp) e->hp = sh_tank_wall_hp_full(t); } }
     e->flash *= 0.86;
   }
   return t->nh;

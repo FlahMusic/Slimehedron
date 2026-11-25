@@ -49,6 +49,10 @@ typedef struct {
   double busy;                    /* the guard's room: its aim of notes a bar, against the web's 8 (1: the web's) */
   int worm_max;                   /* worm_pop: at most this many holes open at once (0: SH_NWORM; the FM-1: 2, Flah 2026-11-25
                                    * "the portals are literally way too often") */
+  int wall_hp;                    /* WALL HP, the FM-1's (0: the plugin's walls, opening every 8 bars, healing every 24): the
+                                   * walls share this many hits, each wall round(wall_hp / walls), at least 2; a wall's notes
+                                   * use them up, at 0 it breaks open for 2 bars, the notes that leave fall away, then it heals
+                                   * whole (Flah 2026-11-25: fewer walls, tougher: 48 -> a triangle 16, a hexagon 8, 12 walls 4) */
 } sh_tank_settings;
 #define SH_SPACE_NORMAL 0
 #define SH_SPACE_PORTAL 1
@@ -69,6 +73,7 @@ typedef struct sh_wall {
   double ax, ay, bx, by, nx, ny;  /* corners; unit normal into the tank */
   int deg; double cents, flash;
   int broken; double reform;      /* an open gap (silent, balls pour through); healing 0..1, catches again past 0.55 */
+  int hp; double open_until;      /* wall_hp: the hits left before it breaks; broken, the ms it heals at */
 } sh_wall;
 
 typedef struct sh_ball {
@@ -85,6 +90,7 @@ typedef struct sh_ball {
   uint32_t still;                 /* the guard: ticks it has crawled (under a fifth of the tempo's speed) */
   int sw_wall; double sw_t;       /* the guard: the turning wall last pushing it, when (a push that goes on is one note) */
   uint8_t autob;                  /* an auto-notes ball (the room melts these, never a hand's) */
+  uint8_t gone;                   /* wall_hp: it left through a break: no wall holds it, it falls away and is removed */
 } sh_ball;
 
 /* a wormhole (portal space): it rests mid-wall and glides to a neighbouring wall every s.worm_hold beats (the web: 1;
@@ -117,6 +123,7 @@ typedef struct {
   int worm_on, worm_key; int64_t worm_beat; double worm_open; sh_worm worm[SH_NWORM]; int worm_n;   /* portal space: worm_n holes */
   uint32_t next_id;               /* the next ball's id */
   uint32_t thrown, melted;        /* the guard's work: rattles thrown back to the middle, notes melted at rest */
+  uint32_t walls_broke, fell;     /* wall_hp: walls broken by their hits; notes that fell out through one */
   /* THE ROOM (the guard, the web's auto adjuster): how many auto-notes balls this shape needs for about 8 notes a bar,
    * measured over the last 8 bars; over the room the oldest auto ball melts into the goo */
   int room; uint32_t a_hits, a_bticks, r_hits[8], r_bticks[8], r_n;
@@ -134,5 +141,7 @@ void sh_tank_on_bar(sh_tank *t);
 int  sh_tank_add_ball(sh_tank *t);
 int  sh_tank_add_ball_at(sh_tank *t, double x, double y, double z, double vx, double vy, double vz);
 int  sh_tank_inside(const sh_tank *t, double x, double y);
+/* wall_hp: a whole wall's hits in this shape (round(wall_hp / walls), at least 2) */
+int  sh_tank_wall_hp_full(const sh_tank *t);
 
 #endif

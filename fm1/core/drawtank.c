@@ -64,6 +64,10 @@ void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0,
     float lit = (float)e->flash * 1.4f; v->lit[i] = lit > 1 ? 1 : lit;   /* a struck wall glows, then fades */
     v->wc[i] = pastel(hue0 + (td > 0 ? (float)e->deg / (float)td : 0), 0.38f + 0.3f * v->lit[i], 0.97f);
     v->open[i] = e->broken && !(e->reform > 0);                          /* an open gap is not drawn */
+    {   /* wall HP: a wall fades as its hits run out (to 40% on its last), a healing one fades back in */
+      float f = 1.0f;
+      if (t->s.wall_hp) { int full = sh_tank_wall_hp_full(t); f = e->broken ? (float)e->reform : 0.4f + 0.6f * (float)(e->hp - 1) / (float)(full > 1 ? full - 1 : 1); }
+      v->hpf[i] = f < 0.0f ? 0.0f : f > 1.0f ? 1.0f : f; }
   }
   for (int i = 0; i < t->n; i++) { int j = (i + 1) % t->n; float a = v->fy[i], b = v->fy[j], c = v->by[i], d = v->by[j];
     float lo = a < b ? a : b, hi = a < b ? b : a; lo = c < lo ? c : lo; lo = d < lo ? d : lo; hi = c > hi ? c : hi; hi = d > hi ? d : hi;
@@ -108,7 +112,7 @@ void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0,
   for (int i = 0; i < v->n; i++) { int j = (i + 1) % v->n;
     float qx[4] = { v->fx[i], v->fx[j], v->bx[j], v->bx[i] }, qy[4] = { v->fy[i], v->fy[j], v->by[j], v->by[i] };
     if (v->open[i]) { v->side[i].n = 0; v->side[i].ylo = 1e9f; v->side[i].yhi = -1e9f; continue; }
-    poly_make(&v->side[i], qx, qy, 4, v->wc[i], 0.16f + 0.3f * v->lit[i]); }
+    poly_make(&v->side[i], qx, qy, 4, v->wc[i], (0.16f + 0.3f * v->lit[i]) * v->hpf[i]); }
   v->nside = v->n;
   for (int h = 0; h < SH_NWORM; h++) {   /* a hole: its rim (the outline grown 1.3 px), then its inside (shrunk 1.3 px) */
     v->hole[h][0].n = v->hole[h][1].n = 0; v->hole[h][0].ylo = v->hole[h][1].ylo = 1e9f; v->hole[h][0].yhi = v->hole[h][1].yhi = -1e9f;
@@ -127,8 +131,8 @@ void st_view_prepare(st_view *v, const sh_tank *t, const float M[9], float hue0,
   v->nunder = v->nover = 0;
   for (int i = 0; i < v->n; i++) seg_make(&v->under[v->nunder++], v->fx[i], v->fy[i], v->bx[i], v->by[i], 1.0f, 0xFFFF, 0.55f);   /* rails */
   for (int i = 0; i < v->n; i++) { int j = (i + 1) % v->n; if (v->open[i]) continue;
-    seg_make(&v->under[v->nunder++], v->bx[i], v->by[i], v->bx[j], v->by[j], 1.1f, v->wc[i], 0.7f);                       /* back edges */
-    seg_make(&v->over[v->nover++], v->fx[i], v->fy[i], v->fx[j], v->fy[j], 1.4f, v->wc[i], 0.9f); }                         /* the front rim */
+    seg_make(&v->under[v->nunder++], v->bx[i], v->by[i], v->bx[j], v->by[j], 1.1f, v->wc[i], 0.7f * v->hpf[i]);            /* back edges */
+    seg_make(&v->over[v->nover++], v->fx[i], v->fy[i], v->fx[j], v->fy[j], 1.4f, v->wc[i], 0.9f * v->hpf[i]); }              /* the front rim */
 }
 
 /* a polygon's inside on row yc, columns xlo..xhi, even-odd */

@@ -674,10 +674,12 @@ static void slime_play_block(void)
  * drums sat 16.4 under (barely there), march / chip 11.3, industrial 7.1; jazz's sparse bass 10.6 (the rule: <= 10). */
 static const uint8_t SL_KIT_DRLVL[11] = {28, 28, 26, 28, 92, 31, 31, 38, 39, 28, 24};   /* (2026-11-16, humanize on: jazz's feel took its drums to 14.7 under, bossa's to 11.1;
                                              * 2026-11-18, the drum bus: bossa 29 -> 28, 8.8 LU under, the soft kits' rule is 9) */
-static const int8_t SL_KIT_BASS[11] = {0, 0, -3, 0, 3, 0, 0, 0, 0, -4, 0};   /* (2026-11-25: disco and beep under the rules since
+static const int8_t SL_KIT_BASS[11] = {0, 0, -3, 0, 3, 0, 0, -2, 0, -4, 0};   /* (2026-11-25: disco and beep under the rules since
                                              * the site's drums came, and BIG MONO's pluck sits louder in beep's busy line) */
 /* the site's drums: each kit down this many half dB on the FM-1 (disco's drums were 5.9 LU under the melody: the rule is 6) */
-static const uint8_t SL_SD_KIT_DOWN[11] = {0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0};
+static const uint8_t SL_SD_KIT_DOWN[11] = {0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0};
+/* the chords, by rhythm, in fader steps (disco's chord part is its busiest: its band sat 0.7..0.8 LU under the melody) */
+static const int8_t SL_KIT_COMP[11] = {0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0};
 /* the site's drums (slime_drums.c): one level for every kit, the pop kit's; each kit's own is the site's KIT_DB after the glue */
 #ifndef SL_SD_DRLVL
 #define SL_SD_DRLVL 79
@@ -796,7 +798,7 @@ static void slime_levels(void)
     static const uint16_t DB_Q12[17] = {4096, 3866, 3649, 3444, 3251, 3069, 2896, 2734, 2580, 2436, 2299, 2170, 2048, 1933, 1825, 1722, 1626};   /* -0.5 dB steps */
     trk[SL_TRK_MEL].p[P_LEVEL] = (int16_t)clamp(SL_MEL_LEVEL + sl_mix[0], 0, 127);
     trk[SL_TRK_BASS].p[P_LEVEL] = (int16_t)clamp(SL_BASS_LEVEL + SL_KIT_BASS[k] + sl_mix[1], 0, 127);
-    trk[SL_TRK_COMP].p[P_LEVEL] = (int16_t)clamp(SL_COMP_LEVEL + sl_mix[2] + (sl_arp_on ? SL_ARP_TRIM[sl_arp_rate % SL_ARP_NRATE] : 0), 0, 127);
+    trk[SL_TRK_COMP].p[P_LEVEL] = (int16_t)clamp(SL_COMP_LEVEL + SL_KIT_COMP[k] + sl_mix[2] + (sl_arp_on ? SL_ARP_TRIM[sl_arp_rate % SL_ARP_NRATE] : 0), 0, 127);
     {   /* the drums' level is a linear gain: their fader steps as ~0.5 dB, up to +6 dB */
         int32_t g = sl_sd_on ? SL_SD_DRLVL * DB_Q12[SL_SD_KIT_DOWN[k]] / 4096 : SL_KIT_DRLVL[k], m = sl_mix[3];
         if (m > 0) g = g * (m >= 12 ? 8192 : 4096 + m * 341) / 4096;
@@ -1096,6 +1098,7 @@ static void sl_start_shape(void)
     s.worm_hold = 16;                                      /* (pop: each hole lives half of it, 8 beats: 2 bars; 2026-11-20 it was 4 beats, "they
                                                             * dont stay long enough before moving": Flah; 2026-11-25 "way too often") */
     s.worm_max = 2;                                        /* two open at once, not four (2026-11-25) */
+    s.wall_hp = 48;                                        /* WALL HP: a wall breaks on its own notes, opens 2 bars (tank.c; walltest.c) */
     sl_on_reform();
     slime_start(s, sl_seed++, sl_root);
     sl_bars_shape = 0;
