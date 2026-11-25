@@ -330,6 +330,11 @@ int main(int argc, char **argv)
         }
         if (getenv("SL_FXP")) { int p = atoi(getenv("SL_FXP")), i = atoi(strchr(getenv("SL_FXP"), ':') + 1); sl_fx_preset((uint32_t)p, (uint32_t)i); }   /* PART:PRESET */
         if (getenv("SL_HUMAN")) sl_band.human = atoi(getenv("SL_HUMAN"));
+        if (getenv("SL_ARP")) {                            /* the arp on: PATTERN:RATE:OCTAVES:GATE (slime.c sl_arp_*) */
+            int a[4] = {2, 1, 2, 60};
+            sscanf(getenv("SL_ARP"), "%d:%d:%d:%d", &a[0], &a[1], &a[2], &a[3]);
+            sl_arp_on = 1; sl_arp_pat = (uint8_t)a[0]; sl_arp_rate = (uint8_t)a[1]; sl_arp_oct = (uint8_t)a[2]; sl_arp_gate = (uint8_t)a[3];
+        }
         if (getenv("SL_JOURNEY")) sl_band.journey = sl_journey_bars((double)bpm);   /* the slime on: the key journey */
         if (getenv("SL_HLOG")) sl_hlog = fopen(getenv("SL_HLOG"), "w");
         if (getenv("SL_MEL")) sl_mel_on = (uint8_t)atoi(getenv("SL_MEL"));

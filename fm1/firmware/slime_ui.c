@@ -6,7 +6,7 @@
  * Panel (studio):
  *   keys      their note in the tank's scale, now (a hand is never quantized), and a ball into the tank
  *   PLAY      everything runs / stands still              HOME   a new shape (on the next downbeat)
- *   ARP       auto-notes: the slime drops notes by itself SEQ    the drums on / off
+ *   ARP       the arp: the band's chords a note at a time, on / off (its page) SEQ    the drums on / off
  *   LFO       the slime: key journey, reforms             REC    the band (bass and chords) on / off
  *   SCL       the next scale                              OCT- / OCT+  the key down / up a semitone
  *   SELECT    the shape: 3..12 walls                      ALGORITHM  space: normal / portal
@@ -392,18 +392,18 @@ static void sl_say_num(const char *a, int32_t v, const char *unit)
  *   ENV   SOUND   attack  decay  sustain  release        SELECT all, a part   ALGO glide            PRESETS the sound
  *   EDIT  CHORDS  root  type  bars  how many             SELECT which chord   ALGO all up / down    PRESETS famous ones
  *   SEQ   DRUMS   lane  fill  shift  mine / the rhythm's | kit  tune  decay  swing
- * ARP: auto-notes on / off; LFO: the slime on / off; OCT- / OCT+ the keyboard's octave; PLAY, REC, SAVE. */
+ * ARP: the arp on / off and its page; LFO: the slime on / off; OCT- / OCT+ the keyboard's octave; PLAY, REC, SAVE. */
 /* PAGES, as a DAW or an MPC has them: one button, one job, and the same button again steps through the page's views
  * (HOME: back to the tank). The three knobs on the left are the three sounds on every page (Flah 2026-11-20: "make all
  * the 3 knobs on the left next to master just control presets for the 3 parts"), so a page has the four knobs only. */
-enum { PG_HOME, PG_SONG, PG_MIX, PG_FX, PG_SOUND, PG_CHORDS, PG_DRUMS, PG_MIDI, PG_N };
+enum { PG_HOME, PG_SONG, PG_MIX, PG_FX, PG_SOUND, PG_CHORDS, PG_DRUMS, PG_MIDI, PG_ARP, PG_N };
 static uint8_t sl_page, sl_pview;
-static const uint8_t SL_NVIEW[PG_N] = {1, 2, 4, 5, 4, 2, 2, 2};
+static const uint8_t SL_NVIEW[PG_N] = {1, 2, 4, 5, 4, 2, 2, 2, 1};
 static const char *const SL_VIEW_NAME[PG_N][5] = {
-    {"tank"}, {"song", "song: rhythm"}, {"mixer: levels", "mixer: pan", "mixer: delay sends", "mixer: reverb sends"},
+    {"tank"}, {"song", "song: harmony"}, {"mixer: levels", "mixer: pan", "mixer: delay sends", "mixer: reverb sends"},
     {"fx: melody", "fx: bass", "fx: chords", "fx: drums", "fx: delay, reverb"},
     {"sound: melody", "sound: bass", "sound: chords", "sound: length, glide"}, {"chords", "chords: all"},
-    {"drums: pattern", "drums: kit"}, {"midi: channels", "midi: in, clock"}};
+    {"drums: pattern", "drums: kit"}, {"midi: channels", "midi: in, clock"}, {"arp"}};
 static uint8_t sl_fx_part;                  /* FX: the part sl_fx_turn works on (the FX view; the mixer's pan and sends) */
 static uint8_t sl_snd_part;                 /* SOUND: 1..3 the part sl_env_turn works on */
 static uint8_t sl_cm_sel, sl_lane, sl_famous;
@@ -420,6 +420,24 @@ static void sl_chord_name(char *b, uint32_t i)   /* "D min7": the chord's note (
     char *e = b + 11;
     b[0] = 0;
     sl_cat(sl_cat(b, SL_NOTE[(uint32_t)(sl_root + sl_band.cm_root[i % SH_CM_MAX]) % 12u], e), SH_CQ_NAME[sl_band.cm_qual[i % SH_CM_MAX] % SH_NCQ], e);
+}
+/* the top line at the tank, playing (Flah 2026-11-25: "at the top of the general interface, it should say what key and
+ * scale you're in, and also what chord is currently being jammed on"): "c major - a min". The chord: a progression's own
+ * (its name, as the CHORDS page shows it), else the band's chord this bar, its root from the scale and its kind the
+ * scale's own triad there (the band may colour it with a 7th: the name says the triad) */
+static void sl_status_line(char *b, uint32_t cap)
+{
+    char c[12], *e = b + cap - 1u;
+    b[0] = 0;
+    sl_cat(sl_cat(sl_cat(b, SL_NOTE[sl_root % 12], e), " ", e), SL_SCALE_SHORT[sl_scale % SL_NSCALE], e);
+    if (sl_band.cm_n && sl_band.cm_cur >= 0) sl_chord_name(c, (uint32_t)sl_band.cm_cur);
+    else {
+        const sh_scale *sc = sl_tank.s.scale;
+        int semis = sc ? (int)(sh_cents_for_degree(sc, sl_bar.chord) / 100.0f + 0.5f) : 0;
+        c[0] = 0;
+        if (sc && sc->n <= 12) sl_cat(sl_cat(c, SL_NOTE[(uint32_t)(sl_root + semis) % 12u], c + 11), SH_CQ_NAME[sh_band_cq_for(sc, ((semis % 12) + 12) % 12) % SH_NCQ], c + 11);
+    }
+    if (c[0]) sl_cat(sl_cat(b + sl_len(b), " - ", e), c, e);
 }
 static void sl_pct(char *b, int32_t v, int32_t max) { char n[8]; sl_cat(sl_cat(b, sl_num(n, v * 100 / max), b + 7), "%", b + 7); }
 static const char *sl_filter_word(int32_t f) { return f < -2 ? "low-pass " : f > 2 ? "high-pass " : "open"; }
@@ -554,6 +572,12 @@ static void sl_panel_build(sl_panel *m)
         b[0] = 0; sl_pct(b, (int32_t)(sl_swing * 100.0 + 0.5), 100); sl_col(&m->c[3], "swing", b, (int)(sl_swing * 200.0), 0);   /* (was "feel": the
                                                            * drummer's humanize on / off, "i literally don't even hear any difference": Flah) */
         sl_cat(m->ex[0], sd_tone == 0xFFu ? "each rhythm plays its own kit" : "every rhythm plays this kit", m->ex[0] + sizeof m->ex[0] - 1u);
+    } else if (sl_page == PG_ARP) {                        /* ARP: the band's chords one note at a time */
+        sl_col(&m->c[0], "pattern", SL_ARP_PAT_NAME[sl_arp_pat % SL_ARP_NPAT], -1, 0);
+        sl_col(&m->c[1], "rate", SL_ARP_RATE[sl_arp_rate % SL_ARP_NRATE].name, (int)(sl_arp_rate * 100u / (SL_ARP_NRATE - 1u)), 0);
+        b[0] = 0; sl_cat(b, sl_num(n, sl_arp_oct), b + 11); sl_cat(b + sl_len(b), sl_arp_oct == 1 ? " oct" : " octs", b + 11); sl_col(&m->c[2], "octaves", b, (sl_arp_oct - 1) * 50, 0);
+        b[0] = 0; sl_pct(b, sl_arp_gate, 100); sl_col(&m->c[3], "gate", b, sl_arp_gate, 0);
+        sl_cat(m->ex[0], sl_arp_on ? "on: chords one note at a time" : "off: ARP turns it on", m->ex[0] + sizeof m->ex[0] - 1u);
     } else if (sl_page == PG_MIDI && v == 0u) {            /* each part's channel out (the drums' channel in plays the kit) */
         for (i = 0; i < 4u; i++) { sl_ch_txt(b, sl_mch[i] > 15u ? 0xFFu : sl_mch[i], "off"); sl_col(&m->c[i], SL_PART_NAME[i], b, -1, sl_mch[i] > 15u ? 2 : 0); }
         sl_cat(m->ex[0], "each part's channel out", m->ex[0] + sizeof m->ex[0] - 1u);
@@ -629,10 +653,10 @@ static void sl_env_turn(uint32_t knob, int32_t d)
  * which this firmware does not otherwise use. A flash erase silences the audio while it runs (felucca.c), so it is
  * written when stopped, 3 s after the last change, and read back at power-on. (SAVE's three songs went 2026-11-20: Flah
  * "idk what save does or where that saves shit to"; SAVE is the MIDI page.) */
-#define SL_SONG_MAGIC 0x534C4D34u   /* "SLM4" (2026-11-20: 52 scales in a new order, the MIDI page, the drums' kit) */
+#define SL_SONG_MAGIC 0x534C4D35u   /* "SLM5" (2026-11-25: the sound lists, the arp; SLM4: 52 scales, the MIDI page, the drums' kit) */
 typedef struct {
     uint32_t magic, size;
-    uint8_t snd[3], kit, scale, walls, space, slime, autoN, mute[4], solo[4], busy, cycle, pinned, chord_bars, dtime, rsize, dfdbk, rdamp, dcolor;
+    uint8_t snd[3], kit, scale, walls, space, slime, arp_on, arp_pat, arp_rate, arp_oct, arp_gate, mute[4], solo[4], busy, cycle, pinned, chord_bars, dtime, rsize, dfdbk, rdamp, dcolor;
     int8_t root, spin, octave, mix[4];
     uint16_t bpm, gate_ms;
     uint8_t swing100, fxp[4], env_on[3], env[3][5];
@@ -655,7 +679,7 @@ UI_SMALL static void sl_song_take(sl_song *g)
     g->magic = SL_SONG_MAGIC; g->size = sizeof *g;
     for (p = 0; p < 3u; p++) { g->snd[p] = sl_snd_of[p]; g->env_on[p] = sl_env_on[p]; memcpy(g->env[p], sl_env_v[p], 5); }
     g->kit = sl_kit; g->scale = sl_scale; g->walls = sl_walls; g->space = sl_space;
-    g->slime = sl_slime; g->autoN = sl_auto; memcpy(g->mute, sl_mute, 4); memcpy(g->solo, sl_solo, 4); g->busy = sl_dens; g->cycle = sl_cycle; g->pinned = sl_pinned;
+    g->slime = sl_slime; g->arp_on = sl_arp_on; g->arp_pat = sl_arp_pat; g->arp_rate = sl_arp_rate; g->arp_oct = sl_arp_oct; g->arp_gate = sl_arp_gate; memcpy(g->mute, sl_mute, 4); memcpy(g->solo, sl_solo, 4); g->busy = sl_dens; g->cycle = sl_cycle; g->pinned = sl_pinned;
     g->dfdbk = (uint8_t)song.g[G_DFDBK]; g->rdamp = (uint8_t)song.g[G_RDAMP]; g->dcolor = (uint8_t)song.g[G_DCOLOR];
     g->chord_bars = (uint8_t)sl_band.chord_bars; g->dtime = (uint8_t)song.g[G_DTIME]; g->rsize = (uint8_t)song.g[G_RSIZE];
     g->root = (int8_t)sl_root; g->spin = sl_spin; g->octave = sl_octave; g->bpm = (uint16_t)song.g[G_BPM]; g->gate_ms = (uint16_t)sl_gate_ms;
@@ -681,7 +705,8 @@ UI_SMALL static void sl_song_put(const sl_song *g)   /* (requests, as a hand's: 
     sl_kit_req = g->kit; sl_scale_req = (uint8_t)(g->scale % SL_NSCALE);
     sl_root_req = (int8_t)(clamp(g->root, 48, 71) - sl_root);
     sl_walls = (uint8_t)clamp(g->walls, 3, 12); sl_space = g->space ? 1u : 0u; sl_reform_req = 1;
-    sl_slime = g->slime ? 1u : 0u; sl_auto = g->autoN ? 1u : 0u;
+    sl_slime = g->slime ? 1u : 0u; sl_arp_on = g->arp_on ? 1u : 0u; sl_arp_pat = (uint8_t)(g->arp_pat % SL_ARP_NPAT);
+    sl_arp_rate = (uint8_t)(g->arp_rate % SL_ARP_NRATE); sl_arp_oct = (uint8_t)clamp(g->arp_oct, 1, 3); sl_arp_gate = (uint8_t)clamp(g->arp_gate, 10, 100);
     for (p = 0; p < 4u; p++) { sl_mute[p] = g->mute[p] ? 1u : 0u; sl_solo[p] = g->solo[p] ? 1u : 0u; }
     sl_dens = (uint8_t)(g->busy % 5u); sl_cycle = (uint8_t)(g->cycle % 4u);
     song.g[G_DFDBK] = (int16_t)clamp(g->dfdbk, 0, 120); song.g[G_RDAMP] = (int16_t)clamp(g->rdamp, 0, 127); song.g[G_DCOLOR] = (int16_t)clamp(g->dcolor, 0, 127);
@@ -820,7 +845,11 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
     if (SL_PRESSED(B_ENV)) sl_goto(PG_SOUND);
     if (SL_PRESSED(B_EDIT)) sl_goto(PG_CHORDS);
     if (SL_PRESSED(B_SEQ)) sl_goto(PG_DRUMS);
-    if (SL_PRESSED(B_ARP)) { sl_auto = (uint8_t)!sl_auto; sl_say("auto-notes ", sl_auto ? "on" : "off"); }
+    if (SL_PRESSED(B_ARP)) {                               /* ARP: the band's chords arpeggiated, on / off, and its page (Flah 2026-11-25;
+                                                            * the auto-notes went: "this device has a built-in keyboard") */
+        sl_arp_on = (uint8_t)!sl_arp_on; sl_page = PG_ARP; sl_pview = 0; slime_levels();
+        sl_say("arp ", sl_arp_on ? "on" : "off");
+    }
     if (SL_PRESSED(B_LFO)) { sl_slime = (uint8_t)!sl_slime; sl_swing_hand = 0; sl_say("slime ", sl_slime ? "on" : "off"); }   /* (a new slime session: the
                                                            * swing breathes again until the knob is turned) */
     /* REC: the loop (count-in, take, close; overdub on a playing loop); a double tap: the loop cleared */
@@ -965,6 +994,11 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
             if (k3) { sd_decay = (uint8_t)clamp((int32_t)sd_decay + k3, 4, 16); sl_say_num("decay ", sd_decay * 100 / 8, "%"); }
             if (k4) { double sw = sl_swing + accel(EN_K4, k4, 21) * 0.025; sl_swing = sw < 0.0 ? 0.0 : sw > 0.5 ? 0.5 : sw; sl_swing_hand = 1;
                       sl_say_num("swing ", (int32_t)(sl_swing * 100.0 + 0.5), "%"); }
+        } else if (sl_page == PG_ARP) {                    /* ARP: pattern, rate, octaves, gate */
+            if (k1) { sl_arp_pat = (uint8_t)sl_wrap(sl_arp_pat, k1, SL_ARP_NPAT); sl_say("arp: ", SL_ARP_PAT_NAME[sl_arp_pat]); }
+            if (k2) { sl_arp_rate = (uint8_t)clamp((int32_t)sl_arp_rate + (k2 > 0 ? 1 : -1), 0, (int32_t)SL_ARP_NRATE - 1); slime_levels(); sl_say("arp rate ", SL_ARP_RATE[sl_arp_rate].name); }
+            if (k3) { sl_arp_oct = (uint8_t)clamp((int32_t)sl_arp_oct + (k3 > 0 ? 1 : -1), 1, 3); sl_say_num("arp over ", sl_arp_oct, sl_arp_oct == 1 ? " octave" : " octaves"); }
+            if (k4) { sl_arp_gate = (uint8_t)clamp((int32_t)sl_arp_gate + accel(EN_K4, k4, 19) * 5, 10, 100); sl_say_num("arp gate ", sl_arp_gate, "%"); }
         } else if (sl_page == PG_MIDI && v == 0) {         /* MIDI: each part's channel out, 1..16 or off */
             int32_t kk[4];
             kk[0] = k1; kk[1] = k2; kk[2] = k3; kk[3] = k4;
@@ -1428,9 +1462,9 @@ static void slime_ui(void)
             else if (s >= 4 && s < 8) fm1_led_key(14u + k, sl_solo[s - 4]);
             else fm1_led_key(14u + k, (int32_t)(sl_lit_until[k] - fm1_ms) > 0);
         }
-    /* the buttons: each page's lit while you are on it; ARP auto-notes, LFO the slime; PLAY blinks until it is first pressed */
+    /* the buttons: each page's lit while you are on it; ARP the arp, LFO the slime; PLAY blinks until it is first pressed */
     for (k = 0; k < 14u; k++) fm1_led_key(k, (k == panel.btn[B_PLAY] && (sl_run || (!ever_played && !splash && ((fm1_ms >> 9) & 1u)))) ||
-                                             (k == panel.btn[B_ARP] && sl_auto) || (k == panel.btn[B_LFO] && sl_slime) ||
+                                             (k == panel.btn[B_ARP] && sl_arp_on) || (k == panel.btn[B_LFO] && sl_slime) ||
                                              (k == panel.btn[B_HOME] && sl_page == PG_HOME) || (k == panel.btn[B_SCL] && sl_page == PG_SONG) ||
                                              (k == panel.btn[B_GLO] && sl_page == PG_MIX) || (k == panel.btn[B_FX] && sl_page == PG_FX) ||
                                              (k == panel.btn[B_ENV] && sl_page == PG_SOUND) || (k == panel.btn[B_EDIT] && sl_page == PG_CHORDS) ||
@@ -1528,11 +1562,12 @@ static void slime_ui(void)
             sl_minis_frame();
         }
         {   /* the top line: what just changed (1.5 s), else the page and what SELECT picked; at the tank, stopped: "press play" */
-            uint8_t on = !splash && ((int32_t)(sl_label_until - fm1_ms) > 0 || panel || !sl_run);
+            uint8_t on = !splash;                          /* (always a line: what changed, the page, "press play", or the key, scale and chord) */
             uint32_t q;
             if (on && (int32_t)(sl_label_until - fm1_ms) <= 0) {
                 if (panel) { for (q = 0; q < sizeof sl_label - 1u && sl_pm.head[q]; q++) sl_label[q] = sl_pm.head[q]; sl_label[q] = 0; }
-                else { const char *pp = "press play"; for (q = 0; pp[q]; q++) sl_label[q] = pp[q]; sl_label[q] = 0; }
+                else if (!sl_run) { const char *pp = "press play"; for (q = 0; pp[q]; q++) sl_label[q] = pp[q]; sl_label[q] = 0; }
+                else sl_status_line(sl_label, sizeof sl_label);
             }
             if (!on) sl_label[0] = 0;
             for (q = 0; q < sizeof sl_label && sl_label[q] == lab_drawn[q] && sl_label[q]; q++) {}

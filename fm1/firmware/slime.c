@@ -353,15 +353,29 @@ static void sl_loop_hand(double cents, int vel)   /* the audio interrupt: a hand
  * progression a person entered owns the harmony instead (band.c), and a loop's replay is not a hand. */
 #define SL_HN 16u
 static volatile uint8_t sl_hn_pc[SL_HN];
+static volatile int16_t sl_hn_c[SL_HN];      /* (its cents over the key: the lowest one is the fallback's root) */
 static volatile uint32_t sl_hn_at[SL_HN], sl_hn_w;
+static int sl_hand_lowest;                   /* (the last bar's choice was the fallback's: slime_ui.c shows it) */
+/* THE HAND'S CHORD (the site's manualRoot, band.c sh_band_hand_root, line for line: a major / minor triad fitted to the
+ * pitch classes played, the root one you played, it and your last note voting). Flah 2026-11-25: over the LAST 2 BARS (the
+ * site: 1.6 s), and "if not enough note information is being input, just base it off the lowest note last 2 bars as a
+ * fallback": under 3 different notes in the window, the lowest note played is the root */
+#define SL_HAND_BARS 2u
 static int sl_hand_deg(void)                 /* the conductor, at a bar: the hand's chord, or -1 */
 {
-    uint8_t pcs[SL_HN];
-    uint32_t w = sl_hn_w, i, win = sl_ms_to_block(1600.0);
-    int n = 0;
+    uint8_t pcs[SL_HN], set[12] = {0};
+    uint32_t w = sl_hn_w, i, win = (sl_bar_blocks ? sl_bar_blocks : sl_ms_to_block(2400.0)) * SL_HAND_BARS;
+    int n = 0, distinct = 0, low = 32767;
     for (i = w > SL_HN ? w - SL_HN : 0u; i < w; i++)
-        if ((int32_t)(sl_sim - sl_hn_at[i % SL_HN]) < (int32_t)win) pcs[n++] = sl_hn_pc[i % SL_HN];
-    return n && sl_tank.s.scale ? sh_band_hand_root(sl_tank.s.scale, pcs, n) : -1;
+        if ((int32_t)(sl_sim - sl_hn_at[i % SL_HN]) < (int32_t)win) {
+            uint8_t pc = sl_hn_pc[i % SL_HN];
+            pcs[n++] = pc; if (!set[pc % 12u]) { set[pc % 12u] = 1; distinct++; }
+            if (sl_hn_c[i % SL_HN] < low) low = sl_hn_c[i % SL_HN];
+        }
+    if (!n || !sl_tank.s.scale) return -1;
+    sl_hand_lowest = distinct < 3;
+    if (sl_hand_lowest) { pcs[0] = (uint8_t)(((low < 0 ? (low - 50) / 100 : (low + 50) / 100) % 12 + 12) % 12); n = 1; }
+    return sh_band_hand_root(sl_tank.s.scale, pcs, n);
 }
 static volatile uint32_t sl_hand_n;          /* hands' notes so far, and the last one's cents: a mini answers it (slime_ui.c) */
 static volatile int32_t sl_hand_c;
@@ -370,7 +384,8 @@ static void sl_hand(double cents, int vel)   /* a hand's note (cents above the k
     int pc = ((int)(cents < 0 ? cents / 100.0 - 0.5 : cents / 100.0 + 0.5) % 12 + 12) % 12;
     sl_play_now(SL_TRK_MEL, sl_root, cents, vel, sl_gate_blocks ? sl_gate_blocks : 151u);
     sl_loop_hand(cents, vel);
-    sl_hn_pc[sl_hn_w % SL_HN] = (uint8_t)pc; sl_hn_at[sl_hn_w % SL_HN] = sl_clock; sl_hn_w = sl_hn_w + 1u;
+    sl_hn_pc[sl_hn_w % SL_HN] = (uint8_t)pc; sl_hn_c[sl_hn_w % SL_HN] = (int16_t)(cents < -9999.0 ? -9999.0 : cents > 9999.0 ? 9999.0 : cents);
+    sl_hn_at[sl_hn_w % SL_HN] = sl_clock; sl_hn_w = sl_hn_w + 1u;
     sl_hand_c = (int32_t)cents; sl_hand_n = sl_hand_n + 1u;
     SL_LOG("H %u %.0f\n", sl_clock, cents);
 }
@@ -428,6 +443,61 @@ static void sl_loop_step(uint32_t s)         /* the conductor, each sixteenth: t
     }
 }
 
+/* THE ARP (the ARP button and page, Flah 2026-11-25: "a page with four dedicated knobs ... arpeggiated chords on and off
+ * with the toggle of the arp button itself"; asked: the BAND'S CHORDS are arpeggiated). On, the chords part plays the
+ * chord it would have stabbed one note at a time, running through the bar: the keyboard player's voicing as the band
+ * leads it (sl_band.padv, a new one each bar), low to high, over OCTAVES, in a PATTERN, at a RATE, each note GATE of its
+ * slot long. The arp keeps its place across bars, so a pattern flows through the chord changes. Our own, not SLOOP's
+ * (that one runs on held keys only and drops the fine pitch a microtonal scale needs). */
+enum { SL_ARP_UP, SL_ARP_DOWN, SL_ARP_UPDOWN, SL_ARP_RANDOM, SL_ARP_NPAT };
+static const char *const SL_ARP_PAT_NAME[SL_ARP_NPAT] = {"up", "down", "up+down", "random"};
+#define SL_ARP_NRATE 5u
+static const struct { const char *name; uint8_t per_beat; } SL_ARP_RATE[SL_ARP_NRATE] = {
+    {"1/4", 1}, {"1/8", 2}, {"1/8 3", 3}, {"1/16", 4}, {"1/16 3", 6},
+};
+static uint8_t sl_arp_on, sl_arp_pat = SL_ARP_UPDOWN, sl_arp_rate = 1, sl_arp_oct = 2, sl_arp_gate = 60;   /* gate: % of its slot */
+static uint32_t sl_arp_i, sl_arp_seed = 0x2468ACE1u;
+/* the chords' fader while the arp plays, by rate (0.5 dB steps): one note at a time against the stabs' 3..5 at once, and the
+ * faster the louder. Measured (slimehost, the chords alone, 32 bars, gate 60%, 2 octaves): the stabs -26.75 LUFS; with these
+ * each rate lands within 0.3 of it */
+static const int8_t SL_ARP_TRIM[SL_ARP_NRATE] = {4, 2, 0, 0, -1};
+/* the tones it walks: the voicing, sorted, over the octaves */
+static int sl_arp_tones(double *t)
+{
+    int n = sl_band.npadv, i, j, k = 0;
+    double v[5];
+    if (n <= 0) return 0;
+    for (i = 0; i < n && i < 5; i++) v[i] = sl_band.padv[i];
+    for (i = 1; i < n; i++) for (j = i; j > 0 && v[j] < v[j - 1]; j--) { double x = v[j]; v[j] = v[j - 1]; v[j - 1] = x; }
+    for (j = 0; j < (int)sl_arp_oct; j++) for (i = 0; i < n; i++) t[k++] = v[i] + 1200.0 * j;
+    return k;
+}
+/* the arp's notes that fall in this 16th (step s of the bar): their place in the step as a nudge, so triplets land */
+static void sl_arp_step(uint32_t s, double step_ms)
+{
+    double t[15];
+    int n = sl_arp_tones(t);
+    uint32_t per = SL_ARP_RATE[sl_arp_rate % SL_ARP_NRATE].per_beat, q;
+    if (n <= 0) return;
+    /* the slots in this step: slot q of the bar starts at q * 4 / per steps */
+    for (q = (s * per + 3u) / 4u; q * 4u < (s + 1u) * per; q++) {
+        double at = (double)q * 4.0 / (double)per - (double)s;   /* 0..1 of this step */
+        double slot = 4.0 / (double)per * step_ms;
+        uint32_t len = 2u * (uint32_t)(n > 1 ? n - 1 : 1), i = sl_arp_i++, k;
+        int vel;
+        switch (sl_arp_pat % SL_ARP_NPAT) {
+        case SL_ARP_UP: k = i % (uint32_t)n; break;
+        case SL_ARP_DOWN: k = (uint32_t)n - 1u - i % (uint32_t)n; break;
+        case SL_ARP_UPDOWN: k = i % len; if (k >= (uint32_t)n) k = len - k; break;
+        default: sl_arp_seed = sl_arp_seed * 1664525u + 1013904223u; k = (sl_arp_seed >> 16) % (uint32_t)n; break;
+        }
+        vel = q % per == 0u ? 84 : 70;                     /* (the slot on a beat a little stronger) */
+        vel += (int)((sl_arp_seed >> 24) & 7u) - 3; sl_arp_seed = sl_arp_seed * 1664525u + 1013904223u;
+        sl_play_at(SL_TRK_COMP, sl_root, t[k], vel, sl_at(at * step_ms),
+                   sl_ms_to_block(slot * (double)sl_arp_gate / 100.0));
+        sl_stat.comp_notes++;
+    }
+}
 static void sl_band_step(double step_ms)
 {
     uint32_t s = sl_step % 16u;
@@ -469,7 +539,8 @@ static void sl_band_step(double step_ms)
                 sl_play_at(SL_TRK_BASS, sl_bass_root(), sl_bar.bass[i].cents, sl_bar.bass[i].vel, sl_at(sl_bar.bass[i].nudge), sl_ms_to_block(step_ms * sl_bar.bass[i].len * 0.95));
                 sl_stat.bass_notes++;
             }
-        for (i = 0; i < sl_bar.nc; i++)
+        if (sl_arp_on) sl_arp_step(s, step_ms);            /* (the arp: the chords one note at a time, instead of the stabs) */
+        else for (i = 0; i < sl_bar.nc; i++)
             if (sl_bar.comp[i].step == s) {
                 sl_play_at(SL_TRK_COMP, sl_root, sl_bar.comp[i].cents, sl_bar.comp[i].vel, sl_at(sl_bar.comp[i].nudge), sl_ms_to_block(step_ms * sl_bar.comp[i].len));
                 sl_stat.comp_notes++;
@@ -725,7 +796,7 @@ static void slime_levels(void)
     static const uint16_t DB_Q12[17] = {4096, 3866, 3649, 3444, 3251, 3069, 2896, 2734, 2580, 2436, 2299, 2170, 2048, 1933, 1825, 1722, 1626};   /* -0.5 dB steps */
     trk[SL_TRK_MEL].p[P_LEVEL] = (int16_t)clamp(SL_MEL_LEVEL + sl_mix[0], 0, 127);
     trk[SL_TRK_BASS].p[P_LEVEL] = (int16_t)clamp(SL_BASS_LEVEL + SL_KIT_BASS[k] + sl_mix[1], 0, 127);
-    trk[SL_TRK_COMP].p[P_LEVEL] = (int16_t)clamp(SL_COMP_LEVEL + sl_mix[2], 0, 127);
+    trk[SL_TRK_COMP].p[P_LEVEL] = (int16_t)clamp(SL_COMP_LEVEL + sl_mix[2] + (sl_arp_on ? SL_ARP_TRIM[sl_arp_rate % SL_ARP_NRATE] : 0), 0, 127);
     {   /* the drums' level is a linear gain: their fader steps as ~0.5 dB, up to +6 dB */
         int32_t g = sl_sd_on ? SL_SD_DRLVL * DB_Q12[SL_SD_KIT_DOWN[k]] / 4096 : SL_KIT_DRLVL[k], m = sl_mix[3];
         if (m > 0) g = g * (m >= 12 ? 8192 : 4096 + m * 341) / 4096;
@@ -983,7 +1054,9 @@ static volatile uint8_t sl_snd_req[3] = {0xFF, 0xFF, 0xFF};   /* a part's new so
 static volatile uint8_t sl_kit_req = 0xFF, sl_scale_req = 0xFF;
 static volatile int8_t sl_root_req;         /* the key moved by hand: semitones */
 static volatile int8_t sl_octave;           /* OCT- / OCT+: the keyboard's octave, -2..2 */
-static volatile uint8_t sl_walls = 6, sl_space, sl_kit, sl_scale, sl_slime = 1, sl_auto = 1;
+static volatile uint8_t sl_walls = 6, sl_space, sl_kit, sl_scale, sl_slime = 1;
+#define sl_auto 0u                          /* no auto-notes on the FM-1 (Flah 2026-11-25: "you don't need auto note on fm one
+                                             * version. People can just play in their notes"): the tank's notes are the hand's */
 static volatile uint8_t sl_pinned;          /* the key held where it is (the site's key pin): the slime stays, the journey stops */
 /* NOTES (the ENV page): a part's own envelope over its sound's (attack, decay, sustain, release, glide); 0: the sound's */
 static uint8_t sl_env_on[3], sl_env_v[3][5];

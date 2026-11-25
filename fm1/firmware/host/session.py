@@ -134,9 +134,11 @@ press(t, "SAVE"); mark(t, "midi: in, clock"); t += 900
 turn(t, 5, -1); mark(t, "clock out off"); t += 1000
 turn(t, 5, 1); mark(t, "clock out on"); t += 1000
 press(t, "HOME"); mark(t, "back to the tank"); t += 900
-# 10. auto-notes off and on, the slime off and on, a new shape
-press(t, "ARP"); mark(t, "auto-notes off"); t += 3000
-press(t, "ARP"); mark(t, "auto-notes on"); t += 1500
+# 10. the arp on (its page: a pattern, the rate) and off, the slime off and on, a new shape
+press(t, "ARP"); mark(t, "arp on"); t += 900
+turn(t, 2, 1); mark(t, "arp: random"); t += 900
+turn(t, 3, 2); mark(t, "arp rate 1/16"); t += 1800
+press(t, "ARP"); mark(t, "arp off"); t += 1500
 press(t, "LFO"); mark(t, "slime off"); t += 1500
 press(t, "LFO"); mark(t, "slime on"); t += 1500
 turn(t, 2, 1); mark(t, "walls +1 (a new shape)"); t += 6000
