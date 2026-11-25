@@ -144,20 +144,57 @@ int main(int argc, char **argv)
             }
             if (k == DRUM_USR) { printf("missing kit %s\n", SL_KIT_SOUND[i]); bad++; }
         }
-        printf("sounds %u bad %u\n", n, bad);
+        printf("sounds %u bad %u mel %u bass %u comp %u\n", n, bad, SL_NMEL, SL_NBASS, SL_NCOMP);   /* (check-host 5 loops over the counts) */
         return bad ? 1 : 0;
     }
-    if (argc >= 5 && !strcmp(argv[1], "note")) {        /* note ENGINE "PRESET" MIDI: held 0.5 s, 3 s rendered, mono f32 */
+    if (argc >= 4 && !strcmp(argv[1], "vnote")) {       /* vnote VOICE MIDI [VEL]: any DX7-layout voice (155 bytes, or a
+                                                         * single-voice SysEx, 163) on FM6, held 1 s, 3 s, mono f32: a
+                                                         * patch measured against another (soundprint.py) without a build */
+        static float buf[FS * 3];
+        uint8_t v[200];
+        uint32_t i, k, n;
+        FILE *f = fopen(argv[2], "rb");
+        int midi = atoi(argv[3]), vel = argc >= 5 ? atoi(argv[4]) : 100;
+        if (!f) { fprintf(stderr, "no file %s\n", argv[2]); return 2; }
+        n = (uint32_t)fread(v, 1, sizeof v, f); fclose(f);
+        if (!(n == FP_SIZE || (n == FP_SIZE + 8u && v[0] == 0xF0 && v[1] == 0x43))) { fprintf(stderr, "%u bytes: not a voice\n", n); return 2; }
+        setup(9, "TINE EP", 100);
+        trk[0].p[P_DLY] = 0; trk[0].p[P_REV] = 0; trk[0].p[P_CHOR] = 0;
+        for (i = 0; i < 64 && sl_busy(0); i++) preview_render();
+        for (i = 0; i < 8; i++) { fm6_poll(); preview_render(); }
+        memcpy(fm6_patch[0], n == FP_SIZE ? v : v + 6, FP_SIZE);
+        fm6_pgen[0]++;
+        for (i = 0; i < 4; i++) preview_render();
+        sl_note_on(0, midi, vel, 0);
+        for (i = 0; i < FS * 3; i += CTL) {
+            float *o;
+            if (i <= FS && i + CTL > FS) trk_note_off(&trk[0], (uint32_t)midi);   /* (let go at 1 s, the block it falls in: "i == FS / 2" never matched, a note was held all 3 s; notemeasure reads to 0.8 s) */
+            o = preview_render();
+            for (k = 0; k < CTL && i + k < FS * 3; k++) buf[i + k] = o[2 * k] + o[2 * k + 1];
+        }
+        fwrite(buf, sizeof buf, 1, stdout);
+        return 0;
+    }
+    if (argc >= 5 && !strcmp(argv[1], "note")) {        /* note ENGINE "PRESET" MIDI [VEL]: held 1 s, 3 s rendered, mono f32 */
         static float buf[FS * 3];
         uint32_t i, k;
         setup((uint32_t)atoi(argv[2]), argv[3], 100);
+        for (i = 0; i < 64 && sl_busy(0); i++) preview_render();   /* (the preset's fade first: it sets the values again) */
+        if (getenv("SL_PE")) {   /* a preset tried before it is written: "E0 .. E7 / A D S R / FENV" (slime_presets.py's order) */
+            int e[13], c = sscanf(getenv("SL_PE"), "%d %d %d %d %d %d %d %d / %d %d %d %d / %d", &e[0], &e[1], &e[2], &e[3],
+                                  &e[4], &e[5], &e[6], &e[7], &e[8], &e[9], &e[10], &e[11], &e[12]);
+            if (c != 13) { fprintf(stderr, "SL_PE: 13 numbers\n"); return 2; }
+            for (i = 0; i < 8u; i++) trk[0].p[P_E0 + i] = (int16_t)e[i];
+            trk[0].p[P_ATK] = (int16_t)e[8]; trk[0].p[P_DEC] = (int16_t)e[9]; trk[0].p[P_SUS] = (int16_t)e[10]; trk[0].p[P_REL] = (int16_t)e[11];
+            trk[0].p[P_ED_FLT] = (int16_t)e[12];
+        }
         trk[0].p[P_DLY] = 0; trk[0].p[P_REV] = 0; trk[0].p[P_CHOR] = 0;   /* the voice alone */
         for (i = 0; i < 64 && sl_busy(0); i++) preview_render();
         for (i = 0; i < 8; i++) { fm6_poll(); preview_render(); }        /* (an FM6 patch loads in the main loop) */
-        sl_note_on(0, atoi(argv[4]), 100, 0);
+        sl_note_on(0, atoi(argv[4]), argc >= 6 ? atoi(argv[5]) : 100, 0);
         for (i = 0; i < FS * 3; i += CTL) {
             float *o;
-            if (i == FS / 2) trk_note_off(&trk[0], (uint32_t)atoi(argv[4]));
+            if (i <= FS && i + CTL > FS) trk_note_off(&trk[0], (uint32_t)atoi(argv[4]));   /* (let go at 1 s, the block it falls in: "i == FS / 2" never matched, a note was held all 3 s; notemeasure reads to 0.8 s) */
             o = preview_render();
             for (k = 0; k < CTL && i + k < FS * 3; k++) buf[i + k] = o[2 * k] + o[2 * k + 1];
         }
@@ -323,6 +360,9 @@ int main(int argc, char **argv)
             if (getenv("SL_LOOPTEST")) loop_script(atoi(getenv("SL_LOOPTEST")));
             if (getenv("SL_HANDTEST")) hand_script(atoi(getenv("SL_HANDTEST")));
             slime_schedule(SL_AHEAD_BLOCKS);      /* the conductor, ahead; then the audio side, as on the device */
+            if (i % (CTL * 32u) == 0u)            /* the slime's muffle, 43 times a second (slime_conduct: 50) */
+                sl_slime_morph(!getenv("SL_NOSLIME"), getenv("SL_FILL") ? atof(getenv("SL_FILL")) : sh_goo_fill(&sl_tank.goo),
+                               i ? CTL * 32u * 1000u / FS : 0u);   /* (SL_FILL: the tank held at that fill, as dev-slimesound holds the site's) */
             slime_play_block();
             o = preview_render();
             for (k = 0; k < CTL; k++) { double m = biq_run(&kh, biq_run(&ks, (o[2 * k] + o[2 * k + 1]) * 0.5)), q = biq_run(&p2, biq_run(&p1, (o[2 * k] + o[2 * k + 1]) * 0.5)); ksum += m * m; psum += q * q; }

@@ -33,3 +33,4 @@ host/stucktest
 host/harmtest
 host/synctest
 host/minitest
+__pycache__/

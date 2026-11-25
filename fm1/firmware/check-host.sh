@@ -45,7 +45,7 @@ ok "$(t "$M - $D < 6")" "the mix check can tell: drums at the top of their level
 #    within 1.5 dB of the part's default, measured alone
 L="$("$B" soundcheck)"; ok "$(t "$(num "$L" bad) == 0")" "every panel sound exists in its engine ($L)"
 lu1() { num "$("$B" song "$OUT/lv.wav" 24 major 6 100 7 1 KALIMBA)" lufs; }
-for pv in "mel MELI 13" "bass BASSI 9" "comp COMPI 9"; do
+for pv in "mel MELI $(num "$L" mel)" "bass BASSI $(num "$L" bass)" "comp COMPI $(num "$L" comp)"; do   # (the lists' own lengths: 9 stood here after they grew)
   set -- $pv; ref=$(SL_ONLY=$1 lu1); worst=0; i=0
   while [ $i -lt $3 ]; do
     v=$(env SL_ONLY=$1 "SL_$2=$i" "$B" song "$OUT/lv.wav" 24 major 6 100 7 1 KALIMBA | tr ' ' '\n' | awk 'p{print;exit} $0=="lufs"{p=1}')
@@ -158,21 +158,37 @@ p0=$(num "$(SL_KIT=industrial SL_ONLY=drums SL_DRUMBUS=0 "$B" song "$OUT/g.wav" 
 p1=$(num "$(SL_NOPRES=1 SL_KIT=industrial SL_ONLY=drums "$B" song "$OUT/g.wav" 16 major 6 100 7 1 KALIMBA)" pres_db)
 ok "$(t "$p0 - $p1 < 4.5")" "the presence check can tell: the bus without its dip takes only $(awk "BEGIN{printf \"%.2f\", $p0 - $p1}") dB (industrial, the most glue)"
 
-# 8. our FM patches (slime_fm6.py) play in key: the note's own fundamental is its strongest partial, low, middle and high
-#    (at Chowning's full index the bell's 0.4x difference tone was: out of key), and every degree sounds within 6 cents
-#    of its wall (the tine's and the bass's detuned pairs beat around the note on purpose, as Yamaha's recipes do)
-for p in "SH TINE" "SH BELL" "SH HARP" "SH BASS"; do
-  parts=""
+# 8. our FM patches (slime_fm6.py) play in key: the strongest partial is a whole harmonic of the note, low, middle and
+#    high (at Chowning's full index the bell's 0.4x difference tone was not: out of key), the note's own fundamental is
+#    there once it settles (at most 10 dB under the loudest partial: a patch pitched an octave wrong has nothing there),
+#    nothing out of key louder than -25 dB under the loudest partial (the bell excepted: inharmonic on purpose),
+#    and every degree sounds within 6 cents of its wall, octaves apart allowed (the tine's and the bass's detuned pairs
+#    beat around the note on purpose, as Yamaha's recipes do). (2026-11-25: the strongest partial may be the 2nd: DX7
+#    E.PIANO 1 itself is 2.00x at C5, and BASS 1's pluck passes its fundamental through a null at ~200 ms, so the pitch
+#    tool reads DX BASS an octave up; the fundamental check is what catches a real octave error. FM_SAB=PRESET:FILE.155
+#    puts another voice in that preset's place: the sabotage)
+for p in "SH TINE" "SH BELL" "SH HARP" "SH BASS" "SMOOTH EP" "DX BASS"; do
+  parts=""; funds=""; unders=""; offks=""
   for n in 48 60 72; do
-    [ "$p" = "SH BASS" ] && n=$((n - 12))
-    "$B" note 9 "$p" $n > "$OUT/note.raw"
-    parts="$parts $(python3 "$HERE/host/notemeasure.py" "$OUT/note.raw" x $n | sed 's/.*strongest partial *//; s/x$//')"
+    case "$p" in *BASS) n=$((n - 12));; esac
+    if [ "${FM_SAB:-}" ] && [ "${FM_SAB%%:*}" = "$p" ]; then "$B" vnote "${FM_SAB#*:}" $n > "$OUT/note.raw"; else "$B" note 9 "$p" $n > "$OUT/note.raw"; fi
+    m="$(python3 "$HERE/host/notemeasure.py" "$OUT/note.raw" x $n)"
+    parts="$parts $(echo "$m" | sed 's/.*strongest partial *//; s/x$//')"
+    funds="$funds $(echo "$m" | sed 's/.*fundamental late *//; s/ dB.*//')"
+    unders="$unders $(echo "$m" | sed 's/.*octave under *//; s/ dB.*//')"
+    offks="$offks $(echo "$m" | sed 's/.*off key *//; s/ dB.*//')"
   done
-  off=$(echo $parts | tr ' ' '\n' | awk '{d=$1-1; if(d<0)d=-d; if(d>0.03)n++} END{print n+0}')
+  offkey=$(echo $offks | tr ' ' '
+' | awk '$1 > -25 {n++} END{print n+0}')   # (a partial out of key: a fifth at -12 in the sabotage)
+  [ "$p" = "SH BELL" ] && offkey=0   # (Chowning's 1:1.4 bell is inharmonic on purpose: -11 dB)
+  low=$(echo $unders | tr ' ' '\n' | awk '$1 > -25 {n++} END{print n+0}')   # (an octave low: its fundamental there)
+  off=$(echo $parts | tr ' ' '\n' | awk '{k=int($1+0.5); d=$1-k; if(d<0)d=-d; if(k<1 || d>0.03*k)n++} END{print n+0}')
+  nofund=$(echo $funds | tr ' ' '\n' | awk '$1 < -10 {n++} END{print n+0}')
   w=$(SL_PITCHDRY=1 "$B" pitch major 9 "$p" | tail -1 | awk '{print $2}')   # (dry: its own delay return was in the reading, 3.98 cents
                                                                           # on the harp, 6.10 once the delay ping-ponged; dry 0.72)
   [ "$p" = "SH BELL" ] && w=0   # (the pitch tool reads periods; an inharmonic bell has none: its partial check is the proof)
-  ok "$(t "$off == 0 && $w < 6 && $w > -6")" "[$p] in key: strongest partial at three octaves$parts (x the note), worst degree $w cents"
+  w=$(awk -v w="$w" 'BEGIN{a=(w<0?-w:w); a-=int(a/1200+0.5)*1200; print (w<0?-a:a)}')   # (octaves apart: the fundamental check)
+  ok "$(t "$off == 0 && $nofund == 0 && $low == 0 && $offkey == 0 && $w < 6 && $w > -6")" "[$p] in key: strongest partial at three octaves$parts (x the note), the fundamental$funds dB, an octave under$unders dB, off key$offks dB, worst degree $w cents"
 done
 
 for p in "edo31 1 KALIMBA" "edo19all 1 GLOCKEN" "edo24 2 SOFT KEYS" "major 0 SUB BASS"; do
@@ -206,6 +222,25 @@ r=$("$B" echo | awk '$1=="delay"{d=$2} $1=="echo"{n++; s[n]=$3; t[n]=$2; v[n]=($
   END{ok=n>=5; for(i=1;i<=n;i++){ if(s[i]!=(i%2?"L":"R")) ok=0; if(t[i]!=i*d) ok=0; if(i>1 && (v[i]/v[i-1]<0.45 || v[i]/v[i-1]>0.56)) ok=0 }
        printf "%d %d echoes, %s ... (each %.3f of the last)", ok, n, s[1] s[2] s[3] s[4], (n>1?v[2]/v[1]:0)}')
 ok "${r%% *}" "[delay] ping-pong: ${r#* }"
+
+# 15. the slime muffles the sound as the goo rises (slime.c sl_slime_morph, the site's masterFilt morph made gentler; Flah
+#     2026-11-25: "not too much and accurate to the visual"): the melody alone, the tank held empty and just under the
+#     burst (SL_FILL 0 / 0.88, as dev-slimesound holds the site's): over 4 kHz down at least 5 dB and at most 14 (the site
+#     takes its whole mix to 1.4 kHz), under 400 Hz within 1 dB (low-passed, not thinned), not louder (+0.3 LU at most).
+#     The chords too (the bass and the drums keep the groove: they must not move). The control: the slime off, a full tank
+#     changes nothing (within 1 dB): the muffle is the slime's.
+H="$HERE/host"
+for who in mel comp bass; do
+  SL_ONLY=$who SL_FILL=0 "$B" song "$OUT/e.wav" 16 major 6 100 7 1 KALIMBA > /dev/null
+  SL_ONLY=$who SL_FILL=0.88 "$B" song "$OUT/f.wav" 16 major 6 100 7 1 KALIMBA > /dev/null
+  set -- $(python3 "$H/muffle.py" "$OUT/e.wav" "$OUT/f.wav" | awk '{print $4, $9, $17}')
+  if [ "$who" = bass ]; then ok "$(t "$1 > -1 && $1 < 1 && $2 > -1 && $2 < 1")" "[slime muffle] the bass keeps its sound at a full tank (over 4 kHz $1 dB, under 400 Hz $2 dB)"
+  else ok "$(t "$1 <= -5 && $1 >= -14 && $2 > -1 && $2 < 1 && $3 <= 0.3")" "[slime muffle, $who] a full tank: over 4 kHz $1 dB, under 400 Hz $2 dB, level $3 LU"; fi
+done
+SL_NOSLIME=1 SL_ONLY=mel SL_FILL=0.88 "$B" song "$OUT/f.wav" 16 major 6 100 7 1 KALIMBA > /dev/null
+SL_NOSLIME=1 SL_ONLY=mel SL_FILL=0 "$B" song "$OUT/e.wav" 16 major 6 100 7 1 KALIMBA > /dev/null
+set -- $(python3 "$H/muffle.py" "$OUT/e.wav" "$OUT/f.wav" | awk '{print $4}')
+ok "$(t "$1 > -1 && $1 < 1")" "[slime muffle] the slime off: a full tank leaves the melody as it is (over 4 kHz $1 dB)"
 
 echo
 [ "$FAILS" = 0 ] && echo "fm1 bridge: clean" || { echo "$FAILS FAILURE(S)"; exit 1; }

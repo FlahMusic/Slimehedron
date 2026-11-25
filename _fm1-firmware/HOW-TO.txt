@@ -90,7 +90,13 @@ midi: in, clock        SAVE x2   in (channel)  sync           notes (out)     cl
         open (it stops there on the way through). The delay is stereo: its echoes go left, right, left, right
   sound: each sound comes with its own envelope; turning one here makes it yours (a new sound starts from its own).
         An FM sound keeps its own envelope (its operators are its envelope). FM sounds (SH): tine, bell, harp, bass,
-        written from Yamaha's FM 101 recipes and Chowning's bell, not copied from any synth's factory bank
+        written from Yamaha's FM 101 recipes and Chowning's bell, not copied from any synth's factory bank.
+        At power-on the chords are SMOOTH EP (a soft DX7-style electric piano, through the chorus) and the bass BIG
+        MONO (an 80s mono-synth pluck). Also new: DX BASS (the 80s FM bass), POLY BRASS and DREAM STAB (80s synth
+        chords). The DX ones are shaped by measurement to sound like the famous DX7 E.PIANO 1 (made softer) and BASS 1,
+        with our own settings: no factory data
+  slime: with the slime on (LFO), the melody and the chords get softer and darker as the goo fills the tank you see,
+        and the melody a little roomier; a burst opens them again as the goo drains. Gentle: about half the site's
   chords: up to 8 chords that the band loops instead of its own (how many = 0 gives the harmony back to the slime).
         A key sets the chord picked to its note and moves on: play the roots to enter a progression. Types: major,
         min, 7, maj7, min7, dim, aug, sus2, sus4, 6, min6, min7b5, dim7, 9, maj9, min9, 7sus4, add9. Famous ones: the

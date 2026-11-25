@@ -597,7 +597,10 @@ static void slime_play_block(void)
  * drums sat 16.4 under (barely there), march / chip 11.3, industrial 7.1; jazz's sparse bass 10.6 (the rule: <= 10). */
 static const uint8_t SL_KIT_DRLVL[11] = {28, 28, 26, 28, 92, 31, 31, 38, 39, 28, 24};   /* (2026-11-16, humanize on: jazz's feel took its drums to 14.7 under, bossa's to 11.1;
                                              * 2026-11-18, the drum bus: bossa 29 -> 28, 8.8 LU under, the soft kits' rule is 9) */
-static const int8_t SL_KIT_BASS[11] = {0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0};
+static const int8_t SL_KIT_BASS[11] = {0, 0, -3, 0, 3, 0, 0, 0, 0, -4, 0};   /* (2026-11-25: disco and beep under the rules since
+                                             * the site's drums came, and BIG MONO's pluck sits louder in beep's busy line) */
+/* the site's drums: each kit down this many half dB on the FM-1 (disco's drums were 5.9 LU under the melody: the rule is 6) */
+static const uint8_t SL_SD_KIT_DOWN[11] = {0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0};
 /* the site's drums (slime_drums.c): one level for every kit, the pop kit's; each kit's own is the site's KIT_DB after the glue */
 #ifndef SL_SD_DRLVL
 #define SL_SD_DRLVL 79
@@ -718,7 +721,7 @@ static void slime_levels(void)
     trk[SL_TRK_BASS].p[P_LEVEL] = (int16_t)clamp(SL_BASS_LEVEL + SL_KIT_BASS[k] + sl_mix[1], 0, 127);
     trk[SL_TRK_COMP].p[P_LEVEL] = (int16_t)clamp(SL_COMP_LEVEL + sl_mix[2], 0, 127);
     {   /* the drums' level is a linear gain: their fader steps as ~0.5 dB, up to +6 dB */
-        int32_t g = sl_sd_on ? SL_SD_DRLVL : SL_KIT_DRLVL[k], m = sl_mix[3];
+        int32_t g = sl_sd_on ? SL_SD_DRLVL * DB_Q12[SL_SD_KIT_DOWN[k]] / 4096 : SL_KIT_DRLVL[k], m = sl_mix[3];
         if (m > 0) g = g * (m >= 12 ? 8192 : 4096 + m * 341) / 4096;
         else if (m < 0) { int32_t q = 4096; while (m < -16) { q = q * 1626 / 4096; m += 16; } g = g * (q * DB_Q12[-m] / 4096) / 4096; }
         song.g[G_DRLVL] = (int16_t)clamp(g, 0, 127);
@@ -734,8 +737,8 @@ static void slime_levels(void)
 static void sl_part_sound(uint32_t part, uint32_t i);
 static void slime_band_sounds(void)
 {
-    sl_part_sound(SL_TRK_BASS, 0);                         /* MONO BASS */
-    sl_part_sound(SL_TRK_COMP, 0);                         /* RHODES */
+    sl_part_sound(SL_TRK_BASS, 0);                         /* BIG MONO */
+    sl_part_sound(SL_TRK_COMP, 0);                         /* SMOOTH EP */
 }
 
 /* ------------------------------------------------------------------ the parts: sounds, mix, fx ---
@@ -748,20 +751,24 @@ enum { SL_P_MEL, SL_P_BASS, SL_P_COMP, SL_P_DRUMS, SL_NPARTS };
 static const char *const SL_PART_NAME[SL_NPARTS] = {"melody", "bass", "chords", "drums"};
 typedef struct { uint8_t eng; int8_t trim; const char *name; } sl_snd;
 #define SL_NMEL 13u
-#define SL_NBASS 9u
-#define SL_NCOMP 9u
+#define SL_NBASS 11u
+#define SL_NCOMP 10u
 static const sl_snd SL_MEL_SND[SL_NMEL] = {
     {1, 0, "KALIMBA"}, {1, 0, "MARIMBA"}, {1, 0, "GLOCKEN"}, {1, 1, "MUSIC BOX"}, {1, 1, "CELESTA"}, {1, -1, "HARP"},
     {1, 0, "FM PLUCK"}, {10, -2, "THUMB PNO"}, {2, -21, "SOFT KEYS"}, {3, 8, "GAME LEAD"},
     {9, -10, "SH TINE"}, {9, -2, "SH BELL"}, {9, 9, "SH HARP"},          /* FM6: slime_fm6.py */
 };
+/* (2026-11-25) the first of each list is the part's sound at power-on: the bass a mono-synth pluck (BIG MONO), the chords
+ * a smooth DX piano (SMOOTH EP, Flah: "the e piano sound of dx7, nice and smooth and chill"); the 80s synths after them
+ * (DX BASS, POLY BRASS, DREAM STAB: patch_sloop.py, slime_fm6.py). SMOOTH EP takes SH TINE's place in the chords.
+ * CHIP CHORD is gone (Flah 2026-11-25: "sounds fucking horrendous ... like a bunch of white noise on the lower notes"). */
 static const sl_snd SL_BASS_SND[SL_NBASS] = {
-    {0, 0, "MONO BASS"}, {0, 1, "SUB BASS"}, {0, 0, "FUNK BASS"}, {0, -2, "SAW BASS"}, {1, -2, "FM BASS"}, {1, 4, "BASS GTR"},
-    {2, -8, "CZ BASS"}, {3, 0, "GB BASS"}, {9, 28, "SH BASS"},
+    {0, 15, "BIG MONO"}, {9, 20, "DX BASS"}, {0, 0, "MONO BASS"}, {0, 1, "SUB BASS"}, {0, 0, "FUNK BASS"}, {0, -2, "SAW BASS"},
+    {1, -2, "FM BASS"}, {1, 4, "BASS GTR"}, {2, -8, "CZ BASS"}, {3, 0, "GB BASS"}, {9, 28, "SH BASS"},
 };
 static const sl_snd SL_COMP_SND[SL_NCOMP] = {
-    {1, 0, "RHODES"}, {1, 5, "M1 PIANO"}, {1, 8, "WURLI"}, {1, 7, "DX RHODES"}, {2, -10, "SOFT KEYS"}, {6, 3, "80S POLY"},
-    {1, 4, "AFRO KEYS"}, {3, 8, "CHIP CHORD"}, {9, 8, "SH TINE"},
+    {9, 17, "SMOOTH EP"}, {1, 0, "RHODES"}, {1, 7, "DX RHODES"}, {1, 8, "WURLI"}, {1, 5, "M1 PIANO"}, {0, 12, "POLY BRASS"},
+    {0, 16, "DREAM STAB"}, {6, 3, "80S POLY"}, {2, -10, "SOFT KEYS"}, {1, 4, "AFRO KEYS"},
 };
 static uint8_t sl_snd_of[3];                /* each synth part's sound, an index into its list */
 static const sl_snd *sl_snd_entry(uint32_t part, uint32_t i)
@@ -821,6 +828,46 @@ static void sl_insert_of(uint32_t ch, uint32_t a, int16_t *p)
         p[P_IA] = (int16_t)a; p[P_IB] = 96; p[P_IC] = (int16_t)(96 - a / 12); p[P_IMIX] = 127;   /* (a / 5 took the drums 6.6 dB down on fuzz) */
     }
 }
+/* THE SLIME MUFFLES THE SOUND (the site's masterFilt morph, 2026-11-21, gentler; Flah 2026-11-25: the slime's
+ * modulation "not too much and accurate to the visual"). As the goo you see fills the tank (sh_goo_fill, the same
+ * coverage the screen draws), the melody and the chords close a low-pass with no resonance, open at an empty tank,
+ * ~3 kHz just under the burst (the site closes its whole mix to 1.4 kHz), and the melody's room send blooms a little:
+ * plinky to harmonious. The bass and the drums keep the groove. The site's curve: (fill / 0.9) ^ 1.5, so a third-full
+ * tank is barely touched; it follows the fill with the site's 0.6 s lag, so a burst opens it again as the goo drains.
+ * Only while the slime is on (it is the slime's). A person's own FILTER wins where it is darker; a high-pass stays. */
+#define SL_MUFFLE 24                        /* P_TFLT at a full tank: cut index 127 - 24 x 1.41 = 93, 30 x 533^(93/127) = 2.9 kHz */
+#define SL_BLOOM 10                         /* the melody's reverb send, more at a full tank (of 127) */
+static float sl_muf;                        /* the slime's muffle now, 0..1 (smoothed) */
+static int8_t sl_muf_v;                     /* its low-pass on the knob's scale: 0 .. -SL_MUFFLE */
+static uint8_t sl_bloom;
+static int8_t sl_filt_of(uint32_t part, int8_t own)
+{
+    if (part != SL_P_MEL && part != SL_P_COMP) return own;
+    return own > 0 ? own : own < sl_muf_v ? own : sl_muf_v;
+}
+/* the slime's share on a synth part's filter and reverb send, over the person's own (sl_fxs) */
+static void sl_morph_put(uint32_t part)
+{
+    const sl_fx *f = &sl_fxs[part % SL_NPARTS];
+    if (part != SL_P_MEL && part != SL_P_COMP) return;
+    int r = f->space + (part == SL_P_MEL ? sl_bloom : 0);
+    trk[part].p[P_TFLT] = sl_filt_of(part, f->filt);
+    trk[part].p[P_REV] = (int16_t)(r > 127 ? 127 : r);
+}
+/* once a conductor pass (or a host block): on = the slime on and playing, fill the goo's coverage, dt the ms since */
+static void sl_slime_morph(int on, double fill, uint32_t dt)
+{
+    float m = on ? (float)(fill / 0.9) : 0.0f, w;
+    int v;
+    m = m < 0.0f ? 0.0f : m > 1.0f ? 1.0f : m;
+    sl_muf += (m - sl_muf) * ((float)dt / (600.0f + (float)dt));   /* the site's setTargetAtTime(.., 0.6) */
+    v = -(int)((float)SL_MUFFLE * sl_muf * sqrtf(sl_muf) + 0.5f);
+    w = sl_muf * sl_muf;                                           /* the site's wash: a square taper */
+    if (v != sl_muf_v || (uint8_t)(w * SL_BLOOM + 0.5f) != sl_bloom) {
+        sl_muf_v = (int8_t)v; sl_bloom = (uint8_t)(w * SL_BLOOM + 0.5f);
+        sl_morph_put(SL_P_MEL); sl_morph_put(SL_P_COMP);
+    }
+}
 /* a part's fx onto SLOOP's parameters */
 static void sl_fx_apply(uint32_t part)
 {
@@ -835,6 +882,7 @@ static void sl_fx_apply(uint32_t part)
         song.g[G_DRREV] = f->space;
     } else {
         t->p[P_DIST] = f->drive; t->p[P_DLY] = f->echo; t->p[P_REV] = f->space;
+        sl_morph_put(part);
     }
 }
 /* the part's fx as they stand on the track (the sound's own sends, after a sound loads with fx preset 0) */
@@ -857,6 +905,7 @@ static void sl_fx_preset(uint32_t part, uint32_t pi)
                for (uint32_t i = 0; i < 4u; i++) t->p[P_DIST + i] = (int16_t)(pr->fx[i] ? pr->fx[i] - 1 : FX_DEF[i]);
                t->p[P_TFLT] = 0; t->p[P_ITYPE] = 0; }
         sl_fx_read(part);
+        sl_morph_put(part);                                /* (the slime's share on top of the sound's own) */
         return;
     }
     sl_fxs[part % SL_NPARTS] = SL_FXP[pi].fx;
@@ -869,7 +918,7 @@ static void sl_part_sound(uint32_t part, uint32_t i)
     sl_snd_of[part] = (uint8_t)(i % sl_snd_count(part));
     sl_sound_on(part, s->eng, s->name);
     trk[part].p[P_ED_FX] = (int16_t)(trk[part].p[P_ED_FX] + s->trim);
-    if (sl_fxp[part] == 0u) sl_fx_read(part);
+    if (sl_fxp[part] == 0u) { sl_fx_read(part); sl_morph_put(part); }
     else sl_fx_apply(part);
     slime_levels();                                        /* (SLOOP's preset loader put the level back to its default) */
 }
@@ -1048,15 +1097,16 @@ static void sl_midi_in(void)
  * C major 7 (C2 under C3 G3 E4 B4: open, the third and seventh up high) with the melody ringing E6, B6 and the 9th, D7,
  * over it as the name comes up. ms: after the splash starts (slime_ui.c's timeline: lands 380, headphones on 900, the
  * synth in his hands 1100, twinkle 1160.., the chord 2100). On the band's own sounds, so it is in the mix and under the
- * limiter like any note. A drum entry (SL_TRK_DRUM) plays the site's kit. */
+ * limiter like any note. A drum entry (SL_TRK_DRUM) plays the site's kit. (2026-11-25: the chord lets go 200 ms sooner: SMOOTH
+ * EP and BIG MONO ring longer than RHODES and MONO BASS did, and their tail must be gone by 4.4 s: boot-check 4) */
 typedef struct { uint16_t ms; uint8_t trk, note, vel; uint16_t hold; } sl_jn;
 static const sl_jn SL_JINGLE[] = {
     {380, SL_TRK_BASS, 36, 70, 120}, {900, SL_TRK_DRUM, 42, 70, 0}, {1100, SL_TRK_DRUM, 37, 72, 0},
     {1160, SL_TRK_MEL, 79, 82, 150}, {1260, SL_TRK_MEL, 84, 84, 150}, {1360, SL_TRK_MEL, 88, 86, 150}, {1460, SL_TRK_MEL, 91, 88, 150},
     {1560, SL_TRK_MEL, 95, 92, 150}, {1660, SL_TRK_MEL, 93, 86, 150}, {1760, SL_TRK_MEL, 91, 84, 150}, {1860, SL_TRK_MEL, 88, 82, 150},
     {1960, SL_TRK_MEL, 86, 84, 150},
-    {2100, SL_TRK_BASS, 36, 100, 1400}, {2100, SL_TRK_COMP, 48, 82, 1500}, {2100, SL_TRK_COMP, 55, 80, 1500},
-    {2100, SL_TRK_COMP, 64, 80, 1500}, {2100, SL_TRK_COMP, 71, 80, 1500}, {2100, SL_TRK_MEL, 88, 86, 900},
+    {2100, SL_TRK_BASS, 36, 100, 1200}, {2100, SL_TRK_COMP, 48, 82, 1300}, {2100, SL_TRK_COMP, 55, 80, 1300},
+    {2100, SL_TRK_COMP, 64, 80, 1300}, {2100, SL_TRK_COMP, 71, 80, 1300}, {2100, SL_TRK_MEL, 88, 86, 900},
     {2250, SL_TRK_MEL, 95, 78, 1000}, {2450, SL_TRK_MEL, 98, 64, 900},
 };
 #define SL_NJINGLE (sizeof SL_JINGLE / sizeof SL_JINGLE[0])
@@ -1174,6 +1224,13 @@ static void slime_conduct(void)
     if (!sl_run) {                                         /* stopped: a new shape (walls, portals, scale) shows at once */
         if (sl_reform_at_bar && sl_reform_fn) { sl_reform_at_bar = 0; sl_reform_fn(); }
         return;
+    }
+    {   /* the slime muffles the sound as the goo rises (sl_slime_morph) */
+        static uint32_t last;
+        if (fm1_ms - last >= 20u) {                        /* (50 a second: the lag is 600 ms) */
+            sl_slime_morph(sl_slime, sh_goo_fill(&sl_tank.goo), last ? fm1_ms - last : 0u);
+            last = fm1_ms;
+        }
     }
     bars0 = sl_stat.bars;
     slime_schedule(SL_AHEAD_BLOCKS);

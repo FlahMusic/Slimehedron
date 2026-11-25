@@ -525,6 +525,71 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
         tank) the tank's physics cost as much as its drawing (poll ~298k ticks a frame); beat lock had gone every tick.
         Back to every other tick at gain 0.42 (0.5 there: stucktest 7 bursts): synctest 88.3% on a grid line (was 89-90),
         97% in step; stucktest 0 stuck, 1 burst, 0 outside. session.sh: worst 5 s window 25.9 fps (was 23.0), worst audio half 66%, 0 late, slowest frame 89 ms. NOT MET: 30.
+    FM-1 SOUNDS PASS: 80S PRESETS, A DX PIANO FOR THE CHORDS, THE SLIME'S MUFFLE, THE MIX (2026-11-25). Flah: "do a pass
+      on fm1 on our preset sounds ... pull from popular dexed presets ... synthy chords and synth bass sounds to sound
+      spectacular, and make the default sound for chords the e piano sound of dx7, nice and smooth and chill. be mindful
+      of balance of audio defaults too and the slime modulation not being too much and accurate to the visual".
+      Research: _docs/research/2026-11-25-fm1-famous-sounds.md (structure of E.PIANO 1, BASS 1, BRASS 1, the analog
+      recipes, the Juno chorus, song attributions marked verified / folklore, licensing).
+      - NO FACTORY DATA. Yamaha's rights notice forbids "Copying or distributing ... any Programmed Sounds"; Dexed ships
+        none (its bank is Dexed_01 + SynprezFM), MiniDexed does. The research doc keeps only structure. The factory
+        banks were downloaded to a scratch folder and used ONLY as references to measure against, never committed.
+      - THE METHOD (new tools): slimehost vnote FILE.155 MIDI [VEL] renders any DX7-layout voice on FM6; host/
+        soundprint.py prints a note as third-octave bands at eight moments (each normalised: timbre, not level) and the
+        RMS distance between two notes (0 the same; ~10 dB another velocity; 13+ another instrument). A coordinate-
+        descent fit (scratch, not in the repo) moves OUR patch's envelope / level numbers towards a target sound over
+        3 notes x 3 velocities, with a GUARD: any operator within 3 of the factory one in every rate, level, output and
+        velocity costs a penalty. The first bass fit, started from numbers written after reading the decoded table,
+        rebuilt BASS 1's OP4 almost exactly: thrown away and redone from SH BASS's envelopes.
+      - SMOOTH EP (FM6 slot F13, the chords' default): E.PIANO 1's structure on SH TINE's numbers, fitted to a SOFTER
+        E.PIANO 1 (tine 6 dB down, less velocity, feedback 4: Yamaha's own E.PIANO 3 / 4 soften it so). Held-out notes
+        0.8..3.1 dB from it (E.PIANO 1 itself 4.5..6; RHODES, the old default, 13.6). Through the chorus (send 40).
+        Its carriers 6 steps under the fit: at full output SLOOP's DRIVE (before any trim) took "crunch" 9.3 dB down.
+      - DX BASS (F14): BASS 1's structure (alg 16, 0.5 carrier, 5.00 / 9.00 plucks, fb 7, key sync), an octave up so it
+        sounds at the band's note, fitted to BASS 1 re-voiced (fuller body, softer bark): 1.2..3.0 dB on the band's
+        notes. Like BASS 1 its fundamental passes through a null at ~200 ms as the plucks decay (the target does too).
+      - Analog (patch_sloop.py, after SLOOP's ANALOG presets): BIG MONO (the bass's default; "Thriller" recipes: the top
+        falls 10 dB in 150 ms, MONO BASS had no sweep), POLY BRASS ("Jump" OB-Xa recipe), DREAM STAB (Juno-style stab,
+        chorus 80). SLOOP's one envelope drives the amp AND the filter: a pluck is the sustain's distance under the peak.
+      - LISTS (slime.c): chords SMOOTH EP, RHODES, DX RHODES, WURLI, M1 PIANO, POLY BRASS, DREAM STAB, 80S POLY, SOFT KEYS,
+        AFRO KEYS (SH TINE left the chords: SMOOTH EP is it, softer; CHIP CHORD gone); bass BIG MONO, DX BASS, then the old
+        nine. A saved session's index 0 becomes the new default; other indexes moved by one or two.
+      - LEVELS: each new sound trimmed to the old default's loudness (within 0.25 LU). levels.sh had been failing disco
+        (drums 5.9 under, band 0.6) and beep (band 0.9) since the site's drums came (11-20; nobody reran it): disco's
+        site drums 1 dB down (SL_SD_KIT_DOWN), the bass -3 / -4 fader steps on disco / beep. All 11 pass.
+      - THE SLIME'S MUFFLE (slime.c sl_slime_morph): the FM-1 had no slime-driven sound at all. Now, slime on, the goo's
+        coverage (sh_goo_fill, what the screen draws) closes the melody's and the chords' track filters, ~2.9 kHz just
+        under the burst, curve (fill/0.9)^1.5, the site's 0.6 s lag (a burst reopens it as the goo drains), and blooms
+        the melody's reverb send by up to 10. The person's own darker FILTER wins; a high-pass stays. Bass / drums untouched.
+        About half the site's (whose whole mix closes to 1.4 kHz).
+      - CHECKS (check-host.sh): 8 rebuilt: the strongest partial a WHOLE harmonic (E.PIANO 1 itself is 2.00x at C5), the
+        fundamental present late (> -10 dB), nothing an octave under (< -25), nothing off key (< -25; the bell exempt),
+        pitch within 6 cents modulo octaves; notemeasure.py at 32768 points (at 8192 a bin was wider than 3% of a C3).
+        Sabotaged (FM_SAB=PRESET:FILE.155): DX BASS an octave up, an octave down, SMOOTH EP's carrier a fifth out: each
+        red. 15 new: the muffle (melody: over 4 kHz -8.4 dB, under 400 Hz -0.1, level -0.2 LU; chords -9.9; the bass
+        untouched; the control: slime off, a full tank changes nothing). 5 now loops over the lists' real lengths (it
+        said 9 after they grew). 6 caught the crunch problem above.
+      - CHIP CHORD removed (Flah's test of the 10:40 build: "like a bunch of white noise on the lower notes").
+      - THE BENCH held every note 3 s: slimehost note's "i == FS / 2" never matched (FS / 2 is no multiple of CTL). Notes
+        now let go at 1 s (notemeasure reads to 0.8 s). Real releases: SMOOTH EP -60 dB 400 ms after (E.PIANO 1 450).
+      - The boot jingle's chord lets go 200 ms sooner: on the new sounds its tail was still 146 at 4.4 s (boot-check 4: <100).
+      - DEVICE (fm1-emu strict, 40 s from PLAY, default): worst audio half 73% (54% with RHODES: the FM6 chords), worst
+        5 s window 43.9 fps (54.9), 0 late notes, the boot's one miss as always. session.sh: worst audio half 72% (66),
+        0 late, BUT worst 5 s window 17.7 fps (25.9): the FM6 chords cost screen time in the heaviest stretch (6
+        operators a chord note). Not fixed this pass: next, with the polyhedra (they need the frame budget too).
+        boot-check 13/13 after the jingle fix.
+      - NEXT (Flah's notes on the 10:40 build, 2026-11-25; decided in one round): the goo looks like "a bunch of balls",
+        not one slime (density, roundness); WALL HP: a wall breaks after so many hits (12 walls 4, hexagon 8, square 12,
+        triangle 16), opens 2 BARS, notes that go through fall out and are gone, then it heals; the drums feel rigid
+        (the site's swing not heard) and the DRUMS page "feel" does nothing audible: make it SWING; "hat" label cut
+        off (show "hi hat"); congas bad, drum tune below -2 "completely out of hand" (fix or cap at -2; +12 fine);
+        portals far too often; ARP = a page (pattern, rate, octaves, gate), the ARP button toggles the BAND'S CHORDS
+        arpeggiated; NO AUTO-NOTES on the FM-1 at all (it has keys); the top line shows key, scale and the chord now;
+        the chord follows the hand: the site's all-notes logic over the last 2 bars, the lowest note of the last 2
+        bars as the fallback when too few notes; TRUE POLYHEDRA (cube, octahedron, orbs, 3D bounces), not the prism's
+        "hamster wheel"; the scales easy to find (all 52 are there: modes, phrygian + phrygian dominant, Japanese...).
+      - NOT CHECKED BY A MACHINE: how any of it sounds (the fit matches spectra to a reference, not taste); the FM-1
+        speaker with BIG MONO's low end; whether the muffle reads as "the slime" to an ear.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
     _docs/research/2026-11-02-tank-perfection.md. Built + measured: 3D goo drops PR3=10 (full-tank tick ~6.5 -> ~3.3 ms
     on Flah's laptop), MODS wobble 15 Hz, droplets slime within ~3 s (no clutter), tumble capped at 45 deg/s, the auto
@@ -1489,7 +1554,10 @@ intuitiveness and polish to be focused on now ... dont rush and make sure these 
 8. GIT STATE AS OF THIS WRITING
 ================================================================
 
-origin/main may be behind by up to 14 commits. Flah pushes / uploads.
+origin/main may be behind by up to 15 commits. Flah pushes / uploads.
+
+  (2026-11-25)  fm1: 80s sounds (SMOOTH EP on the chords, BIG MONO on the bass, DX BASS, POLY BRASS, DREAM STAB, no
+                CHIP CHORD), the slime's muffle, disco / beep levels, check-host 8 / 15
 
   (2026-11-25)  site: the page slimes squash on their feet (sw v175); tests: the sweep's reds sorted
   (2026-11-24)  site: a hand's note on time (sw v173); the worm answers a tap (v172); no MIDI prompt on a first tap (v171);

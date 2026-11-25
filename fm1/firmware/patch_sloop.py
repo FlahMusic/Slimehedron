@@ -62,13 +62,29 @@ start = s.index("PATCHES = [")
 end = s.index("\n]\n", start)
 g.write_text(s[:end] + "\n" + FM6 + s[end:], encoding="utf-8")
 sub("firmware/src/eng_fm6.c", '{"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", ',
-    '{"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", ')
+    '{"F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12", "F13", "F14", ')
 sub("firmware/src/eng_fm6.c", '    {"NYLON PICK", {0, 0, 0, 0, 0, 0, 0, 7}, {0, 0, 127, 0}, 0, 0, FX(0, 20, 35, 30)},\n',
     '    {"NYLON PICK", {0, 0, 0, 0, 0, 0, 0, 7}, {0, 0, 127, 0}, 0, 0, FX(0, 20, 35, 30)},\n'
     '    {"SH TINE", {0, 0, 0, 0, 0, 0, 0, 8}, {0, 0, 127, 0}, 0, 0, FX(0, 30, 20, 35)},    /* slimehedron: slime_fm6.py */\n'
     '    {"SH BASS", {0, 0, 0, 0, 0, 0, 0, 9}, {0, 0, 127, 0}, 0, 1, FX(0, 0, 0, 10)},\n'
     '    {"SH HARP", {0, 0, 0, 0, 0, 0, 0, 10}, {0, 0, 127, 0}, 0, 0, FX(0, 10, 20, 40)},\n'
-    '    {"SH BELL", {0, 0, 0, 0, 0, 0, 0, 11}, {0, 0, 127, 0}, 0, 0, FX(0, 10, 25, 60)},\n')
+    '    {"SH BELL", {0, 0, 0, 0, 0, 0, 0, 11}, {0, 0, 127, 0}, 0, 0, FX(0, 10, 25, 60)},\n'
+    '    {"SMOOTH EP", {0, 0, 0, 0, 0, 0, 0, 12}, {0, 0, 127, 0}, 0, 0, FX(0, 40, 18, 34)},   /* the chords: through the chorus */\n'
+    '    {"DX BASS", {0, 0, 0, 0, 0, 0, 0, 13}, {0, 0, 127, 0}, 0, 1, FX(0, 0, 0, 8)},\n')
+# Analog sounds of our own (2026-11-25; recipes: _docs/research/2026-11-25-fm1-famous-sounds.md 3, 4.2, 4.3), after SLOOP's:
+#   BIG MONO    the 80s mono-synth bass pluck (the "Thriller" recipes: saws a few cents apart, the cutoff low, resonance
+#               and envelope about half, a short decay). SLOOP's one envelope moves the amplitude and the filter together,
+#               so the pluck is the sustain's distance under the peak: measured, the top (over 500 Hz) falls 10 dB in
+#               150 ms while the level drops 2 (MONO BASS, as it was: no sweep at all)
+#   POLY BRASS  the OB-Xa "Jump" recipe (MusicRadar): two saws +-5 cents, cutoff half, resonance 42%, the envelope 83%
+#               onto the filter, a short attack, sustain 76%, release 19%
+#   DREAM STAB  a Juno-style chord stab ("Take On Me" was a Juno-60, SOS): two saws a little apart, the filter fairly
+#               open, a quick decay to a held body, deep into the chorus (SLOOP's bus: 0.41 Hz; the Juno's mode I 0.51)
+sub("firmware/src/eng_analog.c", '    {"SINE PAD", {3, 10, 64, 4, 90, 0, 0, 32}, {80, 90, 118, 90}, 0, 0, FX(0, 60, 20, 65)},\n',
+    '    {"SINE PAD", {3, 10, 64, 4, 90, 0, 0, 32}, {80, 90, 118, 90}, 0, 0, FX(0, 60, 20, 65)},\n'
+    '    {"BIG MONO", {0, 3, 50, 0, 20, 45, 40, 64}, {0, 66, 60, 20}, 63, 1, FX(0, 0, 0, 4), XP(P_TRANS + 1, -24)},   /* slimehedron: patch_sloop.py */\n'
+    '    {"POLY BRASS", {0, 10, 64, 0, 64, 53, 10, 64}, {4, 70, 97, 24}, 53, 0, FX(0, 20, 18, 30)},\n'
+    '    {"DREAM STAB", {0, 14, 64, 0, 76, 20, 0, 64}, {0, 68, 70, 44}, 30, 0, FX(0, 80, 22, 40)},\n')
 # SLOOP's own autosave of its working project would write the flash behind our back (it never knows we are playing:
 # its transport stays stopped); Slimehedron keeps its own session (slime_ui.c, SAVE)
 sub("firmware/src/main.c", "        autosave_tick();                                /* the working project into flash, when quiet */",
@@ -130,4 +146,4 @@ sub("firmware/src/fx.c", """        x = dly_buf[(fx.dly_w - dl) & (DLY_LEN - 1u)
         yl += x;
         yr += x;
         }""")
-print("patch_sloop: 24 changes applied")
+print("patch_sloop: 25 changes applied")
