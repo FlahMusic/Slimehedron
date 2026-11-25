@@ -616,6 +616,22 @@ the device bridge shell is Linux and cannot see the Windows Rust install.
         the site's solidSub bounce ported (3D planes), its drawing in bands, the goo inside it, and the frame budget
         (now 35-41 fps). The conga recipe itself (the site's: a triangle sliding 1.18x -> 0.68x) untouched: only the
         tune floor. NOT CHECKED BY A MACHINE: the swing's feel, the arp's musicality, the goo's look to Flah, wall HP's fun.
+    FM-1 ROUND 2 (2026-11-25, latest; spec "Round 2"). Commits a0a2e08 56c07b3 bc340bd a325e18.
+      - WALLS solid pastels (glass 0.42, saturation 0.55), fading in colour and strength with each hit to 20% on the last.
+      - MINIS: ^ ^ eyes; hop in turn, 0 2 4 on the downbeats, 1 3 on the backbeats (boot-check 8, sabotaged).
+      - ENV: an FM sound's four knobs reshape its carriers (sl_fm_env_apply / _poll; check-host 17, sabotaged); the
+        "length, glide" view gone; HOME's "notes a bar" gone.
+      - MELODY 3 dB down (the keys play at 100, over the bench's stand-in); levels.sh's melody rule is the FM-1's own
+        (-1.5..+2.5 LU about the band); drums, bass, the melody sounds re-trimmed. Filters per part were already there
+        (FX knob 1: left low-pass, right high-pass).
+      - FUNK BASS, SITE AND FM-1 (sw v176): FEELS bass.funk; ghosts 'g' and octave pops in genBass, staccato by funk,
+        real accents; band.c in lockstep (check-band parity + a funk check, SAB=funk red). FM-1 bass -1.5 dB after.
+      - REC: nothing for now (its loop and the session's kept loop gone: "phantom notes"). Projects researched next
+        (_docs/research/2026-11-25-fm1-projects.md when the research lands).
+      - SHAPES stage A: SHAPE knob by name (triangle .. dodecagon, shards 4..8: core s.shard), the slime picks them too;
+        THE TUMBLE (picture only: drawn in the turning frame, turned about a precessing tilted axis). NEXT: stage B,
+        CURVED shapes on the device with portals (core/space.c + drawspace.c exist and match the site); stage C, true
+        SOLIDS (a compact solid ~10-14 KB, solidSub's 3D bounce, faces drawn; RAM free ~15 KB pool, ~17.5 KB bss).
       - NOT CHECKED BY A MACHINE: how any of it sounds (the fit matches spectra to a reference, not taste); the FM-1
         speaker with BIG MONO's low end; whether the muffle reads as "the slime" to an ear.
   - PERFECTION PASS 2026-11-02 (Flah: "keep improving, don't guess, this is the perfection stage"): research notes in
