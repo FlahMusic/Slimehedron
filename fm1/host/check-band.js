@@ -5,6 +5,7 @@ const fs = require('fs'), path = require('path'), { execFileSync } = require('ch
 const root = path.join(__dirname, '..', '..');
 let src = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 if (process.env.SAB) src = src.replace('if(r()>=0.5+0.45*frac)return null;', 'if(r()>=0.5)return null;');
+if (process.env.SAB === 'funk') src = src.replace('const fk=b.funk||0;', 'const fk=0;');
 const grab = (re, w) => { const m = src.match(re); if (!m) throw new Error('not in index.html: ' + w); return m[0]; };
 const code = [grab(/function rep\(base,bars\)\{[^\n]*\}/, 'rep'), grab(/function bars\(\.\.\.b\)\{[^\n]*\}/, 'bars'),
   grab(/const KITS=\{[\s\S]*?\n\};/, 'KITS'), grab(/const KITVOICE=\{[^\n]*\n[^\n]*\};/, 'KITVOICE'),
@@ -58,6 +59,11 @@ for (let i = 0; i < Math.max(want.length, got.length); i++) if (want[i] !== got[
 const n = c => want.filter(l => l[0] === c).length;
 ok(first < 0, `every drum hit, chord rhythm and bass figure is the web's: ${n('D')} drum hits, ${n('C')} comp bars, ${n('B')} bass figures, 11 kits` +
   (first < 0 ? '' : ` (first difference at line ${first}: web "${want[first]}", C "${got[first]}")`));
+{ // the funk (2026-11-25, Flah: "wheres the funk, groove, velocity, bounce"): ghosts and octave pops in the funky kits'
+  // figures (the site's genBass, FEELS bass.funk), on both sides (the lines above are equal); SAB=funk zeroes it: red
+  const B = want.filter(l => l[0] === 'B'), fig = k => B.filter(l => l.split(' ')[1] === String(k)).map(l => l.split(' ')[3]).join('');
+  const ghosts = ['pop', 'disco', 'samba'].map(kit => (fig(ORDER.indexOf(kit)).match(/g/g) || []).length);
+  ok(ghosts.every(g => g >= 2), `the bass has its funk: ghost notes in pop, disco and samba's figures (${ghosts.join(', ')} in 4 blocks each)`); }
 ok(+S[1] > 1000 && +S[2] === 0, `no chord or bass note outside the scale (major, 31-EDO, pentatonic: ${S[1]} notes, ${S[2]} outside)`);
 // HUMANIZE (H lines): the site's rules, per kit over 256 bars at 100 bpm
 // H kit onbeat_max_ms drift_max_ms ghosts_per_bar ghost_bad pickups_per_bar swing8_ms kick_vel_sd hat_vel_sd simple

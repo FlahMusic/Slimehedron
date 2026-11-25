@@ -675,7 +675,7 @@ UI_SMALL static void sl_song_take(sl_song *g)
     memcpy(g->mch, sl_mch, 4); g->min_ch = sl_min_ch; g->mclk_in = sl_mclk_in; g->mo_en = sl_mo_en; g->mclk_out = sl_mclk_out;
     g->dtone = sd_tone; g->ddecay = sd_decay; g->dtune = sd_tune;
     if (sl_loop_state == SL_LOOP_PLAY) {
-        fm1_irq_off(); g->loop_bars = sl_loop_bars; g->loop_n = sl_loop_n; memcpy(g->loop, sl_loop_ev, sl_loop_n * sizeof g->loop[0]); fm1_irq_on();
+        /* (the loop is no longer kept: REC's loop is gone, 2026-11-25) */
     }
     g->sum = sl_song_hash(g);
 }
@@ -719,10 +719,7 @@ UI_SMALL static void sl_song_put(const sl_song *g)   /* (requests, as a hand's: 
     slime_levels();
     fm1_irq_off();
     sl_loop_clear();
-    if (g->loop_bars && g->loop_n && g->loop_n <= SL_LOOP_MAX && g->loop_bars <= 8u) {
-        memcpy(sl_loop_ev, g->loop, g->loop_n * sizeof g->loop[0]);
-        sl_loop_n = g->loop_n; sl_loop_bars = g->loop_bars; sl_loop_at = (uint8_t)(g->loop_bars - 1u); sl_loop_state = SL_LOOP_PLAY;
-    }
+    /* (a session's loop is not played back: REC's loop went 2026-11-25, its kept loops were "phantom notes" at power-on) */
     fm1_irq_on();
 }
 static uint32_t sl_changed_ms, sl_auto_hash;   /* the last hand on the panel; what the session in flash holds */
@@ -837,15 +834,9 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
     }
     if (SL_PRESSED(B_LFO)) { sl_slime = (uint8_t)!sl_slime; sl_swing_hand = 0; sl_say("slime ", sl_slime ? "on" : "off"); }   /* (a new slime session: the
                                                            * swing breathes again until the knob is turned) */
-    /* REC: the loop (count-in, take, close; overdub on a playing loop); a double tap: the loop cleared */
-    if (sl_tap2(B_REC, pressed)) { sl_loop_clear(); sl_say("loop cleared", 0); }
-    if (sl_tap1(B_REC)) {
-        uint8_t was = sl_loop_state;
-        if (!sl_run && was == SL_LOOP_OFF) sl_run = 1;     /* (the site: recording starts the music) */
-        sl_loop_press();
-        sl_say(was == SL_LOOP_OFF ? "rec: count-in" : was == SL_LOOP_ARMED ? "rec off" : was == SL_LOOP_REC ? "loop closes at the bar" :
-               sl_loop_dub ? "overdub: play over the loop" : "overdub off", 0);
-    }
+    /* REC: nothing, for now (Flah 2026-11-25: the loop "saves between shutdowns but i have no way to delete the attempt ...
+     * basically creates phantom notes when u power the device on ... just remove the function from REC for now"). The loop
+     * engine (slime.c sl_loop_*) stays, unreachable from the panel; REC is to become projects (save / load / delete) */
     if (SL_PRESSED(B_SAVE)) sl_goto(PG_MIDI);              /* SAVE: the MIDI page (the session saves itself) */
     if (SL_PRESSED(B_OCTDN) || SL_PRESSED(B_OCTUP)) {      /* the keyboard's octave, as on any synth; both: back to the middle */
         uint32_t both = (1u << panel.btn[B_OCTDN]) | (1u << panel.btn[B_OCTUP]);

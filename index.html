@@ -4182,7 +4182,7 @@ const FEELS={
           progs:[[0,4,5,3],[5,3,0,4],[0,5,3,4],[0,3,0,4]],         // I-V-vi-IV, the axis, doo-wop
           artic:{block:.42,arp:.33,broken:.25}, arpFill:true,
           colour:{seventh:.15,ninth:.22,sus:.18},
-          bass:{w:[10,0,1,1, 2,0,3,1, 8,0,1,1, 3,0,4,2],density:[2,4],oct:.25,approach:.45},
+          bass:{w:[10,0,1,1, 2,0,3,1, 8,0,1,1, 3,0,4,2],density:[2,4],oct:.25,approach:.45,funk:.5},
           fill:{every:8,len:4}},
   rock:  {grid:16, seedOdds:.4, push:.25, ring:false, density:[4,7], dodge:.3,
           seeds:[[0,4,8,12],[0,2,4,8,10,12],[0,4,6,8,12,14],[0,4,8,10,12]],
@@ -4190,7 +4190,7 @@ const FEELS={
           progs:[[0,3,4,3],[0,6,3,0],[0,0,3,4],[5,3,0,4]],         // I-IV-V-IV and the flat-seven move
           artic:{block:.68,arp:.10,broken:.22},
           colour:{seventh:.10,ninth:.05,sus:.28},
-          bass:{w:[10,0,2,0, 7,0,2,0, 8,0,2,0, 7,0,3,2],density:[4,6],oct:.15,approach:.55},
+          bass:{w:[10,0,2,0, 7,0,2,0, 8,0,2,0, 7,0,3,2],density:[4,6],oct:.15,approach:.55,funk:.3},
           fill:{every:8,len:6}},
   disco: {grid:16, seedOdds:.35, push:.2, ring:false, density:[4,7], dodge:.12,
           seeds:[[2,6,10,14],[2,3,6,10,11,14],[2,6,7,10,14,15],[0,2,6,10,14]],
@@ -4198,7 +4198,7 @@ const FEELS={
           progs:[[5,1,4,0],[5,4,5,3],[1,4,0,0],[5,5,1,4]],         // minor vamps and ii-V-I, the disco sound
           artic:{block:.32,arp:.48,broken:.20}, arpFill:true,
           colour:{seventh:.45,ninth:.30,sus:.05},
-          bass:{w:[10,0,8,0, 8,0,8,0, 8,0,8,0, 8,0,8,0],density:[6,8],oct:.85,approach:.3},
+          bass:{w:[10,0,8,0, 8,0,8,0, 8,0,8,0, 8,0,8,0],density:[6,8],oct:.85,approach:.3,funk:.55},
           fill:{every:8,len:4}},
   bossa: {grid:16, seedOdds:.6, push:.15, ring:true, density:[3,4], dodge:.8,
           seeds:[[0,6,12],[2,8,12],[0,6,10],[2,8,14]],
@@ -4206,7 +4206,7 @@ const FEELS={
           progs:[[1,4,0,0],[1,4,5,1],[0,1,4,0],[5,1,4,0]],         // ii-V-I, the bossa staple
           artic:{block:.48,arp:.17,broken:.35},
           colour:{seventh:.60,ninth:.25,sus:.05},
-          bass:{w:[10,0,1,0, 1,0,2,0, 9,0,1,0, 2,0,2,1],density:[2,3],oct:.2,approach:.35},
+          bass:{w:[10,0,1,0, 1,0,2,0, 9,0,1,0, 2,0,2,1],density:[2,3],oct:.2,approach:.35,funk:.15},
           fill:{every:16,len:4}},
   jazz:  {grid:16, seedOdds:.55, push:.5, ring:true, density:[2,4], dodge:.85,
           seeds:[[0,6],[2,8],[0,4,8,12],[6,14],[0,6,10],[2,6,12]],
@@ -4216,7 +4216,7 @@ const FEELS={
           colour:{seventh:.75,ninth:.35,sus:.05,v7:true},   // the V chord ALWAYS gets its dominant 7th
                                                                    // (ordered so jazz doesn't open on the same
                                                                    //  changes as bossa — they share ii-V-I)
-          bass:{w:[10,0,1,0, 6,0,2,0, 8,0,1,0, 6,0,2,1],density:[2,4],oct:.1,approach:.6},
+          bass:{w:[10,0,1,0, 6,0,2,0, 8,0,1,0, 6,0,2,1],density:[2,4],oct:.1,approach:.6,funk:.1},
           fill:{every:8,len:6}}
 };
 // anything without its own row plays the house feel rather than nothing
@@ -4225,7 +4225,7 @@ const FEEL_DEFAULT={grid:16, seedOdds:.4, push:.3, ring:false, density:[3,5], do
   w:[9,1,5,2, 6,1,7,2, 7,1,5,2, 6,1,7,2],
   progs:[[0,4,5,3],[0,5,3,4],[5,3,0,4],[0,3,4,3]],
   artic:{block:.5,arp:.25,broken:.25}, colour:{seventh:.2,ninth:.15,sus:.15},
-  bass:{w:[10,0,2,0, 5,0,3,1, 8,0,2,0, 5,0,3,2],density:[3,5],oct:.25,approach:.45},
+  bass:{w:[10,0,2,0, 5,0,3,1, 8,0,2,0, 5,0,3,2],density:[3,5],oct:.25,approach:.45,funk:.45},
   fill:{every:8,len:4}};
 function feelFor(kit){return FEELS[kit]||FEEL_DEFAULT;}
 
@@ -4333,6 +4333,14 @@ function genBass(feel,rng,lastBarOfChord){
     if(k===0)continue;
     const r=rng();
     out[k]= r<b.oct?'O' : r<b.oct+0.34?'F' : r<b.oct+0.5?'T' : 'R';
+  }
+  // FUNK (2026-11-25, Flah: "wheres the funk, groove, velocity, bounce, etc ??? ... this is 2026, not 1980"): by the
+  // genre's funk, an off-beat root pops up an octave, and the empty 16th right before a hit gets a dead GHOST note ('g':
+  // the bassist's muted pluck, short and soft). fm1/core/band.c gen_bass draws the same numbers in the same order
+  const fk=b.funk||0;
+  if(fk>0)for(let k=1;k<16;k++){
+    if(out[k]==='R'&&(k&1)){if(rng()<fk*0.4)out[k]='O';}
+    else if(!out[k]&&(k===15||out[k+1])){if(rng()<fk*0.55)out[k]='g';}
   }
   // a lead-in on the last 16th walks you into the next chord instead of stopping dead
   if(lastBarOfChord&&rng()<b.approach)out[14]='A';
@@ -4586,7 +4594,7 @@ function bassNote(tok,t,hum,dur){ // bass pluck by default; pass `dur` (seconds)
   if(S.synth){const f=440*Math.pow(2,(bassRootMidi()+c/100-69)/12),v=0.17*BASS_TRIM*(hum||1)*Math.min(1,(1-S.bpMix)*2);
     // a real bass player HOLDS notes and connects them. `dur` = how long this note should ring (seconds). the note
     // sustains, then a short release TAIL overlaps the next note = legato. pitch GLIDES from the last note = a smooth walk.
-    const D=Math.max(0.18,dur||0.5),rel=Math.min(0.14,D*0.45),hold=D-rel*0.6;
+    const D=Math.max(0.05,dur||0.5),rel=Math.min(0.14,D*0.45),hold=D-rel*0.6;   // (0.05: a ghost's dead blip; 0.18 until 2026-11-25)
     const env=(peak)=>{const e=AC.createGain();e.gain.setValueAtTime(0.0001,t);e.gain.exponentialRampToValueAtTime(peak,t+0.015); // quick soft attack
       e.gain.setValueAtTime(peak,t+hold);e.gain.exponentialRampToValueAtTime(0.0008*peak/v,t+D);e.connect(bandBus);return e;};  // hold, then a smooth tail
     const glide=(o,ff)=>{if(_lastBassFreq&&Math.abs(_lastBassFreq-f)<f*0.6){o.frequency.setValueAtTime(_lastBassFreq*ff/f,t);o.frequency.exponentialRampToValueAtTime(ff,t+0.05);}
@@ -4782,8 +4790,13 @@ function drumSchedule(){ // THE CONDUCTOR: one sample-accurate grid drives drums
         if(tok){const anchor=(inBar===0||inBar===8);
           // hold this note until the NEXT bass note in the pattern (wrapping into the next bar) → sustained, connected groove, no gaps
           let g=1;while(g<bar){const bp2=gen||(set?set[(_bassGroove+barI+(((inBar+g)>=bar)?1:0))%set.length]:BASSPAT[_sSig]);const at=(inBar+g)%bar;if(bp2&&bp2[at]!=null)break;if(!bp2&&(at%4===0))break;g++;}
-          const len=g*_sDur(); // seconds until the next bass hit → this note rings that long, with a legato tail
-          bassNote(tok, drumTime+(anchor?0:0.012)+genreShift(inBar), anchor?1:hum, len);}
+          // THE BOUNCE (2026-11-25): by the genre's funk the notes are shorter than the gap to the next (staccato, the
+          // anchors held longer), the accents real (the octave pop hardest, the 16ths between the beats softer), and a
+          // ghost is a dead blip. fm1/core/band.c and slime.c play the same lengths and accents
+          const fk=gen?(feelFor(drumKit).bass.funk||0):0,ghost=tok==='g';
+          const len=ghost?0.35*_sDur():g*_sDur()*(anchor?1-0.25*fk:1-0.45*fk); // seconds this note rings
+          const acc=ghost?0.38:anchor?1:tok==='O'?1.15:(inBar%4===0?0.95:inBar%2===0?0.9:0.82);
+          bassNote(ghost?'R':tok, drumTime+(anchor?0:0.012)+genreShift(inBar), (anchor?1:hum)*acc, len);}
       }
     }
     if(_trimKit!==drumKit&&drumTrim)applyMix();   // the kit changed (any of the ways it can): its own level follows

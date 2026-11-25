@@ -17,7 +17,8 @@
 /* a drum hit: GM note; kind 0 the pattern, a fill or a crash (the site's, note for note: check-band.js), 1 a ghost
  * note, 2 the phrase pickup (humanize); nudge: ms off its 16th (the groove, the style's swing, the drummer's drift) */
 typedef struct { uint8_t step, note, vel, kind; double nudge; } sh_dhit;
-typedef struct { uint8_t step, len, vel; double cents, nudge; } sh_bnote;  /* a pitched note: cents over its part's root */
+typedef struct { uint8_t step, len, vel; double cents, nudge, gate; } sh_bnote;  /* a pitched note: cents over its part's root;
+                                                                            * gate: the bass's share of len it rings (the bounce) */
 
 typedef struct {
   sh_dhit drum[SH_BAND_MAXD]; int nd;

@@ -536,7 +536,7 @@ static void sl_band_step(double step_ms)
     if (sl_band_on) {
         for (i = 0; i < sl_bar.nb; i++)
             if (sl_bar.bass[i].step == s) {
-                sl_play_at(SL_TRK_BASS, sl_bass_root(), sl_bar.bass[i].cents, sl_bar.bass[i].vel, sl_at(sl_bar.bass[i].nudge), sl_ms_to_block(step_ms * sl_bar.bass[i].len * 0.95));
+                sl_play_at(SL_TRK_BASS, sl_bass_root(), sl_bar.bass[i].cents, sl_bar.bass[i].vel, sl_at(sl_bar.bass[i].nudge), sl_ms_to_block(step_ms * sl_bar.bass[i].len * 0.95 * sl_bar.bass[i].gate));   /* (gate: the bounce, band.c) */
                 sl_stat.bass_notes++;
             }
         if (sl_arp_on) sl_arp_step(s, step_ms);            /* (the arp: the chords one note at a time, instead of the stabs) */
@@ -667,7 +667,8 @@ static void slime_play_block(void)
 #define SL_MEL_LEVEL 98                 /* (104 until 2026-11-25, Flah: "the melody even with all at 0db mixer is just so fucking loud
                                          * ... jarring compared to other elements": 3 dB down. A hand's keys play at 100, louder than
                                          * the bench's stand-in melody, so the melody heard sat higher than levels.sh measured) */
-#define SL_BASS_LEVEL 76          /* measured: 4.2..7.8 LU under the melody (levels.sh) */
+#define SL_BASS_LEVEL 73          /* measured: 4.2..7.8 LU under the melody (levels.sh); 76 until 2026-11-25: the funk bass (its
+                                   * octave pops, accents and re-plucked staccato) came out ~1.5 LU louder */
 #define SL_COMP_LEVEL 70          /* measured: at 80 the chords were only 0.9..2.2 LU under the melody (the rule: >= 3) */
 #endif
 /* per rhythm, as the site's KIT_DB: the drums' level (G_DRLVL is a linear gain, 28 put pop 8.7 LU under the melody),

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """A whole session on the FM-1 in fm1-emu, as a person would play it: every button, every encoder, every page's views,
-the double taps, a loop recorded and overdubbed, the session kept over a power cycle.
+the double taps, the session kept over a power cycle (REC does nothing for now).
     session.py keys OUTFILE      the key script (fm1-live FM1_BENCH_KEYS @FILE) and, on stdout, the moments to look at
 Times are ms of firmware time (the boot takes ~1.3 s). Encoders: e0 SELECT, e1 ALGORITHM, e2..e5 KNOB 1..4, e6 PRESETS."""
 import sys
@@ -92,22 +92,16 @@ note(t, 2); mark(t, "bass back"); t += 1500
 note(t, 12); mark(t, "drums solo (key 12)"); t += 3500
 note(t, 12); mark(t, "solo off"); t += 1500
 press(t, "HOME"); mark(t, "back to the tank"); t += 900
-# 6. REC: a loop. Count-in, then a phrase over two bars, REC to close it
-press(t, "REC"); mark(t + 300, "rec: count-in")
-t += 5200                                  # the count-in lands within two bars
-for k, n in enumerate([7, 9, 11, 14, 11, 9, 12, 7]):
+# 6. REC does nothing for now (its loop went 2026-11-25); keys played over it are only the hand's
+press(t, "REC"); mark(t + 300, "rec: nothing (for now)"); t += 900
+for k, n in enumerate([7, 9, 11, 14]):
     note(t + k * 540, n);
-mark(t + 100, "rec: playing in")
-t += 8 * 540 + 200
-press(t, "REC"); mark(t, "loop closes at the bar"); t += 6000
-mark(t, "loop playing")
-# 7. the octave; overdub two notes
+t += 4 * 540 + 400
+# 7. the octave
 press(t, "OCTUP"); mark(t, "octave 1"); t += 800
 ev.append(f"{t}:OCTDN"); ev.append(f"{t + 40}:OCTUP"); ev.append(f"{t + 200}:OCTDN^"); ev.append(f"{t + 220}:OCTUP^")
 mark(t + 40, "both octave buttons: 0"); t += 1200
-press(t, "REC"); mark(t + 300, "overdub on"); t += 900
 note(t, 16); note(t + 700, 18); t += 1600
-press(t, "REC"); mark(t + 300, "overdub off"); t += 3000
 # 8. CHORDS (EDIT): EDIT: a famous progression; EDIT: back to the slots, chord 3 picked, a key sets it to F
 press(t, "EDIT"); mark(t, "chords page"); t += 900
 press(t, "EDIT"); mark(t, "chords 2/2: all"); t += 900

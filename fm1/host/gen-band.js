@@ -57,7 +57,7 @@ L.push('  uint8_t w[16];                               /* chance of a chord hit 
 L.push('  int8_t progs[4][4];                          /* its own chord changes, scale degrees */');
 L.push('  double artic[3];                             /* block, arp, broken */');
 L.push('  double seventh, ninth, sus; uint8_t v7;');
-L.push('  uint8_t bw[16], bdensity[2]; double boct, bapproach;   /* the bass */');
+L.push('  uint8_t bw[16], bdensity[2]; double boct, bapproach, bfunk;   /* the bass (bfunk: its ghosts and pops) */');
 L.push('  uint8_t fill_every, fill_len;');
 L.push('} sh_feel;');
 const f2 = x => String(+x);   // doubles, as the web's: a float 0.6 flips weighted picks at a boundary
@@ -71,7 +71,7 @@ function feelC(f, name) {
     `   ${seeds.length}, {${sd.join(',')}}, {${sn.join(',')}},\n   {${f.w.join(',')}},\n` +
     `   {${f.progs.slice(0, 4).map(p => `{${p.join(',')}}`).join(',')}},\n` +
     `   {${f2(a.block || 0)}, ${f2(a.arp || 0)}, ${f2(a.broken || 0)}}, ${f2(f.colour.seventh || 0)}, ${f2(f.colour.ninth || 0)}, ${f2(f.colour.sus || 0)}, ${f.colour.v7 ? 1 : 0},\n` +
-    `   {${f.bass.w.join(',')}}, {${f.bass.density.join(',')}}, ${f2(f.bass.oct)}, ${f2(f.bass.approach)},\n   ${f.fill.every}, ${f.fill.len}},   /* ${name} */`;
+    `   {${f.bass.w.join(',')}}, {${f.bass.density.join(',')}}, ${f2(f.bass.oct)}, ${f2(f.bass.approach)}, ${f2(f.bass.funk || 0)},\n   ${f.fill.every}, ${f.fill.len}},   /* ${name} */`;
 }
 // the drummer's feel per style (KITFEEL, drumSchedule's SIMPLE): humanize amounts, swing, accents per drum per step
 L.push('/* the drummer\'s feel (KITFEEL): humanize dyn / time / ghost, swung 8ths (jazz) and 16ths (bossa), ghosts on the "&"');

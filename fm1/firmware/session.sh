@@ -1,6 +1,6 @@
 #!/bin/sh
 # Slimehedron for the FM-1: a whole session in fm1-emu STRICT, as a person would play it (host/session.py: every
-# button and encoder, the double taps, a loop recorded and overdubbed, songs saved and loaded), then the FM-1 powered
+# button and encoder, the double taps; REC does nothing for now), then the FM-1 powered
 # off and on again on the same flash: the session must come back. After build-device.sh.
 #   sh fm1/firmware/session.sh            -> ~/fm1w/out/session/: session.wav (what it played), sheet.png (the screen
 #                                            at each step, captioned), reboot.png, and the numbers on stdout

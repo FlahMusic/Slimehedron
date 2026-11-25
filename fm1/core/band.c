@@ -92,6 +92,12 @@ static void gen_bass(const sh_feel *f, mb32 *r, uint8_t *tok) {
     x = mb_next(r);
     tok[on[i]] = x < f->boct ? 'O' : x < f->boct + 0.34 ? 'F' : x < f->boct + 0.5 ? 'T' : 'R';
   }
+  /* FUNK (the site's genBass, 2026-11-25): an off-beat root pops up an octave, the empty 16th before a hit a ghost */
+  if (f->bfunk > 0.0)
+    for (int k = 1; k < 16; k++) {
+      if (tok[k] == 'R' && (k & 1)) { if (mb_next(r) < f->bfunk * 0.4) tok[k] = 'O'; }
+      else if (!tok[k] && (k == 15 || tok[k + 1])) { if (mb_next(r) < f->bfunk * 0.55) tok[k] = 'g'; }
+    }
 }
 
 static double cents_deg(const sh_scale *sc, int d) { return (double)sh_cents_for_degree(sc, d); }
@@ -195,7 +201,7 @@ static double cm_root_cents(const sh_band *b, int i) { return (double)(((b->cm_r
 
 static void push_c(sh_band_bar *o, int step, double cents, double a, int len) {
   if (o->nc >= SH_BAND_MAXC || step > 15) return;
-  o->comp[o->nc].nudge = 0.0;
+  o->comp[o->nc].nudge = 0.0; o->comp[o->nc].gate = 1.0;
   int v = (int)(a * 127.0 + 0.5); if (v < 1) v = 1; if (v > 127) v = 127;
   o->comp[o->nc].step = (uint8_t)step; o->comp[o->nc].cents = cents; o->comp[o->nc].vel = (uint8_t)v; o->comp[o->nc].len = (uint8_t)len;
   o->nc++;
@@ -440,7 +446,7 @@ static void bass(sh_band *b, const sh_scale *sc, sh_band_bar *o) {
   for (int s = 0; s < 16; s++) {
     if (!tok[s]) continue;
     int g = 1; while (s + g < 16 && !tok[s + g]) g++;
-    int deg = b->chord, oct = 0, fifth = drone ? deg_near(sc, 700.0) : 4;
+    int deg = b->chord, oct = 0, fifth = drone ? deg_near(sc, 700.0) : 4, ghost = tok[s] == 'g';
     if (tok[s] == 'F') deg = b->chord + fifth;
     else if (tok[s] == 'T') deg = drone ? b->chord : b->chord + 2;
     else if (tok[s] == 'O') oct = 1;
@@ -459,8 +465,13 @@ static void bass(sh_band *b, const sh_scale *sc, sh_band_bar *o) {
     }
     b->last_bass = c; b->has_last_bass = 1;
     if (o->nb < SH_BAND_MAXB) {
-      int v = (s == 0 || s == 8) ? 112 : 96;
-      o->bass[o->nb].step = (uint8_t)s; o->bass[o->nb].len = (uint8_t)(strcmp(SH_KIT_NAME[b->kit], "industrial") ? g : 16);
+      /* THE BOUNCE (the site's scheduler, 2026-11-25): accents (the anchors full, an octave pop hardest, the 16ths between the
+       * beats softer, a ghost soft) and a staccato gate by the genre's funk; a ghost is a dead blip a third of a 16th */
+      int anchor = s == 0 || s == 8, drone_kit = !strcmp(SH_KIT_NAME[b->kit], "industrial");
+      double acc = ghost ? 0.38 : anchor ? 1.0 : tok[s] == 'O' ? 1.15 : (s % 4 == 0 ? 0.95 : s % 2 == 0 ? 0.9 : 0.82);
+      int v = (int)(112.0 * acc + 0.5); if (v > 127) v = 127;
+      o->bass[o->nb].step = (uint8_t)s; o->bass[o->nb].len = (uint8_t)(drone_kit ? 16 : g);
+      o->bass[o->nb].gate = drone_kit ? 1.0 : ghost ? 0.35 / (double)g : anchor ? 1.0 - 0.25 * f->bfunk : 1.0 - 0.45 * f->bfunk;
       o->bass[o->nb].cents = c; o->bass[o->nb].vel = (uint8_t)v;
       o->bass[o->nb].nudge = b->human ? ((s == 0 || s == 8) ? 0.0 : 12.0) + genre_shift(b, s) : 0.0;   /* bassNote: +12 ms off the anchors */
       o->nb++;
