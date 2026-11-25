@@ -1454,12 +1454,36 @@ slime's colour jittering, an audio and FX pass, and "the slime falling out of ge
   - Not checked by a machine: how the new full-slime sound and the reverb bloom sound on real speakers; the burst on a
     real phone's frame rate (1 ms a tick on this desktop, only while it bursts); the jelly mixer at 120 Hz.
 
+FIXES AND PERSONALITY PASS (2026-11-23..24, sw v170-v173). Flah: "fix all then keep improving my shit overall and
+fixing bugs ... make sure my worm works etc. and in the fm1 ver too, i want the personality and the general
+intuitiveness and polish to be focused on now ... dont rush and make sure these are not guesswork".
+  - The five old red suites, each proven able to fail again: dev-fluid (play opens playing; it presses pause now),
+    dev-goosmooth (lite mode switched on during the software-GL load; pinned off; its 4 ms rebuild check is the
+    machine's speed, logged in SUITES), dev-gl (the flash faded on the clock before the screenshot; held), dev-goolook
+    (the plant did not pin the turn or the chord colour; re-saved after looking), dev-crowding learn/landscape (an app
+    fix: the lessons map's words .lmSign/.lmCap joined the keep-out list), dev-look3d (it looked for the note where the
+    flat projection put it, not where the tumbling GPU box drew it; it finds the roundest blob now; python by any name).
+  - Research (a subagent, sourced): _docs/research/2026-11-23-personality-polish.md, 20 patterns with numbers.
+  - NO MIDI PROMPT ON A FIRST TAP: MIDI in asked on the first touch anywhere; since Chrome 124 every Web MIDI request
+    prompts, so a child's first tap in play opened a permission prompt. It connects alone only where permission was
+    given before; otherwise the switch shows off and asks when switched on. dev-midiprompt (new).
+  - THE WORM ANSWERS A TAP: a CSS rule made him click-through, so his own tap (two bars of double time) never fired.
+    A tap now brings him up (~0.3 s) and he dances. dev-worm 6.
+  - A HAND IS ON TIME: a hand's ring waited a random 8-25 ms like a falling drop's; in a busy tank (click skipped) a tap
+    rang 19 ms late and wobbled 16.5 ms. Now 4.5 ms, steady to 0.5 ms. dev-handtime (new, the synth rendered offline).
+  - FM-1, THE CAST ANSWERS: a key makes one mini hop (low left, high right), a burst is a 3 s party (minis hop twice,
+    the worm dances). slime_minis.h (pure) + host/minitest.c (make minis) + boot-check 8 on the device build.
+  - Asked of Flah, not built: blinking slimes need eyes-closed frames of the SAME slimes (the "blink" frames are
+    different drawings); that is art.
+
 ================================================================
 8. GIT STATE AS OF THIS WRITING
 ================================================================
 
 origin/main may be behind by up to 11 commits. Flah pushes / uploads.
 
+  (2026-11-24)  site: a hand's note on time (sw v173); the worm answers a tap (v172); no MIDI prompt on a first tap (v171);
+                the five old red suites fixed (v170). fm1: the cast answers (a key's mini hops, a burst's party)
   (2026-11-21)  site: the worm back, full-slime sound low-passed, portals hold a bar, the colour glides, a jelly mixer,
                 the burst as a viscoelastic liquid drawn as metaballs; sw v169
   (2026-11-21)  fm1: the lake, the minis and the worm behind the tank

@@ -5410,7 +5410,7 @@ let _hype=false; // one anticipation wave per fill cycle
 function startBreak(now){
   fillState="break";breakAt=now;burstFlash=0.7;frags=[];
   slimeParty(2400);_hype=false; // THE moment — the whole cast celebrates the burst
-  if(window.slimeStar&&performance.now()-_lastStar>2500){_lastStar=performance.now();window.slimeStar();} // a burst earns a star toward today's goal
+  if(window.slimeStar&&performance.now()-_lastStar>2500){_lastStar=performance.now();window.slimeStar();} // (a no-op on purpose: no goals, no stars, a burst is its own reward)
   // one FULL-LENGTH wall per edge — a wall stays a wall in every state, so notes never tunnel through gaps.
   // walls jostle & rotate loose (reads as "broken/unstable") but hold their positions as a real collidable cage.
   for(const e of edges){const ang=Math.atan2(e.by-e.ay,e.bx-e.ax),hl=Math.hypot(e.bx-e.ax,e.by-e.ay)/2;
