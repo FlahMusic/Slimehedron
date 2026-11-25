@@ -97,6 +97,10 @@ const onScreen=(p,id)=>p.evaluate(id=>{const e=document.getElementById(id);if(!e
  // ---- 5 + 6. play has no chord editor; MIDI out shown once and still works ----
  {const ctx=await b.newContext({viewport:{width:1440,height:900}});
   await ctx.addInitScript(()=>{try{localStorage.setItem('slimehedron-coach','1');localStorage.setItem('slimehedron-coach-studio','1');}catch(e){}});
+  // a MIDI port that says yes (as dev-midi): this headless browser refuses MIDI, and the app then rightly turns the
+  // switch back off, so without a port the switch could never be seen to switch (it failed so on 1490a61 too)
+  await ctx.addInitScript(()=>{const out={name:'stub',send(){}};
+    navigator.requestMIDIAccess=()=>Promise.resolve({inputs:new Map(),outputs:new Map([['stub',out]]),onstatechange:null});});
   const p=await ctx.newPage();await p.goto(BASE+'?m=play');await p.waitForTimeout(2000);
   ok(!(await seen(p,'chordBtn')),'[play] the chord editor is not offered in play');
   await p.goto(BASE+'?m=studio');await p.waitForTimeout(2000);

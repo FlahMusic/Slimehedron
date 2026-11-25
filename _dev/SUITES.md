@@ -14,6 +14,7 @@ Every page a suite opens presses a lesson's pulsing "listen" button the moment i
 |---|---|
 | the tall phone tank (play, portrait phones: the canvas at 2:3) | dev-tall, dev-phone, dev-devices, dev-hands |
 | the worm (and anything that places the page decorations) | dev-worm (always shown, never covered, rests and rises, wiggles: play 1280/1440/phone, studio) |
+| the page slimes' pictures or their hops (squish, cheer, beat bounce) | dev-squash (each picture's feet: on one line, never sunk, still on a squash; read from the PNGs' pixels), dev-decor, dev-crowding |
 | the triangle mixer | dev-trimix (the knob lands where you press, a tile not a sticker, by the sound column, off the buttons) |
 | the header / transport / any control's size | dev-decor (mascots whole, off the tank), dev-topbar, dev-a11y, dev-devices, dev-phone, dev-surface, dev-crowding |
 | play mode, the tank gestures, auto-notes | dev-hands, dev-ux, dev-firsttouch, dev-firstfive, dev-controls, dev-guide |
@@ -42,9 +43,24 @@ Then rerun only what failed. A failure that passes on rerun goes on the flaky li
   when struck" (38.0 -> 37.1 on the control) and `dev-look3d` "a note's rim is clearly darker than its middle" / "its edge
   stands out" / "the rim is its own colour". Not chased yet.
 - `dev-sw` served `/root/plinktest` (the cloud box only): it now serves the project folder and passes here.
-- `dev-chordbed` "the chords stay audible at every bass/pad crossfader position": 2 of 4 runs read ~0.004 at position 1
-  (2026-11-07). A direct tap shows the chord bus loud there on this commit and the one before (0.36-0.90): the crossfader
-  does not touch the chords; the 6 s window sometimes lands on a near-silent stretch of the band. Not chased further.
+- `dev-chordbed` "the chords stay audible at every bass/pad crossfader position": read ~0.001-0.006 at position 1 about
+  1 run in 2 (2026-11-07: 2 of 4; 2026-11-24: 6 of 15, all on that pass's commits, 0 of 3 on 1490a61, though that pass
+  changed nothing the band plays; the mechanism is below). Fixed 2026-11-24: the
+  crossfader only sets the bass's level, and a trace of the chord bus itself showed the comp resting 5.7 s (0.0000)
+  while the crossfader sat still, so one 6 s window per position read a rest. Each position now keeps the loudest of
+  four 3 s windows taken in turn (SAB=xfade, the old bug, fails it).
+- `dev-phone` "the key changes on its own over 200 bars": 1 key once (2026-11-25), 2 and 3 on the two reruns; the key
+  journey is random and 200 bars is near its floor. Not chased yet.
+- Seen in the 2026-11-24 sweep, each red on 1490a61 too (controls), not from that pass: `dev-slimecontrast` 2. [3d] the
+  green, 0 px of goo (it needs SLIME_GL=1, a real GPU, as its row says; on software GL the goo is not drawn in time),
+  `dev-perfmode` (lite vs full frame cost, 83-100 vs 50-83 ms on both), `dev-potato` curved/portal ratios and "performance
+  mode makes 3D cheaper" (both commits), `dev-harmony` (green 4 of 4 in the A/B; two different checks failed once each),
+  `dev-beatlock` [2d 6] / [3d 6] "on the grid" (31-43 of 47-56 within 20 ms; on 1490a61 too, not chased: see the
+  handoff's slow-device tick cap, a dropped backlog slips beat lock off the grid). Fixed the same day: `dev-3d` "the
+  selected button wears the glass rim" (it looked for the old ::before; the rim is a .rim>i child since 585a20c),
+  `dev-declutter` "the one in Preferences still switches MIDI out" (headless Chrome refuses MIDI and the app rightly
+  turns the switch back off; the suite gives it a stub port, as dev-midi does), `dev-learn3` 07 (a lesson's ring starts
+  2 ms after its time since dev-handtime, not 8-25: the window is 1-26 ms).
 - `dev-potato`: the curved/portal frame-cost ratios swing between runs on the cloud box (timing noise).
 - `dev-bassmix` 4. [play jazz]: live mix level, bass sometimes lands just over the 5 dB window.
 - `dev-perfmode`, `dev-harmony`, dev-a11y "chord changed", dev-lessons HOME card: timing.

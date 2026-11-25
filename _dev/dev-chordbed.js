@@ -83,13 +83,20 @@ ok(muted<bed*0.35,'muting the chord bus collapses the level — so that really w
 await p.evaluate(()=>{MIX.chords.m=false;applyMix();});
 
 // the bass/pad crossfader must no longer touch the chord level at all
+// Each position gets four 3 s windows, taken in turn round the three positions (36 s), and keeps its loudest: the comp
+// is a generative player and rests for up to ~6 s at a time (traced 2026-11-24: the chord bus itself at 0.0000 for
+// 5.7 s while the crossfader sat still), so one 6 s window per position read a rest as "the crossfader took the chords"
+// about 1 run in 2. A rest cannot cover four windows 9 s apart; a crossfader that silences the chords covers all four.
+// Sabotage: SAB=xfade (the old bug: the crossfader at 1 takes the chord bus down) fails it.
+const SAB=process.env.SAB||'';
 await p.evaluate(()=>{S.wM=0;S.wD=1;S.wK=0;applyMix();});
-const byMix={};
-for(const v of [0,1,0.5]){
-  await p.evaluate(x=>{S.bpMix=x;},v);
-  await p.waitForTimeout(500);
-  byMix[v]=await p.evaluate(async()=>await window.__pk(6000));
+const byMix={0:0,1:0,0.5:0};
+for(let round=0;round<4;round++)for(const v of [0,1,0.5]){
+  await p.evaluate(([x,SAB])=>{S.bpMix=x;if(SAB==='xfade')padBus.gain.value=x===1?0:1;},[v,SAB]);
+  await p.waitForTimeout(300);
+  byMix[v]=Math.max(byMix[v],await p.evaluate(async()=>await window.__pk(3000)));
 }
+if(SAB==='xfade')await p.evaluate(()=>applyMix());
 const vals=Object.values(byMix);
 const lo=Math.min(...vals);
 ok(lo>AUDIBLE,'the chords stay audible at every bass/pad crossfader position '+

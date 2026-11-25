@@ -63,9 +63,10 @@ const URL='http://127.0.0.1:8765/index.html';
  ok(Math.abs(lap-1)<1e-6,'at the slime\'s spin the shape makes one full turn every 8 bars ('+lap.toFixed(3)+' turns)');
 
  // 6. glass rim + background
+ // (the rim is a child, .rim>i, since 2026-11-14: a spinning ::before repainted the button every frame)
  const look=await p.evaluate(()=>{const on=document.querySelector('#psWaves .psBtn.on')||document.querySelector('.psBtn.on');
-   const be=on?getComputedStyle(on,'::before'):null;
-   return {rim:!!be&&be.content!=='none'&&/conic-gradient/.test(be.backgroundImage),bg:getComputedStyle(document.body).backgroundImage};});
+   const ri=on&&on.querySelector('.rim>i'),b=ri&&ri.getBoundingClientRect();
+   return {rim:!!ri&&ri.checkVisibility()&&b.width>4&&/conic-gradient/.test(getComputedStyle(ri).backgroundImage),bg:getComputedStyle(document.body).backgroundImage};});
  ok(look.rim,'the selected button wears the glass rim');
  // FULL-COLOUR CRAYON (2026-10-26): only a light white veil (Flah: the bright white burnt his eyes), never lilac, and the art
  // file starts with the drawing: no band of blank paper at the top for the header to sit on

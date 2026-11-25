@@ -32,3 +32,4 @@ host/goo_16.o
 host/stucktest
 host/harmtest
 host/synctest
+host/minitest

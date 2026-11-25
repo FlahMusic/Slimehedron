@@ -105,7 +105,9 @@ const JUDGED=['howlong','sayplay','echo','notes'];   // (staff is read by sight 
   ok(got.every(g=>picks.some(x=>x.i===g.slot))&&picks.every(x=>got.some(g=>g.slot===x.i)),'07 each note lands on a picked step, and every picked step sounds');
   ok(got.every(g=>{const x=picks.find(q=>q.i===g.slot);return x&&Math.abs(g.f-x.f)<0.01;}),'07 at the pitch picked for that step');
   ok(got.every(g=>g.err<0.002&&g.ahead>-0.005),'07 on the grid, scheduled ahead (worst '+(Math.max(0,...got.map(g=>g.err))*1000).toFixed(2)+' ms off)');
-  const starts=got.length?mk.sched.filter(r=>r.at!=null).every(r=>mk.when.some(w=>w-r.at>=0.007&&w-r.at<=0.026)):false;
+  // the ring starts a moment after its time: 2 ms for a firm note (a lesson's, a hand's: since 2026-11-23, dev-handtime),
+  // 8-25 ms for a falling drop (its crater pause)
+  const starts=got.length?mk.sched.filter(r=>r.at!=null).every(r=>mk.when.some(w=>w-r.at>=0.001&&w-r.at<=0.026)):false;
   ok(starts,'07 and an oscillator starts at each of those times (the note itself, not just the call)');}
 
  // ---- 08/09: Copy the Beat, a drum grid: colours, explain once, count-in, the beat, the playhead, wrong -> lilac, right
