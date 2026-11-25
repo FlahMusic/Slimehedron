@@ -1928,7 +1928,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 .slime{width:90px;height:84px;pointer-events:auto;cursor:pointer;filter:drop-shadow(0 5px 6px rgba(150,120,190,.22))}
 .slime.peeker{transition:transform .5s cubic-bezier(.34,1.56,.64,1)}
 .slime:hover{filter:drop-shadow(0 7px 8px rgba(150,120,190,.32)) brightness(1.05)}
-.slime .bob{width:100%;height:100%;animation:bob 2.9s ease-in-out infinite}
+.slime .bob{width:100%;height:100%;animation:bob 2.9s ease-in-out infinite;transform-origin:50% 92%} /* squash and stretch on their FEET (the minis' drawings stand ~92% down their box, 80-98%): round the middle a tap's squash lifted them 5-7 px off the ground and the cheer's stretch sank them in (dev-squash, 2026-11-24) */
 /* ---- MOTES: tiny background slimes. pure flavour — no pointer events, no click, no physics. they just
    sit in the dead corners breathing, and hop together on beat 1 of every bar. kept small + few on purpose. */
 .mote{position:fixed;pointer-events:none;z-index:4;will-change:transform;opacity:.82}
@@ -1946,7 +1946,7 @@ hr{border:none;border-top:1px solid rgba(180,170,210,.3);margin:12px 0}
 }
 .slime.squish .bob{animation:squish .46s ease}
 @keyframes bob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.03)}}
-@keyframes squish{0%{transform:translateY(0) scale(1,1)}18%{transform:translateY(3px) scale(1.2,.8)}46%{transform:translateY(-11px) scale(.88,1.14)}70%{transform:translateY(0) scale(1.06,.95)}86%{transform:translateY(-3px) scale(.98,1.03)}100%{transform:translateY(0) scale(1,1)}} /* click = squash, hop, settle — a proper bounce, all GPU transform so no lag */
+@keyframes squish{0%{transform:translateY(0) scale(1,1)}18%{transform:translateY(0) scale(1.2,.8)}46%{transform:translateY(-11px) scale(.88,1.14)}70%{transform:translateY(0) scale(1.06,.95)}86%{transform:translateY(-3px) scale(.98,1.03)}100%{transform:translateY(0) scale(1,1)}} /* click = squash, hop, settle — a proper bounce, all GPU transform so no lag */
 .bfly{position:absolute;left:50%;top:42%;animation:orbitb linear infinite;pointer-events:none}
 .bfly i{display:inline-block;font-style:normal;animation:flap .4s ease-in-out infinite alternate}
 @keyframes orbitb{0%{transform:rotate(0deg) translateX(52px) rotate(0deg)}100%{transform:rotate(360deg) translateX(52px) rotate(-360deg)}}
@@ -8730,12 +8730,18 @@ const MINI={green:{happy:'grn',blink:'grn3',wow:'grn2'},violet:{happy:'violet',b
   rainbow:{happy:'bo',blink:'bo2',wow:'bo'}};
 const SLIME_FAMS=Object.keys(MINI); // all families, for evenly spreading colour around the field
 const HEX2CHAR={'#9fe6cf':'green','#c4a9f5':'violet','#a6c8ff':'blue','#ffe39c':'pear','#ffb6d6':'pink','#ffc0a8':'orange','#7fd8d0':'teal'}; // palette vars → families
+// each mini's lowest drawn row of its 180 (alpha over 40), read from the PNGs; dev-squash reads the pixels and checks it
+const MINI_FOOT={blue1:152,blue2:144,blue3:150,bo:172,bo2:173,grn:170,grn2:171,grn3:169,orange:176,pear1:155,pear2:164,pear3:156,
+  pink1:156,pink2:160,pink3:170,teal:168,teal2:171,teal3:168,teal4:173,violet:155,violet2:154,violet3:164};
 function slimeSVG(fill,face){
   const ch=MINI[fill]?fill:(HEX2CHAR[(fill||'').toLowerCase()]||'green');
   let fr=(face==='wow'||face==='surprise'||face==='bigeye')?'wow':(face==='blink'?'blink':'happy');
   let file=MINI[ch][fr];
   if(ch==='teal'&&fr==='happy'&&Math.random()<0.4)file='teal4'; // teal's 4th art shows up sometimes for variety
-  return `<img src="minis/${file}.png" alt="" draggable="false" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none">`;
+  // every drawing stands on the same line, 92% down its box: the art's feet sit anywhere from 80% (blue2) to 98% (orange),
+  // so a tap's face swap made a slime jump (blue 4 px) and no one squash anchor fitted them all (dev-squash, 2026-11-24)
+  const dy=((0.92-(MINI_FOOT[file]||166)/180)*100).toFixed(1);
+  return `<img src="minis/${file}.png" alt="" draggable="false" style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;transform:translateY(${dy}%)">`;
 }
 // the auto-play switch's knob = the glasses-slime logo, reused from the splash art (face swappable for toggle reactions)
 const SS_GLASSES='<svg viewBox="0 0 80 72" width="100%" height="100%" style="position:absolute;inset:0"><g fill="none" stroke="#5a4f78" stroke-width="2.2" stroke-linecap="round" opacity=".85"><circle cx="29" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><circle cx="51" cy="25" r="7.5" fill="rgba(255,255,255,.12)"/><path d="M37.5 24 q2.5 -2 5 0"/><path d="M21.5 23.5 l-5 -1.5"/><path d="M58.5 23.5 l5 -1.5"/></g></svg>'; // wireframe specs, not welding goggles — face stays visible at knob size
