@@ -2908,8 +2908,13 @@ function playSynth(freq,vel,imp,hold,firm,at,pan){   // hold = seconds to SIT at
   // full scale -- about -44dB, which is silence to a child in a room. A bouncing ball can still dud.
   // A person's press cannot.
   const dud=!firm&&Math.random()<0.05;
-  const ej=0.85+Math.random()*0.3;         // per-hit envelope jitter ±15% — no two drops alike
-  const gap=0.008+Math.random()*0.017;     // crater-collapse pause between tick and ring
+  // A HAND IS ON TIME, EVERY TIME. The crater pause (8-25 ms, random) and the envelope jitter are a falling drop's
+  // texture; a hand's note (firm) had them too, so in a busy tank (over 24 voices the click is skipped and the ring IS
+  // the note) a tap rang 19 ms late at the median and wobbled 16.5 ms (dev-handtime). An instrument's delay should stay
+  // under ~10 ms and steady (Wessel & Wright 2002; Jack et al. 2018: +-3 ms of wobble already rated worse; research
+  // _docs/research/2026-11-23-personality-polish.md). A hand: 2 ms, the same every time.
+  const ej=firm?1:0.85+Math.random()*0.3;         // per-hit envelope jitter ±15% — no two drops alike
+  const gap=firm?0.002:0.008+Math.random()*0.017; // crater-collapse pause between tick and ring
   const tr=t+gap;
   // fill drives envelope: empty = plucky/short, full = rounder attack/decay + longer release
   const shorten=1.15-imp*0.4;              // harder hits decay quicker
