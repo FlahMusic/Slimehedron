@@ -1104,6 +1104,18 @@ static volatile uint8_t sl_kit_req = 0xFF, sl_scale_req = 0xFF;
 static volatile int8_t sl_root_req;         /* the key moved by hand: semitones */
 static volatile int8_t sl_octave;           /* OCT- / OCT+: the keyboard's octave, -2..2 */
 static volatile uint8_t sl_walls = 6, sl_space, sl_kit, sl_scale, sl_slime = 1;
+/* THE SHAPES, by name (Flah 2026-11-25: "change that to the actual shape names instead of walls ... tirangle square
+ * octahedron etc"): the regular polygons and the SHARDS (tank.c s.shard: a polygon with every side its own length). The
+ * solids (cube, octahedron ...) and the curved shapes come next; see _docs/specs/2026-11-25-fm1-play-pass */
+typedef struct { uint8_t walls, shard; const char *name; } sl_shape_t;
+#define SL_NSHAPE 14u
+static const sl_shape_t SL_SHAPE[SL_NSHAPE] = {
+    {3, 0, "triangle"}, {4, 0, "square"}, {5, 0, "pentagon"}, {6, 0, "hexagon"}, {7, 0, "heptagon"}, {8, 0, "octagon"},
+    {9, 0, "nonagon"}, {10, 0, "decagon"}, {12, 0, "dodecagon"},
+    {4, 1, "shard 4"}, {5, 2, "shard 5"}, {6, 3, "shard 6"}, {7, 4, "shard 7"}, {8, 5, "shard 8"},
+};
+static volatile uint8_t sl_shape = 3u;      /* an index into SL_SHAPE (hexagon); sl_walls follows it */
+static void sl_shape_set(uint32_t i) { sl_shape = (uint8_t)(i % SL_NSHAPE); sl_walls = SL_SHAPE[sl_shape].walls; }
 #define sl_auto 0u                          /* no auto-notes on the FM-1 (Flah 2026-11-25: "you don't need auto note on fm one
                                              * version. People can just play in their notes"): the tank's notes are the hand's */
 static volatile uint8_t sl_pinned;          /* the key held where it is (the site's key pin): the slime stays, the journey stops */
@@ -1130,6 +1142,7 @@ static void sl_start_shape(void)
 #endif
     sh_tank_settings s = sh_tank_defaults();
     s.walls = sl_walls; s.space = sl_space ? SH_SPACE_PORTAL : SH_SPACE_NORMAL; s.spin = (double)sl_spin;
+    s.shard = SL_SHAPE[sl_shape % SL_NSHAPE].shard ? SL_SHAPE[sl_shape % SL_NSHAPE].shard * 7919u + sl_seed : 0u;   /* (a new shard each time) */
     s.scale = sh_scale_by_id(SL_SCALES[sl_scale % SL_NSCALE]);
     s.auto_notes = sl_auto;
     s.guard = 1;                                           /* no note stuck ringing a wall (stucktest.c), the web's room */
@@ -1376,9 +1389,10 @@ static void slime_conduct(void)
     /* the slime's own cycle (the web: the tank fills, bursts and reforms as a new shape): after 64 bars or a full tank,
      * at the next downbeat. Slime off: the shape stays (a shape picked by hand stays, as on the site). */
     if (sl_slime && !sl_reform_at_bar && SL_CYCLE[sl_cycle % 4u] && (sl_bars_shape >= SL_CYCLE[sl_cycle % 4u] || sh_goo_fill(&sl_tank.goo) > 0.97)) {
-        static const uint8_t SHAPES[8] = {6, 5, 8, 3, 7, 4, 12, 6};
+        static const uint8_t SHAPES[10] = {3, 2, 5, 11, 0, 4, 9, 1, 8, 12};   /* (SL_SHAPE: hexagon, pentagon, octagon, shard 6,
+                                                            * triangle, heptagon, shard 4, square, dodecagon, shard 7) */
         if (!sl_hand_shape) {                              /* (one picked by hand stays: the slime only bursts and refills it) */
-            sl_walls = SHAPES[sl_seed % 8u];
+            sl_shape_set(SHAPES[sl_seed % 10u]);
             sl_space = (uint8_t)(sl_seed % 6u == 5u);      /* 1 reform in 6 is portal space (the web's auto: 1 in 3; Flah 2026-11-25: "the
                                                             * portals are literally way too often") */
         }

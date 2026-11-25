@@ -38,6 +38,7 @@ int main(int argc, char **argv) {
   for (int wi = 0; wi < 6; wi++) for (int si = 0; si < 3; si++) for (int sp = 0; sp < 2; sp++) for (int seed = 1; seed <= 2; seed++) {
     sh_tank_settings s = sh_tank_defaults();
     s.walls = WALLS[wi]; s.spin = SPIN[si]; s.space = sp ? SH_SPACE_PORTAL : SH_SPACE_NORMAL; s.auto_notes = 1;
+    if (getenv("SHARD")) s.shard = (uint32_t)(seed * 7919 + wi + 1);   /* SHARD=1: every shape a shard (irregular sides) */
     s.guard = guard; s.worm_hold = hold; s.worm_pop = guard;   /* (the device: the FM-1's four popping holes with the guard) */
     sh_tank_init(&T, s, (uint64_t)(seed * 7919 + wi * 31 + si * 7 + sp));
     sh_tank_start(&T, 0.0);

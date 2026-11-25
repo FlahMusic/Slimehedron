@@ -380,7 +380,7 @@ static void sl_say_num(const char *a, int32_t v, const char *unit)
  * lives in exactly one place; an encoder means the same kind of thing on every page: SELECT picks WHAT the page works on
  * (a part, a chord, a lane), the four knobs are its values (named, with their values, on the page's panel), ALGORITHM and
  * PRESETS are the page's two extras. A page's button again: back to the tank.
- *   HOME  TANK    walls  spin  portals  -                          (the tank alone, full size)
+ *   HOME  TANK    shape  spin  portals  -                          (the tank alone, full size; shape by name)
  *   SCL   SONG    tempo  rhythm  key  scale (all 52)  | chord every  key pinned  shape every
  *   GLO   MIXER   levels | pan | delay sends | reverb sends (the four parts); keys: 4 white mute, the next 4 solo
  *   FX    FX      filter (left low-pass, right high-pass)  drive  effect  amount, for melody | bass | chords | drums;
@@ -663,7 +663,7 @@ UI_SMALL static void sl_song_take(sl_song *g)
     memset(g, 0, sizeof *g);
     g->magic = SL_SONG_MAGIC; g->size = sizeof *g;
     for (p = 0; p < 3u; p++) { g->snd[p] = sl_snd_of[p]; g->env_on[p] = sl_env_on[p]; memcpy(g->env[p], sl_env_v[p], 5); }
-    g->kit = sl_kit; g->scale = sl_scale; g->walls = sl_walls; g->space = sl_space;
+    g->kit = sl_kit; g->scale = sl_scale; g->walls = sl_shape; g->space = sl_space;   /* (walls: the shape's index now) */
     g->slime = sl_slime; g->arp_on = sl_arp_on; g->arp_pat = sl_arp_pat; g->arp_rate = sl_arp_rate; g->arp_oct = sl_arp_oct; g->arp_gate = sl_arp_gate; memcpy(g->mute, sl_mute, 4); memcpy(g->solo, sl_solo, 4); g->busy = sl_dens; g->cycle = sl_cycle; g->pinned = sl_pinned;
     g->dfdbk = (uint8_t)song.g[G_DFDBK]; g->rdamp = (uint8_t)song.g[G_RDAMP]; g->dcolor = (uint8_t)song.g[G_DCOLOR];
     g->chord_bars = (uint8_t)sl_band.chord_bars; g->dtime = (uint8_t)song.g[G_DTIME]; g->rsize = (uint8_t)song.g[G_RSIZE];
@@ -689,7 +689,7 @@ UI_SMALL static void sl_song_put(const sl_song *g)   /* (requests, as a hand's: 
     }
     sl_kit_req = g->kit; sl_scale_req = (uint8_t)(g->scale % SL_NSCALE);
     sl_root_req = (int8_t)(clamp(g->root, 48, 71) - sl_root);
-    sl_walls = (uint8_t)clamp(g->walls, 3, 12); sl_space = g->space ? 1u : 0u; sl_reform_req = 1;
+    sl_shape_set(g->walls < SL_NSHAPE ? g->walls : 3u); sl_space = g->space ? 1u : 0u; sl_reform_req = 1;
     sl_slime = g->slime ? 1u : 0u; sl_arp_on = g->arp_on ? 1u : 0u; sl_arp_pat = (uint8_t)(g->arp_pat % SL_ARP_NPAT);
     sl_arp_rate = (uint8_t)(g->arp_rate % SL_ARP_NRATE); sl_arp_oct = (uint8_t)clamp(g->arp_oct, 1, 3); sl_arp_gate = (uint8_t)clamp(g->arp_gate, 10, 100);
     for (p = 0; p < 4u; p++) { sl_mute[p] = g->mute[p] ? 1u : 0u; sl_solo[p] = g->solo[p] ? 1u : 0u; }
@@ -858,7 +858,7 @@ static void slime_poll(void)                /* often: nothing a hand does waits 
             sl_say(p == 0 ? "melody: " : p == 1 ? "bass: " : "chords: ", sl_snd_entry(p, i)->name);
         }
         if (sl_page == PG_HOME) {                          /* TANK: the instrument */
-            if (k1) { sl_walls = (uint8_t)clamp((int32_t)sl_walls + k1, 3, 12); sl_reform_req = 1; sl_hand_shape = 1; sl_say_num("walls ", sl_walls, 0); }
+            if (k1) { sl_shape_set((uint32_t)clamp((int32_t)sl_shape + k1, 0, (int32_t)SL_NSHAPE - 1)); sl_reform_req = 1; sl_hand_shape = 1; sl_say("shape: ", SL_SHAPE[sl_shape].name); }
             if (k2) { sl_spin = (int8_t)clamp(sl_spin + accel(EN_K2, k2, 51) * 4, -100, 100); if (sl_spin) sl_say_num("spin ", sl_spin, 0); else sl_say("spin off", 0); }
             if (k3) { sl_space = (uint8_t)(k3 > 0); sl_reform_req = 1; sl_hand_shape = 1; sl_say(sl_space ? "portals on" : "portals off", 0); }
             /* (knob 4, "notes a bar", went 2026-11-25: with no auto-notes it only set how many of your notes the tank kept;
@@ -1488,6 +1488,22 @@ static void slime_ui(void)
         float hue0 = (float)(sl_root % 12) / 12.0f;
         int td = sl_tank.s.scale ? sl_tank.s.scale->n * sl_tank.s.octs : 7;
         sl_pose_apply();                                   /* the tank as the speaker plays it */
+        {   /* THE TUMBLE (Flah 2026-11-25: "the shapes are still that stupid ass hamster wheel thing"; asked: face-on and
+             * tumbling on all 3 axes). The walls turn in their own plane (the physics' spin, rot), about the box's axis,
+             * nearly the view's: a wheel. Drawn in their own turning frame (the turn undone: Rz(-rot)) and turned instead
+             * by the same angle about an axis tipped 55 degrees off the box's and slowly going round it (the precession):
+             * the shape tumbles like a thrown thing. Only the picture: the notes, the bounces and the music are the same */
+            float th = (float)sl_tank.rot, ct = cosf(th), st = sinf(th), ph = (float)(fm1_ms % 48331u) * 0.00013f;
+            float sp = sinf(0.96f), ux = sp * cosf(ph), uy = sp * sinf(ph), uz = cosf(0.96f), oc = 1.0f - ct;
+            float Ra[9] = {ct + ux * ux * oc, ux * uy * oc - uz * st, ux * uz * oc + uy * st,
+                           uy * ux * oc + uz * st, ct + uy * uy * oc, uy * uz * oc - ux * st,
+                           uz * ux * oc - uy * st, uz * uy * oc + ux * st, ct + uz * uz * oc};
+            float Rz[9] = {ct, st, 0.0f, -st, ct, 0.0f, 0.0f, 0.0f, 1.0f}, A[9], T[9];
+            uint32_t r, c;
+            for (r = 0; r < 3u; r++) for (c = 0; c < 3u; c++) A[r * 3 + c] = Ra[r * 3] * Rz[c] + Ra[r * 3 + 1] * Rz[3 + c] + Ra[r * 3 + 2] * Rz[6 + c];
+            for (r = 0; r < 3u; r++) for (c = 0; c < 3u; c++) T[r * 3 + c] = M[r * 3] * A[c] + M[r * 3 + 1] * A[3 + c] + M[r * 3 + 2] * A[6 + c];
+            for (r = 0; r < 9u; r++) M[r] = T[r];
+        }
         st_view_prepare(v, &sl_tank, M, hue0, 0);
         sl_pose_restore();
         v->goo = sl_hsv565(hue0 + (td > 0 ? (float)sl_band.chord / (float)td : 0.0f), 0.62f, 0.86f);

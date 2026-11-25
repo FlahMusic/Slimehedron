@@ -120,6 +120,7 @@ stucktest: $(TANKSRC) ../core/tank.h ../core/goo.h stucktest.c
 stuck: stucktest
 	./stucktest 1
 	NOHANDS=1 ./stucktest 1
+	SHARD=1 ./stucktest 1
 .PHONY: stuck
 
 # wall HP, the FM-1's (walltest.c): a wall breaks on its own hits, opens 2 bars, notes fall out; `make walls` must PASS

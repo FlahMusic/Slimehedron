@@ -49,6 +49,8 @@ typedef struct {
   double busy;                    /* the guard's room: its aim of notes a bar, against the web's 8 (1: the web's) */
   int worm_max;                   /* worm_pop: at most this many holes open at once (0: SH_NWORM; the FM-1: 2, Flah 2026-11-25
                                    * "the portals are literally way too often") */
+  uint32_t shard;                 /* a SHARD, the FM-1's (0: a regular polygon): its corners at angles off the even step by up
+                                   * to 35% of it, from this number, so its sides are all different (still convex) */
   int wall_hp;                    /* WALL HP, the FM-1's (0: the plugin's walls, opening every 8 bars, healing every 24): the
                                    * walls share this many hits, each wall round(wall_hp / walls), at least 2; a wall's notes
                                    * use them up, at 0 it breaks open for 2 bars, the notes that leave fall away, then it heals

@@ -15,7 +15,7 @@ static double fmax2(double a, double b) { return a > b ? a : b; }
 static double fclamp(double x, double lo, double hi) { return x < lo ? lo : x > hi ? hi : x; }
 
 sh_tank_settings sh_tank_defaults(void) {
-  sh_tank_settings s = { 6, sh_scale_by_id("major"), 2, 0.0625, 0.15, 1, 0.0, 0.12, 1, 100, 12, 94, 1, SH_SPACE_NORMAL, 1, 0, 0, 1.0, 0, 0 };   /* (worm_pop 0, guard 0, worm_max 0, wall_hp 0) */
+  sh_tank_settings s = { 6, sh_scale_by_id("major"), 2, 0.0625, 0.15, 1, 0.0, 0.12, 1, 100, 12, 94, 1, SH_SPACE_NORMAL, 1, 0, 0, 1.0, 0, 0, 0 };   /* (worm_pop 0, guard 0, worm_max 0, shard 0, wall_hp 0) */
   return s;
 }
 
@@ -59,6 +59,9 @@ static void rebuild(sh_tank *t, int keep_flash) {
   double c = cos(t->rot), s = sin(t->rot);
   for (int i = 0; i < n; i++) {
     double a = -FRAC_PI_2 + (double)i * 2.0 * PI / (double)n;
+    if (t->s.shard) {   /* a shard: each corner off its even place by a fixed amount of its own (a hash of the number and i) */
+      uint32_t h = t->s.shard * 2654435761u + (uint32_t)i * 40503u; h ^= h >> 15; h *= 2246822519u; h ^= h >> 13;
+      a += ((double)(h & 0xFFFFu) / 65535.0 - 0.5) * 0.7 * 2.0 * PI / (double)n; }
     double px = SH_TR * cos(a), py = SH_TR * sin(a);
     t->vx[i] = SH_TCX + (px * c - py * s); t->vy[i] = SH_TCY + (px * s + py * c);
   }
