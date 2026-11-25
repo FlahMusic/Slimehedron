@@ -47,6 +47,10 @@ typedef struct { uint8_t on, trk, note, vel, mch, pad; int16_t fine; uint32_t at
 
 /* 99 KB: on the device it lives in SLOOP's .pool (zeroed at boot), never in the 96 KiB RAM region */
 static sh_tank sl_tank __attribute__((section(".pool")));
+static double sl_swing_want = 0.22;         /* what the swing is to be: it takes effect at the next bar line (slime_block), so
+                                             * every 16th pair sums to two straight 16ths and the bar stays exact (a swing
+                                             * changed between the two halves of a pair moved the bar: the loop's replays drifted,
+                                             * check-host 10, 23 of 28 on time) */
 static sh_band sl_band;
 static sh_band_bar sl_bar;
 static sl_ev sl_on_q[SL_NQ], sl_off_q[SL_NQ];
@@ -503,7 +507,9 @@ static void slime_block(void)
     const double block_ms = CTL * 1000.0 / FS;
     double now_ms = (double)sl_blocks * block_ms, bpm = (double)song.g[G_BPM];
     while (sl_step_left <= 0.0) {                          /* the band, a sixteenth at a time (the tank's swing) */
-        double len = 15000.0 / bpm, sw = sl_tank.s.swing;
+        double len, sw;
+        if (sl_step % 16u == 0u) sl_tank.s.swing = sl_swing_want;   /* (a new swing at the bar line only: sl_swing_want) */
+        len = 15000.0 / bpm; sw = sl_tank.s.swing;
         if (sw > 0.01) len *= (sl_step % 2u == 0u) ? 1.0 + sw * 0.5 : 1.0 - sw * 0.5;
         sl_band_step(len);
         if (sl_blocks == 0) now_ms = 0.0;                  /* (a reform just restarted the tank's clock) */
@@ -854,6 +860,20 @@ static void sl_morph_put(uint32_t part)
     trk[part].p[P_TFLT] = sl_filt_of(part, f->filt);
     trk[part].p[P_REV] = (int16_t)(r > 127 ? 127 : r);
 }
+/* SWING (the DRUMS page's knob 4, Flah 2026-11-25: "change the feel knob to a swing thing"; the drums felt "very rigid").
+ * Measured first (the host bench, pop at 100 bpm, every hit's onset): the band's odd 16ths already landed 14 ms late at the
+ * old 15% (the site's default drums: ~3 ms, its "Human" groove), so the swing was there, only faint. Now one swing, 0..50%
+ * (50%: the odd 16th 37 ms late at 100 bpm, nearly a triplet), 22% by default; with the slime on and the knob not turned it
+ * BREATHES 13..31% over ~62 s, the site's MODS swing (index.html MODS swingSl: c 22, d 9, rate 0.016). It moves the band's
+ * 16ths and the tank's grid together (slime_block, tank.c tick_interval), so the balls and the drums agree. */
+static double sl_swing = 0.22;              /* the person's swing (the knob) */
+static uint8_t sl_swing_hand;               /* the knob turned: the slime's breathing stops for this slime session */
+static void sl_swing_tick(int slime_on, uint32_t ms)
+{
+    double s = sl_swing;
+    if (slime_on && !sl_swing_hand) s = 0.22 + 0.09 * sin((double)(ms % 62500u) * 0.001 * 0.016 * 6.283185307);
+    sl_swing_want = s;
+}
 /* once a conductor pass (or a host block): on = the slime on and playing, fill the goo's coverage, dt the ms since */
 static void sl_slime_morph(int on, double fill, uint32_t dt)
 {
@@ -999,9 +1019,10 @@ static void sl_start_shape(void)
     s.scale = sh_scale_by_id(SL_SCALES[sl_scale % SL_NSCALE]);
     s.auto_notes = sl_auto;
     s.guard = 1;                                           /* no note stuck ringing a wall (stucktest.c), the web's room */
-    s.worm_pop = 1;                                        /* four bigger holes, popping open on random walls, out on the grid */
-    s.worm_hold = 8;                                       /* (pop: each hole lives half of it, 4 beats; the web's glide rests 8) ("they dont stay
-                                                            * long enough before moving so they dont rly get used": Flah) */
+    s.worm_pop = 1;                                        /* bigger holes, popping open on random walls, out on the grid */
+    s.worm_hold = 16;                                      /* (pop: each hole lives half of it, 8 beats: 2 bars; 2026-11-20 it was 4 beats, "they
+                                                            * dont stay long enough before moving": Flah; 2026-11-25 "way too often") */
+    s.worm_max = 2;                                        /* two open at once, not four (2026-11-25) */
     sl_on_reform();
     slime_start(s, sl_seed++, sl_root);
     sl_bars_shape = 0;
@@ -1229,6 +1250,7 @@ static void slime_conduct(void)
         static uint32_t last;
         if (fm1_ms - last >= 20u) {                        /* (50 a second: the lag is 600 ms) */
             sl_slime_morph(sl_slime, sh_goo_fill(&sl_tank.goo), last ? fm1_ms - last : 0u);
+            sl_swing_tick(sl_slime, fm1_ms);               /* (and the swing breathes with the slime) */
             last = fm1_ms;
         }
     }
@@ -1241,7 +1263,8 @@ static void slime_conduct(void)
         static const uint8_t SHAPES[8] = {6, 5, 8, 3, 7, 4, 12, 6};
         if (!sl_hand_shape) {                              /* (one picked by hand stays: the slime only bursts and refills it) */
             sl_walls = SHAPES[sl_seed % 8u];
-            sl_space = (uint8_t)(sl_seed % 3u == 2u);      /* 1 reform in 3 is portal space, as the web's auto */
+            sl_space = (uint8_t)(sl_seed % 6u == 5u);      /* 1 reform in 6 is portal space (the web's auto: 1 in 3; Flah 2026-11-25: "the
+                                                            * portals are literally way too often") */
         }
         sl_reform_at_bar = 1;
         sl_bars_shape = 0;

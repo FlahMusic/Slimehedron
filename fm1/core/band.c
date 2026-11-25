@@ -108,7 +108,7 @@ static int harm_drone(const sh_scale *sc) { return sc->n > 12; }
 
 /* ---- THE HARMONY'S OTHER OWNERS and A PERSON'S DRUM PATTERN (2026-11-18; see band.h) ---- */
 const uint8_t SH_PLANE_V[SH_PLANES] = {0, 1, 2, 3, 4, 6, 7, 8};
-const char *const SH_PLANE_NAME[SH_PLANES] = {"kick", "snare", "hat", "open hat", "rim", "conga", "tom", "ride"};
+const char *const SH_PLANE_NAME[SH_PLANES] = {"kick", "snare", "hi hat", "open hat", "rim", "conga", "tom", "ride"};   /* ("hi hat": Flah 2026-11-25) */
 /* the site's CQUAL, in its CQUAL_ORDER */
 /* (min, not m: the FM-1's font has capitals only, and AM7 would read as A major 7) */
 const char *const SH_CQ_NAME[SH_NCQ] = {"", "min", "7", "maj7", "min7", "dim", "aug", "sus2", "sus4", "6", "min6", "min7b5", "dim7", "9", "maj9", "min9", "7sus4", "add9"};

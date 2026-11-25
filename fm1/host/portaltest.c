@@ -13,6 +13,7 @@
  *      (139 moves while open), the web's size (78 px against 82, 17.9% through)
  * Prints PASS/FAIL; exit 1 on a fail.   portaltest */
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "../core/tank.h"
 
@@ -180,6 +181,24 @@ int main(void) {
         for (int k = 0; k < T.nb; k++) if (!T.balls[k].warp && !sh_tank_inside(&T, T.balls[k].x, T.balls[k].y)) bad++; } }
     snprintf(m, sizeof m, "9  a triangle and a square: every hole on a real wall and every ball inside (%d ticks wrong), at most a hole fewer than the walls open (%d ticks over)", bad, over);
     ok(bad == 0 && over == 0 && !lost, m); }
+  /* ---- 10: the FM-1 as it is now (slime.c, Flah 2026-11-25: "the portals are literally way too often"): worm_max 2 and
+   *          worm_hold 16 on a hexagon: never more than two holes open, a hole staying on its wall ~2 bars on average (7 beats
+   *          at least: a hole moves only once shut, so a late move shortens the next stay: 6 beats at the shortest), every
+   *          ball still in the tank. PT_OLD=1: the 2026-11-20 setting (four holes, worm_hold 8) must fail it */
+  { int over = 0, lost = 0, moves = 0; double gap = 1e9, last[SH_NWORM]; int at[SH_NWORM];
+    sh_tank_settings s = portal(); s.walls = 6; s.worm_pop = 1; s.worm_hold = getenv("PT_OLD") ? 8 : 16; s.worm_max = getenv("PT_OLD") ? 0 : 2; s.spin = 60; s.chaos = 0.12; s.guard = 1;
+    sh_tank_init(&T, s, 34); sh_tank_start(&T, 0); tick = 0;
+    for (int i = 0; i < 8; i++) sh_tank_add_ball(&T);
+    for (int h = 0; h < SH_NWORM; h++) { last[h] = -1; at[h] = T.worm[h].at; }
+    for (int i = 0; i < 60 * 60; i++) {
+      int open = 0; double now = tick * SH_FIXED; step1(120); if (T.nb != 8) lost = 1;
+      for (int h = 0; h < T.worm_n; h++) {
+        if (T.worm[h].rad > SH_BR) open++;
+        if (T.worm[h].at != at[h]) { double beats = now / 60000.0 * 120.0; if (last[h] >= 0 && beats - last[h] < gap) gap = beats - last[h]; last[h] = beats; at[h] = T.worm[h].at; moves++; } }
+      if (open > 2) over++; }
+    { double mean = moves > 2 ? 2.0 * 120.0 / (double)moves : 0.0;   /* (two holes over the minute's 120 beats) */
+      snprintf(m, sizeof m, "10 the FM-1 now (worm_max 2, worm_hold 16): never more than 2 holes open (%d ticks over), a hole stays %.1f beats on a wall on average, %.1f at the shortest", over, mean, gap);
+      ok(over == 0 && !lost && moves > 0 && mean >= 7.0 && gap >= 5.0, m); } }
   printf(fails ? "FAILED: %d\n" : "the FM-1 tank's wormholes behave like the web's, and the FM-1's own are bigger and on the grid\n", fails);
   return fails ? 1 : 0;
 }

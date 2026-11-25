@@ -53,8 +53,8 @@ It works like a groovebox: ONE BUTTON, ONE PAGE, every setting in exactly one pl
 
 PAGE / VIEW            BUTTON    KNOB 1        KNOB 2         KNOB 3          KNOB 4
 tank                   HOME      walls         spin           portals         notes a bar
-song                   SCL       tempo         swing          key             SCALE
-song: rhythm           SCL x2    rhythm        a chord every  key moves/pinned new shape every
+song                   SCL       tempo         rhythm         key             SCALE
+song: harmony          SCL x2    a chord every key moves/pinned new shape every -
 mixer: levels          GLO       melody        bass           chords          drums
 mixer: pan             GLO x2    melody        bass           chords          drums
 mixer: delay sends     GLO x3    melody        bass           chords          drums
@@ -69,14 +69,15 @@ sound: length, glide   ENV x4    note length   melody glide   bass glide      ch
 chords                 EDIT      which chord   root           type            bars
 chords: all            EDIT x2   how many      famous ones    all up / down   -
 drums: pattern         SEQ       lane          fill           shift           mine / rhythm's
-drums: kit             SEQ x2    kit           tune           decay           feel
+drums: kit             SEQ x2    kit           tune           decay           swing
 midi: channels         SAVE      melody ch     bass ch        chords ch       drums ch
 midi: in, clock        SAVE x2   in (channel)  sync           notes (out)     clock (out)
 
   tank: HOME comes back here from any page. A shape or portals set here stay (the slime still bursts and refills the
         tank, it just keeps your shape; untouched, it picks a new one each time). Notes a bar: the melody's density (4, 6, 8, 12, 16; the site aims at 8).
-        Portals: four wormholes, bigger than the site's two, each living a bar on one wall, then closing and popping
-        open on another; a note that goes in comes out of another hole, on the beat grid
+        Portals: two wormholes open at a time, bigger than the site's, each staying 2 bars on one wall, then closing and
+        popping open on another; a note that goes in comes out of another hole, on the beat grid. The slime picks portal
+        space on about 1 new shape in 6
   song: SCALE (knob 4) runs through 52 scales: the 7 modes; harmonic and melodic minor, harmonic major, phrygian
         dominant (hijaz), double harmonic (bhairav), hungarian minor, lydian dominant, altered, dorian #4, lydian
         augmented, locrian natural 2, neapolitan minor and major, persian, enigmatic, prometheus, bebop dominant; whole
@@ -105,8 +106,9 @@ midi: in, clock        SAVE x2   in (channel)  sync           notes (out)     cl
         the snare's noise and shell, the 808 metal hats, the open hat the next hat cuts off, the ride tuned to the key,
         toms, congas, clave). PATTERN: your own 16 steps, played by the rhythm's drummer (no fills): the 16 white keys
         are the steps, a black key picks the lane; turning to "mine" with nothing in it starts from the rhythm's bar.
-        KIT: any rhythm's kit for every rhythm ("rhythm": each plays its own), tuned up or down 12 semitones, its
-        decay from half to twice as long; feel: the drummer's accents and push, or exact
+        KIT: any rhythm's kit for every rhythm ("rhythm": each plays its own), tuned down 2 or up 12 semitones, its
+        decay from half to twice as long; SWING: how late every other 16th lands (0: straight, 50%: nearly a triplet).
+        With the slime on it breathes between 13% and 31% by itself until you turn it (the site's swing does the same)
   midi: see MIDI below
 
 THE OTHER BUTTONS

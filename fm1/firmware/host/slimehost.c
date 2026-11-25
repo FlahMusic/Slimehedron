@@ -363,6 +363,8 @@ int main(int argc, char **argv)
             if (i % (CTL * 32u) == 0u)            /* the slime's muffle, 43 times a second (slime_conduct: 50) */
                 sl_slime_morph(!getenv("SL_NOSLIME"), getenv("SL_FILL") ? atof(getenv("SL_FILL")) : sh_goo_fill(&sl_tank.goo),
                                i ? CTL * 32u * 1000u / FS : 0u);   /* (SL_FILL: the tank held at that fill, as dev-slimesound holds the site's) */
+            if (i % (CTL * 32u) == 0u && !getenv("SL_SWING")) sl_swing_tick(!getenv("SL_NOSLIME"), (uint32_t)((double)i * 1000.0 / FS));
+            if (getenv("SL_SWING")) sl_swing_want = atof(getenv("SL_SWING"));   /* (a swing held: the onset check) */
             slime_play_block();
             o = preview_render();
             for (k = 0; k < CTL; k++) { double m = biq_run(&kh, biq_run(&ks, (o[2 * k] + o[2 * k + 1]) * 0.5)), q = biq_run(&p2, biq_run(&p1, (o[2 * k] + o[2 * k + 1]) * 0.5)); ksum += m * m; psum += q * q; }

@@ -74,7 +74,10 @@ static const int8_t SD_PIECE_DB[11][SDP_N] = {   /* x2: half dB */
 static const float SD_KIT_DB[11] = {-15.0f, -20.0f, -16.6f, -16.2f, -6.6f, -13.1f, -12.9f, -10.4f, -9.1f, -12.4f, -21.3f};
 /* the DRUMS page's own controls over the kit: its tone (one of the 11), tune (semitones), decay (x 0.5 .. 2) */
 static volatile uint8_t sd_tone = 0xFF;      /* 0xFF: the rhythm's own kit */
-static volatile int8_t sd_tune;              /* -12..12 */
+static volatile int8_t sd_tune;              /* SD_TUNE_MIN..12 */
+#define SD_TUNE_MIN (-2)                      /* (Flah 2026-11-25: "once you hit the tuning past minus two, it gets completely out of hand":
+                                               * every piece's pitch x 2^(tune/12): at -12 the conga's slide sinks to mud, the kick goes subsonic;
+                                               * "plus 12 sounds fine") */
 static volatile uint8_t sd_decay = 8;        /* 4..16: x decay / 8 */
 
 /* a^b without libm in the audio path (slime.c). The per-sample multipliers are a^(1/samples), within a few 1e-4 of 1,

@@ -15,7 +15,7 @@ static double fmax2(double a, double b) { return a > b ? a : b; }
 static double fclamp(double x, double lo, double hi) { return x < lo ? lo : x > hi ? hi : x; }
 
 sh_tank_settings sh_tank_defaults(void) {
-  sh_tank_settings s = { 6, sh_scale_by_id("major"), 2, 0.0625, 0.15, 1, 0.0, 0.12, 1, 100, 12, 94, 1, SH_SPACE_NORMAL, 1, 0, 0, 1.0 };   /* (worm_pop 0, guard 0) */
+  sh_tank_settings s = { 6, sh_scale_by_id("major"), 2, 0.0625, 0.15, 1, 0.0, 0.12, 1, 100, 12, 94, 1, SH_SPACE_NORMAL, 1, 0, 0, 1.0, 0 };   /* (worm_pop 0, guard 0, worm_max 0) */
   return s;
 }
 
@@ -304,6 +304,7 @@ static void worm_pop_tick(sh_tank *t, double now, int on) {
   /* at most a hole fewer than the walls is open (a triangle: 2, a square: 3), so a hole always has a free wall to go to;
    * the rest stay shut, each still on a wall (a hole on walls[-1]: the triangle's ball out of the tank, stucktest) */
   int open_n = t->n - 1 < t->worm_n ? t->n - 1 : t->worm_n;
+  if (t->s.worm_max > 0 && open_n > t->s.worm_max) open_n = t->s.worm_max;
   if (t->worm_key != t->n) { t->worm_key = t->n; for (int i = 0; i < t->worm_n; i++) { t->worm[i].at = i % t->n; t->worm[i].life = -1; t->worm[i].tt = 0.5; t->worm[i].za = t->worm[i].zb = 0.0; } }
   for (int i = 0; i < t->worm_n; i++) { sh_worm *P = &t->worm[i];
     if (i >= open_n) { if (P->at < 0 || P->at >= t->n) P->at = i % t->n; worm_pop_place(t, P, 0.0); continue; }

@@ -242,5 +242,15 @@ SL_NOSLIME=1 SL_ONLY=mel SL_FILL=0 "$B" song "$OUT/e.wav" 16 major 6 100 7 1 KAL
 set -- $(python3 "$H/muffle.py" "$OUT/e.wav" "$OUT/f.wav" | awk '{print $4}')
 ok "$(t "$1 > -1 && $1 < 1")" "[slime muffle] the slime off: a full tank leaves the melody as it is (over 4 kHz $1 dB)"
 
+# 16. the swing (the DRUMS page, Flah 2026-11-25: the drums felt "very rigid"): the band's odd 16ths land late by what the
+#     knob says: at 0 only the drummer's humanize (under 6 ms), at 50% nearly a triplet (30..50 ms at 100 bpm), measured on
+#     the drums' own onsets (host/onsets.py). Sabotage: a swing that never reaches the band reads ~3 ms at 50%.
+for sw in 0 0.5; do
+  SL_SWING=$sw SL_KIT=pop SL_ONLY=drums "$B" song "$OUT/sw.wav" 8 major 6 100 7 1 KALIMBA > /dev/null
+  late=$(python3 "$HERE/host/onsets.py" "$OUT/sw.wav" 100 | sed 's/.*odd late by *//; s/ ms.*//')
+  if [ "$sw" = 0 ]; then ok "$(t "$late > -6 && $late < 6")" "[swing 0] the odd 16ths on the grid: $late ms (the humanize only)"
+  else ok "$(t "$late >= 30 && $late <= 50")" "[swing 50%] the odd 16ths $late ms late (a 16th is 150 ms at 100 bpm: nearly a triplet)"; fi
+done
+
 echo
 [ "$FAILS" = 0 ] && echo "fm1 bridge: clean" || { echo "$FAILS FAILURE(S)"; exit 1; }
