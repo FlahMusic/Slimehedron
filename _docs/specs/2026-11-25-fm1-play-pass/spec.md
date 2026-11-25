@@ -1,6 +1,6 @@
 # FM-1 play pass (2026-11-25)
 
-Status: in-progress
+Status: in-progress (tickets 1-6 done 2026-11-25: 3a45bd5, a879e9d, aeba418, f8f73d2; 7 not started)
 
 Flah tested the 10:40 build on the FM-1 and dictated notes (verbatim in the session; the decisions below were asked in one
 round with recommended answers). The point of the device, in his words: "a more organic and flowing kind of free form way
