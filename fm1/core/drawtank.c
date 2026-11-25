@@ -168,13 +168,35 @@ static void seg_row(const st_seg *s, float yc, uint16_t *row, int xlo, int xhi) 
     x0_ = x0_ < xlo ? xlo : x0_; x1_ = x1_ > xhi ? xhi : x1_; \
     for (int px = x0_; px <= x1_; px++) { float ddx = px + 0.5f - (cx); (void)ddx; __VA_ARGS__ } } } while (0)
 
+/* THE GOO AS ONE SLIME (Flah 2026-11-25: "it pretty much just looks like ... a bunch of balls together instead of an
+ * actual cohesive slime type object ... the density and the circularness ... of each individual particle is just wrong").
+ * Each drop was its own see-through disc: overlaps stacked darker and every drop kept its own round edge. Now a metaball
+ * field: each drop adds (1 - d^2 / R^2)^2 out to R = GOO_REACH (1.6) x its radius, and one surface is drawn where the sum passes
+ * GOO_T: neighbours flow into one body, the fill is even, the edge soft (anti-aliased over GOO_SOFT of the field) with a
+ * darker rim, so it reads as one object. GOO_T is where a lone drop's surface falls on its own radius (1 - 1/REACH^2)^2,
+ * so a single drop looks the size it did. Spray (drops not yet pooled, "the dot particles of slime that come off of the
+ * notes") counts 0.45: alone it is a small bead (about a third of a drop's size), it shows whole only as it joins the
+ * slime. Cost (fm1-emu, 40 keys over 20 s): worst 5 s window 36.2 fps against 41.0 with the discs (no square root a
+ * row, only the columns the band's goo can reach cleared: 32.3 before those two). */
+#define GOO_REACH 1.6f
+#define GOO_T 0.371f             /* (1 - 1 / 1.6^2)^2 */
+#define GOO_SOFT 0.22f
 void st_draw_band(const st_view *v, int y0, int rows, uint16_t *buf, uint16_t bg, int xlo, int xhi) {
-  static int dl[SH_GOO_MAXD]; int nd = 0;   /* the drops that reach this band (and these columns) */
+  static int dl[SH_GOO_MAXD]; int nd = 0;   /* the drops whose field reaches this band (and these columns) */
+  static float acc[SH_SCREEN];
   if (xlo < 0) xlo = 0;
   if (xhi > SH_SCREEN - 1) xhi = SH_SCREEN - 1;
-  for (int k = 0; k < v->nd; k++) if (v->dy[k] + v->dr[k] >= (float)y0 && v->dy[k] - v->dr[k] <= (float)(y0 + rows) &&
-                                      v->dx[k] + v->dr[k] >= (float)xlo && v->dx[k] - v->dr[k] <= (float)(xhi + 1)) dl[nd++] = k;
+  int bx0 = xhi + 1, bx1 = xlo - 1;          /* the columns the band's goo can touch: only those are cleared and read */
+  for (int k = 0; k < v->nd; k++) { float R = v->dr[k] * GOO_REACH;
+    if (v->dy[k] + R >= (float)y0 && v->dy[k] - R <= (float)(y0 + rows) && v->dx[k] + R >= (float)xlo && v->dx[k] - R <= (float)(xhi + 1)) {
+      int a = (int)(v->dx[k] - R), b = (int)(v->dx[k] + R) + 1;
+      if (a < bx0) bx0 = a;
+      if (b > bx1) bx1 = b;
+      dl[nd++] = k; } }
+  if (bx0 < xlo) bx0 = xlo;
+  if (bx1 > xhi) bx1 = xhi;
   const uint16_t shade = rgb565(0.24f, 0.14f, 0.43f), white = 0xFFFF;
+  const uint16_t rim = blend565(v->goo, shade, 12u);   /* the slime's edge: its own colour, deeper */
   for (int r = 0; r < rows; r++) {
     uint16_t *row = buf + r * SH_SCREEN; float yc = (float)(y0 + r) + 0.5f;
     if (st_bg_row) st_bg_row(row, y0 + r, xlo, xhi); else for (int x = xlo; x <= xhi; x++) row[x] = bg;
@@ -184,8 +206,24 @@ void st_draw_band(const st_view *v, int y0, int rows, uint16_t *buf, uint16_t bg
     for (int i = 0; i < v->nside; i++) poly_row(&v->side[i], yc, row, xlo, xhi);                         /* the side walls, glass */
     for (int i = 0; i < v->nunder; i++) seg_row(&v->under[i], yc, row, xlo, xhi);                        /* rails, back edges */
     for (int h = 0; h < SH_NWORM; h++) if (v->hn[h]) { poly_row(&v->hole[h][0], yc, row, xlo, xhi); poly_row(&v->hole[h][1], yc, row, xlo, xhi); }   /* wormholes */
-    for (int q = 0; q < nd; q++) { int k = dl[q]; uint32_t ka = v->dpool[k] ? 29u : 19u;           /* the goo, then its spray */
-      DISC_ROW(v->dx[k], v->dy[k], v->dr[k], yc, row[px] = blend565(row[px], v->goo, ka);); }
+    if (nd) {                                                                                           /* the goo: one surface */
+      int gx0 = xhi + 1, gx1 = xlo - 1;
+      for (int px = bx0; px <= bx1; px++) acc[px] = 0.0f;
+      for (int q = 0; q < nd; q++) { int k = dl[q]; float R = v->dr[k] * GOO_REACH, ir2 = 1.0f / (R * R), w = v->dpool[k] ? 1.0f : 0.45f;
+        float dy = yc - v->dy[k]; if (dy * dy >= R * R) continue;
+        int a = (int)ceilf(v->dx[k] - R - 0.5f), b = (int)floorf(v->dx[k] + R - 0.5f);   /* (the box: no square root; the field ends itself) */
+        if (a < xlo) a = xlo;
+        if (b > xhi) b = xhi;
+        if (a > b) continue;
+        if (a < gx0) gx0 = a;
+        if (b > gx1) gx1 = b;
+        { float dx = (float)a + 0.5f - v->dx[k], base = 1.0f - dy * dy * ir2;     /* (the distance stepped, not remade) */
+          for (int px = a; px <= b; px++, dx += 1.0f) { float q2 = base - dx * dx * ir2; if (q2 > 0.0f) acc[px] += q2 * q2 * w; } } }
+      for (int px = gx0; px <= gx1; px++) { float f = acc[px] - GOO_T; if (f <= 0.0f) continue;
+        float e = f / GOO_SOFT;                                       /* 0 at the surface .. 1 a little inside it */
+        uint16_t col = e < 1.0f ? blend565(rim, v->goo, k32(e)) : v->goo;
+        if (f > GOO_SOFT * 2.0f) { float g = (f - GOO_SOFT * 2.0f) * 0.35f; col = blend565(col, white, k32(g > 0.25f ? 0.25f : g)); }   /* a sheen where it is thick */
+        row[px] = blend565(row[px], col, k32(e < 1.0f ? 0.35f + 0.55f * e : 0.9f)); } }
     for (int o = 0; o < v->nb; o++) { int i = v->order[o]; float R = v->r[i]; uint32_t kz = k32(1.0f - 0.3f * v->z[i]);   /* balls, far first */
       float il = 0.55f / (R * R * 1.6f), hy = (yc - v->y[i]) + R * 0.4f, hy2 = hy * hy;
       DISC_ROW(v->x[i], v->y[i], R, yc, { float hx = ddx + R * 0.35f, l = 0.55f - (hx * hx + hy2) * il;
